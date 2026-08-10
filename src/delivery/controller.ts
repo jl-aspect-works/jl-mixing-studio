@@ -74,7 +74,7 @@ export function useDeliveryWorkflow({
           result.delivery.projectName === project.projectName &&
           result.delivery.currentRevision === project.currentRevision &&
           result.delivery.approvedRevision === project.approvedRevision &&
-          result.delivery.deliveredRevision === project.deliveredRevision &&
+          result.delivery.deliveredRevision === null &&
           result.delivery.deliveryMethod === project.deliveryMethod &&
           result.delivery.replacementMode === request.replacementMode &&
           result.delivery.createZip === request.createZip &&
