@@ -43,5 +43,9 @@ fn clean_reconciliation_accepts_automation_fixed_empty_stems_directory() {
     assert!(verify_delivery_artifacts(directory.path(), &expected, None));
 
     fs::write(delivery.join("Stems/Blue Sky Stems.wav"), "stale stem").expect("stale stem");
-    assert!(!verify_delivery_artifacts(directory.path(), &expected, None));
+    assert!(!verify_delivery_artifacts(
+        directory.path(),
+        &expected,
+        None
+    ));
 }
