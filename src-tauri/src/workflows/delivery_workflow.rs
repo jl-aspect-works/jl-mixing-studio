@@ -140,10 +140,12 @@ pub(crate) fn run_delivery_operation(
                 )
             };
         };
+        // Automation API planned responses intentionally report delivered_revision as null.
+        // The existing delivered package remains authoritative workspace state until execution.
         let expected_delivered = if verify_after_creation {
             Some(approved_revision)
         } else {
-            before.delivered_revision
+            None
         };
         if preview.client_id != client_id
             || preview.project_id != project_id
