@@ -140,7 +140,6 @@ pub enum DeliveryOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     ProjectUnavailable,
     ApprovalRequired,
