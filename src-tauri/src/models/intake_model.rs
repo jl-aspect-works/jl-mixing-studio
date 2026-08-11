@@ -57,7 +57,6 @@ pub enum IntakeOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     ProjectUnavailable,
     ReportUnavailable,
