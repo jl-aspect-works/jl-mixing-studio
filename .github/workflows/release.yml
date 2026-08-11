@@ -110,12 +110,13 @@ jobs:
           )
       - name: Write release notes
         run: |
-          cat > release-notes.md <<'EOF'
-          ## JL Mixing Studio 1.0
+          version="${GITHUB_REF_NAME#v}"
+          cat > release-notes.md <<EOF
+          ## JL Mixing Studio ${version}
 
           This release provides separate installers for Intel Macs, Apple Silicon Macs, and Windows x64.
 
-          These installers are intentionally unsigned. macOS Gatekeeper and Windows SmartScreen will identify the publisher as unknown. Verify the downloaded file against `SHA256SUMS.txt`, then follow the unsigned-install instructions in the project documentation.
+          These installers are intentionally unsigned. macOS Gatekeeper and Windows SmartScreen will identify the publisher as unknown. Verify the downloaded file against \`SHA256SUMS.txt\`, then follow the unsigned-install instructions in the project documentation.
           EOF
       - name: Publish release assets
         env:
