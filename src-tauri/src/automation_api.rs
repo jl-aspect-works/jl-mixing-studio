@@ -13,6 +13,7 @@ use crate::models::VersionCheck;
 pub(crate) const AUTOMATION_EXECUTABLE: &str = "jl-mixing";
 const SUPPORTED_API_VERSION: &str = "1.0";
 const HOMEBREW_COMMAND_PATHS: [&str; 2] = ["/usr/local/bin", "/opt/homebrew/bin"];
+const WINDOWS_INSTALL_RELATIVE: [&str; 4] = ["Programs", "JL Mixing", "bin", ""];
 
 pub(crate) trait ProcessRunner {
     fn run(
@@ -62,19 +63,83 @@ pub(crate) fn automation_subprocess_path(
         .flatten()
         .collect();
 
-    for path in HOMEBREW_COMMAND_PATHS {
-        let path = PathBuf::from(path);
-        if !paths.contains(&path) {
-            paths.push(path);
+    if !cfg!(target_os = "windows") {
+        for path in HOMEBREW_COMMAND_PATHS {
+            let path = PathBuf::from(path);
+            if !paths.contains(&path) {
+                paths.push(path);
+            }
         }
     }
 
     env::join_paths(paths).ok()
 }
 
+fn command_names(executable: &str, windows: bool) -> Vec<String> {
+    if windows {
+        vec![
+            format!("{executable}.exe"),
+            format!("{executable}.cmd"),
+            format!("{executable}.bat"),
+            executable.to_owned(),
+        ]
+    } else {
+        vec![executable.to_owned()]
+    }
+}
+
+fn find_command_in(directory: &Path, executable: &str, windows: bool) -> Option<PathBuf> {
+    command_names(executable, windows)
+        .into_iter()
+        .map(|name| directory.join(name))
+        .find(|candidate| candidate.is_file())
+}
+
+fn windows_default_bin(local_app_data: &Path) -> PathBuf {
+    let mut path = local_app_data.to_path_buf();
+    for component in WINDOWS_INSTALL_RELATIVE.iter().take(3) {
+        path.push(component);
+    }
+    path
+}
+
+fn resolve_command_for_platform(
+    home: &Path,
+    executable: &str,
+    search_path: Option<&OsStr>,
+    local_app_data: Option<&OsStr>,
+    windows: bool,
+) -> Option<PathBuf> {
+    if windows {
+        if let Some(local_app_data) = local_app_data {
+            let default_bin = windows_default_bin(Path::new(local_app_data));
+            if let Some(candidate) = find_command_in(&default_bin, executable, true) {
+                return Some(candidate);
+            }
+        }
+    }
+
+    // Preserve the established POSIX default and source/dev compatibility on every platform.
+    let posix_default_bin = home.join(".local").join("bin");
+    if let Some(candidate) = find_command_in(&posix_default_bin, executable, windows) {
+        return Some(candidate);
+    }
+
+    search_path.and_then(|value| {
+        env::split_paths(value).find_map(|directory| find_command_in(&directory, executable, windows))
+    })
+}
+
 pub(crate) fn resolve_command(home: &Path, executable: &str) -> Option<PathBuf> {
     let path = env::var_os("PATH");
-    resolve_command_with_path(home, executable, path.as_deref())
+    let local_app_data = env::var_os("LOCALAPPDATA");
+    resolve_command_for_platform(
+        home,
+        executable,
+        path.as_deref(),
+        local_app_data.as_deref(),
+        cfg!(target_os = "windows"),
+    )
 }
 
 pub(crate) fn resolve_command_with_path(
@@ -82,16 +147,13 @@ pub(crate) fn resolve_command_with_path(
     executable: &str,
     search_path: Option<&OsStr>,
 ) -> Option<PathBuf> {
-    let default_install = home.join(".local").join("bin").join(executable);
-    if default_install.is_file() {
-        return Some(default_install);
-    }
-
-    search_path.and_then(|value| {
-        env::split_paths(value)
-            .map(|directory| directory.join(executable))
-            .find(|candidate| candidate.is_file())
-    })
+    resolve_command_for_platform(
+        home,
+        executable,
+        search_path,
+        None,
+        cfg!(target_os = "windows"),
+    )
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
@@ -287,29 +349,24 @@ fn compatibility_result(
         };
     }
 
-    let platform_supported = !cfg!(target_os = "windows");
-    // Feature availability follows provider-advertised API capabilities rather than Automation's
-    // product version, preserving Studio/Automation version independence within API 1.0.
+    // API-backed workflow availability follows provider-advertised capabilities, not the host OS
+    // or Automation product version. Automation v1.5 makes these API 1.0 operations native on
+    // Windows as well as macOS.
     let has = |capability: &str| capabilities.iter().any(|item| item == capability);
 
     VersionCheck {
         available: true,
         supported: true,
-        // Studio workspace creation is not yet an Automation API 1.0 capability. Preserve the
-        // existing platform gate while the API-backed workflows migrate independently.
-        studio_creation_supported: platform_supported,
-        client_creation_supported: platform_supported && has("client.create"),
-        project_creation_supported: platform_supported
-            && has("project.create")
-            && has("project.create.artist"),
-        intake_validation_supported: platform_supported
-            && has("intake.validate")
-            && has("intake.validate.report"),
-        revision_creation_supported: platform_supported
-            && has("revision.create")
+        // Studio workspace creation is still a human-CLI path in Studio v1.1, so preserve its
+        // existing platform gate independently of the API-backed workflows below.
+        studio_creation_supported: !cfg!(target_os = "windows"),
+        client_creation_supported: has("client.create"),
+        project_creation_supported: has("project.create") && has("project.create.artist"),
+        intake_validation_supported: has("intake.validate") && has("intake.validate.report"),
+        revision_creation_supported: has("revision.create")
             && has("revision.create.description"),
-        revision_approval_supported: platform_supported && has("revision.approve"),
-        delivery_creation_supported: platform_supported && has("delivery.create"),
+        revision_approval_supported: has("revision.approve"),
+        delivery_creation_supported: has("delivery.create"),
         version: Some(application.version.clone()),
         message: format!(
             "JL Mixing Automation {} detected with compatible Automation API {}",
@@ -395,7 +452,12 @@ mod tests {
         let home = tempdir().expect("temporary home");
         let bin = home.path().join(".local/bin");
         fs::create_dir_all(&bin).expect("create bin");
-        fs::write(bin.join(AUTOMATION_EXECUTABLE), "stub").expect("create executable stub");
+        let name = if cfg!(target_os = "windows") {
+            format!("{AUTOMATION_EXECUTABLE}.cmd")
+        } else {
+            AUTOMATION_EXECUTABLE.to_owned()
+        };
+        fs::write(bin.join(name), "stub").expect("create executable stub");
         home
     }
 
@@ -409,6 +471,47 @@ mod tests {
     }
 
     #[test]
+    fn resolves_windows_default_install_before_path() {
+        let home = tempdir().expect("temporary home");
+        let local = tempdir().expect("temporary local app data");
+        let default_bin = windows_default_bin(local.path());
+        fs::create_dir_all(&default_bin).expect("create default bin");
+        let expected = default_bin.join("jl-mixing.cmd");
+        fs::write(&expected, "stub").expect("create Windows launcher");
+
+        let path_dir = tempdir().expect("temporary PATH dir");
+        fs::write(path_dir.path().join("jl-mixing.exe"), "stub").expect("create PATH launcher");
+        let search_path = env::join_paths([path_dir.path()]).expect("join PATH");
+
+        let resolved = resolve_command_for_platform(
+            home.path(),
+            AUTOMATION_EXECUTABLE,
+            Some(search_path.as_os_str()),
+            Some(local.path().as_os_str()),
+            true,
+        );
+        assert_eq!(resolved.as_deref(), Some(expected.as_path()));
+    }
+
+    #[test]
+    fn windows_path_search_accepts_cmd_extension() {
+        let home = tempdir().expect("temporary home");
+        let path_dir = tempdir().expect("temporary PATH dir");
+        let expected = path_dir.path().join("jl-mixing.cmd");
+        fs::write(&expected, "stub").expect("create Windows launcher");
+        let search_path = env::join_paths([path_dir.path()]).expect("join PATH");
+
+        let resolved = resolve_command_for_platform(
+            home.path(),
+            AUTOMATION_EXECUTABLE,
+            Some(search_path.as_os_str()),
+            None,
+            true,
+        );
+        assert_eq!(resolved.as_deref(), Some(expected.as_path()));
+    }
+
+    #[test]
     fn missing_provider_is_unavailable() {
         let home = tempdir().expect("temporary home");
         let result = check_automation_compatibility(home.path(), &FakeRunner::new(vec![]));
@@ -418,26 +521,24 @@ mod tests {
     }
 
     #[test]
-    fn compatible_api_uses_advertised_capabilities() {
+    fn compatible_api_uses_advertised_capabilities_on_all_platforms() {
         let home = installed_home();
         let discovery = r#"{
             "api_version":"1.0",
-            "application":{"name":"jl-mixing","version":"1.9.4"},
+            "application":{"name":"jl-mixing","version":"1.5.0-rc.1"},
             "capabilities":["system.info","client.create","project.create","project.create.artist","revision.create","revision.create.description","intake.validate","intake.validate.report","revision.approve","delivery.create"]
         }"#;
         let result =
             check_automation_compatibility(home.path(), &FakeRunner::new(vec![success(discovery)]));
         assert!(result.available);
         assert!(result.supported);
-        assert_eq!(result.version.as_deref(), Some("1.9.4"));
-        if !cfg!(target_os = "windows") {
-            assert!(result.client_creation_supported);
-            assert!(result.project_creation_supported);
-            assert!(result.intake_validation_supported);
-            assert!(result.revision_creation_supported);
-            assert!(result.revision_approval_supported);
-            assert!(result.delivery_creation_supported);
-        }
+        assert_eq!(result.version.as_deref(), Some("1.5.0-rc.1"));
+        assert!(result.client_creation_supported);
+        assert!(result.project_creation_supported);
+        assert!(result.intake_validation_supported);
+        assert!(result.revision_creation_supported);
+        assert!(result.revision_approval_supported);
+        assert!(result.delivery_creation_supported);
     }
 
     #[test]
@@ -478,10 +579,22 @@ mod tests {
         let result =
             check_automation_compatibility(home.path(), &FakeRunner::new(vec![success(discovery)]));
         assert!(result.supported);
-        if !cfg!(target_os = "windows") {
-            assert!(result.client_creation_supported);
-            assert!(!result.project_creation_supported);
-            assert!(!result.delivery_creation_supported);
-        }
+        assert!(result.client_creation_supported);
+        assert!(!result.project_creation_supported);
+        assert!(!result.delivery_creation_supported);
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn system_runner_can_execute_cmd_launcher() {
+        let temp = tempdir().expect("temporary launcher dir");
+        let launcher = temp.path().join("jl-mixing-test.cmd");
+        fs::write(&launcher, "@echo off\r\necho ok\r\n").expect("write cmd launcher");
+
+        let result = SystemProcessRunner
+            .run(&launcher, &[], None)
+            .expect("execute cmd launcher");
+        assert!(result.success);
+        assert_eq!(result.stdout.trim(), "ok");
     }
 }
