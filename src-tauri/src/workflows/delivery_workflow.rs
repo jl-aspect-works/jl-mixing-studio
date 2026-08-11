@@ -140,10 +140,12 @@ pub(crate) fn run_delivery_operation(
                 )
             };
         };
+        // Automation API planned responses intentionally report delivered_revision as null.
+        // The existing delivered package remains authoritative workspace state until execution.
         let expected_delivered = if verify_after_creation {
             Some(approved_revision)
         } else {
-            before.delivered_revision
+            None
         };
         if preview.client_id != client_id
             || preview.project_id != project_id
@@ -214,9 +216,13 @@ pub(crate) fn verify_delivery_artifacts(
         }
     }
     if matches!(expected.replacement_mode, DeliveryReplacementMode::Clean) {
+        // Automation's clean package always recreates the Stems directory, even when the
+        // selected revision has no stem files. Treat it as fixed package structure rather than
+        // a stale entry that should have remained deleted.
         let mut recreated = std::collections::BTreeSet::from([
             "Delivery_Notes.md".to_owned(),
             "delivery-manifest.json".to_owned(),
+            "Stems/".to_owned(),
         ]);
         if expected.create_zip {
             let Some(zip_name) = expected.zip_name.as_ref() else {
@@ -343,3 +349,7 @@ fn uncertain_delivery_result() -> DeliveryOperationResult {
 pub(crate) fn workspace_allows_delivery_creation(status: WorkspaceStatus) -> bool {
     matches!(status, WorkspaceStatus::Healthy)
 }
+
+#[cfg(test)]
+#[path = "delivery_workflow_tests.rs"]
+mod tests;
