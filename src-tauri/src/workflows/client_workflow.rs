@@ -4,7 +4,9 @@
 //! delegates platform support to the JL Mixing Automation API/capability layer.
 
 use crate::cli;
-use crate::models::{ClientCreationRequest, ClientOperationCode, ClientOperationResult, WorkspaceStatus};
+use crate::models::{
+    ClientCreationRequest, ClientOperationCode, ClientOperationResult, WorkspaceStatus,
+};
 use crate::workspace;
 
 use super::super::resolve_home;
