@@ -62,7 +62,6 @@ pub enum ClientOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     Collision,
     Rejected,
