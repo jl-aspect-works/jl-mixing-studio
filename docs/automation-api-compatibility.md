@@ -2,94 +2,121 @@
 
 ## Purpose
 
-JL Mixing Studio and JL Mixing Automation use independent product versions. Studio determines compatibility from the Automation API version declared by the provider, not from the Automation application release number.
+JL Mixing Studio and JL Mixing Automation use independent product versions. Studio determines provider compatibility from the Automation API version and advertised capabilities, not from the Automation application release number.
 
-## Studio v1.1 supported provider contract
+## Studio v1.1 provider contract
 
-JL Mixing Studio v1.1 supports JL Mixing Automation API `1.0`.
+JL Mixing Studio v1.1 supports Automation API `1.0`.
 
-Studio must query the provider through the machine-readable discovery command:
+Studio discovers the provider through:
 
 ```text
 jl-mixing system-info --json
 ```
 
-The response must declare `api_version: "1.0"` and the capabilities required by the workflow Studio intends to use.
+The response must declare API `1.0` and the capabilities required by the workflow Studio intends to use.
 
-The initial Studio v1.1 provider capability set is:
+Studio v1.1 consumes:
 
 - `system.info`
 - `client.create`
 - `project.create`
-- `revision.create`
 - `intake.validate`
+- `revision.create`
 - `revision.approve`
 - `delivery.create`
 
-Studio must not infer compatibility from the Automation product version or from metadata schema versions.
+Automation may advertise additional compatible API 1.0 capabilities. Studio must not reject a provider merely because it exposes additive capabilities or a different Automation product release.
+
+Studio creation remains outside this API-backed capability set in Studio v1.1 and continues through the separately controlled human CLI path.
+
+## Current coordinated provider
+
+The current coordinated provider target is JL Mixing Automation v1.5. Automation v1.5 retains API `1.0` and workspace metadata schema `1.1.0` while adding native Windows support and a shared cross-platform runtime.
+
+The original Studio v1.1.0 release was acceptance-tested against Automation v1.4.0. That historical result remains valid for the tested release pair; the current v1.5 coordination extends the same API 1.0 consumer contract to Windows and validates the post-release compatibility fixes merged into Studio v1.1.
 
 ## Compatibility rule
 
-Studio v1.1 accepts Automation API `1.0` exactly.
+Studio v1.1 accepts Automation API `1.0` exactly and evaluates workflow availability by capability.
 
-A future Studio release may broaden this rule only after the provider compatibility guarantees and Studio tests explicitly support that range. A future Automation application release may remain compatible with Studio v1.1 while retaining API `1.0`.
+Studio must not infer API compatibility from:
 
-## Discovery and validation behavior
+- Automation product version;
+- Studio product version;
+- workspace metadata schema version; or
+- human CLI output.
 
-Before enabling an Automation-backed workflow, Studio must use a single centralized discovery and validation path that:
+Application release, Automation API, and metadata schema versions are independent contracts.
 
-1. locates the Automation executable using Studio-owned discovery rules;
-2. invokes `jl-mixing system-info --json`;
-3. requires exactly one valid JSON discovery document;
-4. validates the declared API version;
-5. validates the capability required by the requested workflow; and
-6. returns a structured Studio compatibility result to callers.
+## Discovery behavior
 
-Packaged and development builds must use the same compatibility rules.
+The centralized Studio discovery path:
+
+1. locates a supported Automation launcher;
+2. invokes `jl-mixing system-info --json` without a shell command string;
+3. requires one valid discovery document;
+4. validates API version `1.0`;
+5. validates required capability names; and
+6. returns a structured compatibility result to the frontend.
+
+### macOS
+
+Studio preserves supported installed/default/PATH discovery behavior for Automation providers.
+
+### Windows
+
+Studio v1.1 supports native Windows Automation discovery, including the v1.5 default installation beneath the user's local application-data Programs location and compatible `.exe`, `.cmd`, or `.bat` launchers found through supported discovery rules.
+
+Workflow availability is capability-driven on Windows. Windows is not blanket-disabled when a compatible Automation API provider is present.
+
+## Workspace compatibility
+
+Studio v1.1 supports metadata schema `1.1.0`, including the authoritative cross-platform schema forms used by Automation v1.5 for valid POSIX, Windows drive-letter, and UNC root paths.
+
+No metadata migration is introduced by Studio v1.1. Product-version changes do not imply metadata-schema changes.
 
 ## Failure classes
 
-Studio must distinguish these conditions rather than reducing them to a generic process error:
+Studio distinguishes:
 
-- **Automation missing** — no usable Automation executable can be located.
+- **Automation missing** — no usable provider launcher can be located.
 - **Invocation failed** — Automation was located but discovery could not be executed successfully.
-- **Malformed response** — discovery output is not valid or cannot be parsed as the expected document.
-- **API unavailable** — the discovery document does not provide a usable API declaration.
+- **Malformed response** — discovery output is not valid for the expected document.
+- **API unavailable** — discovery does not provide a usable API declaration.
 - **API incompatible** — the declared API version is not supported by Studio v1.1.
-- **Capability unavailable** — API `1.0` is supported but the required workflow capability is not advertised.
+- **Capability unavailable** — API 1.0 is supported but the requested workflow capability is absent.
 
-These conditions must be represented as stable structured Studio errors by the abstraction layer introduced in issue #75.
+These are structured Studio conditions rather than strings parsed from provider stdout/stderr.
 
 ## Graceful degradation
 
-Failure to locate or validate Automation must not make Studio itself unusable. Studio must continue to open and provide non-Automation functionality. Automation-backed actions must be disabled or fail cleanly with a user-readable explanation derived from the structured compatibility error.
+Failure to locate or admit Automation does not make Studio unusable. Supported read-only workspace functionality remains available where its own prerequisites are satisfied. Automation-backed actions are disabled or fail cleanly with actionable guidance.
 
-Studio must not silently fall back to constructing legacy workflow commands when the provider API is missing or incompatible. Such fallback would bypass the compatibility contract.
+Studio must not silently fall back to legacy human workflow commands for API-backed mutations after provider discovery fails or becomes incompatible. That would bypass the API contract and could make uncertain mutation outcomes unsafe.
 
-## Workflow ownership
+## Ownership
 
-The Automation repository owns provider behavior, API schemas, capability names, response envelopes, and machine error codes.
+Automation owns:
 
-The Studio repository owns:
+- provider workflow semantics;
+- API schemas and examples;
+- capability names;
+- response envelopes and machine error codes;
+- filesystem mutation and provider-side transaction behavior.
 
-- which Automation API versions Studio supports;
-- executable discovery and compatibility validation;
-- mapping provider responses into Studio domain results;
-- user-visible graceful degradation; and
-- consumer integration and regression tests.
+Studio owns:
 
-## Versioning implications
+- supported Automation API versions;
+- provider discovery/admission;
+- capability-to-feature availability;
+- confirmation and operating-system UX;
+- mapping provider results into Studio domain state;
+- authoritative post-operation reconciliation; and
+- consumer regression/packaged acceptance tests.
 
-Studio and Automation product releases remain independently versioned. For example, a future Automation `1.x` or `2.x` product release may remain compatible with Studio v1.1 if it still provides the Automation API `1.0` contract consumed by Studio.
+## Release implications
 
-Conversely, matching product version numbers do not imply compatibility.
+Compatibility-policy changes require a reviewed Studio source change and release. Studio does not download or silently replace its compatibility declaration at runtime.
 
-## Implementation dependencies
-
-This policy is the basis for:
-
-- issue #75 — Studio-side Automation API abstraction layer;
-- issue #76 — centralized discovery and API-version validation; and
-- issue #77 — Automation API compatibility integration tests.
-
-Provider contract: `JLAudio/jl-mixing#44`.
+A future Automation product release can remain compatible with Studio v1.1 as long as it continues to satisfy the Automation API 1.0 and metadata-schema contracts consumed by Studio. Matching product version numbers never imply compatibility.
