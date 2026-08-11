@@ -24,12 +24,6 @@ pub(crate) fn run_revision_operation(
     ) -> RevisionOperationResult,
     verify_after_creation: bool,
 ) -> RevisionOperationResult {
-    if cfg!(target_os = "windows") {
-        return cli::blocked_revision_operation(
-            RevisionOperationCode::UnsupportedPlatform,
-            "Revision creation requires JL Mixing Automation on macOS or Linux",
-        );
-    }
     let home = match resolve_home(app) {
         Ok(home) => home,
         Err(message) => {
@@ -175,12 +169,6 @@ pub(crate) fn run_approval_operation(
     ) -> ApprovalOperationResult,
     verify_after_approval: bool,
 ) -> ApprovalOperationResult {
-    if cfg!(target_os = "windows") {
-        return cli::blocked_approval_operation(
-            ApprovalOperationCode::UnsupportedPlatform,
-            "Revision approval requires JL Mixing Automation on macOS or Linux",
-        );
-    }
     let home = match resolve_home(app) {
         Ok(home) => home,
         Err(message) => {

@@ -86,7 +86,6 @@ pub enum ProjectOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     ClientUnavailable,
     Collision,

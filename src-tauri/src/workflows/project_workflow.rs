@@ -17,13 +17,6 @@ pub(crate) fn run_project_operation(
         ProjectCreationRequest,
     ) -> ProjectOperationResult,
 ) -> ProjectOperationResult {
-    if cfg!(target_os = "windows") {
-        return cli::blocked_project_operation(
-            ProjectOperationCode::UnsupportedPlatform,
-            "Project creation requires JL Mixing Automation on macOS or Linux",
-        );
-    }
-
     let home = match app.path().home_dir() {
         Ok(home) => home,
         Err(_) => {

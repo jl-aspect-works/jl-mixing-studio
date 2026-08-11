@@ -25,12 +25,6 @@ pub(crate) fn run_delivery_operation(
     ) -> DeliveryOperationResult,
     verify_after_creation: bool,
 ) -> DeliveryOperationResult {
-    if cfg!(target_os = "windows") {
-        return cli::blocked_delivery_operation(
-            DeliveryOperationCode::UnsupportedPlatform,
-            "Delivery creation requires JL Mixing Automation on macOS or Linux",
-        );
-    }
     let home = match resolve_home(app) {
         Ok(home) => home,
         Err(message) => {
@@ -95,7 +89,6 @@ pub(crate) fn run_delivery_operation(
             );
         }
         if verify_after_creation {
-            // Clean replacement is authorized only for the exact deletion inventory the user reviewed.
             if request.confirmed_deletions.is_empty() {
                 return cli::blocked_delivery_operation(
                     DeliveryOperationCode::InvalidInput,
@@ -140,8 +133,6 @@ pub(crate) fn run_delivery_operation(
                 )
             };
         };
-        // Automation API planned responses intentionally report delivered_revision as null.
-        // The existing delivered package remains authoritative workspace state until execution.
         let expected_delivered = if verify_after_creation {
             Some(approved_revision)
         } else {
@@ -173,8 +164,6 @@ pub(crate) fn run_delivery_operation(
     let Some(expected) = result.delivery.as_ref() else {
         return uncertain_delivery_result();
     };
-    // Automation success is reconciled against authoritative workspace state before we claim
-    // completion; failure to reconcile is Uncertain so callers must not retry automatically.
     let refreshed = workspace::discover_workspace_at(&workspace_path);
     let Some(after) = find_project_summary(&refreshed, &client_id, &project_id) else {
         return uncertain_delivery_result();
@@ -216,9 +205,6 @@ pub(crate) fn verify_delivery_artifacts(
         }
     }
     if matches!(expected.replacement_mode, DeliveryReplacementMode::Clean) {
-        // Automation's clean package always recreates the Stems directory, even when the
-        // selected revision has no stem files. Treat it as fixed package structure rather than
-        // a stale entry that should have remained deleted.
         let mut recreated = std::collections::BTreeSet::from([
             "Delivery_Notes.md".to_owned(),
             "delivery-manifest.json".to_owned(),

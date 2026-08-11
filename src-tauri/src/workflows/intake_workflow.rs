@@ -47,12 +47,6 @@ pub(crate) fn run_intake_operation(
     request: IntakeRequest,
     operation: fn(&std::path::Path, &std::path::Path, IntakeRequest) -> IntakeOperationResult,
 ) -> IntakeOperationResult {
-    if cfg!(target_os = "windows") {
-        return cli::blocked_intake_operation(
-            IntakeOperationCode::UnsupportedPlatform,
-            "Intake validation requires JL Mixing Automation on macOS or Linux",
-        );
-    }
     let home = match resolve_home(app) {
         Ok(home) => home,
         Err(message) => {
