@@ -185,3 +185,7 @@ pub fn run() {
 #[cfg(test)]
 #[path = "lib_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "workspace_compat_tests.rs"]
+mod workspace_compat_tests;
