@@ -58,9 +58,7 @@ pub(crate) fn discover_default_workspace(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{
-        DiscoveryIssue, DiscoveryScope, WorkspaceCounts, WorkspaceStatus,
-    };
+    use crate::models::{DiscoveryIssue, DiscoveryScope, WorkspaceCounts, WorkspaceStatus};
 
     #[test]
     fn invalid_schema_recovery_does_not_pin_an_automation_product_version() {
@@ -80,8 +78,9 @@ mod tests {
                 display_name: None,
                 relative_path: Some("Studio/studio.json".into()),
                 message: "A JL Mixing metadata file does not match its supported schema".into(),
-                recovery: "Validate or recreate the metadata file with JL Mixing Automation v1.2.0."
-                    .into(),
+                recovery:
+                    "Validate or recreate the metadata file with JL Mixing Automation v1.2.0."
+                        .into(),
             }],
             tasks: Vec::new(),
             activity: Vec::new(),
