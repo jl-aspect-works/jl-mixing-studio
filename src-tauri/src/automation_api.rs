@@ -126,7 +126,8 @@ fn resolve_command_for_platform(
     }
 
     search_path.and_then(|value| {
-        env::split_paths(value).find_map(|directory| find_command_in(&directory, executable, windows))
+        env::split_paths(value)
+            .find_map(|directory| find_command_in(&directory, executable, windows))
     })
 }
 
@@ -363,8 +364,7 @@ fn compatibility_result(
         client_creation_supported: has("client.create"),
         project_creation_supported: has("project.create") && has("project.create.artist"),
         intake_validation_supported: has("intake.validate") && has("intake.validate.report"),
-        revision_creation_supported: has("revision.create")
-            && has("revision.create.description"),
+        revision_creation_supported: has("revision.create") && has("revision.create.description"),
         revision_approval_supported: has("revision.approve"),
         delivery_creation_supported: has("delivery.create"),
         version: Some(application.version.clone()),
