@@ -12,10 +12,12 @@ Last updated: 2026-08-11
 
 ## Active development target
 
+- Target release candidate: `v1.1.1-rc.1`
 - Studio release line: `v1.1.x`
 - Scope: **Frozen except for confirmed defects, compatibility fixes, documentation, and release preparation.**
 - Primary objective: validate and publish a refreshed Studio v1.1 build that incorporates the merged Windows/Automation v1.5 compatibility fixes.
 - Versioning policy: Studio and Automation retain independent product versions. Studio compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
+- Coordinated acceptance source of truth: `docs/v1.1.1-v1.5-coordinated-acceptance.md`.
 
 ## Current provider contract
 
@@ -41,6 +43,7 @@ The following Windows/Automation v1.5 fixes are merged to `main`:
 - PR #178 — accept authoritative Automation v1.5 Windows `root_path` forms in Studio's bundled schema snapshot.
 - PR #180 — remove obsolete Windows-only workflow blocks so capability-backed client/project/intake/revision/approval/delivery operations run on Windows.
 - PR #181 — add Windows path regression coverage and remove stale hard-coded provider-version recovery guidance.
+- PR #182 — refresh current Studio v1.1 documentation for Automation API 1.0, Automation v1.5 coordination, and Windows support.
 
 These fixes preserve Automation API `1.0`, metadata schema `1.1.0`, and existing macOS behavior.
 
@@ -61,15 +64,15 @@ These fixes preserve Automation API `1.0`, metadata schema `1.1.0`, and existing
 
 ## Release validation status
 
-Before publishing the refreshed Studio v1.1 release:
+Before publishing Studio `v1.1.1`:
 
-1. complete this documentation audit and merge the documentation refresh;
-2. verify the Studio application/release version chosen for the refreshed build;
-3. run `npm run release:verify -- <tag>` and `npm run check`;
-4. require the complete GitHub CI matrix to pass;
-5. build packaged macOS and Windows installers;
-6. run coordinated packaged acceptance against Automation v1.5 RC2/final, with particular attention to Windows discovery, workspace loading, and all API-backed workflows;
-7. publish only after no release-blocking defects remain.
+1. prepare and validate `v1.1.1-rc.1` release metadata;
+2. run `npm run release:verify -- v1.1.1-rc.1` and `npm run check`;
+3. require the complete GitHub CI matrix to pass;
+4. build packaged macOS and Windows installers;
+5. execute the coordinated acceptance matrix in `docs/v1.1.1-v1.5-coordinated-acceptance.md` against Automation v1.5 RC2;
+6. fix only confirmed release defects, cutting another RC if required;
+7. publish stable `v1.1.1` only after no release-blocking defects remain.
 
 ## Historical v1.1 / Automation v1.4 acceptance
 
