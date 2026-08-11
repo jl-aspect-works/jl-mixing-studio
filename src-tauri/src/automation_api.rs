@@ -143,6 +143,21 @@ pub(crate) fn resolve_command(home: &Path, executable: &str) -> Option<PathBuf> 
     )
 }
 
+#[cfg(test)]
+pub(crate) fn resolve_command_with_path(
+    home: &Path,
+    executable: &str,
+    search_path: Option<&OsStr>,
+) -> Option<PathBuf> {
+    resolve_command_for_platform(
+        home,
+        executable,
+        search_path,
+        None,
+        cfg!(target_os = "windows"),
+    )
+}
+
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum ApiStatus {
