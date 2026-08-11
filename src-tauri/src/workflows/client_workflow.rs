@@ -1,12 +1,10 @@
 //! Client creation workflow policy.
 //!
 //! Client creation is allowed only against a validated existing studio workspace. The workflow
-//! also owns the platform gate before JL Mixing Automation is invoked.
+//! delegates platform support to the JL Mixing Automation API/capability layer.
 
 use crate::cli;
-use crate::models::{
-    ClientCreationRequest, ClientOperationCode, ClientOperationResult, WorkspaceStatus,
-};
+use crate::models::{ClientCreationRequest, ClientOperationCode, ClientOperationResult, WorkspaceStatus};
 use crate::workspace;
 
 use super::super::resolve_home;
@@ -20,13 +18,6 @@ pub(crate) fn run_client_operation(
         ClientCreationRequest,
     ) -> ClientOperationResult,
 ) -> ClientOperationResult {
-    if cfg!(target_os = "windows") {
-        return cli::blocked_client_operation(
-            ClientOperationCode::UnsupportedPlatform,
-            "Client creation requires JL Mixing Automation on macOS or Linux",
-        );
-    }
-
     let home = match resolve_home(app) {
         Ok(home) => home,
         Err(message) => {
