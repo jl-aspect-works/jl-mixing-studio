@@ -12,10 +12,10 @@ Last updated: 2026-08-11
 
 ## Active development target
 
-- Target release: `v1.1.2-rc.1`
+- Target release: `v1.1.2`
 - Studio release line: `v1.1.x`
 - Scope: Windows UX patch for hidden Automation subprocess execution.
-- Primary objective: verify that Studio can invoke Automation discovery and workflow commands on Windows without flashing a terminal/PowerShell-style console window.
+- Primary objective: promote the accepted `v1.1.2-rc.1` behavior to stable with release metadata only.
 - Versioning policy: Studio and Automation retain independent product versions. Studio compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
 ## Windows console-window fix
@@ -35,19 +35,35 @@ Automated validation for PR #186 passed:
 
 The existing Windows-only `SystemProcessRunner` regression continues to execute a `.cmd` launcher and verify captured stdout with the no-window creation flag applied.
 
-## v1.1.2 RC acceptance gate
+## v1.1.2 RC acceptance
 
-Before promoting Studio `v1.1.2` stable:
+Studio `v1.1.2-rc.1` was built and published successfully from merge commit `30d9eb4daf1f4c3790e95be659bba6ba0b5f55fb`.
 
-1. build and publish `v1.1.2-rc.1` installers from a green release-prep commit;
-2. install the Windows x64 RC package against JL Mixing Automation `v1.5.0`;
-3. confirm Studio startup/discovery does not flash a terminal window;
-4. exercise representative API-backed workflows, including client/project/intake/revision/delivery operations, and confirm they do not flash a terminal window;
-5. confirm those workflows still complete successfully and Studio still receives expected Automation responses;
-6. confirm no macOS regression through CI and, if practical, a normal packaged macOS smoke test;
-7. record any release-blocking defect before stable promotion.
+Release automation produced and published:
 
-The visible-window behavior cannot be proven by headless CI, so packaged Windows observation is a required acceptance step for this patch release.
+- Windows x64 NSIS installer;
+- Intel macOS DMG;
+- Apple Silicon macOS DMG;
+- `SHA256SUMS.txt`.
+
+Packaged Windows acceptance against JL Mixing Automation `v1.5.0` is complete. The previously visible terminal/PowerShell-style window no longer appears during Studio Automation subprocess execution. The fix was confirmed working in the packaged Windows RC.
+
+No release-blocking defect remains for the v1.1.2 patch objective.
+
+## Stable v1.1.2 release gate
+
+Before publishing stable `v1.1.2`:
+
+1. set all Studio application/release metadata from `1.1.2-rc.1` to `1.1.2`;
+2. regenerate `package-lock.json` without dependency changes;
+3. run `npm run release:verify -- v1.1.2` and `npm run check`;
+4. require the complete GitHub CI matrix to pass on the final-release prep commit;
+5. merge the final-release prep PR;
+6. create tag `v1.1.2` on the exact green merge commit;
+7. verify the release workflow publishes the expected macOS and Windows installers plus checksums;
+8. close issue #185 after the stable release is verified.
+
+No additional functional or compatibility changes are permitted in the final promotion unless a release-blocking defect is discovered.
 
 ## Current provider contract
 
@@ -75,6 +91,7 @@ Merged Windows/Automation v1.5 work includes:
 - PR #183 — Studio `v1.1.1-rc.1` release preparation and coordinated acceptance plan.
 - PR #184 — Studio `v1.1.1` stable release preparation.
 - PR #186 — suppress Automation subprocess console windows on Windows.
+- PR #187 — Studio `v1.1.2-rc.1` release preparation.
 
 The coordinated v1.1.1 / Automation v1.5 acceptance record remains in `docs/v1.1.1-v1.5-coordinated-acceptance.md`.
 
@@ -96,5 +113,4 @@ Studio v1.1.1 was subsequently accepted and released with Automation v1.5 cross-
 
 ## Known issues and technical debt
 
-- The Windows console-window fix requires packaged visual confirmation because CI can validate process behavior but cannot directly assert that no visible console was created.
 - Legacy approval/delivery regression support remains intentionally test-only until remaining parser-era assertions have explicit structured API equivalents.
