@@ -6,6 +6,9 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 use serde::Deserialize;
 
 use crate::models::VersionCheck;
@@ -14,6 +17,8 @@ pub(crate) const AUTOMATION_EXECUTABLE: &str = "jl-mixing";
 const SUPPORTED_API_VERSION: &str = "1.0";
 const HOMEBREW_COMMAND_PATHS: [&str; 2] = ["/usr/local/bin", "/opt/homebrew/bin"];
 const WINDOWS_INSTALL_RELATIVE: [&str; 4] = ["Programs", "JL Mixing", "bin", ""];
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 pub(crate) trait ProcessRunner {
     fn run(
@@ -41,6 +46,8 @@ impl ProcessRunner for SystemProcessRunner {
         if let Some(directory) = current_directory {
             command.current_dir(directory);
         }
+        #[cfg(target_os = "windows")]
+        command.creation_flags(CREATE_NO_WINDOW);
         let output = command.output()?;
         Ok(ProcessResult {
             success: output.status.success(),
