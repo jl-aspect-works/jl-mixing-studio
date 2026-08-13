@@ -7,15 +7,15 @@ import { SettingsRoute, StudioRoute } from "../AppWorkflows";
 import { AppProjectSection } from "../project/AppProjectSection";
 import type { ProjectShellView } from "../project/ProjectView";
 import type { AppPreferences } from "../AppWorkflowModels";
-import type { getWorkflowAvailability } from "../AppWorkflowAvailability";
+import { getWorkflowAvailability } from "../AppWorkflowAvailability";
 import type { AppRouteContext } from "../shell/route-context";
 import type { PrimaryRoute } from "../ui/routes";
-import type { useStudioWorkflow } from "../studio";
-import type { useProjectWorkflow } from "../project";
-import type { useIntakeWorkflow } from "../intake";
-import type { useRevisionWorkflow } from "../revision";
-import type { useApprovalWorkflow } from "../approval";
-import type { useDeliveryWorkflow } from "../delivery";
+import { useStudioWorkflow } from "../studio";
+import { useProjectWorkflow } from "../project";
+import { useIntakeWorkflow } from "../intake";
+import { useRevisionWorkflow } from "../revision";
+import { useApprovalWorkflow } from "../approval";
+import { useDeliveryWorkflow } from "../delivery";
 
 export interface AppRoutesProps {
   activeRoute: PrimaryRoute;
