@@ -10,7 +10,7 @@ use crate::models::{
 };
 use crate::workspace;
 
-use super::super::resolve_home;
+use super::super::{resolve_home, workspace_configuration};
 
 pub(crate) fn run_studio_operation(
     app: &tauri::AppHandle,
@@ -30,7 +30,19 @@ pub(crate) fn run_studio_operation(
             return cli::blocked_studio_operation(StudioOperationCode::Failed, &message)
         }
     };
-    let workspace_path = home.join("Music").join("Mixes");
+    let configuration = match workspace_configuration(app) {
+        Ok(configuration) => configuration,
+        Err(message) => {
+            return cli::blocked_studio_operation(StudioOperationCode::Failed, &message)
+        }
+    };
+    if configuration.configured {
+        return cli::blocked_studio_operation(
+            StudioOperationCode::WorkspaceBlocked,
+            "Studio setup cannot replace an explicitly configured workspace; reconnect it or choose another workspace in Settings",
+        );
+    }
+    let workspace_path = std::path::PathBuf::from(configuration.workspace_path);
     let before = workspace::discover_workspace_at(&workspace_path);
     if before.status != WorkspaceStatus::Unavailable {
         return cli::blocked_studio_operation(
