@@ -90,7 +90,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       const snapshot = healthyWorkspace();
       snapshot.activity = [{ id: "event", eventType: "clientCreated", timestamp: "2026-07-15T12:00:00Z", clientId: "acme", clientName: "Acme Records", projectId: null, projectName: null, revision: null, persistedSource: "client metadata.created_at" }];
       respondWith(snapshot); render(<App />); await screen.findByText("JL Mix Studio");
-      fireEvent.click(screen.getByRole("button", { name: "Activity Log" }));
+      fireEvent.click(screen.getByRole("button", { name: "Activities" }));
       expect(screen.getByRole("heading", { name: "1 event" })).toBeInTheDocument();
       expect(screen.getByText(/supported project milestones/i)).toBeInTheDocument();
     });
@@ -99,7 +99,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       render(<App />); await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Tasks" }));
       expect(screen.getByRole("heading", { name: "Nothing needs your attention" })).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Activity Log" }));
+      fireEvent.click(screen.getByRole("button", { name: "Activities" }));
       expect(screen.getByRole("heading", { name: "No recent activity yet" })).toBeInTheDocument();
     });
 
@@ -151,7 +151,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       ).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
       expect(screen.getByText("48 kHz / 24-bit / WAV")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Intake" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Client Files" })).toBeEnabled();
       expect(screen.getByRole("button", { name: "Revisions" })).toBeEnabled();
       expect(screen.getByRole("button", { name: "Open folder" })).toBeEnabled();
     });

@@ -24,7 +24,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "Intake" }));
+      fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
 
       expect(await screen.findByRole("heading", { name: "Intake validation" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "2 inspected files" })).toBeInTheDocument();
