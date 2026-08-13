@@ -1,4 +1,5 @@
 use super::workspace_command_support::resolve_home;
+use super::resolve_workspace_root;
 use crate::cli;
 use crate::models::{DiscoveryCode, SystemInfo, VersionCheck, WorkspaceSnapshot};
 use crate::workspace;
@@ -45,14 +46,15 @@ fn current_recovery_guidance(mut snapshot: WorkspaceSnapshot) -> WorkspaceSnapsh
     snapshot
 }
 
+/// Legacy command name retained for the existing frontend contract. Discovery now uses the
+/// machine-local configured workspace root, falling back to ~/Music/Mixes only when no explicit
+/// workspace preference has ever been saved.
 #[tauri::command]
 pub(crate) fn discover_default_workspace(
     app: tauri::AppHandle,
 ) -> Result<WorkspaceSnapshot, String> {
-    let home = resolve_home(&app)?;
-    Ok(current_recovery_guidance(workspace::discover_workspace_at(
-        &home.join("Music").join("Mixes"),
-    )))
+    let root = resolve_workspace_root(&app)?;
+    Ok(current_recovery_guidance(workspace::discover_workspace_at(&root)))
 }
 
 #[cfg(test)]
