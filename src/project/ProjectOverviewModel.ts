@@ -9,6 +9,12 @@ export interface OverviewStatus {
   tone: OverviewTone;
 }
 
+export const overviewString = (value: unknown, key: string) => {
+  if (!value || typeof value !== "object" || !(key in value)) return null;
+  const candidate = (value as Record<string, unknown>)[key];
+  return typeof candidate === "string" && candidate.length > 0 ? candidate : null;
+};
+
 export const formatOverviewDate = (value: string | null | undefined) => {
   if (!value) return "Not available";
   const date = new Date(value);
@@ -26,8 +32,8 @@ export const formatOverviewDateTime = (value: string | null | undefined) => {
 export const getProjectLastModified = (project: ProjectSummary) => {
   const timestamps = [
     project.createdAt,
-    project.delivery?.createdAt,
-    ...project.revisions.flatMap((revision) => [revision.createdAt, revision.approvedAt]),
+    overviewString(project.delivery, "createdAt"),
+    ...project.revisions.flatMap((revision) => [overviewString(revision, "createdAt"), overviewString(revision, "approvedAt")]),
   ].filter((value): value is string => Boolean(value));
   return timestamps.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? project.createdAt;
 };
@@ -43,15 +49,15 @@ export const getIntakeOverviewStatus = (state: IntakeReportState): OverviewStatu
   return { label: "Validated", detail: `${report.filesDiscovered} file${report.filesDiscovered === 1 ? "" : "s"}`, tone: "good", fileCount: report.filesDiscovered };
 };
 
-export const getTaskOverviewStatus = (tasks: DerivedTask[]): OverviewStatus => {
-  if (tasks.length === 0) return { label: "Clear", detail: "No open project tasks", tone: "good" };
-  return { label: "Needs attention", detail: `${tasks.length} open task${tasks.length === 1 ? "" : "s"}`, tone: "attention" };
-};
+export const getTaskOverviewStatus = (tasks: DerivedTask[]): OverviewStatus => tasks.length === 0
+  ? { label: "Clear", detail: "No open project tasks", tone: "good" }
+  : { label: "Needs attention", detail: `${tasks.length} open task${tasks.length === 1 ? "" : "s"}`, tone: "attention" };
 
 export const getRevisionOverviewStatus = (project: ProjectSummary): OverviewStatus => {
   const current = `Revision ${String(project.currentRevision).padStart(2, "0")}`;
-  if (project.approvedRevision === project.currentRevision) return { label: "Approved", detail: `${current} approved`, tone: "good" };
-  return { label: "Current", detail: current, tone: "neutral" };
+  return project.approvedRevision === project.currentRevision
+    ? { label: "Approved", detail: `${current} approved`, tone: "good" }
+    : { label: "Current", detail: current, tone: "neutral" };
 };
 
 export const getDeliveryOverviewStatus = (project: ProjectSummary): OverviewStatus => {
