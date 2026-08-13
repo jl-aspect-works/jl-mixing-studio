@@ -12,7 +12,9 @@ use crate::models::{
 };
 use crate::workspace;
 
-use super::super::{find_project_summary, resolve_home, validated_project_directory};
+use super::super::{
+    find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
+};
 
 pub(crate) fn run_revision_operation(
     app: &tauri::AppHandle,
@@ -30,7 +32,12 @@ pub(crate) fn run_revision_operation(
             return cli::blocked_revision_operation(RevisionOperationCode::Failed, &message)
         }
     };
-    let workspace_path = home.join("Music").join("Mixes");
+    let workspace_path = match resolve_workspace_root(app) {
+        Ok(path) => path,
+        Err(message) => {
+            return cli::blocked_revision_operation(RevisionOperationCode::Failed, &message)
+        }
+    };
     let snapshot = workspace::discover_workspace_at(&workspace_path);
     if !workspace_allows_revision_creation(snapshot.status) {
         return cli::blocked_revision_operation(
@@ -175,7 +182,12 @@ pub(crate) fn run_approval_operation(
             return cli::blocked_approval_operation(ApprovalOperationCode::Failed, &message)
         }
     };
-    let workspace_path = home.join("Music").join("Mixes");
+    let workspace_path = match resolve_workspace_root(app) {
+        Ok(path) => path,
+        Err(message) => {
+            return cli::blocked_approval_operation(ApprovalOperationCode::Failed, &message)
+        }
+    };
     let snapshot = workspace::discover_workspace_at(&workspace_path);
     if !workspace_allows_revision_approval(snapshot.status) {
         return cli::blocked_approval_operation(

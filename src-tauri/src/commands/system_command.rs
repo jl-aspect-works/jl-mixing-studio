@@ -1,10 +1,16 @@
 use super::workspace_command_support::resolve_home;
+use super::workspace_configuration::workspace_configuration;
 use crate::cli;
-use crate::models::{DiscoveryCode, SystemInfo, VersionCheck, WorkspaceSnapshot};
+use crate::models::{DiscoveryCode, SystemInfo, VersionCheck, WorkspaceSnapshot, WorkspaceStatus};
 use crate::workspace;
+use std::path::PathBuf;
 
 const INVALID_SCHEMA_RECOVERY: &str =
     "Validate or recreate the metadata file with a compatible JL Mixing Automation release.";
+const CONFIGURED_WORKSPACE_UNAVAILABLE_MESSAGE: &str =
+    "The configured JL Mixing workspace is unavailable";
+const CONFIGURED_WORKSPACE_UNAVAILABLE_RECOVERY: &str =
+    "Reconnect the configured workspace or choose another workspace in Settings. Studio will keep this path configured until you change it.";
 
 #[tauri::command]
 pub(crate) fn get_system_info() -> SystemInfo {
@@ -36,29 +42,68 @@ pub(crate) fn get_jl_mixing_version(app: tauri::AppHandle) -> VersionCheck {
     }
 }
 
-fn current_recovery_guidance(mut snapshot: WorkspaceSnapshot) -> WorkspaceSnapshot {
+fn current_recovery_guidance(
+    mut snapshot: WorkspaceSnapshot,
+    explicitly_configured: bool,
+) -> WorkspaceSnapshot {
     for issue in &mut snapshot.issues {
         if issue.code == DiscoveryCode::InvalidSchema {
             issue.recovery = INVALID_SCHEMA_RECOVERY.to_owned();
+        }
+        if explicitly_configured
+            && snapshot.status == WorkspaceStatus::Unavailable
+            && issue.code == DiscoveryCode::NotFound
+        {
+            issue.message = CONFIGURED_WORKSPACE_UNAVAILABLE_MESSAGE.to_owned();
+            issue.recovery = CONFIGURED_WORKSPACE_UNAVAILABLE_RECOVERY.to_owned();
         }
     }
     snapshot
 }
 
+/// Legacy command name retained for the existing frontend contract. Discovery now uses the
+/// machine-local configured workspace root, falling back to ~/Music/Mixes only when no explicit
+/// workspace preference has ever been saved.
 #[tauri::command]
 pub(crate) fn discover_default_workspace(
     app: tauri::AppHandle,
 ) -> Result<WorkspaceSnapshot, String> {
-    let home = resolve_home(&app)?;
-    Ok(current_recovery_guidance(workspace::discover_workspace_at(
-        &home.join("Music").join("Mixes"),
-    )))
+    let configuration = workspace_configuration(&app)?;
+    let root = PathBuf::from(&configuration.workspace_path);
+    Ok(current_recovery_guidance(
+        workspace::discover_workspace_at(&root),
+        configuration.configured,
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{DiscoveryIssue, DiscoveryScope, WorkspaceCounts, WorkspaceStatus};
+    use crate::models::{DiscoveryIssue, DiscoveryScope, WorkspaceCounts};
+
+    fn unavailable_snapshot() -> WorkspaceSnapshot {
+        WorkspaceSnapshot {
+            workspace_path: "/Volumes/Shared/Mixes".into(),
+            status: WorkspaceStatus::Unavailable,
+            studio: None,
+            counts: WorkspaceCounts {
+                clients: 0,
+                projects: 0,
+                issues: 1,
+            },
+            clients: Vec::new(),
+            issues: vec![DiscoveryIssue {
+                scope: DiscoveryScope::Workspace,
+                code: DiscoveryCode::NotFound,
+                display_name: None,
+                relative_path: None,
+                message: "The default JL Mixing workspace was not found".into(),
+                recovery: "Create ~/Music/Mixes.".into(),
+            }],
+            tasks: Vec::new(),
+            activity: Vec::new(),
+        }
+    }
 
     #[test]
     fn invalid_schema_recovery_does_not_pin_an_automation_product_version() {
@@ -86,8 +131,32 @@ mod tests {
             activity: Vec::new(),
         };
 
-        let updated = current_recovery_guidance(snapshot);
+        let updated = current_recovery_guidance(snapshot, false);
         assert_eq!(updated.issues[0].recovery, INVALID_SCHEMA_RECOVERY);
         assert!(!updated.issues[0].recovery.contains("v1.2.0"));
+    }
+
+    #[test]
+    fn configured_unavailable_workspace_does_not_suggest_default_creation() {
+        let updated = current_recovery_guidance(unavailable_snapshot(), true);
+        assert_eq!(
+            updated.issues[0].message,
+            CONFIGURED_WORKSPACE_UNAVAILABLE_MESSAGE
+        );
+        assert_eq!(
+            updated.issues[0].recovery,
+            CONFIGURED_WORKSPACE_UNAVAILABLE_RECOVERY
+        );
+        assert!(!updated.issues[0].recovery.contains("~/Music/Mixes"));
+    }
+
+    #[test]
+    fn unavailable_default_workspace_keeps_default_setup_guidance() {
+        let updated = current_recovery_guidance(unavailable_snapshot(), false);
+        assert_eq!(
+            updated.issues[0].message,
+            "The default JL Mixing workspace was not found"
+        );
+        assert_eq!(updated.issues[0].recovery, "Create ~/Music/Mixes.");
     }
 }

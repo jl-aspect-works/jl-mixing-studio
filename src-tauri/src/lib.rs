@@ -9,9 +9,13 @@ mod workspace;
 
 use commands::{
     discover_default_workspace, get_delivery_notes, get_jl_mixing_version, get_system_info,
-    open_folder, resolve_folder, update_delivery_notes,
+    get_workspace_configuration, open_folder, resolve_folder, set_workspace_root,
+    update_delivery_notes, validate_workspace_root,
 };
-pub(crate) use commands::{find_project_summary, resolve_home, validated_project_directory};
+pub(crate) use commands::{
+    find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
+    workspace_configuration,
+};
 #[cfg(test)]
 use commands::{
     intake_directory, read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
@@ -157,6 +161,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_system_info,
             get_jl_mixing_version,
+            get_workspace_configuration,
+            validate_workspace_root,
+            set_workspace_root,
             discover_default_workspace,
             resolve_folder,
             open_folder,

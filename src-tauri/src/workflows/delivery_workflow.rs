@@ -13,7 +13,9 @@ use crate::models::{
 };
 use crate::workspace;
 
-use super::super::{find_project_summary, resolve_home, validated_project_directory};
+use super::super::{
+    find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
+};
 
 pub(crate) fn run_delivery_operation(
     app: &tauri::AppHandle,
@@ -31,7 +33,12 @@ pub(crate) fn run_delivery_operation(
             return cli::blocked_delivery_operation(DeliveryOperationCode::Failed, &message)
         }
     };
-    let workspace_path = home.join("Music").join("Mixes");
+    let workspace_path = match resolve_workspace_root(app) {
+        Ok(path) => path,
+        Err(message) => {
+            return cli::blocked_delivery_operation(DeliveryOperationCode::Failed, &message)
+        }
+    };
     let snapshot = workspace::discover_workspace_at(&workspace_path);
     if !workspace_allows_delivery_creation(snapshot.status) {
         return cli::blocked_delivery_operation(

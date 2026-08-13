@@ -1,4 +1,5 @@
-use super::workspace_command_support::{resolve_home, validated_project_directory};
+use super::resolve_workspace_root;
+use super::workspace_command_support::validated_project_directory;
 use crate::models::{FolderLocation, FolderRequest, FolderResult, WorkspaceStatus};
 use crate::workspace;
 use std::path::{Path, PathBuf};
@@ -8,8 +9,7 @@ pub(crate) fn resolve_folder(
     app: tauri::AppHandle,
     request: FolderRequest,
 ) -> Result<FolderResult, String> {
-    let home = resolve_home(&app)?;
-    let root = home.join("Music").join("Mixes");
+    let root = resolve_workspace_root(&app)?;
     let snapshot = workspace::discover_workspace_at(&root);
     if !matches!(
         snapshot.status,

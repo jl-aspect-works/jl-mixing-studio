@@ -3,7 +3,8 @@ use crate::models::{
     ProjectCreationRequest, ProjectOperationCode, ProjectOperationResult, WorkspaceStatus,
 };
 use crate::workspace;
-use tauri::Manager;
+
+use super::super::{resolve_home, resolve_workspace_root};
 
 /// Project creation requires a healthy workspace and a client directory that
 /// is re-resolved from the current validated snapshot. UI-selected identity is
@@ -17,16 +18,18 @@ pub(crate) fn run_project_operation(
         ProjectCreationRequest,
     ) -> ProjectOperationResult,
 ) -> ProjectOperationResult {
-    let home = match app.path().home_dir() {
+    let home = match resolve_home(app) {
         Ok(home) => home,
-        Err(_) => {
-            return cli::blocked_project_operation(
-                ProjectOperationCode::Failed,
-                "The current user's home directory could not be resolved",
-            )
+        Err(message) => {
+            return cli::blocked_project_operation(ProjectOperationCode::Failed, &message)
         }
     };
-    let workspace_path = home.join("Music").join("Mixes");
+    let workspace_path = match resolve_workspace_root(app) {
+        Ok(path) => path,
+        Err(message) => {
+            return cli::blocked_project_operation(ProjectOperationCode::Failed, &message)
+        }
+    };
     let snapshot = workspace::discover_workspace_at(&workspace_path);
     if !workspace_allows_project_creation(snapshot.status) {
         return cli::blocked_project_operation(

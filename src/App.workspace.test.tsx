@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mockedInvoke, version, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
+import { defaultWorkspaceConfiguration, mockedInvoke, version, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
 import App from "./App";
 import type { StudioOperationResult, WorkspaceSnapshot } from "./types";
 
@@ -11,7 +11,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
     resetAppTestState();
   });
 
-  it("shows setup guidance for an unavailable workspace", async () => {
+  it("shows setup guidance for an unavailable default workspace", async () => {
       respondWith({
         workspacePath: "/Users/engineer/Music/Mixes",
         status: "unavailable",
@@ -34,6 +34,22 @@ describe("JL Mixing Studio — workspace and studio states", () => {
 
       expect(await screen.findByRole("heading", { name: "Your studio workspace isn’t ready yet" })).toBeInTheDocument();
       expect(screen.getByText(/run new-studio/i)).toBeInTheDocument();
+    });
+
+  it("does not offer default setup when an explicitly configured workspace is unavailable", async () => {
+      const unavailable: WorkspaceSnapshot = {
+        workspacePath: "/Volumes/Shared/Mixes", status: "unavailable", studio: null,
+        counts: { clients: 0, projects: 0, issues: 1 }, clients: [], tasks: [], activity: [],
+        issues: [{ scope: "workspace", code: "notFound", displayName: null, relativePath: null, message: "Workspace unavailable", recovery: "Reconnect it." }],
+      };
+      respondWith(unavailable, version, { workspacePath: "/Volumes/Shared/Mixes", configured: true });
+
+      render(<App />);
+      await screen.findByRole("heading", { name: "Your studio workspace isn’t ready yet" });
+      fireEvent.click(screen.getByRole("button", { name: "Studio" }));
+
+      expect(screen.getByRole("button", { name: "New studio" })).toBeDisabled();
+      expect(screen.getByText(/Reconnect the configured workspace/i)).toBeInTheDocument();
     });
 
   it("shows validated studio identity, defaults, and workspace path", async () => {
@@ -64,6 +80,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
       let discoveryCalls = 0;
       mockedInvoke.mockImplementation((command) => {
         if (command === "discover_default_workspace") return Promise.resolve(discoveryCalls++ === 0 ? unavailable : refreshed);
+        if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
         if (command === "preflight_studio_creation") return Promise.resolve(preflight);
         if (command === "create_studio") return Promise.resolve(created);
@@ -125,8 +142,8 @@ describe("JL Mixing Studio — workspace and studio states", () => {
         supported: false,
         studioCreationSupported: false,
         clientCreationSupported: false,
-          projectCreationSupported: false,
-          intakeValidationSupported: false,
+        projectCreationSupported: false,
+        intakeValidationSupported: false,
         revisionCreationSupported: false,
         revisionApprovalSupported: false,
         deliveryCreationSupported: false,
@@ -142,7 +159,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
       expect(screen.getByRole("button", { name: "New client" })).toBeDisabled();
     });
 
-  it("refreshes workspace and version state independently", async () => {
+  it("refreshes workspace, configuration, and version state independently", async () => {
       let workspaceCalls = 0;
       mockedInvoke.mockImplementation((command) => {
         if (command === "discover_default_workspace") {
@@ -151,6 +168,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
           if (workspaceCalls > 1 && snapshot.studio) snapshot.studio.studioName = "After Refresh";
           return Promise.resolve(snapshot);
         }
+        if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
         return Promise.reject(new Error("Unexpected command"));
       });
@@ -161,7 +179,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
 
       expect(await screen.findByText("After Refresh")).toBeInTheDocument();
       expect(workspaceCalls).toBe(2);
-      expect(mockedInvoke).toHaveBeenCalledTimes(4);
+      expect(mockedInvoke).toHaveBeenCalledTimes(6);
     });
 
   it("offers retry after an unexpected discovery failure", async () => {
@@ -169,7 +187,9 @@ describe("JL Mixing Studio — workspace and studio states", () => {
         if (command === "discover_default_workspace") {
           return Promise.reject(new Error("Unexpected internal failure"));
         }
-        return Promise.resolve(version);
+        if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
+        if (command === "get_jl_mixing_version") return Promise.resolve(version);
+        return Promise.reject(new Error("Unexpected command"));
       });
 
       render(<App />);
@@ -184,8 +204,8 @@ describe("JL Mixing Studio — workspace and studio states", () => {
         supported: false,
         studioCreationSupported: false,
         clientCreationSupported: false,
-          projectCreationSupported: false,
-          intakeValidationSupported: false,
+        projectCreationSupported: false,
+        intakeValidationSupported: false,
         revisionCreationSupported: false,
         revisionApprovalSupported: false,
         deliveryCreationSupported: false,
