@@ -1,6 +1,6 @@
-import type { ProjectView } from "./ProjectView";
+import type { ProjectShellView } from "./ProjectView";
 
-export const projectNavigationItems: ReadonlyArray<[ProjectView, string]> = [
+export const projectNavigationItems: ReadonlyArray<[ProjectShellView, string]> = [
   ["overview", "Overview"],
   ["intake", "Client Files"],
   ["audioPrep", "Audio Prep"],
