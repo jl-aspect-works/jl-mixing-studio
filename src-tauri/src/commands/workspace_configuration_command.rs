@@ -152,7 +152,9 @@ mod tests {
     fn missing_configuration_is_distinct_from_invalid_configuration() {
         let temp = tempdir().expect("tempdir");
         let config = temp.path().join(WORKSPACE_CONFIG_FILE);
-        assert!(read_stored_configuration(&config).expect("missing is valid").is_none());
+        assert!(read_stored_configuration(&config)
+            .expect("missing is valid")
+            .is_none());
         fs::write(&config, "not json").expect("write");
         assert!(read_stored_configuration(&config).is_err());
     }
