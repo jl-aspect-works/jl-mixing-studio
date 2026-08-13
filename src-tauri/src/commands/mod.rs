@@ -4,9 +4,9 @@ mod delivery_notes;
 mod folders;
 #[path = "system_command.rs"]
 mod system;
+mod workspace_command_support;
 #[path = "workspace_configuration_command.rs"]
 mod workspace_configuration;
-mod workspace_command_support;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
@@ -22,5 +22,7 @@ pub(super) use delivery_notes::{
 #[cfg(test)]
 pub(super) use folders::intake_directory;
 
-pub(crate) use workspace_command_support::{find_project_summary, resolve_home, validated_project_directory};
+pub(crate) use workspace_command_support::{
+    find_project_summary, resolve_home, validated_project_directory,
+};
 pub(crate) use workspace_configuration::{resolve_workspace_root, workspace_configuration};
