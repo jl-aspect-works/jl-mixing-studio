@@ -1,6 +1,6 @@
 # JL Mixing Automation schemas
 
-These are unchanged copies of the JSON Schemas released by [JL Mixing Automation v1.2.0](https://github.com/JLAudio/jl-mixing/tree/v1.2.0/schemas):
+These are unchanged copies of the JSON Schemas released by [JL Mixing Automation v1.2.0](https://github.com/jl-aspect-works/jl-mixing-automation/tree/v1.2.0/schemas):
 
 - `studio.schema.json`
 - `client.schema.json`
