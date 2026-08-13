@@ -8,19 +8,18 @@ use crate::cli;
 use crate::models::{IntakeOperationCode, IntakeOperationResult, IntakeRequest, WorkspaceStatus};
 use crate::workspace;
 
-use super::super::{resolve_home, validated_project_directory};
+use super::super::{resolve_home, resolve_workspace_root, validated_project_directory};
 
 pub(crate) fn read_intake_report(
     app: tauri::AppHandle,
     request: IntakeRequest,
 ) -> IntakeOperationResult {
-    let home = match resolve_home(&app) {
-        Ok(home) => home,
+    let workspace_path = match resolve_workspace_root(&app) {
+        Ok(path) => path,
         Err(message) => {
             return cli::blocked_intake_operation(IntakeOperationCode::Failed, &message)
         }
     };
-    let workspace_path = home.join("Music").join("Mixes");
     let snapshot = workspace::discover_workspace_at(&workspace_path);
     if !workspace_allows_intake_report_read(snapshot.status) {
         return cli::blocked_intake_operation(
@@ -53,7 +52,12 @@ pub(crate) fn run_intake_operation(
             return cli::blocked_intake_operation(IntakeOperationCode::Failed, &message)
         }
     };
-    let workspace_path = home.join("Music").join("Mixes");
+    let workspace_path = match resolve_workspace_root(app) {
+        Ok(path) => path,
+        Err(message) => {
+            return cli::blocked_intake_operation(IntakeOperationCode::Failed, &message)
+        }
+    };
     let snapshot = workspace::discover_workspace_at(&workspace_path);
     if !workspace_allows_intake_validation(snapshot.status) {
         return cli::blocked_intake_operation(
