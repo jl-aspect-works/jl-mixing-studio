@@ -17,11 +17,12 @@ export function ProjectOverviewHeader({ client, project, workspacePath }: { clie
         <div>
           <h1>{project.projectName}</h1>
           <p><strong>Client:</strong> {client.clientName}<span aria-hidden="true">·</span><strong>Artist:</strong> {project.artist}<span aria-hidden="true">·</span><strong>Created:</strong> {formatOverviewDate(project.createdAt)}</p>
+          <small>{project.sampleRate / 1000} kHz / {project.bitDepth}-bit / {project.fileFormat}</small>
         </div>
       </div>
       <div className="overview-workspace-block">
         <span>Workspace</span>
-        <code>{workspacePath}</code>
+        <code>{workspacePath || "Workspace path unavailable"}</code>
       </div>
       <dl className="overview-header-status">
         <div><dt>Revisions</dt><dd>{project.revisions.length}</dd></div>

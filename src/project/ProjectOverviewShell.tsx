@@ -1,10 +1,19 @@
-import type { ClientSummary, ProjectSummary } from "../types";
+import type { ClientSummary, DerivedTask, ProjectSummary, RevisionSummary } from "../types";
+import type { IntakeReportState } from "../AppShellViews";
 import { ProjectBreadcrumbs } from "./ProjectBreadcrumbs";
 import { ProjectNavigationBar } from "./ProjectNavigationBar";
 import { ProjectOverviewDetails } from "./ProjectOverviewDetails";
-import { ProjectOverviewSummary } from "./ProjectOverviewSummary";
+import { ProjectOverviewHeader } from "./ProjectOverviewHeader";
 import type { ProjectShellView } from "./ProjectView";
+import "./ProjectOverview.css";
 
-export function ProjectOverviewShell({ client, project, loading, revisionCreationAvailable, revisionCreationHelp, onProjects, onRefresh, onIntake, onRevisions, onNewRevision, onSelectView }: { client: ClientSummary; project: ProjectSummary; loading: boolean; revisionCreationAvailable: boolean; revisionCreationHelp: string; onProjects: () => void; onRefresh: () => void; onIntake: () => void; onRevisions: () => void; onNewRevision: () => void; onSelectView: (view: ProjectShellView) => void }) {
-  return <><div className="detail-navigation-row"><ProjectBreadcrumbs project={project} onProjects={onProjects} /><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Refreshing…" : "Refresh"}</button></div><ProjectNavigationBar active="overview" onSelect={onSelectView} /><ProjectOverviewSummary project={project} /><ProjectOverviewDetails client={client} project={project} onIntake={onIntake} onRevisions={onRevisions} onNewRevision={onNewRevision} revisionCreationAvailable={revisionCreationAvailable} revisionCreationHelp={revisionCreationHelp} loading={loading} /></>;
+export function ProjectOverviewShell({ client, project, workspacePath, projectTasks, intakeReport, loading, revisionCreationAvailable, revisionApprovalAvailable, onProjects, onRefresh, onRevisions, onNewRevision, onApproveRevision, onSelectView }: { client: ClientSummary; project: ProjectSummary; workspacePath: string; projectTasks: DerivedTask[]; intakeReport: IntakeReportState; loading: boolean; revisionCreationAvailable: boolean; revisionApprovalAvailable: boolean; onProjects: () => void; onRefresh: () => void; onRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onSelectView: (view: ProjectShellView) => void }) {
+  return (
+    <>
+      <div className="detail-navigation-row"><ProjectBreadcrumbs project={project} onProjects={onProjects} /><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Refreshing…" : "Refresh"}</button></div>
+      <ProjectOverviewHeader client={client} project={project} workspacePath={workspacePath} />
+      <ProjectNavigationBar active="overview" onSelect={onSelectView} />
+      <ProjectOverviewDetails client={client} project={project} tasks={projectTasks} intakeReport={intakeReport} loading={loading} revisionCreationAvailable={revisionCreationAvailable} revisionApprovalAvailable={revisionApprovalAvailable} onNewRevision={onNewRevision} onApproveRevision={onApproveRevision} onRevisions={onRevisions} />
+    </>
+  );
 }

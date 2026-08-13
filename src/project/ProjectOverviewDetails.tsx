@@ -1,7 +1,23 @@
-import type { ClientSummary, ProjectSummary } from "../types";
-import { FolderControl } from "../AppShellViews";
-import { copy as productCopy } from "../resources/copy";
+import type { ClientSummary, DerivedTask, ProjectSummary, RevisionSummary } from "../types";
+import type { IntakeReportState } from "../AppShellViews";
+import { ProjectOverviewFileSystem } from "./ProjectOverviewFileSystem";
+import { ProjectOverviewHealth } from "./ProjectOverviewHealth";
+import { ProjectOverviewQuickActions } from "./ProjectOverviewQuickActions";
+import { ProjectOverviewRecentRevisions } from "./ProjectOverviewRecentRevisions";
+import { ProjectOverviewSummary } from "./ProjectOverviewSummary";
 
-export function ProjectOverviewDetails({ client, project, onIntake, onRevisions, onNewRevision, revisionCreationAvailable, revisionCreationHelp, loading }: { client: ClientSummary; project: ProjectSummary; onIntake: () => void; onRevisions: () => void; onNewRevision: () => void; revisionCreationAvailable: boolean; revisionCreationHelp: string; loading: boolean }) {
-  return <div className="project-detail-grid"><section className="panel" aria-labelledby="project-information-heading"><div className="panel-heading"><div><p className="kicker">{productCopy.projects.informationKicker}</p><h2 id="project-information-heading">{productCopy.projects.detailsTitle}</h2></div></div><dl className="metadata-list"><div><dt>{productCopy.projects.tableClient}</dt><dd>{client.clientName}</dd></div><div><dt>{productCopy.projects.projectId}</dt><dd><code>{project.projectId}</code></dd></div><div><dt>{productCopy.projects.tableArtist}</dt><dd>{project.artist}</dd></div><div><dt>{productCopy.projects.deadline}</dt><dd>{project.deadline ?? productCopy.common.notSet}</dd></div><div><dt>{productCopy.projects.audio}</dt><dd>{project.sampleRate / 1000} kHz / {project.bitDepth}-bit / {project.fileFormat}</dd></div></dl></section><section className="panel" aria-labelledby="project-actions-heading"><div className="panel-heading"><div><p className="kicker">{productCopy.projects.actionsKicker}</p><h2 id="project-actions-heading">{productCopy.projects.actionsTitle}</h2></div></div><div className="action-stack"><button type="button" onClick={onIntake}>{productCopy.projects.validateIntake}</button><button type="button" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}>{productCopy.projects.newRevision}</button><button type="button" onClick={onRevisions}>{productCopy.projects.viewRevisions}</button></div><FolderControl location="project" clientId={client.clientId} projectId={project.projectId} /><p className="action-help">{revisionCreationHelp}</p></section></div>;
+export function ProjectOverviewDetails({ client, project, tasks, intakeReport, loading, revisionCreationAvailable, revisionApprovalAvailable, onNewRevision, onApproveRevision, onRevisions }: { client: ClientSummary; project: ProjectSummary; tasks: DerivedTask[]; intakeReport: IntakeReportState; loading: boolean; revisionCreationAvailable: boolean; revisionApprovalAvailable: boolean; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onRevisions: () => void }) {
+  return (
+    <div className="overview-layout">
+      <div className="overview-top-grid">
+        <ProjectOverviewSummary project={project} tasks={tasks} intakeReport={intakeReport} />
+        <ProjectOverviewHealth project={project} tasks={tasks} intakeReport={intakeReport} />
+        <ProjectOverviewQuickActions client={client} project={project} loading={loading} revisionCreationAvailable={revisionCreationAvailable} revisionApprovalAvailable={revisionApprovalAvailable} onNewRevision={onNewRevision} onApproveRevision={onApproveRevision} onRevisions={onRevisions} />
+      </div>
+      <div className="overview-bottom-grid">
+        <ProjectOverviewRecentRevisions project={project} onRevisions={onRevisions} />
+        <ProjectOverviewFileSystem project={project} intakeReport={intakeReport} />
+      </div>
+    </div>
+  );
 }
