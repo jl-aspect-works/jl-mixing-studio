@@ -156,6 +156,15 @@ export function Sidebar({
   onNavigate: (route: PrimaryRoute) => void;
   workspace: ResourceState<WorkspaceSnapshot>;
 }) {
+  const [workspaceFolderMessage, setWorkspaceFolderMessage] = useState<string | null>(null);
+  const workspaceFolderAvailable = workspace.status === "ready" && workspace.value.status !== "unavailable" && workspace.value.status !== "invalid";
+  const openWorkspaceFolder = () => {
+    const request: FolderRequest = { location: "workspace", clientId: null, projectId: null };
+    void invoke<FolderResult>("open_folder", { request })
+      .then(() => setWorkspaceFolderMessage(productCopy.common.folderOpened))
+      .catch((error: unknown) => setWorkspaceFolderMessage(safeError(error, productCopy.common.folderOpenFailed)));
+  };
+
   return (
     <aside className="sidebar">
       <div className="brand" aria-label={productCopy.navigation.brandLabel}>
@@ -198,6 +207,10 @@ export function Sidebar({
           {workspace.status === "ready" && (
             <code>{displayWorkspacePath(workspace.value.workspacePath)}</code>
           )}
+          <button type="button" className="secondary" onClick={openWorkspaceFolder} disabled={!workspaceFolderAvailable}>
+            {productCopy.studio.openWorkspace} folder
+          </button>
+          {workspaceFolderMessage && <small role="status">{workspaceFolderMessage}</small>}
         </span>
       </div>
     </aside>
