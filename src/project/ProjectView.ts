@@ -1,4 +1,4 @@
-export type ProjectView =
+export type ProjectShellView =
   | "overview"
   | "intake"
   | "audioPrep"
