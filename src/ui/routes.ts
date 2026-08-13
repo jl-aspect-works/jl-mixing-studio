@@ -18,20 +18,16 @@ export interface RouteDefinition {
   description: string;
 }
 
-/**
- * Central route metadata for the persistent application shell.
- *
- * Normal route copy follows the approved #101 voice: creative collaborator +
- * studio casual. Keep implementation terminology out of these strings; reserve
- * technical language for Metadata and diagnostic views where it helps the user.
- */
 export const routes: RouteDefinition[] = ([
   "dashboard",
   "studio",
   "clients",
   "projects",
   "tasks",
-  "reports",
   "activity",
   "settings",
-] as const).map((id) => ({ id, ...productCopy.routes[id] }));
+] as const).map((id) => ({
+  id,
+  ...productCopy.routes[id],
+  label: id === "activity" ? "Activities" : productCopy.routes[id].label,
+}));
