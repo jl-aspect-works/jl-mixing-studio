@@ -1,5 +1,6 @@
 import type { ClientSummary, ProjectSummary, VersionCheck, WorkspaceSnapshot } from "../types";
-import type { ProjectView, ResourceState } from "../AppViews";
+import type { ResourceState } from "../AppViews";
+import type { ProjectShellView } from "../project/ProjectView";
 import { routes, type PrimaryRoute, type RouteDefinition } from "../ui/routes";
 
 export interface SelectedProject {
@@ -17,13 +18,25 @@ export interface AppRouteContext {
   activeRouteDefinition: RouteDefinition;
 }
 
+const projectRouteCopy: Record<ProjectShellView, { eyebrow: string; description: string }> = {
+  overview: { eyebrow: "Project overview", description: "Project details and next steps." },
+  intake: { eyebrow: "Client Files", description: "Original delivery and intake status." },
+  audioPrep: { eyebrow: "Audio Prep", description: "Prepare working audio for the mix." },
+  references: { eyebrow: "References", description: "Reference material for the project." },
+  revisions: { eyebrow: "Project revisions", description: "Revisions, approvals, and mix history." },
+  delivery: { eyebrow: "Project delivery", description: "Final files and delivery status." },
+  files: { eyebrow: "Project files", description: "Project-wide file inspection." },
+  reports: { eyebrow: "Project reports", description: "Project reports." },
+  metadata: { eyebrow: "Project metadata", description: "Project metadata." },
+};
+
 export function getAppRouteContext(
   workspace: ResourceState<WorkspaceSnapshot>,
   version: ResourceState<VersionCheck>,
   selectedClientId: string | null,
   selectedProject: SelectedProject | null,
   activeRoute: PrimaryRoute,
-  projectView: ProjectView,
+  projectView: ProjectShellView,
   deliveryCreationSupported: boolean,
 ): AppRouteContext {
   const resolvedClient = workspace.status === "ready" && selectedClientId
@@ -36,12 +49,7 @@ export function getAppRouteContext(
     ? resolvedProjectClient.projects.find((project) => project.projectId === selectedProject.projectId) ?? null
     : null;
 
-  const deliveryCreationAvailable =
-    deliveryCreationSupported &&
-    resolvedProject !== null &&
-    resolvedProject.approvedRevision !== null &&
-    ((resolvedProject.deliveredRevision === null && resolvedProject.delivery === null) ||
-      (resolvedProject.deliveredRevision !== null && resolvedProject.delivery !== null));
+  const deliveryCreationAvailable = deliveryCreationSupported && resolvedProject !== null && resolvedProject.approvedRevision !== null && ((resolvedProject.deliveredRevision === null && resolvedProject.delivery === null) || (resolvedProject.deliveredRevision !== null && resolvedProject.delivery !== null));
 
   const deliveryCreationHelp = (() => {
     if (!resolvedProject) return "Select a project before creating a delivery.";
@@ -58,26 +66,13 @@ export function getAppRouteContext(
     ? {
         id: "projects",
         label: "Projects",
-        eyebrow: projectView === "intake" ? "Project intake" : projectView === "revisions" ? "Project revisions" : projectView === "delivery" ? "Project delivery" : "Project overview",
+        eyebrow: projectRouteCopy[projectView].eyebrow,
         title: resolvedProject.projectName,
-        description: projectView === "intake" ? `${resolvedProject.artist} · Check the files before mixing.` : projectView === "revisions" ? `${resolvedProject.artist} · Revisions, approvals, and mix history.` : projectView === "delivery" ? `${resolvedProject.artist} · Final files and delivery status.` : `${resolvedProject.artist} · Project details and next steps.`,
+        description: `${resolvedProject.artist} · ${projectRouteCopy[projectView].description}`,
       }
     : resolvedClient
-      ? {
-          id: "clients",
-          label: "Clients",
-          eyebrow: "Client details",
-          title: resolvedClient.clientName,
-          description: "Client details, defaults, and projects in your studio.",
-        }
+      ? { id: "clients", label: "Clients", eyebrow: "Client details", title: resolvedClient.clientName, description: "Client details, defaults, and projects in your studio." }
       : baseRouteDefinition;
 
-  return {
-    resolvedClient,
-    resolvedProjectClient,
-    resolvedProject,
-    deliveryCreationAvailable,
-    deliveryCreationHelp,
-    activeRouteDefinition,
-  };
+  return { resolvedClient, resolvedProjectClient, resolvedProject, deliveryCreationAvailable, deliveryCreationHelp, activeRouteDefinition };
 }
