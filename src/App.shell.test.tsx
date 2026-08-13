@@ -19,7 +19,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(compact);
       expect(compact).toBeChecked();
       expect(document.querySelector(".app-shell")).toHaveClass("compact-layout");
-      expect(localStorage.getItem("jl-mixing-studio.preferences")).toContain('"compactLayout":true');
+      expect(localStorage.getItem("jl-mixing-studio.preferences")).toContain('\"compactLayout\":true');
       expect(mockedInvoke.mock.calls.some(([command]) => /setting|update|write/.test(String(command)))).toBe(false);
       unmount();
       render(<App />);
@@ -162,7 +162,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
       expect(screen.getByText("48 kHz / 24-bit / WAV")).toBeInTheDocument();
       const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
-      expect(within(projectNavigation).getAllByRole(/button|generic/).filter((element) => element.matches("button, span")).map((element) => element.textContent)).toEqual([
+      expect(Array.from(projectNavigation.querySelectorAll("button, span")).map((element) => element.textContent)).toEqual([
         "Overview",
         "Client Files",
         "Audio Prep",
@@ -171,7 +171,7 @@ describe("JL Mixing Studio — shell and routes", () => {
         "Delivery",
         "Files",
       ]);
-      expect(screen.getByRole("button", { name: "Intake" })).toBeEnabled();
+      expect(within(projectNavigation).getByRole("button", { name: "Client Files" })).toBeEnabled();
       expect(within(projectNavigation).getByRole("button", { name: "Revisions" })).toBeEnabled();
       expect(screen.getByRole("button", { name: "Open folder" })).toBeEnabled();
     });
