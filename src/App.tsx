@@ -6,6 +6,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { VersionCheck, WorkspaceSnapshot } from "./types";
+import type { WorkspaceConfiguration } from "./settings/models";
 import {
   ActivityRoute,
   ClientDetails,
@@ -72,6 +73,7 @@ export default function App() {
   } | null>(null);
   const [routeNotice, setRouteNotice] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<ResourceState<WorkspaceSnapshot>>({ status: "loading" });
+  const [workspaceConfiguration, setWorkspaceConfiguration] = useState<ResourceState<WorkspaceConfiguration>>({ status: "loading" });
   const [version, setVersion] = useState<ResourceState<VersionCheck>>({ status: "loading" });
   const [projectView, setProjectView] = useState<ProjectView>("overview");
   const [creationNotice, setCreationNotice] = useState<string | null>(null);
@@ -81,6 +83,7 @@ export default function App() {
   const refresh = useCallback(async () => {
     const currentRequest = ++requestId.current;
     setWorkspace({ status: "loading" });
+    setWorkspaceConfiguration({ status: "loading" });
     setVersion({ status: "loading" });
     await yieldToBrowserPaint();
 
@@ -91,6 +94,16 @@ export default function App() {
       .catch((error: unknown) => {
         if (requestId.current === currentRequest) {
           setWorkspace({ status: "error", message: safeError(error, "Workspace discovery could not be completed.") });
+        }
+      });
+
+    invoke<WorkspaceConfiguration>("get_workspace_configuration")
+      .then((value) => {
+        if (requestId.current === currentRequest) setWorkspaceConfiguration({ status: "ready", value });
+      })
+      .catch((error: unknown) => {
+        if (requestId.current === currentRequest) {
+          setWorkspaceConfiguration({ status: "error", message: safeError(error, "Workspace configuration could not be loaded.") });
         }
       });
 
@@ -131,7 +144,7 @@ export default function App() {
     }
   }, [workspace, selectedClientId, selectedProject]);
 
-  const loading = workspace.status === "loading" || version.status === "loading";
+  const loading = workspace.status === "loading" || workspaceConfiguration.status === "loading" || version.status === "loading";
   const {
     automationReady,
     clientCreationAvailable,
@@ -145,9 +158,16 @@ export default function App() {
     revisionApprovalAvailable,
     revisionApprovalHelp,
     deliveryCreationSupported,
-    studioCreationAvailable,
-    studioCreationHelp,
+    studioCreationAvailable: defaultStudioCreationAvailable,
+    studioCreationHelp: defaultStudioCreationHelp,
   } = getWorkflowAvailability(workspace, version);
+
+  const workspaceExplicitlyConfigured = workspaceConfiguration.status === "ready" && workspaceConfiguration.value.configured;
+  const configuredWorkspaceUnavailable = workspaceExplicitlyConfigured && workspace.status === "ready" && workspace.value.status === "unavailable";
+  const studioCreationAvailable = defaultStudioCreationAvailable && workspaceConfiguration.status === "ready" && !workspaceExplicitlyConfigured;
+  const studioCreationHelp = configuredWorkspaceUnavailable
+    ? "Reconnect the configured workspace or choose another workspace in Settings. Studio will not replace it with a new default workspace."
+    : defaultStudioCreationHelp;
 
   const {
     studioWorkflow,
@@ -403,7 +423,22 @@ export default function App() {
         {activeRoute === "tasks" && <TasksRoute workspace={workspace} loading={loading} onRefresh={refresh} onOpenProject={openDerivedProject} />}
         {activeRoute === "activity" && <ActivityRoute workspace={workspace} loading={loading} onRefresh={refresh} onOpenProject={openDerivedProject} />}
         {activeRoute === "reports" && <ReportsRoute workspace={workspace} onOpenProject={(clientId, projectId) => { openDerivedProject(clientId, projectId); setProjectView("reports"); }} />}
-        {activeRoute === "settings" && <SettingsRoute preferences={preferences} onChange={setPreferences} workspace={workspace} version={version} />}
+        {activeRoute === "settings" && (
+          <SettingsRoute
+            preferences={preferences}
+            onChange={setPreferences}
+            workspace={workspace}
+            workspaceConfiguration={workspaceConfiguration}
+            version={version}
+            onWorkspaceChanged={(snapshot) => {
+              setWorkspace({ status: "ready", value: snapshot });
+              invoke<WorkspaceConfiguration>("get_workspace_configuration")
+                .then((value) => setWorkspaceConfiguration({ status: "ready", value }))
+                .catch((error: unknown) => setWorkspaceConfiguration({ status: "error", message: safeError(error, "Workspace configuration could not be reloaded.") }));
+            }}
+            onRefresh={refresh}
+          />
+        )}
         {activeRoute === "clients" && (resolvedClient ? (
           <ClientDetails
             client={resolvedClient}
