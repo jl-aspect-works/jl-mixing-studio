@@ -1,6 +1,6 @@
 # JL Mixing Studio
 
-JL Mixing Studio is an open-source desktop application for small-studio and home-studio mix engineers. It provides a visual, studio-aware workflow over the project structure and automation capabilities established by [JL Mixing Automation](https://github.com/jl-aspect-works/jl-mixing).
+JL Mixing Studio is an open-source desktop application for small-studio and home-studio mix engineers. It provides a visual, studio-aware workflow over the project structure and automation capabilities established by [JL Mixing Automation](https://github.com/jl-aspect-works/jl-mixing-automation).
 
 ## Current release line
 
