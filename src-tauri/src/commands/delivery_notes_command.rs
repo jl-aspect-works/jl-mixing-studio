@@ -1,6 +1,5 @@
-use super::workspace_command_support::{
-    find_project_summary, resolve_home, validated_project_directory,
-};
+use super::workspace_command_support::{find_project_summary, validated_project_directory};
+use super::resolve_workspace_root;
 use crate::models::{
     DeliveryNotesDocument, DeliveryNotesRequest, DeliveryNotesUpdateRequest, WorkspaceStatus,
 };
@@ -45,8 +44,7 @@ fn resolve_delivery_notes_path(
     project_id: &str,
     allow_partial: bool,
 ) -> Result<PathBuf, String> {
-    let home = resolve_home(app)?;
-    let root = home.join("Music").join("Mixes");
+    let root = resolve_workspace_root(app)?;
     let snapshot = workspace::discover_workspace_at(&root);
     if snapshot.status != WorkspaceStatus::Healthy
         && !(allow_partial && snapshot.status == WorkspaceStatus::Partial)
