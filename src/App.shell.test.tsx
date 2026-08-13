@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mockedInvoke, mockedWriteText, version, intakePreview, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
+import { mockedInvoke, mockedWriteText, version, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
 import App from "./App";
 
 afterEach(cleanup);
@@ -40,28 +40,27 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(mockedInvoke).toHaveBeenCalledWith("get_jl_mixing_version");
     });
 
-  it("renders the persistent shell, planned global search, and authoritative summaries", async () => {
+  it("renders the persistent shell, locked global navigation, and authoritative summaries", async () => {
       render(<App />);
-
       await screen.findByText("JL Mix Studio");
       expect(screen.getByLabelText("JL Mixing Studio")).toBeInTheDocument();
       expect(screen.getByText("JL Mix Studio")).toBeInTheDocument();
       expect(screen.getByText("~/Music/Mixes")).toBeInTheDocument();
-      expect(screen.getByRole("navigation", { name: "Primary navigation" })).toBeInTheDocument();
+      const primaryNavigation = screen.getByRole("navigation", { name: "Primary navigation" });
+      expect(within(primaryNavigation).getAllByRole("button").map((button) => button.textContent)).toEqual(["Dashboard", "Studio", "Clients", "Projects", "Tasks", "Activities", "Settings"]);
       expect(screen.getByRole("button", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByLabelText("Global search")).toHaveAttribute("aria-disabled", "true");
       expect(screen.getByText("Awaiting review").nextElementSibling).toHaveTextContent("1");
       expect(screen.getByText("Ready to deliver").nextElementSibling).toHaveTextContent("1");
       expect(screen.getByRole("button", { name: "New project" })).toBeEnabled();
       expect(screen.queryByRole("button", { name: /validate intake/i })).not.toBeInTheDocument();
+      expect(within(primaryNavigation).queryByRole("button", { name: "Reports" })).not.toBeInTheDocument();
     });
 
   it("launches guided project creation from the Dashboard", async () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
-
       fireEvent.click(screen.getByRole("button", { name: "New project" }));
-
       expect(screen.getByRole("heading", { name: "New project" })).toBeInTheDocument();
       expect(screen.getByLabelText("Client")).toBeEnabled();
       expect(screen.getByLabelText("Client")).toHaveFocus();
@@ -86,7 +85,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
     });
 
-  it("activates Activity Log as an incomplete derived event feed", async () => {
+  it("activates Activities as an incomplete derived event feed", async () => {
       const snapshot = healthyWorkspace();
       snapshot.activity = [{ id: "event", eventType: "clientCreated", timestamp: "2026-07-15T12:00:00Z", clientId: "acme", clientName: "Acme Records", projectId: null, projectName: null, revision: null, persistedSource: "client metadata.created_at" }];
       respondWith(snapshot); render(<App />); await screen.findByText("JL Mix Studio");
@@ -106,9 +105,7 @@ describe("JL Mixing Studio — shell and routes", () => {
   it("navigates to the functional project directory with a programmatic active state", async () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
-
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-
       expect(screen.getByRole("button", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
       expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("heading", { name: "Projects", level: 1 })).toBeInTheDocument();
@@ -120,11 +117,9 @@ describe("JL Mixing Studio — shell and routes", () => {
   it("keeps guided client creation available from the Clients directory", async () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
-
       fireEvent.click(screen.getByRole("button", { name: "Clients" }));
       expect(screen.getByRole("button", { name: "Clients" })).toHaveAttribute("aria-current", "page");
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
-
       expect(screen.getByRole("dialog")).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "New client" })).toBeInTheDocument();
     });
@@ -132,27 +127,22 @@ describe("JL Mixing Studio — shell and routes", () => {
   it("opens Client Details and the shared Project Overview from Clients", async () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
-
       fireEvent.click(screen.getByRole("button", { name: "Clients" }));
       expect(screen.getByRole("button", { name: "Acme Records" })).toBeInTheDocument();
       expect(screen.getByText("acme")).toBeInTheDocument();
       expect(screen.getByText("The Artist")).toBeInTheDocument();
-
       fireEvent.click(screen.getByRole("button", { name: "Acme Records" }));
       expect(screen.getByRole("heading", { name: "Acme Records", level: 1 })).toBeInTheDocument();
       expect(screen.getByText(/client editing.*available yet/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Blue Sky" })).toBeInTheDocument();
-
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      expect(
-        within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", {
-          name: "Projects",
-        }),
-      ).toHaveAttribute("aria-current", "page");
+      expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
       expect(screen.getByText("48 kHz / 24-bit / WAV")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Client Files" })).toBeEnabled();
-      expect(screen.getByRole("button", { name: "Revisions" })).toBeEnabled();
+      const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+      expect(Array.from(projectNavigation.querySelectorAll("button, span")).map((element) => element.textContent)).toEqual(["Overview", "Client Files", "Audio Prep", "References", "Revisions", "Delivery", "Files"]);
+      expect(within(projectNavigation).getByRole("button", { name: "Client Files" })).toBeEnabled();
+      expect(within(projectNavigation).getByRole("button", { name: "Revisions" })).toBeEnabled();
       expect(screen.getByRole("button", { name: "Open folder" })).toBeEnabled();
     });
 
@@ -187,7 +177,6 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(await screen.findByRole("button", { name: "Copy path" }));
-
       await waitFor(() => expect(mockedWriteText).toHaveBeenCalledWith(path));
       expect(await screen.findByText("Path copied.")).toBeInTheDocument();
     });
@@ -204,52 +193,33 @@ describe("JL Mixing Studio — shell and routes", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-
       const pathText = await screen.findByText(path);
       const folderControl = pathText.closest(".folder-control");
       const actions = folderControl?.querySelector(".directory-actions");
-
       expect(folderControl).not.toBeNull();
       expect(pathText.nextElementSibling).toBe(actions);
       expect(actions).toContainElement(screen.getByRole("button", { name: "Copy path" }));
       expect(actions).toContainElement(screen.getByRole("button", { name: "Open folder" }));
     });
 
-  it("activates project Reports, Files, and Metadata from authoritative records", async () => {
-      mockedInvoke.mockImplementation((command) => {
-        if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
-        if (command === "get_jl_mixing_version") return Promise.resolve(version);
-        if (command === "get_intake_report") return Promise.resolve(intakePreview);
-        return Promise.reject(new Error("Unexpected command"));
-      });
+  it("uses the locked project navigation and dedicated shell views", async () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(within(screen.getByLabelText("Project workflow")).getByRole("button", { name: "Reports" }));
-      expect(await screen.findByRole("heading", { name: "Project reports" })).toBeInTheDocument();
-      expect(screen.getByText(/2 files · 0 blocking errors/i)).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Files" }));
-      expect(screen.getByRole("heading", { name: "Project files" })).toBeInTheDocument();
-      expect(screen.getByText("one/song.wav")).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Metadata" }));
-      expect(screen.getByRole("heading", { name: "Project metadata" })).toBeInTheDocument();
-      expect(screen.getByText("48000 Hz · 24-bit WAV")).toBeInTheDocument();
-    });
-
-  it("activates the global validated delivery report index", async () => {
-      const snapshot = healthyWorkspace();
-      snapshot.clients[0].projects[0].delivery = {
-        documentId: "delivery-1", createdWith: "jl-mixing 1.2.0", createdAt: "2026-07-18T12:00:00Z",
-        method: "digital", revision: 1, revisionId: "revision-1", description: "Approved",
-        approvedAt: "2026-07-18T11:00:00Z", approvedBy: "Engineer", files: [],
-      };
-      respondWith(snapshot);
-      render(<App />);
-      await screen.findByText("JL Mix Studio");
-      fireEvent.click(screen.getByRole("button", { name: "Reports" }));
-      expect(screen.getByRole("heading", { name: "Reports", level: 1 })).toBeInTheDocument();
-      expect(screen.getByText("Delivery details")).toBeInTheDocument();
-      expect(screen.queryByText(/report browsing is planned/i)).not.toBeInTheDocument();
+      const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+      expect(within(projectNavigation).queryByRole("button", { name: "Reports" })).not.toBeInTheDocument();
+      expect(within(projectNavigation).queryByRole("button", { name: "Metadata" })).not.toBeInTheDocument();
+      fireEvent.click(within(projectNavigation).getByRole("button", { name: "Audio Prep" }));
+      expect(screen.getByRole("heading", { name: "Audio Prep" })).toBeInTheDocument();
+      expect(within(screen.getByRole("navigation", { name: "Project navigation" })).getByText("Audio Prep")).toHaveAttribute("aria-current", "page");
+      fireEvent.click(within(screen.getByRole("navigation", { name: "Project navigation" })).getByRole("button", { name: "References" }));
+      expect(screen.getByRole("heading", { name: "References" })).toBeInTheDocument();
+      expect(within(screen.getByRole("navigation", { name: "Project navigation" })).getByText("References")).toHaveAttribute("aria-current", "page");
+      fireEvent.click(within(screen.getByRole("navigation", { name: "Project navigation" })).getByRole("button", { name: "Files" }));
+      expect(screen.getByRole("heading", { name: "Files" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Project file workspace" })).toBeInTheDocument();
+      expect(within(screen.getByRole("navigation", { name: "Project navigation" })).getByText("Files")).toHaveAttribute("aria-current", "page");
+      expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
     });
 });

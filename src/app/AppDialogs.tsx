@@ -1,0 +1,39 @@
+import type { ProjectSummary, WorkspaceSnapshot } from "../types";
+import type { ResourceState } from "../AppViews";
+import { ApprovalDialog, ClientDialog, DeliveryDialog, DeliveryOptionsDialog, IntakeDialog, ProjectDialog, RevisionDialog, StudioDialog } from "../AppWorkflows";
+import { useStudioWorkflow } from "../studio";
+import { useClientWorkflow } from "../client";
+import { useProjectWorkflow } from "../project";
+import { useIntakeWorkflow } from "../intake";
+import { useRevisionWorkflow } from "../revision";
+import { useApprovalWorkflow } from "../approval";
+import { useDeliveryWorkflow } from "../delivery";
+
+export interface AppDialogsProps {
+  workspace: ResourceState<WorkspaceSnapshot>;
+  project: ProjectSummary | null;
+  studio: ReturnType<typeof useStudioWorkflow>;
+  clients: ReturnType<typeof useClientWorkflow>;
+  projects: ReturnType<typeof useProjectWorkflow>;
+  intake: ReturnType<typeof useIntakeWorkflow>;
+  revision: ReturnType<typeof useRevisionWorkflow>;
+  approval: ReturnType<typeof useApprovalWorkflow>;
+  delivery: ReturnType<typeof useDeliveryWorkflow>;
+  onRefresh: () => void;
+}
+
+export function AppDialogs({ workspace, project, studio, clients, projects, intake, revision, approval, delivery, onRefresh }: AppDialogsProps) {
+  return <>
+    {studio.studioWorkflow.status !== "closed" && <StudioDialog state={studio.studioWorkflow} values={studio.studioForm} onChange={studio.setStudioForm} onPreflight={studio.preflightStudio} onConfirm={studio.confirmStudioCreation} onBack={() => studio.setStudioWorkflow({ status: "editing" })} onClose={studio.closeStudioWorkflow} />}
+    {clients.state.status !== "closed" && <ClientDialog state={clients.state} values={clients.form} onChange={clients.setForm} onPreflight={clients.preflight} onConfirm={clients.confirm} onBack={() => clients.setState({ status: "editing" })} onClose={clients.close} />}
+    {projects.state.status !== "closed" && <ProjectDialog state={projects.state} values={projects.form} clients={workspace.status === "ready" ? workspace.value.clients : []} onChange={projects.setForm} onPreflight={projects.preflight} onConfirm={projects.confirm} onBack={() => {
+      if (projects.state.status !== "confirming") return;
+      projects.setState({ status: "editing", lockedClientId: projects.state.fromClient ? projects.state.request.clientId : null, fromClient: projects.state.fromClient });
+    }} onClose={projects.close} />}
+    {intake.state.status !== "closed" && intake.state.status !== "preflighting" && <IntakeDialog state={intake.state} onConfirm={intake.confirm} onClose={intake.closeDialog} />}
+    {revision.state.status !== "closed" && project && <RevisionDialog state={revision.state} values={revision.form} project={project} onChange={revision.setForm} onPreflight={revision.preflight} onConfirm={revision.confirm} onBack={revision.back} onClose={revision.close} />}
+    {approval.state.status !== "closed" && project && <ApprovalDialog state={approval.state} values={approval.form} project={project} onChange={approval.setForm} onPreflight={approval.preflight} onConfirm={approval.confirm} onBack={approval.back} onClose={approval.close} />}
+    {delivery.state.status === "options" && project && <DeliveryOptionsDialog request={delivery.state.request} projectName={project.projectName} onChange={delivery.setRequest} onPreview={delivery.preflight} onClose={delivery.close} />}
+    {delivery.state.status !== "closed" && delivery.state.status !== "options" && delivery.state.status !== "preflighting" && <DeliveryDialog state={delivery.state} onConfirm={delivery.confirm} onClose={() => { delivery.close(); if (delivery.state.status === "uncertain") onRefresh(); }} />}
+  </>;
+}
