@@ -12,6 +12,7 @@ import type {
   VersionCheck,
   WorkspaceSnapshot
 } from "./types";
+import type { WorkspaceConfiguration } from "./settings/models";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/plugin-clipboard-manager", () => ({ writeText: vi.fn() }));
@@ -240,12 +241,19 @@ export const healthyWorkspace = (projectName = "Blue Sky"): WorkspaceSnapshot =>
   activity: [],
 });
 
+export const defaultWorkspaceConfiguration: WorkspaceConfiguration = {
+  workspacePath: "/Users/engineer/Music/Mixes",
+  configured: false,
+};
+
 export const respondWith = (
   workspace: WorkspaceSnapshot,
   automation: VersionCheck = version,
+  workspaceConfiguration: WorkspaceConfiguration = defaultWorkspaceConfiguration,
 ) => {
   mockedInvoke.mockImplementation((command) => {
     if (command === "discover_default_workspace") return Promise.resolve(workspace);
+    if (command === "get_workspace_configuration") return Promise.resolve(workspaceConfiguration);
     if (command === "get_jl_mixing_version") return Promise.resolve(automation);
     if (command === "get_intake_report") return Promise.resolve(intakeNotRun);
     return Promise.reject(new Error("Unexpected command"));
