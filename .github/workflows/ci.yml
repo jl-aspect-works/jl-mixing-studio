@@ -59,3 +59,33 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Check desktop compile
         run: cargo check --manifest-path src-tauri/Cargo.toml --all-features
+
+  macos-audio-preview-spike:
+    name: ${{ matrix.name }} WKWebView audio preview spike
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Intel
+            os: macos-15-intel
+          - name: macOS Apple Silicon
+            os: macos-15
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure ffmpeg is available
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            brew install ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+      - name: Generate required audio fixtures
+        run: bash scripts/macos-audio-preview-fixtures.sh "$RUNNER_TEMP/jl-audio-preview-fixtures"
+      - name: Probe required formats through WKWebView
+        run: |
+          swift scripts/macos-wkwebview-audio-probe.swift \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/wav16-44100-mono.wav" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/wav24-48000-stereo.wav" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/wavf32-96000-stereo.wav" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/aiff24-48000-stereo.aiff" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/mp3-44100-stereo.mp3"
