@@ -1,0 +1,40 @@
+import type { ClientSummary, ProjectSummary, RevisionSummary } from "../types";
+import type { IntakeReportState } from "../AppShellViews";
+import { IntakeView } from "../intake/IntakeViews";
+import { RevisionsView } from "../revision/RevisionViews";
+import { DeliveryView } from "../delivery/DeliveryView";
+import { ProjectFilesShellView } from "./ProjectFilesShellView";
+import { ProjectOverviewShell } from "./ProjectOverviewShell";
+import { ProjectPlaceholderView } from "./ProjectPlaceholderView";
+import type { ProjectShellView } from "./ProjectView";
+
+export interface ProjectRouteContentProps {
+  view: ProjectShellView;
+  client: ClientSummary;
+  project: ProjectSummary;
+  loading: boolean;
+  intakeReport: IntakeReportState;
+  intakeActionError: string | null;
+  intakeValidationAvailable: boolean;
+  intakeValidationHelp: string;
+  intakeLoading: boolean;
+  revisionActionError: string | null;
+  revisionCreationAvailable: boolean;
+  revisionCreationHelp: string;
+  revisionApprovalAvailable: boolean;
+  revisionApprovalHelp: string;
+  deliveryActionError: string | null;
+  deliveryCreationAvailable: boolean;
+  deliveryCreationHelp: string;
+  deliveryLoading: boolean;
+  onProjects: () => void;
+  onRefresh: () => void;
+  onIntakeRefresh: () => void;
+  onSelectView: (view: ProjectShellView) => void;
+  onOpenIntake: () => void;
+  onPreviewIntake: () => void;
+  onOpenRevisions: () => void;
+  onNewRevision: () => void;
+  onApproveRevision: (revision: RevisionSummary) => void;
+  onCreateDelivery: () => void;
+}
