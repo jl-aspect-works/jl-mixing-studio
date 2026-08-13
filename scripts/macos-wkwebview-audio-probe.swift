@@ -48,7 +48,7 @@ guard urls.allSatisfy({ $0.deletingLastPathComponent() == fixtureDirectory }) el
 let html = #"""
 <!doctype html>
 <meta charset="utf-8">
-<audio id="audio" preload="auto"></audio>
+<audio id="audio" preload="metadata" controls></audio>
 <script>
 window.probeAudio = async function(filename) {
   const audio = document.getElementById('audio');
@@ -60,38 +60,35 @@ window.probeAudio = async function(filename) {
     let settled = false;
     const cleanup = () => {
       clearTimeout(timer);
-      audio.removeEventListener('loadeddata', onLoadedData);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('error', onError);
     };
+    const snapshot = (extra = {}) => ({
+      duration: Number.isFinite(audio.duration) ? audio.duration : null,
+      readyState: audio.readyState,
+      networkState: audio.networkState,
+      currentSrc: audio.currentSrc,
+      baseURI: document.baseURI,
+      ...extra
+    });
     const finish = (value) => {
       if (settled) return;
       settled = true;
       cleanup();
       resolve(value);
     };
-    const onLoadedData = () => finish({
-      ok: true,
-      duration: audio.duration,
-      readyState: audio.readyState,
-      networkState: audio.networkState
-    });
-    const onError = () => finish({
+    const onLoadedMetadata = () => finish(snapshot({ ok: Number.isFinite(audio.duration) && audio.duration > 0 }));
+    const onError = () => finish(snapshot({
       ok: false,
-      duration: Number.isFinite(audio.duration) ? audio.duration : null,
-      readyState: audio.readyState,
-      networkState: audio.networkState,
       errorCode: audio.error ? audio.error.code : null,
       errorMessage: audio.error ? audio.error.message : 'media error'
-    });
-    const timer = setTimeout(() => finish({
+    }));
+    const timer = setTimeout(() => finish(snapshot({
       ok: false,
-      duration: Number.isFinite(audio.duration) ? audio.duration : null,
-      readyState: audio.readyState,
-      networkState: audio.networkState,
-      errorMessage: 'timeout waiting for loadeddata'
-    }), 12000);
+      errorMessage: 'timeout waiting for loadedmetadata'
+    })), 8000);
 
-    audio.addEventListener('loadeddata', onLoadedData, { once: true });
+    audio.addEventListener('loadedmetadata', onLoadedMetadata, { once: true });
     audio.addEventListener('error', onError, { once: true });
     audio.src = filename;
     audio.load();
@@ -104,11 +101,21 @@ let htmlURL = fixtureDirectory.appendingPathComponent("wkwebview-audio-probe.htm
 try html.write(to: htmlURL, atomically: true, encoding: .utf8)
 
 let app = NSApplication.shared
-app.setActivationPolicy(.prohibited)
+app.setActivationPolicy(.accessory)
 
 let configuration = WKWebViewConfiguration()
 configuration.mediaTypesRequiringUserActionForPlayback = []
-let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 320, height: 200), configuration: configuration)
+let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 480, height: 240), configuration: configuration)
+let window = NSWindow(
+    contentRect: NSRect(x: 0, y: 0, width: 480, height: 240),
+    styleMask: [.titled],
+    backing: .buffered,
+    defer: false
+)
+window.contentView = webView
+window.makeKeyAndOrderFront(nil)
+app.activate(ignoringOtherApps: true)
+
 let navigationDelegate = NavigationDelegate()
 webView.navigationDelegate = navigationDelegate
 webView.loadFileURL(htmlURL, allowingReadAccessTo: fixtureDirectory)
@@ -143,7 +150,7 @@ for url in urls {
         completed = true
     }
 
-    guard runLoopUntil({ completed }, timeout: 20) else {
+    guard runLoopUntil({ completed }, timeout: 15) else {
         print("FAIL \(url.lastPathComponent): JavaScript probe timed out")
         failed = true
         continue
@@ -162,18 +169,21 @@ for url in urls {
         continue
     }
 
+    let duration = dictionary["duration"] ?? "unknown"
+    let readyState = dictionary["readyState"] ?? "unknown"
+    let networkState = dictionary["networkState"] ?? "unknown"
+    let currentSrc = dictionary["currentSrc"] ?? "unknown"
+
     if ok {
-        let duration = dictionary["duration"] ?? "unknown"
-        let readyState = dictionary["readyState"] ?? "unknown"
-        print("PASS \(url.lastPathComponent): duration=\(duration) readyState=\(readyState)")
+        print("PASS \(url.lastPathComponent): duration=\(duration) readyState=\(readyState) networkState=\(networkState)")
     } else {
         let message = dictionary["errorMessage"] ?? "unknown media error"
         let code = dictionary["errorCode"] ?? "none"
-        let readyState = dictionary["readyState"] ?? "unknown"
-        print("FAIL \(url.lastPathComponent): errorCode=\(code) readyState=\(readyState) message=\(message)")
+        print("FAIL \(url.lastPathComponent): errorCode=\(code) readyState=\(readyState) networkState=\(networkState) currentSrc=\(currentSrc) message=\(message)")
         failed = true
     }
 }
 
+window.orderOut(nil)
 try? FileManager.default.removeItem(at: htmlURL)
 exit(failed ? 1 : 0)
