@@ -24,7 +24,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "Intake" }));
+      fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
 
       expect(await screen.findByRole("heading", { name: "Intake validation" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "2 inspected files" })).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "Intake" }));
+      fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
       await screen.findByRole("heading", { name: "Intake validation has not been run" });
       fireEvent.click(screen.getByRole("button", { name: "Preview validation" }));
 
@@ -107,7 +107,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "Intake" }));
+      fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
       await screen.findByRole("heading", { name: "Intake validation has not been run" });
       fireEvent.click(screen.getByRole("button", { name: "Preview validation" }));
 
@@ -129,7 +129,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "Intake" }));
+      fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
       await screen.findByRole("heading", { name: "Intake validation has not been run" });
       fireEvent.click(screen.getByRole("button", { name: "Preview validation" }));
       await screen.findByRole("heading", { name: "Confirm intake report update" });
@@ -155,7 +155,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "Intake" }));
+      fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
 
       expect(await screen.findByRole("heading", { name: "2 inspected files" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Preview validation" })).toBeDisabled();
@@ -175,7 +175,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "Intake" }));
+      fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
       await screen.findByRole("heading", { name: "Intake validation has not been run" });
       fireEvent.click(screen.getByRole("button", { name: "Preview validation" }));
       await screen.findByRole("heading", { name: "Confirm intake report update" });
