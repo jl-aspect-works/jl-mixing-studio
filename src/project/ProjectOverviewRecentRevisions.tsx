@@ -1,5 +1,5 @@
 import type { ProjectSummary, RevisionSummary } from "../types";
-import { formatOverviewDateTime } from "./ProjectOverviewModel";
+import { formatOverviewDateTime, overviewString } from "./ProjectOverviewModel";
 
 const statusLabels = (project: ProjectSummary, revision: RevisionSummary) => {
   const labels: string[] = [];
@@ -17,7 +17,7 @@ export function ProjectOverviewRecentRevisions({ project, onRevisions }: { proje
       {revisions.length === 0 ? <p className="overview-empty-copy">No revisions have been created yet.</p> : <div className="overview-revision-list">
         {revisions.map((revision) => {
           const labels = statusLabels(project, revision);
-          return <article key={revision.revisionId}><div className="overview-revision-number">{String(revision.number).padStart(2, "0")}</div><div><strong>Revision {String(revision.number).padStart(2, "0")}</strong><p>{revision.description || "No revision description"}</p></div><div className="overview-revision-meta"><span>{formatOverviewDateTime(revision.createdAt)}</span><div>{labels.map((label) => <small key={label} className={`overview-revision-badge ${label.toLowerCase()}`}>{label}</small>)}</div></div></article>;
+          return <article key={revision.revisionId}><div className="overview-revision-number">{String(revision.number).padStart(2, "0")}</div><div><strong>Revision {String(revision.number).padStart(2, "0")}</strong><p>{revision.description || "No revision description"}</p></div><div className="overview-revision-meta"><span>{formatOverviewDateTime(overviewString(revision, "createdAt"))}</span><div>{labels.map((label) => <small key={label} className={`overview-revision-badge ${label.toLowerCase()}`}>{label}</small>)}</div></div></article>;
         })}
       </div>}
     </section>
