@@ -11,7 +11,7 @@ describe("JL Mixing Studio — intake workflow", () => {
     resetAppTestState();
   });
 
-  it("opens the functional Intake route and reads the authoritative report", async () => {
+  it("opens the functional Client Files route and reads the authoritative report", async () => {
       const path = "/Users/engineer/Music/Mixes/Clients/acme/Projects/blue-sky/01_Client_Files/Original_Delivery";
       mockedInvoke.mockImplementation((command) => {
         if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
@@ -26,7 +26,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
 
-      expect(await screen.findByRole("heading", { name: "Intake validation" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "Client Files" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "2 inspected files" })).toBeInTheDocument();
       expect(screen.getByText("one/song.wav")).toBeInTheDocument();
       expect(screen.getByText(/review duplicate filenames/i)).toBeInTheDocument();
@@ -38,7 +38,7 @@ describe("JL Mixing Studio — intake workflow", () => {
       await waitFor(() => expect(mockedWriteText).toHaveBeenCalledWith(path));
       expect(await screen.findByText("Path copied.")).toBeInTheDocument();
 
-      fireEvent.click(screen.getByRole("button", { name: "Open intake folder" }));
+      fireEvent.click(screen.getByRole("button", { name: "Open client files folder" }));
       await waitFor(() =>
         expect(mockedInvoke).toHaveBeenCalledWith("open_folder", {
           request: { location: "intake", clientId: "acme", projectId: "blue-sky" },
