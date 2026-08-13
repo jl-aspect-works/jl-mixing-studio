@@ -1,13 +1,13 @@
 import type { ProjectSummary, WorkspaceSnapshot } from "../types";
 import type { ResourceState } from "../AppViews";
 import { ApprovalDialog, ClientDialog, DeliveryDialog, DeliveryOptionsDialog, IntakeDialog, ProjectDialog, RevisionDialog, StudioDialog } from "../AppWorkflows";
-import type { useStudioWorkflow } from "../studio";
-import type { useClientWorkflow } from "../client";
-import type { useProjectWorkflow } from "../project";
-import type { useIntakeWorkflow } from "../intake";
-import type { useRevisionWorkflow } from "../revision";
-import type { useApprovalWorkflow } from "../approval";
-import type { useDeliveryWorkflow } from "../delivery";
+import { useStudioWorkflow } from "../studio";
+import { useClientWorkflow } from "../client";
+import { useProjectWorkflow } from "../project";
+import { useIntakeWorkflow } from "../intake";
+import { useRevisionWorkflow } from "../revision";
+import { useApprovalWorkflow } from "../approval";
+import { useDeliveryWorkflow } from "../delivery";
 
 export interface AppDialogsProps {
   workspace: ResourceState<WorkspaceSnapshot>;
