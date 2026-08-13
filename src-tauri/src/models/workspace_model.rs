@@ -3,6 +3,13 @@ use serde::Serialize;
 use super::client_model::ClientSummary;
 use super::studio_model::StudioSummary;
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceConfiguration {
+    pub workspace_path: String,
+    pub configured: bool,
+}
+
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceSnapshot {
