@@ -5,6 +5,7 @@ export function ProjectFileList({
   listing,
   emptyMessage = "No files in this folder.",
   onOpenDirectory,
+  onOpen,
   onPreview,
   onReveal,
   onRename,
@@ -13,6 +14,7 @@ export function ProjectFileList({
   listing: ProjectFileListing;
   emptyMessage?: string;
   onOpenDirectory?: (entry: ProjectFileEntry) => void;
+  onOpen?: (entry: ProjectFileEntry) => void;
   onPreview?: (entry: ProjectFileEntry) => void;
   onReveal?: (entry: ProjectFileEntry) => void;
   onRename?: (entry: ProjectFileEntry) => void;
@@ -51,6 +53,9 @@ export function ProjectFileList({
               <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
               <td>
                 <div className="directory-actions">
+                  {entry.entryType === "file" && entry.permissions.canOpen && onOpen && (
+                    <button type="button" className="secondary" onClick={() => onOpen(entry)}>Open</button>
+                  )}
                   {entry.playable && onPreview && (
                     <button type="button" className="secondary" onClick={() => onPreview(entry)}>Preview</button>
                   )}
