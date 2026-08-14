@@ -17,7 +17,7 @@ export function ProjectOverviewHeader({ client, project, workspacePath }: { clie
         <div className="overview-project-icon" aria-hidden="true">♫</div>
         <div>
           <div className="overview-project-title">{project.projectName}</div>
-          <p><strong>Client:</strong> {client.clientName}<span aria-hidden="true">·</span><strong>Artist:</strong> {project.artist}<span aria-hidden="true">·</span><strong>Created:</strong> {formatOverviewDate(project.createdAt)}</p>
+          <p><strong>Client:</strong> <span>{client.clientName}</span><span aria-hidden="true">·</span><strong>Artist:</strong> <span>{project.artist}</span><span aria-hidden="true">·</span><strong>Created:</strong> {formatOverviewDate(project.createdAt)}</p>
           <small>{project.sampleRate / 1000} kHz / {project.bitDepth}-bit / {project.fileFormat}</small>
         </div>
       </div>
