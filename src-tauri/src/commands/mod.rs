@@ -2,10 +2,10 @@
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
-#[path = "project_file_command.rs"]
-mod project_files;
 #[path = "project_file_open_command.rs"]
 mod project_file_open;
+#[path = "project_file_command.rs"]
+mod project_files;
 #[path = "system_command.rs"]
 mod system;
 mod workspace_command_support;
