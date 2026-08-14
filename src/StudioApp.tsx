@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RouteHeader, Sidebar } from "./AppViews";
+import { GlobalSearch, RouteHeader, Sidebar } from "./AppViews";
 import { type AppPreferences, loadPreferences } from "./AppWorkflowModels";
 import { getWorkflowAvailability } from "./AppWorkflowAvailability";
 import { getAppRouteContext } from "./AppRouteContext";
@@ -61,11 +61,12 @@ export default function StudioApp() {
   const openProject = (clientId: string, projectId: string) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: false }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
   const openClientProject = (clientId: string, projectId: string) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: true }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
   const leaveProject = () => { setSelectedProject(null); setSelectedClientId(null); setProjectView("overview"); setRouteNotice(null); };
+  const projectOverviewSelected = activeRoute === "projects" && selectedProject !== null && projectView === "overview";
 
   return <div className={`app-shell${preferences.compactLayout ? " compact-layout" : ""}${preferences.reduceMotion ? " reduce-motion" : ""}`}>
     <Sidebar activeRoute={activeRoute} onNavigate={navigate} workspace={resources.workspace} />
     <main className="main-content" id="main-content">
-      <RouteHeader route={route.activeRouteDefinition} />
+      {projectOverviewSelected ? <div className="project-overview-search-row"><GlobalSearch /></div> : <RouteHeader route={route.activeRouteDefinition} />}
       <AppNotices routeNotice={routeNotice} studioNotice={studio.studioNotice} clientNotice={clientNotice} projectNotice={projectNotice} intakeNotice={intake.notice} revisionNotice={revision.notice} approvalNotice={approval.notice} deliveryNotice={delivery.notice} />
       <AppRoutes activeRoute={activeRoute} workspace={resources.workspace} workspaceConfiguration={resources.workspaceConfiguration} version={resources.version} loading={resources.loading} availability={availability} route={route} projectView={projectView} selectedProject={selectedProject !== null} preferences={preferences} setPreferences={setPreferences} studioCreationAvailable={studioCreationAvailable} studioCreationHelp={studioCreationHelp} studio={studio} projects={projects} intake={intake} revision={revision} approval={approval} delivery={delivery} onRefresh={resources.refresh} onWorkspaceConfigurationReload={resources.reloadWorkspaceConfiguration} onNewClient={openClientWorkflow} onNavigate={navigate} onOpenDerivedProject={openProject} onSelectClient={(clientId) => { setSelectedClientId(clientId); setRouteNotice(null); }} onOpenClientProject={openClientProject} onProjects={leaveProject} onSelectProjectView={selectProjectView} onOpenRevisions={openRevisions} />
     </main>
