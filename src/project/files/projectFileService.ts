@@ -50,6 +50,16 @@ export type ProjectFileListRequest = {
   relativePath?: string;
 };
 
+export type ProjectFileMutationRequest = {
+  clientId: string;
+  projectId: string;
+  relativePath: string;
+};
+
+export type ProjectFileMutationResult = {
+  relativePath: string;
+};
+
 export const projectFilePaths = {
   projectRoot: "",
   admin: "00_Admin",
@@ -67,6 +77,19 @@ export const projectFilePaths = {
 
 export const listProjectFiles = ({ clientId, projectId, relativePath = "" }: ProjectFileListRequest) =>
   invoke<ProjectFileListing>("list_project_files", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const renameAudioPrepFile = (
+  { clientId, projectId, relativePath }: ProjectFileMutationRequest,
+  newName: string,
+) =>
+  invoke<ProjectFileMutationResult>("rename_project_file", {
+    request: { clientId, projectId, relativePath, newName },
+  });
+
+export const deleteAudioPrepFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("delete_project_file", {
     request: { clientId, projectId, relativePath },
   });
 
