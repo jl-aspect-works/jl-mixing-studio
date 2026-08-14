@@ -12,8 +12,8 @@ export function ProjectOverviewQuickActions({ client, project, loading, revision
         <button type="button" aria-label="New revision" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}>Create New Revision</button>
         <button type="button" className="secondary" onClick={() => currentRevision && onApproveRevision(currentRevision)} disabled={!canApproveCurrent}>Approve Current Revision</button>
         <button type="button" className="secondary" onClick={onRevisions}>View Revisions</button>
+        <FolderControl location="project" clientId={client.clientId} projectId={project.projectId} label="Open Project Folder" />
       </div>
-      <div className="overview-folder-action"><span>Project folder</span><FolderControl location="project" clientId={client.clientId} projectId={project.projectId} label="Open Project Folder" /></div>
     </section>
   );
 }
