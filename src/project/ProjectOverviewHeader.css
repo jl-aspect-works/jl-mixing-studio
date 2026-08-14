@@ -57,11 +57,31 @@
   font-size: .5rem;
 }
 
+.compact-project-route-context {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
 .compact-project-route-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-  flex: 0 0 auto;
+}
+
+.compact-project-route-context .breadcrumbs {
+  justify-content: flex-end;
+  min-width: 0;
+  font-size: .68rem;
+  line-height: 1.1;
+}
+
+.compact-project-route-context .breadcrumbs button {
+  min-height: 20px;
+  padding: 0;
+  font-size: .68rem;
 }
 
 .compact-global-headers button:not(.nav-item):not(.table-link) {
@@ -152,26 +172,14 @@
   padding: 10px 12px;
 }
 
-.overview-detail-navigation-row {
-  gap: 10px;
-  margin: 0 0 -2px;
-  padding-bottom: 0;
-}
-
-.overview-detail-navigation-row .breadcrumbs {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.overview-detail-navigation-row .breadcrumbs button {
-  min-height: 22px;
-  padding-block: 0;
-}
-
 .overview-refresh-button {
   min-height: 28px !important;
   padding: 3px 8px !important;
   font-size: .66rem !important;
+}
+
+.project-overview-open > .compact-project-route-header {
+  margin-bottom: 6px;
 }
 
 .project-overview-open .overview-project-header {
@@ -219,12 +227,21 @@
     align-items: flex-start;
   }
 
-  .compact-project-route-actions {
+  .compact-project-route-context {
     width: 100%;
+    justify-items: stretch;
+  }
+
+  .compact-project-route-actions {
+    justify-content: stretch;
   }
 
   .compact-project-route-actions .global-search {
     width: 100%;
+  }
+
+  .compact-project-route-context .breadcrumbs {
+    justify-content: flex-start;
   }
 }
 
