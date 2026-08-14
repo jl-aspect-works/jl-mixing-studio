@@ -143,7 +143,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(Array.from(projectNavigation.querySelectorAll("button, span")).map((element) => element.textContent)).toEqual(["Overview", "Client Files", "Audio Prep", "References", "Revisions", "Delivery", "Files"]);
       expect(within(projectNavigation).getByRole("button", { name: "Client Files" })).toBeEnabled();
       expect(within(projectNavigation).getByRole("button", { name: "Revisions" })).toBeEnabled();
-      expect(screen.getByRole("button", { name: "Open folder" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Open Project Folder" })).toBeEnabled();
     });
 
   it("resolves and opens only the validated project folder", async () => {
@@ -159,7 +159,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       expect(await screen.findByText(path)).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Open folder" }));
+      fireEvent.click(screen.getByRole("button", { name: "Open Project Folder" }));
       await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("open_folder", { request: { location: "project", clientId: "acme", projectId: "blue-sky" } }));
       expect(await screen.findByText("Folder opened.")).toBeInTheDocument();
     });
@@ -199,7 +199,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(folderControl).not.toBeNull();
       expect(pathText.nextElementSibling).toBe(actions);
       expect(actions).toContainElement(screen.getByRole("button", { name: "Copy path" }));
-      expect(actions).toContainElement(screen.getByRole("button", { name: "Open folder" }));
+      expect(actions).toContainElement(screen.getByRole("button", { name: "Open Project Folder" }));
     });
 
   it("uses the locked project navigation and dedicated shell views", async () => {
