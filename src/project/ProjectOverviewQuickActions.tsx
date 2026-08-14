@@ -9,7 +9,7 @@ export function ProjectOverviewQuickActions({ client, project, loading, revision
     <section className="overview-card overview-actions-card" aria-labelledby="overview-actions-heading">
       <h2 id="overview-actions-heading">Quick Actions</h2>
       <div className="overview-action-stack">
-        <button type="button" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}>Create New Revision</button>
+        <button type="button" aria-label="New revision" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}>Create New Revision</button>
         <button type="button" className="secondary" onClick={() => currentRevision && onApproveRevision(currentRevision)} disabled={!canApproveCurrent}>Approve Current Revision</button>
         <button type="button" className="secondary" onClick={onRevisions}>View Revisions</button>
       </div>
