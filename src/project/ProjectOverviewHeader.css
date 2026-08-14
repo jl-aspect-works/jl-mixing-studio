@@ -82,18 +82,24 @@
   flex: 1 1 auto;
 }
 
-.compact-project-route-context .breadcrumbs {
+.compact-project-route-context .project-header-breadcrumbs {
+  display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   margin: 0;
-  box-sizing: border-box;
-  justify-content: flex-end;
-  flex-wrap: nowrap;
-  gap: 0;
   overflow: hidden;
+  text-align: right;
   font-size: .68rem;
   line-height: 1.1;
+}
+
+.compact-project-route-context .breadcrumb-trail {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  max-width: 100%;
+  vertical-align: top;
 }
 
 .compact-project-route-context .breadcrumb-separator {
@@ -280,7 +286,7 @@
     align-items: stretch;
   }
 
-  .compact-project-route-context .breadcrumbs {
-    justify-content: flex-start;
+  .compact-project-route-context .project-header-breadcrumbs {
+    text-align: left;
   }
 }
