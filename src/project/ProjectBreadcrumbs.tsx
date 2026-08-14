@@ -9,15 +9,8 @@ interface ProjectBreadcrumbsProps {
 
 export function ProjectBreadcrumbs({ project, screen, onProjects, onOverview }: ProjectBreadcrumbsProps) {
   return (
-    <nav
-      className="breadcrumbs"
-      aria-label="Breadcrumb"
-      style={{ width: "100%", maxWidth: "100%", marginLeft: 0, justifyContent: "flex-end", overflow: "hidden" }}
-    >
-      <span
-        className="breadcrumb-trail"
-        style={{ display: "inline-flex", alignItems: "center", flexWrap: "nowrap", marginLeft: "auto", maxWidth: "100%" }}
-      >
+    <nav className="breadcrumbs project-header-breadcrumbs" aria-label="Breadcrumb">
+      <span className="breadcrumb-trail">
         <button type="button" className="breadcrumb-button" onClick={onProjects}>Projects</button>
         <span className="breadcrumb-separator" aria-hidden="true">/</span>
         {screen ? (
