@@ -2,6 +2,8 @@
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
+#[path = "project_file_command.rs"]
+mod project_files;
 #[path = "system_command.rs"]
 mod system;
 mod workspace_command_support;
@@ -10,6 +12,7 @@ mod workspace_configuration;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
+pub(super) use project_files::list_project_files;
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
 pub(super) use workspace_configuration::{
     get_workspace_configuration, set_workspace_root, validate_workspace_root,
