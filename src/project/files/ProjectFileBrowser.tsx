@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { ProjectFileList } from "./ProjectFileList";
 import { canNavigateProjectFilesUp, projectFilePathUp } from "./projectFileNavigation";
 import {
+  presentProjectFileListing,
+  type ProjectFileKindFilter,
+  type ProjectFileSort,
+} from "./projectFilePresentation";
+import {
   openProjectFile,
   revealProjectFile,
   type ProjectFileEntry,
@@ -40,22 +45,38 @@ export function ProjectFileBrowser({
 }) {
   const [relativePath, setRelativePath] = useState(initialPath);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [kind, setKind] = useState<ProjectFileKindFilter>("all");
+  const [sort, setSort] = useState<ProjectFileSort>("name");
   const { state, refresh } = useProjectFiles({ clientId, projectId, relativePath });
 
   useEffect(() => {
     setRelativePath(initialPath);
     setActionError(null);
+    setQuery("");
+    setKind("all");
+    setSort("name");
   }, [initialPath]);
 
   const canNavigateUp = useMemo(
     () => canNavigateProjectFilesUp(relativePath, rootPath),
     [relativePath, rootPath],
   );
+  const visibleListing = useMemo(
+    () => state.listing ? presentProjectFileListing(state.listing, { query, kind, sort }) : null,
+    [state.listing, query, kind, sort],
+  );
+  const filtersActive = query.trim() !== "" || kind !== "all";
+
+  const navigateTo = (nextPath: string) => {
+    setActionError(null);
+    setQuery("");
+    setRelativePath(nextPath);
+  };
 
   const navigateUp = () => {
     if (!canNavigateUp) return;
-    setActionError(null);
-    setRelativePath(projectFilePathUp(relativePath, rootPath));
+    navigateTo(projectFilePathUp(relativePath, rootPath));
   };
 
   const runDefaultAction = async (
@@ -103,6 +124,37 @@ export function ProjectFileBrowser({
         </div>
       </div>
 
+      {state.listing && (
+        <div className="project-file-controls" aria-label="File view controls">
+          <label>
+            <span>Search</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search this folder"
+            />
+          </label>
+          <label>
+            <span>Show</span>
+            <select value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}>
+              <option value="all">Everything</option>
+              <option value="audio">Audio</option>
+              <option value="files">Files</option>
+              <option value="folders">Folders</option>
+            </select>
+          </label>
+          <label>
+            <span>Sort</span>
+            <select value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}>
+              <option value="name">Name</option>
+              <option value="modified">Modified</option>
+              <option value="size">Size</option>
+            </select>
+          </label>
+        </div>
+      )}
+
       {state.status === "error" && (
         <section className="notice error" role="alert">
           <strong>We couldn’t read this project folder</strong>
@@ -122,14 +174,11 @@ export function ProjectFileBrowser({
         <section className="notice" aria-live="polite">Reading project files…</section>
       )}
 
-      {state.listing && (
+      {visibleListing && (
         <ProjectFileList
-          listing={state.listing}
-          emptyMessage={emptyMessage}
-          onOpenDirectory={(entry) => {
-            setActionError(null);
-            setRelativePath(entry.relativePath);
-          }}
+          listing={visibleListing}
+          emptyMessage={filtersActive ? "No files match the current search or filter." : emptyMessage}
+          onOpenDirectory={(entry) => navigateTo(entry.relativePath)}
           onOpen={openEntry}
           onPreview={onPreview}
           onReveal={revealEntry}
