@@ -7,6 +7,7 @@ import { useWorkspaceResources } from "./app/useWorkspaceResources";
 import { AppNotices } from "./app/AppNotices";
 import { AppRoutes } from "./app/AppRoutes";
 import { AppDialogs } from "./app/AppDialogs";
+import { ProjectOverviewHeader } from "./project/ProjectOverviewHeader";
 import type { PrimaryRoute } from "./ui/routes";
 import type { ProjectShellView } from "./project/ProjectView";
 import { useStudioWorkflow } from "./studio";
@@ -61,12 +62,14 @@ export default function StudioApp() {
   const openProject = (clientId: string, projectId: string) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: false }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
   const openClientProject = (clientId: string, projectId: string) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: true }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
   const leaveProject = () => { setSelectedProject(null); setSelectedClientId(null); setProjectView("overview"); setRouteNotice(null); };
-  const projectOverviewSelected = activeRoute === "projects" && selectedProject !== null && projectView === "overview";
+  const projectHeaderClient = activeRoute === "projects" && selectedProject !== null ? route.resolvedProjectClient : null;
+  const projectHeaderProject = activeRoute === "projects" && selectedProject !== null ? route.resolvedProject : null;
+  const workspacePath = resources.workspace.status === "ready" ? resources.workspace.value.workspacePath : "";
 
   return <div className={`app-shell${preferences.compactLayout ? " compact-layout" : ""}${preferences.reduceMotion ? " reduce-motion" : ""}`}>
     <Sidebar activeRoute={activeRoute} onNavigate={navigate} workspace={resources.workspace} />
     <main className="main-content" id="main-content">
-      {projectOverviewSelected ? <div className="project-overview-search-row"><GlobalSearch /></div> : <RouteHeader route={route.activeRouteDefinition} />}
+      {projectHeaderClient && projectHeaderProject ? <><div className="project-route-search-row"><GlobalSearch /></div><ProjectOverviewHeader client={projectHeaderClient} project={projectHeaderProject} workspacePath={workspacePath} /></> : <RouteHeader route={route.activeRouteDefinition} />}
       <AppNotices routeNotice={routeNotice} studioNotice={studio.studioNotice} clientNotice={clientNotice} projectNotice={projectNotice} intakeNotice={intake.notice} revisionNotice={revision.notice} approvalNotice={approval.notice} deliveryNotice={delivery.notice} />
       <AppRoutes activeRoute={activeRoute} workspace={resources.workspace} workspaceConfiguration={resources.workspaceConfiguration} version={resources.version} loading={resources.loading} availability={availability} route={route} projectView={projectView} selectedProject={selectedProject !== null} preferences={preferences} setPreferences={setPreferences} studioCreationAvailable={studioCreationAvailable} studioCreationHelp={studioCreationHelp} studio={studio} projects={projects} intake={intake} revision={revision} approval={approval} delivery={delivery} onRefresh={resources.refresh} onWorkspaceConfigurationReload={resources.reloadWorkspaceConfiguration} onNewClient={openClientWorkflow} onNavigate={navigate} onOpenDerivedProject={openProject} onSelectClient={(clientId) => { setSelectedClientId(clientId); setRouteNotice(null); }} onOpenClientProject={openClientProject} onProjects={leaveProject} onSelectProjectView={selectProjectView} onOpenRevisions={openRevisions} />
     </main>
