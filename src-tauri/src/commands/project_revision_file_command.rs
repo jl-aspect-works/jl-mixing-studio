@@ -1,7 +1,8 @@
 use super::resolve_workspace_root;
 use super::workspace_command_support::validated_project_directory;
 use crate::models::{
-    ProjectFileMutationRequest, ProjectFileMutationResult, ProjectFileRenameRequest, WorkspaceStatus,
+    ProjectFileMutationRequest, ProjectFileMutationResult, ProjectFileRenameRequest,
+    WorkspaceStatus,
 };
 use crate::workspace;
 use std::fs;
@@ -59,9 +60,10 @@ fn normalize_revision_file_path(relative_path: &str) -> Result<String, String> {
         return Err("A portable project-relative revision file path is required".into());
     }
     let components = value.split('/').collect::<Vec<_>>();
-    if components.iter().any(|component| {
-        component.is_empty() || *component == "." || *component == ".."
-    }) {
+    if components
+        .iter()
+        .any(|component| component.is_empty() || *component == "." || *component == "..")
+    {
         return Err("Unsafe revision file path segments are not allowed".into());
     }
     if components.len() < 3
@@ -70,8 +72,13 @@ fn normalize_revision_file_path(relative_path: &str) -> Result<String, String> {
     {
         return Err("Revision file changes are limited to managed Revision_NN folders".into());
     }
-    if components.last().is_some_and(|name| *name == REVISION_NOTES) {
-        return Err("Revision_Notes.md is managed revision content and cannot be renamed or deleted".into());
+    if components
+        .last()
+        .is_some_and(|name| *name == REVISION_NOTES)
+    {
+        return Err(
+            "Revision_Notes.md is managed revision content and cannot be renamed or deleted".into(),
+        );
     }
     Ok(value.to_owned())
 }
@@ -204,8 +211,8 @@ fn validate_rename_stem(value: &str) -> Result<String, String> {
         return Err("File names cannot end with a period or space".into());
     }
     let reserved = [
-        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7",
-        "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+        "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     ];
     let reserved_candidate = stem.split('.').next().unwrap_or(stem);
     if reserved
@@ -303,7 +310,9 @@ mod tests {
     fn revision_path_policy_protects_structure_and_notes() {
         assert!(normalize_revision_file_path("04_Revisions/Revision_01/Mix.wav").is_ok());
         assert!(normalize_revision_file_path("04_Revisions/Revision_01/Stems/Vocal.wav").is_ok());
-        assert!(normalize_revision_file_path("04_Revisions/Revision_01/Revision_Notes.md").is_err());
+        assert!(
+            normalize_revision_file_path("04_Revisions/Revision_01/Revision_Notes.md").is_err()
+        );
         assert!(normalize_revision_file_path("04_Revisions/Revision_01").is_err());
         assert!(normalize_revision_file_path("04_Revisions/not-a-revision/Mix.wav").is_err());
         assert!(normalize_revision_file_path("../Revision_01/Mix.wav").is_err());
@@ -326,8 +335,8 @@ mod tests {
         assert_eq!(renamed, "04_Revisions/Revision_01/Mix Print.WAV");
         assert!(revision.join("Mix Print.WAV").is_file());
 
-        let deleted = delete_managed_revision_file(&project.0, &renamed)
-            .expect("delete revision file");
+        let deleted =
+            delete_managed_revision_file(&project.0, &renamed).expect("delete revision file");
         assert_eq!(deleted, renamed);
         assert!(!revision.join("Mix Print.WAV").exists());
         assert!(revision.join("Revision_Notes.md").is_file());
@@ -343,13 +352,11 @@ mod tests {
         let revision = project.0.join("04_Revisions/Revision_01");
         fs::create_dir_all(&revision).expect("create revision");
         fs::write(outside.0.join("outside.wav"), b"audio").expect("write outside");
-        symlink(outside.0.join("outside.wav"), revision.join("link.wav"))
-            .expect("create symlink");
+        symlink(outside.0.join("outside.wav"), revision.join("link.wav")).expect("create symlink");
 
-        assert!(resolve_revision_regular_file(
-            &project.0,
-            "04_Revisions/Revision_01/link.wav",
-        )
-        .is_err());
+        assert!(
+            resolve_revision_regular_file(&project.0, "04_Revisions/Revision_01/link.wav",)
+                .is_err()
+        );
     }
 }
