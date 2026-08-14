@@ -6,6 +6,8 @@
   line-height: 1.2;
 }
 
+/* Shared Studio density standard. Keep common controls and spacing consistent
+   across routes so the app remains comfortable on smaller laptop displays. */
 .compact-global-headers > .route-header,
 .compact-global-headers > .compact-project-route-header {
   align-items: center;
@@ -62,6 +64,94 @@
   flex: 0 0 auto;
 }
 
+.compact-global-headers button:not(.nav-item):not(.table-link) {
+  min-height: 34px;
+  padding: 6px 11px;
+  font-size: .76rem;
+}
+
+.compact-global-headers .breadcrumbs {
+  font-size: .72rem;
+  line-height: 1.15;
+}
+
+.compact-global-headers .breadcrumbs button {
+  min-height: 24px;
+  padding: 1px 0;
+  font-size: .72rem;
+}
+
+.compact-global-headers .detail-navigation-row {
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.compact-global-headers .workflow-tabs {
+  gap: 5px;
+  margin-bottom: 14px;
+  padding-bottom: 7px;
+}
+
+.compact-global-headers .workflow-tabs > span,
+.compact-global-headers .workflow-tabs > button {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: .72rem;
+}
+
+.compact-global-headers .panel {
+  padding: 18px;
+}
+
+.compact-global-headers .panel-heading {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.compact-global-headers .directory-toolbar {
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.compact-global-headers .directory-toolbar h2 {
+  font-size: 1.2rem;
+}
+
+.compact-global-headers .directory-actions {
+  gap: 7px;
+}
+
+.compact-global-headers .folder-control {
+  gap: 7px;
+  margin: 10px 0 14px;
+  padding: 10px;
+}
+
+.compact-global-headers .summary-grid {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.compact-global-headers .summary-card {
+  min-height: 132px;
+  padding: 17px 18px 15px;
+}
+
+.compact-global-headers .dashboard-grid,
+.compact-global-headers .project-detail-grid {
+  gap: 14px;
+}
+
+.compact-global-headers .notice {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+}
+
+.compact-global-headers th,
+.compact-global-headers td {
+  padding: 10px 12px;
+}
+
 .overview-detail-navigation-row {
   gap: 10px;
   margin: 0 0 -2px;
@@ -71,8 +161,6 @@
 .overview-detail-navigation-row .breadcrumbs {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: .72rem;
-  line-height: 1.15;
 }
 
 .overview-detail-navigation-row .breadcrumbs button {
@@ -81,26 +169,14 @@
 }
 
 .overview-refresh-button {
-  min-height: 28px;
-  padding: 3px 8px;
-  font-size: .66rem;
+  min-height: 28px !important;
+  padding: 3px 8px !important;
+  font-size: .66rem !important;
 }
 
 .project-overview-open .overview-project-header {
   margin: 0 0 10px;
   padding: 16px 18px;
-}
-
-.project-overview-open .workflow-tabs {
-  margin-bottom: 12px;
-  padding-bottom: 7px;
-}
-
-.project-overview-open .workflow-tabs > span,
-.project-overview-open .workflow-tabs > button {
-  min-height: 32px;
-  padding: 5px 9px;
-  font-size: .72rem;
 }
 
 .project-overview-open .overview-layout {
