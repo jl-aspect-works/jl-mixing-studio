@@ -9,6 +9,23 @@ pub struct ProjectFileListRequest {
     pub relative_path: String,
 }
 
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectFileMutationRequest {
+    pub client_id: String,
+    pub project_id: String,
+    pub relative_path: String,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectFileRenameRequest {
+    pub client_id: String,
+    pub project_id: String,
+    pub relative_path: String,
+    pub new_name: String,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum ProjectFileArea {
@@ -67,4 +84,10 @@ pub struct ProjectFileListing {
     pub area: ProjectFileArea,
     pub permissions: ProjectFilePermissions,
     pub entries: Vec<ProjectFileEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectFileMutationResult {
+    pub relative_path: String,
 }
