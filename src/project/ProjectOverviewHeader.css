@@ -6,44 +6,122 @@
   line-height: 1.2;
 }
 
+.project-overview-open .compact-project-route-header {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.project-overview-open .compact-project-route-header .eyebrow {
+  margin-bottom: 4px;
+  font-size: .58rem;
+}
+
+.project-overview-open .compact-project-route-header h1 {
+  font-size: 1.45rem;
+  line-height: 1.08;
+}
+
+.project-overview-open .compact-project-route-header .lede {
+  margin-top: 4px;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
 .overview-detail-navigation-row {
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .overview-detail-navigation-row .breadcrumbs {
   flex: 1 1 auto;
   min-width: 0;
+  font-size: .72rem;
+}
+
+.overview-detail-navigation-row .breadcrumbs button {
+  min-height: 26px;
+  padding-block: 2px;
 }
 
 .overview-navigation-search {
-  flex: 0 1 250px;
+  flex: 0 1 230px;
 }
 
 .overview-navigation-search .global-search {
   width: 100%;
-  min-height: 32px;
-  gap: 7px;
-  padding: 5px 8px;
-  font-size: .7rem;
+  min-height: 28px;
+  gap: 6px;
+  padding: 4px 7px;
+  font-size: .66rem;
   box-shadow: none;
 }
 
 .overview-navigation-search .global-search svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
 }
 
 .overview-navigation-search .planned-pill {
-  min-height: 18px;
-  padding: 2px 6px;
-  font-size: .55rem;
+  min-height: 16px;
+  padding: 1px 5px;
+  font-size: .5rem;
 }
 
 .overview-refresh-button {
-  min-height: 30px;
-  padding: 4px 9px;
-  font-size: .7rem;
+  min-height: 27px;
+  padding: 3px 8px;
+  font-size: .66rem;
+}
+
+.project-overview-open .overview-project-header {
+  margin: 8px 0 10px;
+  padding: 16px 18px;
+}
+
+.project-overview-open .workflow-tabs {
+  margin-bottom: 12px;
+  padding-bottom: 7px;
+}
+
+.project-overview-open .workflow-tabs > span,
+.project-overview-open .workflow-tabs > button {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: .72rem;
+}
+
+.project-overview-open .overview-layout {
+  margin-top: 10px;
+}
+
+.project-overview-open .overview-top-grid,
+.project-overview-open .overview-bottom-grid {
+  gap: 10px;
+}
+
+.project-overview-open .overview-bottom-grid {
+  margin-top: 10px;
+}
+
+.project-overview-open .overview-card {
+  padding: 15px;
+}
+
+.project-overview-open .overview-action-stack {
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.project-overview-open .overview-action-stack > button {
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: .72rem;
+}
+
+.project-overview-open .overview-compact-button {
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: .66rem;
 }
 
 @media (max-width: 620px) {
