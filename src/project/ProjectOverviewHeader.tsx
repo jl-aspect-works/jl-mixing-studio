@@ -22,13 +22,13 @@ export function ProjectOverviewHeader({ client, project, workspacePath }: { clie
         </div>
       </div>
       <div className="overview-workspace-block">
-        <span>Workspace</span>
+        <span>Workspace:</span>
         <code>{workspacePath || "Workspace path unavailable"}</code>
       </div>
       <dl className="overview-header-status">
-        <div><dt>Revisions</dt><dd>{project.revisions.length}</dd></div>
-        <div><dt>Current</dt><dd>{revisionLabel(project.currentRevision)}</dd></div>
-        <div className="wide"><dt>Delivery</dt><dd>{deliveryLabel}</dd></div>
+        <div><dt>Revisions:</dt><dd>{project.revisions.length}</dd></div>
+        <div><dt>Current:</dt><dd>{revisionLabel(project.currentRevision)}</dd></div>
+        <div className="wide"><dt>Delivery:</dt><dd>{deliveryLabel}</dd></div>
       </dl>
     </section>
   );
