@@ -12,6 +12,7 @@ import {
   type ProjectFileEntry,
 } from "./projectFileService";
 import { useProjectFiles } from "./useProjectFiles";
+import "./ProjectFileBrowser.css";
 
 const actionErrorMessage = (error: unknown) =>
   error instanceof Error && error.message
