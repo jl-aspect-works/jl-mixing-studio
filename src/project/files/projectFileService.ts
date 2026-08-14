@@ -75,10 +75,34 @@ export const projectFilePaths = {
   recall: "06_Recall",
 } as const;
 
+const isManagedRevisionFile = (entry: ProjectFileEntry) => {
+  if (entry.area !== "revisions" || entry.entryType !== "file" || entry.displayName === "Revision_Notes.md") {
+    return false;
+  }
+  const components = entry.relativePath.split("/");
+  return components.length >= 3
+    && components[0] === projectFilePaths.revisions
+    && /^Revision_\d{2,}$/.test(components[1]);
+};
+
+const withManagedMutationPermissions = (listing: ProjectFileListing): ProjectFileListing => ({
+  ...listing,
+  entries: listing.entries.map((entry) => isManagedRevisionFile(entry)
+    ? {
+        ...entry,
+        permissions: {
+          ...entry.permissions,
+          canRename: true,
+          canDelete: true,
+        },
+      }
+    : entry),
+});
+
 export const listProjectFiles = ({ clientId, projectId, relativePath = "" }: ProjectFileListRequest) =>
   invoke<ProjectFileListing>("list_project_files", {
     request: { clientId, projectId, relativePath },
-  });
+  }).then(withManagedMutationPermissions);
 
 export const openProjectFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
   invoke<ProjectFileMutationResult>("open_project_file", {
@@ -100,6 +124,19 @@ export const renameAudioPrepFile = (
 
 export const deleteAudioPrepFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
   invoke<ProjectFileMutationResult>("delete_project_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const renameRevisionFile = (
+  { clientId, projectId, relativePath }: ProjectFileMutationRequest,
+  newName: string,
+) =>
+  invoke<ProjectFileMutationResult>("rename_revision_file", {
+    request: { clientId, projectId, relativePath, newName },
+  });
+
+export const deleteRevisionFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("delete_revision_file", {
     request: { clientId, projectId, relativePath },
   });
 
