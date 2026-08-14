@@ -19,7 +19,7 @@
 .overview-workspace-block span { color: #68758a; font-size: .72rem; font-weight: 800; }
 .overview-workspace-block code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1758d5; font-size: .72rem; }
 .overview-header-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 0; padding-left: 22px; border-left: 1px solid #e5e9ef; }
-.overview-header-status div { display: grid; gap: 3px; }
+.overview-header-status div { display: flex; align-items: baseline; gap: 7px; }
 .overview-header-status .wide { grid-column: 1 / -1; }
 .overview-header-status dt { color: #68758a; font-size: .7rem; font-weight: 800; }
 .overview-header-status dd { margin: 0; color: #172033; font-size: .86rem; font-weight: 850; }
@@ -54,12 +54,13 @@
 .overview-status-dot.attention { background: #e09627; }
 
 .overview-action-stack { display: grid; gap: 8px; margin-top: 14px; }
-.overview-action-stack button { width: 100%; min-height: 38px; font-size: .76rem; }
-.overview-folder-action { margin-top: 14px; padding-top: 12px; border-top: 1px solid #edf0f4; }
-.overview-folder-action > span { display: block; margin-bottom: 6px; color: #6d788d; font-size: .67rem; font-weight: 800; }
-.overview-folder-action .folder-control { margin: 0; padding: 9px; gap: 7px; }
-.overview-folder-action .folder-control code { font-size: .62rem; }
-.overview-folder-action .directory-actions button { min-height: 32px; padding: 6px 9px; font-size: .68rem; }
+.overview-action-stack > button,
+.overview-action-stack .folder-control .directory-actions button:last-child { width: 100%; min-height: 38px; font-size: .76rem; }
+.overview-action-stack .folder-control { margin: 0; padding: 0; border: 0; background: transparent; }
+.overview-action-stack .folder-control > code,
+.overview-action-stack .folder-control .directory-actions button:first-child { display: none; }
+.overview-action-stack .folder-control .directory-actions { display: block; margin: 0; }
+.overview-action-stack .folder-control small { display: block; margin-top: 6px; }
 
 .overview-compact-button { min-height: 32px; padding: 6px 10px; font-size: .7rem; }
 .overview-revision-list { display: grid; margin-top: 12px; }
