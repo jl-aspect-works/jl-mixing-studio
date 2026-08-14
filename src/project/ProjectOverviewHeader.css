@@ -5,3 +5,50 @@
   font-weight: 800;
   line-height: 1.2;
 }
+
+.overview-detail-navigation-row {
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.overview-detail-navigation-row .breadcrumbs {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.overview-navigation-search {
+  flex: 0 1 250px;
+}
+
+.overview-navigation-search .global-search {
+  width: 100%;
+  min-height: 32px;
+  gap: 7px;
+  padding: 5px 8px;
+  font-size: .7rem;
+  box-shadow: none;
+}
+
+.overview-navigation-search .global-search svg {
+  width: 14px;
+  height: 14px;
+}
+
+.overview-navigation-search .planned-pill {
+  min-height: 18px;
+  padding: 2px 6px;
+  font-size: .55rem;
+}
+
+.overview-refresh-button {
+  min-height: 30px;
+  padding: 4px 9px;
+  font-size: .7rem;
+}
+
+@media (max-width: 620px) {
+  .overview-navigation-search {
+    width: 100%;
+    flex-basis: auto;
+  }
+}
