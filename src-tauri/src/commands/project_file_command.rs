@@ -2,8 +2,8 @@ use super::resolve_workspace_root;
 use super::workspace_command_support::validated_project_directory;
 use crate::models::{
     ProjectFileArea, ProjectFileEntry, ProjectFileEntryType, ProjectFileListRequest,
-    ProjectFileListing, ProjectFileMutationRequest, ProjectFileMutationResult, ProjectFilePermissions,
-    ProjectFileRenameRequest, WorkspaceStatus,
+    ProjectFileListing, ProjectFileMutationRequest, ProjectFileMutationResult,
+    ProjectFilePermissions, ProjectFileRenameRequest, WorkspaceStatus,
 };
 use crate::workspace;
 use std::fs;
@@ -15,7 +15,8 @@ pub(crate) fn list_project_files(
     app: tauri::AppHandle,
     request: ProjectFileListRequest,
 ) -> Result<ProjectFileListing, String> {
-    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+    let project_directory =
+        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
     list_project_directory(&project_directory, &request.relative_path)
 }
 
@@ -24,7 +25,8 @@ pub(crate) fn rename_project_file(
     app: tauri::AppHandle,
     request: ProjectFileRenameRequest,
 ) -> Result<ProjectFileMutationResult, String> {
-    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+    let project_directory =
+        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
     let relative_path = rename_audio_preparation_file(
         &project_directory,
         &request.relative_path,
@@ -38,7 +40,8 @@ pub(crate) fn delete_project_file(
     app: tauri::AppHandle,
     request: ProjectFileMutationRequest,
 ) -> Result<ProjectFileMutationResult, String> {
-    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+    let project_directory =
+        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
     let relative_path = delete_audio_preparation_file(&project_directory, &request.relative_path)?;
     Ok(ProjectFileMutationResult { relative_path })
 }
@@ -85,7 +88,11 @@ pub(crate) fn list_project_directory(
         let right_directory = matches!(right.entry_type, ProjectFileEntryType::Directory);
         right_directory
             .cmp(&left_directory)
-            .then_with(|| left.display_name.to_lowercase().cmp(&right.display_name.to_lowercase()))
+            .then_with(|| {
+                left.display_name
+                    .to_lowercase()
+                    .cmp(&right.display_name.to_lowercase())
+            })
             .then_with(|| left.display_name.cmp(&right.display_name))
     });
 
@@ -172,7 +179,10 @@ fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
     Ok(value.to_owned())
 }
 
-fn resolve_existing_directory(project_directory: &Path, relative_path: &str) -> Result<PathBuf, String> {
+fn resolve_existing_directory(
+    project_directory: &Path,
+    relative_path: &str,
+) -> Result<PathBuf, String> {
     let canonical_project = canonical_project_root(project_directory)?;
     let current = walk_existing_path_without_symlinks(project_directory, relative_path)?;
     let canonical = current
@@ -264,11 +274,15 @@ fn rename_audio_preparation_file(
         return Err("The new file name is unchanged".into());
     }
 
-    let parent = source.parent().ok_or("The selected project file has no parent folder")?;
+    let parent = source
+        .parent()
+        .ok_or("The selected project file has no parent folder")?;
     reject_case_insensitive_collision(parent, &source_name, &target_name)?;
     let target = parent.join(&target_name);
     if target.exists() {
-        return Err(format!("A file named '{target_name}' already exists in this folder"));
+        return Err(format!(
+            "A file named '{target_name}' already exists in this folder"
+        ));
     }
 
     if source_name.eq_ignore_ascii_case(&target_name) {
@@ -278,7 +292,10 @@ fn rename_audio_preparation_file(
             .map_err(|error| filesystem_error("rename the Audio Prep file", error))?;
     }
 
-    let parent_relative = normalized.rsplit_once('/').map(|(parent, _)| parent).unwrap_or("");
+    let parent_relative = normalized
+        .rsplit_once('/')
+        .map(|(parent, _)| parent)
+        .unwrap_or("");
     Ok(if parent_relative.is_empty() {
         target_name
     } else {
@@ -307,17 +324,22 @@ fn validate_rename_stem(value: &str) -> Result<String, String> {
     }
     if stem.chars().any(|character| {
         character.is_control()
-            || matches!(character, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
+            || matches!(
+                character,
+                '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
+            )
     }) {
-        return Err("The file name contains characters that are not portable across macOS and Windows".into());
+        return Err(
+            "The file name contains characters that are not portable across macOS and Windows"
+                .into(),
+        );
     }
     if stem.ends_with('.') || stem.ends_with(' ') {
         return Err("File names cannot end with a period or space".into());
     }
     let reserved = [
-        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6",
-        "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7",
-        "LPT8", "LPT9",
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8",
+        "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
     ];
     let reserved_candidate = stem.split('.').next().unwrap_or(stem);
     if reserved
@@ -340,18 +362,25 @@ fn reject_case_insensitive_collision(
         let entry = entry.map_err(|error| filesystem_error("check a file name conflict", error))?;
         let name = entry.file_name().to_string_lossy().into_owned();
         if name != source_name && name.eq_ignore_ascii_case(target_name) {
-            return Err(format!("A file named '{name}' already conflicts with the requested name"));
+            return Err(format!(
+                "A file named '{name}' already conflicts with the requested name"
+            ));
         }
     }
     Ok(())
 }
 
 fn rename_case_only(source: &Path, target: &Path) -> Result<(), String> {
-    let parent = source.parent().ok_or("The selected project file has no parent folder")?;
+    let parent = source
+        .parent()
+        .ok_or("The selected project file has no parent folder")?;
     let mut attempt = 0_u32;
     let temporary = loop {
         attempt += 1;
-        let candidate = parent.join(format!(".jl-mixing-rename-{}-{attempt}", std::process::id()));
+        let candidate = parent.join(format!(
+            ".jl-mixing-rename-{}-{attempt}",
+            std::process::id()
+        ));
         if !candidate.exists() {
             break candidate;
         }
@@ -364,7 +393,10 @@ fn rename_case_only(source: &Path, target: &Path) -> Result<(), String> {
         .map_err(|error| filesystem_error("prepare the case-only Audio Prep rename", error))?;
     if let Err(error) = fs::rename(&temporary, target) {
         let _ = fs::rename(&temporary, source);
-        return Err(filesystem_error("finish the case-only Audio Prep rename", error));
+        return Err(filesystem_error(
+            "finish the case-only Audio Prep rename",
+            error,
+        ));
     }
     Ok(())
 }
@@ -498,11 +530,8 @@ mod tests {
         file.write_all(b"audio").expect("write audio");
         fs::create_dir(original.join("Session Notes")).expect("create folder");
 
-        let listing = list_project_directory(
-            &project.0,
-            "01_Client_Files/Original_Delivery",
-        )
-        .expect("list project files");
+        let listing = list_project_directory(&project.0, "01_Client_Files/Original_Delivery")
+            .expect("list project files");
 
         assert_eq!(listing.area, ProjectFileArea::ClientOriginalDelivery);
         assert_eq!(listing.entries.len(), 2);
@@ -603,7 +632,8 @@ mod tests {
         let project = TestDirectory::new();
         let outside = TestDirectory::new();
         fs::create_dir_all(project.0.join("02_Audio_Preparation")).expect("create prep");
-        symlink(&outside.0, project.0.join("02_Audio_Preparation/Outside")).expect("create symlink");
+        symlink(&outside.0, project.0.join("02_Audio_Preparation/Outside"))
+            .expect("create symlink");
 
         let error = list_project_directory(&project.0, "02_Audio_Preparation/Outside")
             .expect_err("symlink traversal must fail");
