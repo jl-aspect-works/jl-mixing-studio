@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ProjectFileList } from "./ProjectFileList";
+import { canNavigateProjectFilesUp, projectFilePathUp } from "./projectFileNavigation";
 import type { ProjectFileEntry } from "./projectFileService";
 import { useProjectFiles } from "./useProjectFiles";
-
-const parentPath = (relativePath: string) => {
-  const separator = relativePath.lastIndexOf("/");
-  return separator < 0 ? "" : relativePath.slice(0, separator);
-};
 
 export function ProjectFileBrowser({
   clientId,
@@ -37,14 +33,13 @@ export function ProjectFileBrowser({
   }, [initialPath]);
 
   const canNavigateUp = useMemo(
-    () => relativePath !== rootPath && relativePath.startsWith(rootPath),
+    () => canNavigateProjectFilesUp(relativePath, rootPath),
     [relativePath, rootPath],
   );
 
   const navigateUp = () => {
     if (!canNavigateUp) return;
-    const next = parentPath(relativePath);
-    setRelativePath(next.length < rootPath.length ? rootPath : next);
+    setRelativePath(projectFilePathUp(relativePath, rootPath));
   };
 
   return (
