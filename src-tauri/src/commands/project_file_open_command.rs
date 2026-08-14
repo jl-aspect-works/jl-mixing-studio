@@ -140,9 +140,12 @@ fn reveal_with_system(path: &Path) -> Result<(), String> {
         let directory = if path.is_dir() {
             path
         } else {
-            path.parent().ok_or("The selected project file has no parent folder")?
+            path.parent()
+                .ok_or("The selected project file has no parent folder")?
         };
-        std::process::Command::new("xdg-open").arg(directory).status()
+        std::process::Command::new("xdg-open")
+            .arg(directory)
+            .status()
     }
     .map_err(|_| "The selected project entry could not be revealed".to_owned())?;
 
@@ -191,11 +194,9 @@ mod tests {
         fs::create_dir_all(&folder).expect("create folder");
         fs::write(folder.join("reference.wav"), b"audio").expect("create file");
 
-        let (resolved, relative) = resolve_project_entry(
-            &project.0,
-            "01_Client_Files/References/reference.wav",
-        )
-        .expect("resolve project file");
+        let (resolved, relative) =
+            resolve_project_entry(&project.0, "01_Client_Files/References/reference.wav")
+                .expect("resolve project file");
         assert!(resolved.is_file());
         assert_eq!(relative, "01_Client_Files/References/reference.wav");
         assert!(resolve_project_entry(&project.0, "../outside.wav").is_err());
@@ -209,7 +210,8 @@ mod tests {
 
         let project = TestDirectory::new();
         let outside = TestDirectory::new();
-        fs::create_dir_all(project.0.join("01_Client_Files/References")).expect("create references");
+        fs::create_dir_all(project.0.join("01_Client_Files/References"))
+            .expect("create references");
         fs::write(outside.0.join("outside.wav"), b"audio").expect("create outside file");
         symlink(
             outside.0.join("outside.wav"),
@@ -217,10 +219,6 @@ mod tests {
         )
         .expect("create symlink");
 
-        assert!(resolve_project_entry(
-            &project.0,
-            "01_Client_Files/References/link.wav",
-        )
-        .is_err());
+        assert!(resolve_project_entry(&project.0, "01_Client_Files/References/link.wav",).is_err());
     }
 }
