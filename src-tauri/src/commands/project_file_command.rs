@@ -2,7 +2,8 @@ use super::resolve_workspace_root;
 use super::workspace_command_support::validated_project_directory;
 use crate::models::{
     ProjectFileArea, ProjectFileEntry, ProjectFileEntryType, ProjectFileListRequest,
-    ProjectFileListing, ProjectFilePermissions, WorkspaceStatus,
+    ProjectFileListing, ProjectFileMutationRequest, ProjectFileMutationResult, ProjectFilePermissions,
+    ProjectFileRenameRequest, WorkspaceStatus,
 };
 use crate::workspace;
 use std::fs;
@@ -14,7 +15,40 @@ pub(crate) fn list_project_files(
     app: tauri::AppHandle,
     request: ProjectFileListRequest,
 ) -> Result<ProjectFileListing, String> {
-    let root = resolve_workspace_root(&app)?;
+    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+    list_project_directory(&project_directory, &request.relative_path)
+}
+
+#[tauri::command]
+pub(crate) fn rename_project_file(
+    app: tauri::AppHandle,
+    request: ProjectFileRenameRequest,
+) -> Result<ProjectFileMutationResult, String> {
+    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+    let relative_path = rename_audio_preparation_file(
+        &project_directory,
+        &request.relative_path,
+        &request.new_name,
+    )?;
+    Ok(ProjectFileMutationResult { relative_path })
+}
+
+#[tauri::command]
+pub(crate) fn delete_project_file(
+    app: tauri::AppHandle,
+    request: ProjectFileMutationRequest,
+) -> Result<ProjectFileMutationResult, String> {
+    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+    let relative_path = delete_audio_preparation_file(&project_directory, &request.relative_path)?;
+    Ok(ProjectFileMutationResult { relative_path })
+}
+
+fn resolve_project_directory(
+    app: &tauri::AppHandle,
+    client_id: &str,
+    project_id: &str,
+) -> Result<PathBuf, String> {
+    let root = resolve_workspace_root(app)?;
     let snapshot = workspace::discover_workspace_at(&root);
     if !matches!(
         snapshot.status,
@@ -23,15 +57,8 @@ pub(crate) fn list_project_files(
         return Err("The configured workspace is unavailable; reconnect it and try again".into());
     }
 
-    let project_directory = validated_project_directory(
-        &root,
-        &snapshot,
-        request.client_id.trim(),
-        request.project_id.trim(),
-    )
-    .ok_or("The selected project could not be resolved safely")?;
-
-    list_project_directory(&project_directory, &request.relative_path)
+    validated_project_directory(&root, &snapshot, client_id.trim(), project_id.trim())
+        .ok_or_else(|| "The selected project could not be resolved safely".into())
 }
 
 pub(crate) fn list_project_directory(
@@ -95,12 +122,12 @@ fn project_file_entry(path: &Path, parent_relative: &str) -> Result<ProjectFileE
         format!("{parent_relative}/{display_name}")
     };
     let area = project_file_area(&relative_path);
-    let extension = matches!(entry_type, ProjectFileEntryType::File)
-        .then(|| {
-            path.extension()
-                .map(|extension| extension.to_string_lossy().to_lowercase())
-        })
-        .flatten();
+    let extension = if matches!(entry_type, ProjectFileEntryType::File) {
+        path.extension()
+            .map(|extension| extension.to_string_lossy().to_lowercase())
+    } else {
+        None
+    };
     let is_audio = extension.as_deref().is_some_and(is_audio_extension);
     let playable = cfg!(target_os = "macos")
         && extension
@@ -146,27 +173,8 @@ fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
 }
 
 fn resolve_existing_directory(project_directory: &Path, relative_path: &str) -> Result<PathBuf, String> {
-    let project_metadata = fs::symlink_metadata(project_directory)
-        .map_err(|error| filesystem_error("inspect the project root", error))?;
-    if project_metadata.file_type().is_symlink() || !project_metadata.is_dir() {
-        return Err("The selected project root is unavailable or unsafe".into());
-    }
-    let canonical_project = project_directory
-        .canonicalize()
-        .map_err(|error| filesystem_error("resolve the project root", error))?;
-
-    let mut current = project_directory.to_path_buf();
-    if !relative_path.is_empty() {
-        for component in relative_path.split('/') {
-            current.push(component);
-            let metadata = fs::symlink_metadata(&current)
-                .map_err(|error| filesystem_error("resolve the selected project folder", error))?;
-            if metadata.file_type().is_symlink() {
-                return Err("Symbolic-link project paths are not allowed".into());
-            }
-        }
-    }
-
+    let canonical_project = canonical_project_root(project_directory)?;
+    let current = walk_existing_path_without_symlinks(project_directory, relative_path)?;
     let canonical = current
         .canonicalize()
         .map_err(|error| filesystem_error("resolve the selected project folder", error))?;
@@ -174,6 +182,191 @@ fn resolve_existing_directory(project_directory: &Path, relative_path: &str) -> 
         return Err("The selected project folder could not be resolved safely".into());
     }
     Ok(canonical)
+}
+
+fn resolve_existing_regular_file(
+    project_directory: &Path,
+    relative_path: &str,
+) -> Result<PathBuf, String> {
+    let normalized = normalize_relative_path(relative_path)?;
+    if normalized.is_empty() {
+        return Err("A project file path is required".into());
+    }
+    let canonical_project = canonical_project_root(project_directory)?;
+    let current = walk_existing_path_without_symlinks(project_directory, &normalized)?;
+    let metadata = fs::symlink_metadata(&current)
+        .map_err(|error| filesystem_error("inspect the selected project file", error))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err("Only regular project files can be changed".into());
+    }
+    let canonical = current
+        .canonicalize()
+        .map_err(|error| filesystem_error("resolve the selected project file", error))?;
+    if !canonical.starts_with(&canonical_project) {
+        return Err("The selected project file could not be resolved safely".into());
+    }
+    Ok(canonical)
+}
+
+fn canonical_project_root(project_directory: &Path) -> Result<PathBuf, String> {
+    let project_metadata = fs::symlink_metadata(project_directory)
+        .map_err(|error| filesystem_error("inspect the project root", error))?;
+    if project_metadata.file_type().is_symlink() || !project_metadata.is_dir() {
+        return Err("The selected project root is unavailable or unsafe".into());
+    }
+    project_directory
+        .canonicalize()
+        .map_err(|error| filesystem_error("resolve the project root", error))
+}
+
+fn walk_existing_path_without_symlinks(
+    project_directory: &Path,
+    relative_path: &str,
+) -> Result<PathBuf, String> {
+    let mut current = project_directory.to_path_buf();
+    if !relative_path.is_empty() {
+        for component in relative_path.split('/') {
+            current.push(component);
+            let metadata = fs::symlink_metadata(&current)
+                .map_err(|error| filesystem_error("resolve the selected project path", error))?;
+            if metadata.file_type().is_symlink() {
+                return Err("Symbolic-link project paths are not allowed".into());
+            }
+        }
+    }
+    Ok(current)
+}
+
+fn rename_audio_preparation_file(
+    project_directory: &Path,
+    relative_path: &str,
+    new_stem: &str,
+) -> Result<String, String> {
+    let normalized = normalize_relative_path(relative_path)?;
+    if project_file_area(&normalized) != ProjectFileArea::AudioPreparation {
+        return Err("Rename is only available for files in Audio Preparation".into());
+    }
+    let source = resolve_existing_regular_file(project_directory, &normalized)?;
+    let stem = validate_rename_stem(new_stem)?;
+    let extension = source
+        .extension()
+        .map(|value| value.to_string_lossy().into_owned());
+    let target_name = match extension.as_deref() {
+        Some(extension) if !extension.is_empty() => format!("{stem}.{extension}"),
+        _ => stem,
+    };
+    let source_name = source
+        .file_name()
+        .ok_or("The selected project file has no usable name")?
+        .to_string_lossy()
+        .into_owned();
+    if source_name == target_name {
+        return Err("The new file name is unchanged".into());
+    }
+
+    let parent = source.parent().ok_or("The selected project file has no parent folder")?;
+    reject_case_insensitive_collision(parent, &source_name, &target_name)?;
+    let target = parent.join(&target_name);
+    if target.exists() {
+        return Err(format!("A file named '{target_name}' already exists in this folder"));
+    }
+
+    if source_name.eq_ignore_ascii_case(&target_name) {
+        rename_case_only(&source, &target)?;
+    } else {
+        fs::rename(&source, &target)
+            .map_err(|error| filesystem_error("rename the Audio Prep file", error))?;
+    }
+
+    let parent_relative = normalized.rsplit_once('/').map(|(parent, _)| parent).unwrap_or("");
+    Ok(if parent_relative.is_empty() {
+        target_name
+    } else {
+        format!("{parent_relative}/{target_name}")
+    })
+}
+
+fn delete_audio_preparation_file(
+    project_directory: &Path,
+    relative_path: &str,
+) -> Result<String, String> {
+    let normalized = normalize_relative_path(relative_path)?;
+    if project_file_area(&normalized) != ProjectFileArea::AudioPreparation {
+        return Err("Delete is only available for files in Audio Preparation".into());
+    }
+    let source = resolve_existing_regular_file(project_directory, &normalized)?;
+    fs::remove_file(&source)
+        .map_err(|error| filesystem_error("delete the Audio Prep file", error))?;
+    Ok(normalized)
+}
+
+fn validate_rename_stem(value: &str) -> Result<String, String> {
+    let stem = value.trim();
+    if stem.is_empty() || matches!(stem, "." | "..") {
+        return Err("Enter a file name before renaming".into());
+    }
+    if stem.chars().any(|character| {
+        character.is_control()
+            || matches!(character, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
+    }) {
+        return Err("The file name contains characters that are not portable across macOS and Windows".into());
+    }
+    if stem.ends_with('.') || stem.ends_with(' ') {
+        return Err("File names cannot end with a period or space".into());
+    }
+    let reserved = [
+        "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6",
+        "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7",
+        "LPT8", "LPT9",
+    ];
+    let reserved_candidate = stem.split('.').next().unwrap_or(stem);
+    if reserved
+        .iter()
+        .any(|reserved_name| reserved_candidate.eq_ignore_ascii_case(reserved_name))
+    {
+        return Err("That file name is reserved on Windows".into());
+    }
+    Ok(stem.to_owned())
+}
+
+fn reject_case_insensitive_collision(
+    parent: &Path,
+    source_name: &str,
+    target_name: &str,
+) -> Result<(), String> {
+    for entry in fs::read_dir(parent)
+        .map_err(|error| filesystem_error("check for file name conflicts", error))?
+    {
+        let entry = entry.map_err(|error| filesystem_error("check a file name conflict", error))?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if name != source_name && name.eq_ignore_ascii_case(target_name) {
+            return Err(format!("A file named '{name}' already conflicts with the requested name"));
+        }
+    }
+    Ok(())
+}
+
+fn rename_case_only(source: &Path, target: &Path) -> Result<(), String> {
+    let parent = source.parent().ok_or("The selected project file has no parent folder")?;
+    let mut attempt = 0_u32;
+    let temporary = loop {
+        attempt += 1;
+        let candidate = parent.join(format!(".jl-mixing-rename-{}-{attempt}", std::process::id()));
+        if !candidate.exists() {
+            break candidate;
+        }
+        if attempt >= 100 {
+            return Err("Unable to reserve a temporary name for the rename".into());
+        }
+    };
+
+    fs::rename(source, &temporary)
+        .map_err(|error| filesystem_error("prepare the case-only Audio Prep rename", error))?;
+    if let Err(error) = fs::rename(&temporary, target) {
+        let _ = fs::rename(&temporary, source);
+        return Err(filesystem_error("finish the case-only Audio Prep rename", error));
+    }
+    Ok(())
 }
 
 fn project_file_area(relative_path: &str) -> ProjectFileArea {
@@ -324,6 +517,82 @@ mod tests {
         assert_eq!(audio.size_bytes, Some(5));
         assert!(!audio.permissions.can_rename);
         assert!(!audio.permissions.can_delete);
+    }
+
+    #[test]
+    fn renames_only_audio_preparation_regular_files_and_preserves_extension() {
+        let project = TestDirectory::new();
+        let prep = project.0.join("02_Audio_Preparation/Working_Audio");
+        fs::create_dir_all(&prep).expect("create prep");
+        fs::write(prep.join("Lead Vocal.WAV"), b"audio").expect("write prep audio");
+
+        let result = rename_audio_preparation_file(
+            &project.0,
+            "02_Audio_Preparation/Working_Audio/Lead Vocal.WAV",
+            "Lead Vocal Clean",
+        )
+        .expect("rename prep file");
+
+        assert_eq!(
+            result,
+            "02_Audio_Preparation/Working_Audio/Lead Vocal Clean.WAV"
+        );
+        assert!(!prep.join("Lead Vocal.WAV").exists());
+        assert!(prep.join("Lead Vocal Clean.WAV").is_file());
+        assert!(rename_audio_preparation_file(
+            &project.0,
+            "01_Client_Files/Original_Delivery/Lead Vocal.WAV",
+            "Unsafe",
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn refuses_rename_collisions_and_nonportable_names() {
+        let project = TestDirectory::new();
+        let prep = project.0.join("02_Audio_Preparation/Working_Audio");
+        fs::create_dir_all(&prep).expect("create prep");
+        fs::write(prep.join("Lead.wav"), b"lead").expect("write lead");
+        fs::write(prep.join("Vocal.wav"), b"vocal").expect("write vocal");
+
+        assert!(rename_audio_preparation_file(
+            &project.0,
+            "02_Audio_Preparation/Working_Audio/Lead.wav",
+            "vOcAl",
+        )
+        .is_err());
+        assert!(rename_audio_preparation_file(
+            &project.0,
+            "02_Audio_Preparation/Working_Audio/Lead.wav",
+            "bad:name",
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn deletes_only_audio_preparation_regular_files() {
+        let project = TestDirectory::new();
+        let prep = project.0.join("02_Audio_Preparation/Rejected_Files");
+        fs::create_dir_all(&prep).expect("create rejected files");
+        fs::write(prep.join("bad.wav"), b"bad").expect("write rejected file");
+
+        let result = delete_audio_preparation_file(
+            &project.0,
+            "02_Audio_Preparation/Rejected_Files/bad.wav",
+        )
+        .expect("delete prep file");
+        assert_eq!(result, "02_Audio_Preparation/Rejected_Files/bad.wav");
+        assert!(!prep.join("bad.wav").exists());
+
+        let original = project.0.join("01_Client_Files/Original_Delivery");
+        fs::create_dir_all(&original).expect("create original delivery");
+        fs::write(original.join("source.wav"), b"source").expect("write source");
+        assert!(delete_audio_preparation_file(
+            &project.0,
+            "01_Client_Files/Original_Delivery/source.wav",
+        )
+        .is_err());
+        assert!(original.join("source.wav").is_file());
     }
 
     #[cfg(unix)]
