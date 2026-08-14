@@ -121,7 +121,7 @@
   white-space: nowrap;
 }
 
-.compact-global-headers button:not(.nav-item):not(.table-link) {
+.compact-global-headers button:not(.nav-item):not(.table-link):not(.breadcrumb-button) {
   min-height: 34px;
   padding: 6px 11px;
   font-size: .76rem;
