@@ -11,7 +11,7 @@ const separatorStyle = { marginInline: "0.25em" };
 
 export function ProjectBreadcrumbs({ project, screen, onProjects, onOverview }: ProjectBreadcrumbsProps) {
   return (
-    <nav className="breadcrumbs" aria-label="Breadcrumb" style={{ gap: 0 }}>
+    <nav className="breadcrumbs" aria-label="Breadcrumb" style={{ gap: 0, width: "100%", justifyContent: "flex-start" }}>
       <button type="button" onClick={onProjects}>Projects</button>
       <span aria-hidden="true" style={separatorStyle}>/</span>
       {screen ? (
