@@ -80,6 +80,16 @@ export const listProjectFiles = ({ clientId, projectId, relativePath = "" }: Pro
     request: { clientId, projectId, relativePath },
   });
 
+export const openProjectFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("open_project_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const revealProjectFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("reveal_project_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
 export const renameAudioPrepFile = (
   { clientId, projectId, relativePath }: ProjectFileMutationRequest,
   newName: string,
