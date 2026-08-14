@@ -1,5 +1,6 @@
 import type { ClientSummary, ProjectSummary } from "../types";
 import { formatOverviewDate } from "./ProjectOverviewModel";
+import "./ProjectOverviewHeader.css";
 
 const revisionLabel = (value: number | null) => value === null ? "—" : String(value).padStart(2, "0");
 
@@ -15,7 +16,7 @@ export function ProjectOverviewHeader({ client, project, workspacePath }: { clie
       <div className="overview-project-identity">
         <div className="overview-project-icon" aria-hidden="true">♫</div>
         <div>
-          <h1>{project.projectName}</h1>
+          <div className="overview-project-title">{project.projectName}</div>
           <p><strong>Client:</strong> {client.clientName}<span aria-hidden="true">·</span><strong>Artist:</strong> {project.artist}<span aria-hidden="true">·</span><strong>Created:</strong> {formatOverviewDate(project.createdAt)}</p>
           <small>{project.sampleRate / 1000} kHz / {project.bitDepth}-bit / {project.fileFormat}</small>
         </div>
