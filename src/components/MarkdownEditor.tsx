@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import "./MarkdownEditor.css";
 
 interface MarkdownEditorProps {
@@ -29,7 +29,7 @@ function parseInline(text: string): InlinePart[] {
 
 function InlineMarkdown({ text }: { text: string }) {
   return <>{parseInline(text).map((part, index) => {
-    let content: React.ReactNode = part.text;
+    let content: ReactNode = part.text;
     if (part.bold) content = <strong>{content}</strong>;
     if (part.italic) content = <em>{content}</em>;
     return <span key={`${index}-${part.text}`}>{content}</span>;
@@ -38,7 +38,7 @@ function InlineMarkdown({ text }: { text: string }) {
 
 function MarkdownPreview({ value }: { value: string }) {
   const lines = value.split(/\r?\n/);
-  const blocks: React.ReactNode[] = [];
+  const blocks: ReactNode[] = [];
   let list: string[] = [];
   const flushList = () => {
     if (!list.length) return;
