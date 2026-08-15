@@ -1,48 +1,42 @@
-import { useEffect, useState } from "react";
 import type { DerivedTask, ProjectSummary } from "../types";
 import type { IntakeReportState } from "../AppShellViews";
-import { listProjectFiles, projectFilePaths } from "./files/projectFileService";
+import {
+  overviewAreaHasFailure,
+  type ProjectOverviewFileIndex,
+} from "./ProjectOverviewFileIndex";
+import { projectFilePaths } from "./files/projectFileService";
 import { getDeliveryOverviewStatus, getIntakeOverviewStatus, getRevisionOverviewStatus, getTaskOverviewStatus, type OverviewStatus } from "./ProjectOverviewModel";
 
 function HealthRow({ label, status }: { label: string; status: OverviewStatus }) {
   return <div className="overview-health-row"><span className={`overview-status-dot ${status.tone}`} aria-hidden="true"/><strong>{label}</strong><span>{status.label}</span><small>{status.detail}</small></div>;
 }
 
-const countWorkingAudio = async (clientId: string, projectId: string, relativePath: string, visited = new Set<string>(), depth = 0): Promise<number> => {
-  if (depth > 16 || visited.has(relativePath)) return 0;
-  visited.add(relativePath);
-  const listing = await listProjectFiles({ clientId, projectId, relativePath });
-  let count = listing.entries.filter((entry) => entry.entryType === "file").length;
-  const nested = await Promise.all(listing.entries
-    .filter((entry) => entry.entryType === "directory")
-    .map((entry) => countWorkingAudio(clientId, projectId, entry.relativePath, visited, depth + 1)));
-  count += nested.reduce((total, value) => total + value, 0);
-  return count;
+const getAudioPrepStatus = (fileIndex: ProjectOverviewFileIndex): OverviewStatus => {
+  if (fileIndex.status === "loading") return { label: "Checking", detail: "Reading Audio Prep files", tone: "neutral" };
+  if (overviewAreaHasFailure(fileIndex, projectFilePaths.audioPreparation)) {
+    return { label: "Unavailable", detail: "Audio Prep files could not be indexed", tone: "neutral" };
+  }
+  const count = fileIndex.workingAudioAreaPresent
+    ? fileIndex.workingAudioCount
+    : fileIndex.folders.audioPreparation.fileCount;
+  if (count === 0) {
+    return { label: "Empty", detail: fileIndex.workingAudioAreaPresent ? "No working audio files" : "No Audio Prep files", tone: "neutral" };
+  }
+  return {
+    label: "Available",
+    detail: fileIndex.workingAudioAreaPresent
+      ? `${count} working audio ${count === 1 ? "file" : "files"}`
+      : `${count} Audio Prep ${count === 1 ? "file" : "files"}`,
+    tone: "good",
+  };
 };
 
-export function ProjectOverviewHealth({ clientId, project, tasks, intakeReport }: { clientId: string; project: ProjectSummary; tasks: DerivedTask[]; intakeReport: IntakeReportState }) {
+export function ProjectOverviewHealth({ project, tasks, intakeReport, fileIndex }: { project: ProjectSummary; tasks: DerivedTask[]; intakeReport: IntakeReportState; fileIndex: ProjectOverviewFileIndex }) {
   const intake = getIntakeOverviewStatus(intakeReport);
   const taskStatus = getTaskOverviewStatus(tasks);
   const revisionStatus = getRevisionOverviewStatus(project);
   const deliveryStatus = getDeliveryOverviewStatus(project);
-  const [audioPrepStatus, setAudioPrepStatus] = useState<OverviewStatus>({ label: "Checking", detail: "Reading working audio", tone: "neutral" });
-
-  useEffect(() => {
-    let cancelled = false;
-    setAudioPrepStatus({ label: "Checking", detail: "Reading working audio", tone: "neutral" });
-    countWorkingAudio(clientId, project.projectId, projectFilePaths.audioPreparationWorking)
-      .then((count) => {
-        if (cancelled) return;
-        setAudioPrepStatus(count > 0
-          ? { label: "Available", detail: `${count} working audio ${count === 1 ? "file" : "files"}`, tone: "good" }
-          : { label: "Empty", detail: "No working audio files", tone: "neutral" });
-      })
-      .catch(() => {
-        if (!cancelled) setAudioPrepStatus({ label: "Unavailable", detail: "Working audio could not be indexed", tone: "neutral" });
-      });
-    return () => { cancelled = true; };
-  }, [clientId, project.projectId]);
-
+  const audioPrepStatus = getAudioPrepStatus(fileIndex);
   const overallAttention = intake.tone === "attention" || taskStatus.tone === "attention";
 
   return (
