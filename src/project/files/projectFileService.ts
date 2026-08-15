@@ -137,6 +137,16 @@ export const revealProjectFile = ({ clientId, projectId, relativePath }: Project
     request: { clientId, projectId, relativePath },
   });
 
+export const addProjectReference = ({ clientId, projectId }: ProjectFileListRequest) =>
+  invoke<ProjectFileMutationResult | null>("add_project_reference", {
+    request: { clientId, projectId, relativePath: projectFilePaths.references },
+  });
+
+export const deleteProjectReference = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("delete_project_reference", {
+    request: { clientId, projectId, relativePath },
+  });
+
 export const renameAudioPrepFile = (
   { clientId, projectId, relativePath }: ProjectFileMutationRequest,
   newName: string,
