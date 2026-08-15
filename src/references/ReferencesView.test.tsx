@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectFileEntry, ProjectFileListing } from "../project/files/projectFileService";
 import { ReferencesView } from "./ReferencesView";
@@ -65,6 +65,7 @@ const renderView = () => render(<ReferencesView
 
 describe("ReferencesView", () => {
   beforeEach(() => {
+    cleanup();
     vi.clearAllMocks();
     listing = {
       relativePath: "01_Client_Files/References",
