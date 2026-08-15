@@ -20,7 +20,7 @@ export interface ProjectRouteContentProps {
 export function ProjectRouteContent(p: ProjectRouteContentProps) {
   const common = { onProjects: p.onProjects, onOverview: () => p.onSelectView("overview"), onSelectView: p.onSelectView };
   if (p.view === "intake") return <IntakeView client={p.client} project={p.project} reportState={p.intakeReport} actionError={p.intakeActionError} validationAvailable={p.intakeValidationAvailable} validationHelp={p.intakeValidationHelp} loading={p.intakeLoading} onRecheck={p.onRecheckIntake} onRefresh={p.onIntakeRefresh} {...common} />;
-  if (p.view === "audioPrep") return <AudioPrepView client={p.client} project={p.project} {...common} />;
+  if (p.view === "audioPrep") return <AudioPrepView client={p.client} project={p.project} reportState={p.intakeReport} {...common} />;
   if (p.view === "references") return <ProjectPlaceholderView active={p.view} project={p.project} {...common} />;
   if (p.view === "revisions") return <RevisionsView client={p.client} project={p.project} loading={p.loading} actionError={p.revisionActionError} creationAvailable={p.revisionCreationAvailable} creationHelp={p.revisionCreationHelp} approvalAvailable={p.revisionApprovalAvailable} approvalHelp={p.revisionApprovalHelp} onRefresh={p.onRefresh} onNewRevision={p.onNewRevision} onApprove={p.onApproveRevision} {...common} />;
   if (p.view === "delivery") return <DeliveryView clientId={p.client.clientId} project={p.project} loading={p.deliveryLoading} actionError={p.deliveryActionError} creationAvailable={p.deliveryCreationAvailable} creationHelp={p.deliveryCreationHelp} onCreate={p.onCreateDelivery} onRefresh={p.onRefresh} {...common} />;
