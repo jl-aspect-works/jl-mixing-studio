@@ -68,6 +68,7 @@ pub struct VersionCheck {
     pub intake_validation_supported: bool,
     pub revision_creation_supported: bool,
     pub revision_approval_supported: bool,
+    pub revision_description_update_supported: bool,
     pub delivery_creation_supported: bool,
     pub version: Option<String>,
     pub message: String,
