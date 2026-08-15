@@ -8,6 +8,7 @@ import {
   renameAudioPrepFile,
   revealProjectFile,
 } from "../project/files/projectFileService";
+import { canNavigateProjectFilesUp, projectFilePathUp } from "../project/files/projectFileNavigation";
 import { presentProjectFileListing, type ProjectFileKindFilter, type ProjectFileSort } from "../project/files/projectFilePresentation";
 import { useProjectFiles } from "../project/files/useProjectFiles";
 import { formatClientFileModified } from "../intake/ClientFilesBrowser";
@@ -55,14 +56,15 @@ function PendingStatusIcon() {
 
 export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; projectId: string }) {
   const rootPath = projectFilePaths.audioPreparationWorking;
+  const [relativePath, setRelativePath] = useState(rootPath);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ProjectFileKindFilter>("all");
   const [sort, setSort] = useState<ProjectFileSort>("name");
   const [renameState, setRenameState] = useState<RenameState>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyPath, setBusyPath] = useState<string | null>(null);
-  const { state, refresh } = useProjectFiles({ clientId, projectId, relativePath: rootPath });
-  const workingAreaNotCreated = state.status === "error" && missingWorkingAudioDirectory(state.message);
+  const { state, refresh } = useProjectFiles({ clientId, projectId, relativePath });
+  const workingAreaNotCreated = relativePath === rootPath && state.status === "error" && missingWorkingAudioDirectory(state.message);
 
   const listing = useMemo(() => {
     if (!state.listing) return null;
@@ -70,6 +72,14 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
   }, [state.listing, query, kind, sort]);
   const visibleEntries = listing?.entries ?? [];
   const showTable = Boolean(listing) || workingAreaNotCreated;
+  const canNavigateUp = canNavigateProjectFilesUp(relativePath, rootPath);
+
+  const navigateTo = (path: string) => {
+    setRelativePath(path);
+    setQuery("");
+    setRenameState(null);
+    setActionError(null);
+  };
 
   const beginRename = (entry: ProjectFileEntry) => {
     setActionError(null);
@@ -116,8 +126,9 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
 
   return <section className="client-files-browser audio-prep-browser" aria-label="Audio Prep working files">
     <div className="project-file-toolbar client-files-file-toolbar">
-      <code>{rootPath}</code>
+      <code>{relativePath}</code>
       <div className="directory-actions">
+        <button type="button" className="secondary" disabled={!canNavigateUp || state.status === "loading"} onClick={() => navigateTo(projectFilePathUp(relativePath, rootPath))}>Up</button>
         <button type="button" className="secondary" disabled={state.status === "loading"} onClick={() => void refresh()}>{state.status === "loading" ? "Refreshing…" : "Refresh files"}</button>
       </div>
     </div>
@@ -141,7 +152,7 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
       return <tr key={entry.id} className={editing ? "audio-prep-row-editing" : ""}>
         <td className="client-file-status-cell"><PendingStatusIcon /></td>
         <td className="client-file-name-cell audio-prep-filename-cell">
-          {entry.entryType === "directory" ? <span>{entry.displayName}</span> : editing ? <div className="audio-prep-inline-rename"><div className="audio-prep-inline-input"><input autoFocus aria-label={`Rename ${entry.displayName}`} value={renameState.stem} disabled={busy} onChange={(event) => setRenameState({ ...renameState, stem: event.target.value, error: null })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); } else if (event.key === "Escape") { event.preventDefault(); cancelRename(); } }} /><span className="audio-prep-extension">{entry.extension ? `.${entry.extension}` : ""}</span></div>{renameState.error && <span className="audio-prep-rename-error" role="alert">{renameState.error}</span>}</div> : <button type="button" className="client-file-select audio-prep-name-button" onClick={() => beginRename(entry)} title="Rename filename">{entry.displayName}</button>}
+          {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : editing ? <div className="audio-prep-inline-rename"><div className="audio-prep-inline-input"><input autoFocus aria-label={`Rename ${entry.displayName}`} value={renameState.stem} disabled={busy} onChange={(event) => setRenameState({ ...renameState, stem: event.target.value, error: null })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); } else if (event.key === "Escape") { event.preventDefault(); cancelRename(); } }} /><span className="audio-prep-extension">{entry.extension ? `.${entry.extension}` : ""}</span></div>{renameState.error && <span className="audio-prep-rename-error" role="alert">{renameState.error}</span>}</div> : <button type="button" className="client-file-select audio-prep-name-button" onClick={() => beginRename(entry)} title="Rename filename">{entry.displayName}</button>}
         </td>
         <td className="audio-prep-origin-cell"><span title="Source provenance will appear when Automation exposes the authoritative mapping">—</span></td>
         <td className="client-file-preview-cell">{entry.playable ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} /> : <span className="client-file-preview-empty">—</span>}</td>
