@@ -75,19 +75,29 @@ export function RevisionFileBrowser({
   };
 
   const beginRename = (entry: ProjectFileEntry) => {
+    if (editingPath === entry.relativePath) return;
     setEditingPath(entry.relativePath);
     setRenameStem(filenameStem(entry));
-    setConfirmDeletePath(null);
     setActionError(null);
   };
 
+  const cancelRename = (entry: ProjectFileEntry) => {
+    setEditingPath(null);
+    setRenameStem(filenameStem(entry));
+  };
+
   const saveRename = async (entry: ProjectFileEntry) => {
+    const nextStem = renameStem.trim();
+    if (!nextStem || nextStem === filenameStem(entry)) {
+      cancelRename(entry);
+      return;
+    }
     setBusyPath(entry.relativePath);
     setActionError(null);
     try {
       await renameRevisionFile(
         { clientId, projectId, relativePath: entry.relativePath },
-        renameStem,
+        nextStem,
       );
       setEditingPath(null);
       await refresh();
@@ -155,20 +165,25 @@ export function RevisionFileBrowser({
               <td className="revision-file-name-cell">
                 {entry.entryType === "directory"
                   ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button>
-                  : editing
-                    ? <div className="revision-inline-rename">
+                  : entry.permissions.canRename
+                    ? <div className="revision-inline-filename">
                         <input
-                          autoFocus
-                          aria-label={`Rename ${entry.displayName}`}
-                          value={renameStem}
+                          aria-label={`Filename ${entry.displayName}`}
+                          value={editing ? renameStem : filenameStem(entry)}
                           disabled={busy}
-                          onChange={(event) => setRenameStem(event.target.value)}
+                          onFocus={() => beginRename(entry)}
+                          onChange={(event) => {
+                            if (!editing) beginRename(entry);
+                            setRenameStem(event.target.value);
+                          }}
+                          onBlur={() => { if (editing && !busy) void saveRename(entry); }}
                           onKeyDown={(event) => {
-                            if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); }
-                            if (event.key === "Escape") { event.preventDefault(); setEditingPath(null); }
+                            if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
+                            if (event.key === "Escape") { event.preventDefault(); cancelRename(entry); event.currentTarget.blur(); }
                           }}
                         />
                         {entry.extension && <span>.{entry.extension}</span>}
+                        {busy && editing && <small>Saving…</small>}
                       </div>
                     : <strong>{entry.displayName}</strong>}
               </td>
@@ -182,18 +197,19 @@ export function RevisionFileBrowser({
               <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
               <td>
                 <div className="revision-file-actions">
-                  {editing ? <>
-                    <button type="button" className="secondary" disabled={busy} onClick={() => void saveRename(entry)}>Save</button>
-                    <button type="button" className="secondary" disabled={busy} onClick={() => setEditingPath(null)}>Cancel</button>
-                  </> : confirming ? <>
-                    <button type="button" className="revision-delete-confirm" disabled={busy} onClick={() => void deleteEntry(entry)}>Confirm</button>
-                    <button type="button" className="secondary" disabled={busy} onClick={() => setConfirmDeletePath(null)}>Cancel</button>
-                  </> : <>
-                    {entry.entryType === "file" && entry.permissions.canOpen && <button type="button" className="secondary" disabled={busy} onClick={() => void runFileAction("open", entry)}>Open</button>}
-                    {entry.permissions.canReveal && <button type="button" className="secondary" disabled={busy} onClick={() => void runFileAction("reveal", entry)}>Reveal</button>}
-                    {entry.entryType === "file" && entry.permissions.canRename && <button type="button" className="secondary" disabled={busy} onClick={() => beginRename(entry)}>Rename</button>}
-                    {entry.entryType === "file" && entry.permissions.canDelete && <button type="button" className="revision-delete" disabled={busy} onClick={() => { setConfirmDeletePath(entry.relativePath); setEditingPath(null); }}>Delete</button>}
-                  </>}
+                  <details className="revision-row-menu">
+                    <summary aria-label={`Actions for ${entry.displayName}`} title="More actions">…</summary>
+                    <div className="revision-row-menu-popover">
+                      {confirming ? <>
+                        <button type="button" className="revision-delete-confirm" disabled={busy} onClick={() => void deleteEntry(entry)}>Confirm Delete</button>
+                        <button type="button" className="secondary" disabled={busy} onClick={() => setConfirmDeletePath(null)}>Cancel</button>
+                      </> : <>
+                        {entry.entryType === "file" && entry.permissions.canOpen && <button type="button" disabled={busy} onClick={() => void runFileAction("open", entry)}>Open</button>}
+                        {entry.permissions.canReveal && <button type="button" disabled={busy} onClick={() => void runFileAction("reveal", entry)}>Reveal</button>}
+                        {entry.entryType === "file" && entry.permissions.canDelete && <button type="button" className="revision-delete" disabled={busy} onClick={() => setConfirmDeletePath(entry.relativePath)}>Delete</button>}
+                      </>}
+                    </div>
+                  </details>
                 </div>
               </td>
             </tr>;
