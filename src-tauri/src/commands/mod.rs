@@ -18,7 +18,9 @@ mod workspace_configuration;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
-pub(super) use project_file_open::{open_project_file, reveal_project_file};
+pub(super) use project_file_open::{
+    open_project_file, prepare_project_audio_preview, reveal_project_file,
+};
 pub(super) use project_file_summary::summarize_project_files;
 pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
 pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
