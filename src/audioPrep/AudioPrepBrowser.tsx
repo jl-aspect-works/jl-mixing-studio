@@ -26,6 +26,15 @@ const actionErrorMessage = (error: unknown) =>
       ? error
       : "The Audio Prep file action could not be completed.";
 
+const missingWorkingAudioDirectory = (message: string | null) => {
+  if (!message) return false;
+  const normalized = message.toLowerCase();
+  return normalized.includes("no such file or directory")
+    || normalized.includes("cannot find the path specified")
+    || normalized.includes("(os error 2)")
+    || normalized.includes("(os error 3)");
+};
+
 const filenameStem = (entry: ProjectFileEntry) => {
   if (!entry.extension) return entry.displayName;
   const suffix = `.${entry.extension}`;
@@ -53,6 +62,7 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyPath, setBusyPath] = useState<string | null>(null);
   const { state, refresh } = useProjectFiles({ clientId, projectId, relativePath: rootPath });
+  const workingAreaNotCreated = state.status === "error" && missingWorkingAudioDirectory(state.message);
 
   const listing = useMemo(() => {
     if (!state.listing) return null;
@@ -117,7 +127,8 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
       <label className="client-files-control" title="Sort"><span className="client-files-control-icon"><ControlIcon kind="sort" /></span><select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select></label>
     </div>}
 
-    {state.status === "error" && <section className="notice error" role="alert"><strong>We couldn’t read Audio Prep</strong><span>{state.message}</span><button type="button" onClick={() => void refresh()}>Try again</button></section>}
+    {state.status === "error" && !workingAreaNotCreated && <section className="notice error" role="alert"><strong>We couldn’t read Audio Prep</strong><span>{state.message}</span><button type="button" onClick={() => void refresh()}>Try again</button></section>}
+    {workingAreaNotCreated && <section className="notice" role="status"><strong>No working audio yet</strong><span>The Working_Audio folder has not been created for this project. It will appear when prepared working files are available.</span></section>}
     {actionError && <section className="notice error" role="alert"><strong>We couldn’t complete that file action</strong><span>{actionError}</span></section>}
     {state.status === "loading" && !state.listing && <div className="client-files-loading-inline" role="status" aria-label="Reading Audio Prep"><span className="client-files-spinner" aria-hidden="true" /></div>}
 
