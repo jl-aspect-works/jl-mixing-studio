@@ -41,6 +41,7 @@ export function ReferencesView({
     relativePath: projectFilePaths.references,
   });
   const [busy, setBusy] = useState(false);
+  const [deletePendingPath, setDeletePendingPath] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const entries = (state.listing?.entries ?? []).filter(
@@ -70,7 +71,6 @@ export function ReferencesView({
   };
 
   const deleteReference = async (entry: ProjectFileEntry) => {
-    if (!window.confirm(`Delete the project reference “${entry.displayName}”?\n\nThe external source file will not be affected.`)) return;
     setBusy(true);
     setActionError(null);
     try {
@@ -79,6 +79,7 @@ export function ReferencesView({
         projectId: project.projectId,
         relativePath: entry.relativePath,
       });
+      setDeletePendingPath(null);
       await refresh();
     } catch (error) {
       setActionError(errorMessage(error));
@@ -157,7 +158,10 @@ export function ReferencesView({
                 <div className="references-actions">
                   <button type="button" className="secondary" onClick={() => void fileAction("open", entry)}>Open</button>
                   <button type="button" className="secondary" onClick={() => void fileAction("reveal", entry)}>Reveal</button>
-                  <button type="button" className="references-delete" disabled={busy} onClick={() => void deleteReference(entry)}>Delete</button>
+                  {deletePendingPath === entry.relativePath ? <>
+                    <button type="button" className="references-delete-confirm" disabled={busy} onClick={() => void deleteReference(entry)}>{busy ? "Deleting…" : "Confirm"}</button>
+                    <button type="button" className="secondary" disabled={busy} onClick={() => setDeletePendingPath(null)}>Cancel</button>
+                  </> : <button type="button" className="references-delete" disabled={busy} onClick={() => { setActionError(null); setDeletePendingPath(entry.relativePath); }}>Delete</button>}
                 </div>
               </td>
             </tr>)}
