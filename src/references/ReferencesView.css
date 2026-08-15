@@ -23,7 +23,9 @@
 .references-preview-cell .audio-preview-play:focus:not(:disabled) { border: 0; background: transparent; box-shadow: none; }
 .references-muted { color: var(--muted, #667085); font-size: .84rem; }
 .references-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; white-space: nowrap; }
-.references-delete { background: transparent; color: #b42318; border: 1px solid rgba(180,35,24,.35); }
-.references-delete:hover:not(:disabled) { background: rgba(180,35,24,.07); }
+.references-delete,
+.references-delete-confirm { background: transparent; color: #b42318; border: 1px solid rgba(180,35,24,.35); }
+.references-delete:hover:not(:disabled),
+.references-delete-confirm:hover:not(:disabled) { background: rgba(180,35,24,.07); }
 .references-empty { text-align: center; color: var(--muted, #667085); padding: 32px 16px !important; }
 @media (max-width: 980px) { .references-header-row { grid-template-columns: 1fr; } .references-intro, .references-quick-actions { min-height: 0; } }
