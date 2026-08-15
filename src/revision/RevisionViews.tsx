@@ -212,84 +212,86 @@ export function RevisionsView({
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}
     {folderError && <div className="inline-notice error" role="alert">{folderError}</div>}
 
-    {revisions.length === 0 ? <section className="empty-state"><h2>No revisions recorded</h2><p>This project doesn’t have a revision yet.</p></section> : <div className="revisions-workspace">
-      <nav className="panel revision-history" aria-label="Revision history">
-        <div className="revision-history-header"><h2>Revision History</h2></div>
-        <div className="revision-history-list">
-          {revisions.map((revision) => <button
-            key={revision.revisionId}
-            type="button"
-            className={`revision-history-item${revision.number === selected?.number ? " active" : ""}`}
-            aria-current={revision.number === selected?.number ? "true" : undefined}
-            onClick={() => setSelectedNumber(revision.number)}
-          >
-            <span className="revision-history-title">
-              <strong>Revision {String(revision.number).padStart(2, "0")}</strong>
-              <RevisionBadges project={project} number={revision.number} historicallyApproved={revision.approvedAt !== null} />
-            </span>
-            <span className="revision-history-description">{revision.description}</span>
-            <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
-          </button>)}
-        </div>
-      </nav>
-
-      {selected && <main className="revision-detail">
-        <section className="panel revision-detail-header" aria-labelledby="revision-detail-heading">
-          <div className="revision-detail-heading">
-            <div>
-              <h2 id="revision-detail-heading">Revision {String(selected.number).padStart(2, "0")}</h2>
-              <small>Created {formatRevisionTimestamp(selected.createdAt)} · {selected.revisionId}</small>
-            </div>
-            <RevisionBadges project={project} number={selected.number} historicallyApproved={selected.approvedAt !== null} />
-          </div>
-
-          {descriptionEditing ? <div className="revision-description-edit">
-            <input
-              autoFocus
-              aria-label="Revision description"
-              value={descriptionDraft}
-              disabled={descriptionBusy}
-              onChange={(event) => setDescriptionDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") { event.preventDefault(); void saveDescription(); }
-                if (event.key === "Escape") { event.preventDefault(); setDescriptionEditing(false); setDescriptionDraft(selected.description); }
-              }}
-            />
-            <button type="button" disabled={descriptionBusy || !descriptionDraft.trim()} onClick={() => void saveDescription()}>{descriptionBusy ? "Saving…" : "Save"}</button>
-            <button type="button" className="secondary" disabled={descriptionBusy} onClick={() => { setDescriptionEditing(false); setDescriptionDraft(selected.description); }}>Cancel</button>
-          </div> : <div className="revision-description-row">
-            <p>{selected.description}</p>
-            <button type="button" className="secondary" onClick={() => setDescriptionEditing(true)}>Edit Description</button>
-          </div>}
-          {descriptionError && <div className="inline-notice error" role="alert">{descriptionError}</div>}
-        </section>
-
-        <section className="panel revision-notes-panel" aria-labelledby="revision-notes-heading">
-          <div className="revision-notes-heading">
-            <h2 id="revision-notes-heading">Revision Notes</h2>
-            <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
-          </div>
-          {notes.status === "error" && <div className="inline-notice error" role="alert">{notes.message}</div>}
-          <textarea
-            aria-label="Revision Notes"
-            disabled={notes.status === "loading" || notesBusy}
-            value={notes.content}
-            onChange={(event) => setNotes((current) => ({ ...current, content: event.target.value }))}
-          />
-          <div className="revision-notes-actions">
-            <button
+    {revisions.length === 0 ? <section className="empty-state"><h2>No revisions recorded</h2><p>This project doesn’t have a revision yet.</p></section> : <>
+      <div className="revisions-workspace">
+        <nav className="panel revision-history" aria-label="Revision history">
+          <div className="revision-history-header"><h2>Revision History</h2></div>
+          <div className="revision-history-list">
+            {revisions.map((revision) => <button
+              key={revision.revisionId}
               type="button"
-              disabled={notes.status === "loading" || notesBusy || notes.content === notes.saved || new TextEncoder().encode(notes.content).length > notes.maxBytes}
-              onClick={() => void saveNotes()}
-            >{notesBusy ? "Saving…" : "Save Notes"}</button>
+              className={`revision-history-item${revision.number === selected?.number ? " active" : ""}`}
+              aria-current={revision.number === selected?.number ? "true" : undefined}
+              onClick={() => setSelectedNumber(revision.number)}
+            >
+              <span className="revision-history-title">
+                <strong>Revision {String(revision.number).padStart(2, "0")}</strong>
+                <RevisionBadges project={project} number={revision.number} historicallyApproved={revision.approvedAt !== null} />
+              </span>
+              <span className="revision-history-description">{revision.description}</span>
+              <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
+            </button>)}
           </div>
-        </section>
+        </nav>
 
-        <section className="panel revision-files-panel" aria-labelledby="revision-files-heading">
-          <div className="revision-files-heading"><h2 id="revision-files-heading">Revision Files</h2></div>
-          <RevisionFileBrowser key={selected.number} clientId={client.clientId} projectId={project.projectId} revision={selected.number} />
-        </section>
-      </main>}
-    </div>}
+        {selected && <main className="revision-detail">
+          <section className="panel revision-detail-header" aria-labelledby="revision-detail-heading">
+            <div className="revision-detail-heading">
+              <div>
+                <h2 id="revision-detail-heading">Revision {String(selected.number).padStart(2, "0")}</h2>
+                <small>Created {formatRevisionTimestamp(selected.createdAt)} · {selected.revisionId}</small>
+              </div>
+              <RevisionBadges project={project} number={selected.number} historicallyApproved={selected.approvedAt !== null} />
+            </div>
+
+            {descriptionEditing ? <div className="revision-description-edit">
+              <input
+                autoFocus
+                aria-label="Revision description"
+                value={descriptionDraft}
+                disabled={descriptionBusy}
+                onChange={(event) => setDescriptionDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") { event.preventDefault(); void saveDescription(); }
+                  if (event.key === "Escape") { event.preventDefault(); setDescriptionEditing(false); setDescriptionDraft(selected.description); }
+                }}
+              />
+              <button type="button" disabled={descriptionBusy || !descriptionDraft.trim()} onClick={() => void saveDescription()}>{descriptionBusy ? "Saving…" : "Save"}</button>
+              <button type="button" className="secondary" disabled={descriptionBusy} onClick={() => { setDescriptionEditing(false); setDescriptionDraft(selected.description); }}>Cancel</button>
+            </div> : <div className="revision-description-row">
+              <p>{selected.description}</p>
+              <button type="button" className="secondary" onClick={() => setDescriptionEditing(true)}>Edit Description</button>
+            </div>}
+            {descriptionError && <div className="inline-notice error" role="alert">{descriptionError}</div>}
+          </section>
+
+          <section className="panel revision-notes-panel" aria-labelledby="revision-notes-heading">
+            <div className="revision-notes-heading">
+              <h2 id="revision-notes-heading">Revision Notes</h2>
+              <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
+            </div>
+            {notes.status === "error" && <div className="inline-notice error" role="alert">{notes.message}</div>}
+            <textarea
+              aria-label="Revision Notes"
+              disabled={notes.status === "loading" || notesBusy}
+              value={notes.content}
+              onChange={(event) => setNotes((current) => ({ ...current, content: event.target.value }))}
+            />
+            <div className="revision-notes-actions">
+              <button
+                type="button"
+                disabled={notes.status === "loading" || notesBusy || notes.content === notes.saved || new TextEncoder().encode(notes.content).length > notes.maxBytes}
+                onClick={() => void saveNotes()}
+              >{notesBusy ? "Saving…" : "Save Notes"}</button>
+            </div>
+          </section>
+        </main>}
+      </div>
+
+      {selected && <section className="panel revision-files-panel" aria-labelledby="revision-files-heading">
+        <div className="revision-files-heading"><h2 id="revision-files-heading">Revision Files</h2></div>
+        <RevisionFileBrowser key={selected.number} clientId={client.clientId} projectId={project.projectId} revision={selected.number} />
+      </section>}
+    </>}
   </>;
 }
