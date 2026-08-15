@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { IntakeReportState } from "../AppShellViews";
 import { safeError } from "../AppShellViews";
@@ -25,6 +25,31 @@ export function useIntakeWorkflow({
   const [state, setState] = useState<IntakeWorkflowState>({ status: "closed" });
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!clientId || !projectId) {
+      setReportState({ status: "idle" });
+      return;
+    }
+
+    let cancelled = false;
+    const request: IntakeRequest = { clientId, projectId };
+    setReportState({ status: "loading" });
+    invoke<IntakeOperationResult>("get_intake_report", { request })
+      .then((result) => {
+        if (!cancelled) setReportState({ status: "ready", value: result });
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setReportState({
+            status: "error",
+            message: safeError(error, "The intake report could not be read."),
+          });
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [clientId, projectId]);
 
   const currentRequest = (): IntakeRequest | null =>
     clientId && projectId ? { clientId, projectId } : null;
