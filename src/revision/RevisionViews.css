@@ -6,11 +6,11 @@
 .revisions-quick-actions h2 { margin: 0 0 2px; font-size: .95rem; }
 .revisions-quick-actions .action-stack { display: grid; gap: 6px; }
 .revisions-quick-actions .action-stack button { width: 100%; min-height: 30px; padding: 4px 8px; font-size: .68rem; }
-.revisions-workspace { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 12px; }
-.revision-history { padding: 0 !important; overflow: hidden; }
-.revision-history-header { padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.08); }
+.revisions-workspace { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 12px; align-items: stretch; margin-bottom: 12px; }
+.revision-history { min-height: 0; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
+.revision-history-header { flex: 0 0 auto; padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.08); }
 .revision-history-header h2 { margin: 0; font-size: .95rem; }
-.revision-history-list { display: grid; max-height: 690px; overflow-y: auto; }
+.revision-history-list { display: grid; flex: 1 1 auto; min-height: 0; max-height: 318px; overflow-y: auto; align-content: start; }
 .revision-history-item { border: 0; border-bottom: 1px solid rgba(0,0,0,.07); border-radius: 0; background: transparent; color: inherit; padding: 11px 12px; text-align: left; box-shadow: none; }
 .revision-history-item:last-child { border-bottom: 0; }
 .revision-history-item:hover { background: #f7f9fc; }
@@ -65,5 +65,5 @@
 .revision-delete:hover:not(:disabled), .revision-delete-confirm:hover:not(:disabled) { background: rgba(180,35,24,.07); }
 .revision-muted { color: var(--muted, #667085); }
 .revision-files-empty { text-align: center; color: var(--muted, #667085); padding: 28px 12px !important; }
-@media (max-width: 1050px) { .revisions-workspace { grid-template-columns: 220px minmax(0, 1fr); } }
+@media (max-width: 1050px) { .revisions-workspace { grid-template-columns: minmax(230px, 1fr) minmax(0, 2fr); } }
 @media (max-width: 850px) { .revisions-summary-row, .revisions-workspace { grid-template-columns: 1fr; } .revisions-context, .revisions-quick-actions { min-height: 0; } .revision-history-list { max-height: 260px; } }
