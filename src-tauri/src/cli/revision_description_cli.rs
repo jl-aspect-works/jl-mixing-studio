@@ -23,11 +23,6 @@ pub fn update_revision_description(
         return failed("Enter a valid non-empty revision description.");
     }
 
-    let version = super::check_version_with_runner(home, &SystemProcessRunner);
-    if !version.available || !version.supported {
-        return failed(&version.message);
-    }
-
     let arguments = vec![
         "revision".into(),
         "update-description".into(),
