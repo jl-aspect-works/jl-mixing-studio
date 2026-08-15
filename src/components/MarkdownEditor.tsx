@@ -87,7 +87,7 @@ function MarkdownPreview({ value }: { value: string }) {
 
 export function MarkdownEditor({ value, ariaLabel, disabled = false, minRows = 8, onChange }: MarkdownEditorProps) {
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [mode, setMode] = useState<"edit" | "preview">("preview");
 
   const restoreSelection = (start: number, end: number) => {
     requestAnimationFrame(() => {
