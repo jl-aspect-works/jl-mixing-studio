@@ -10,7 +10,7 @@ export function ProjectOverviewDetails({ client, project, tasks, intakeReport, l
   return (
     <div className="overview-layout">
       <div className="overview-top-grid">
-        <ProjectOverviewSummary project={project} tasks={tasks} intakeReport={intakeReport} />
+        <ProjectOverviewSummary clientId={client.clientId} project={project} tasks={tasks} intakeReport={intakeReport} />
         <ProjectOverviewHealth project={project} tasks={tasks} intakeReport={intakeReport} />
         <ProjectOverviewQuickActions client={client} project={project} loading={loading} revisionCreationAvailable={revisionCreationAvailable} revisionApprovalAvailable={revisionApprovalAvailable} onNewRevision={onNewRevision} onApproveRevision={onApproveRevision} onRevisions={onRevisions} />
       </div>
