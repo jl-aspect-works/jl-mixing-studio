@@ -4,10 +4,10 @@ mod delivery_notes;
 mod folders;
 #[path = "project_file_open_command.rs"]
 mod project_file_open;
-#[path = "project_file_command.rs"]
-mod project_files;
 #[path = "project_file_summary_command.rs"]
 mod project_file_summary;
+#[path = "project_file_command.rs"]
+mod project_files;
 #[path = "project_revision_file_command.rs"]
 mod project_revision_files;
 #[path = "system_command.rs"]
