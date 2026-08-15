@@ -184,30 +184,20 @@ export function RevisionsView({
   const selectedAlreadyApproved = selected?.number === project.approvedRevision;
 
   return <>
-    <ProjectNavigationBar active="revisions" onSelect={onSelectView} />
-
-    <div className="revisions-summary-row">
-      <section className="panel revisions-context" aria-labelledby="revisions-heading">
-        <div>
-          <h2 id="revisions-heading">Revisions</h2>
-          <p>Mix history, notes, and revision files for this project.</p>
-        </div>
-      </section>
-      <section className="panel revisions-quick-actions" aria-labelledby="revision-actions-heading">
-        <h2 id="revision-actions-heading">Quick Actions</h2>
-        <div className="action-stack">
-          <button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}>New Revision</button>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => { if (selected) onApprove(selected); }}
-            disabled={!selected || !approvalAvailable || selectedAlreadyApproved || loading}
-            title={selectedAlreadyApproved ? "The selected revision is already approved." : approvalHelp}
-          >Approve Revision</button>
-          <button type="button" className="secondary" onClick={() => void openRevisionsFolder()}>Open Revisions Folder</button>
-        </div>
-      </section>
-    </div>
+    <ProjectNavigationBar
+      active="revisions"
+      onSelect={onSelectView}
+      actions={<>
+        <button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}>New Revision</button>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => { if (selected) onApprove(selected); }}
+          disabled={!selected || !approvalAvailable || selectedAlreadyApproved || loading}
+          title={selectedAlreadyApproved ? "The selected revision is already approved." : approvalHelp}
+        >Approve Revision</button>
+      </>}
+    />
 
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}
     {folderError && <div className="inline-notice error" role="alert">{folderError}</div>}
@@ -231,6 +221,9 @@ export function RevisionsView({
               <span className="revision-history-description">{revision.description}</span>
               <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
             </button>)}
+          </div>
+          <div className="revision-history-footer">
+            <button type="button" className="secondary" onClick={() => void openRevisionsFolder()}>Open Revisions Folder</button>
           </div>
         </nav>
 
