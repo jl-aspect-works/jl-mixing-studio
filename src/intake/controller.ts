@@ -102,7 +102,7 @@ export function useIntakeWorkflow({
       loadReport(request);
     } catch (error) {
       setState({ status: "closed" });
-      setActionError(safeError(error, "Client Files validation could not be refreshed."));
+      setActionError(safeError(error, "Project file validation could not be refreshed."));
       loadReport(request);
     }
   };
@@ -110,6 +110,12 @@ export function useIntakeWorkflow({
   const reload = () => {
     const request = currentRequest();
     if (request) loadReport(request);
+  };
+
+  const refreshStructured = () => {
+    const request = currentRequest();
+    if (!request || !validationAvailable) return;
+    void refreshClientFiles(request, false);
   };
 
   const open = () => {
@@ -233,6 +239,7 @@ export function useIntakeWorkflow({
     reset,
     clear,
     reload,
+    refreshStructured,
     recheck,
     preflight,
     confirm,

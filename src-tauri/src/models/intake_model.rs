@@ -45,10 +45,15 @@ pub struct IntakeOperationResult {
     pub code: IntakeOperationCode,
     pub message: String,
     pub report: Option<IntakeReport>,
-    /// Automation-authored structured file validation records. Durable report-only reads leave
-    /// this empty because the Markdown artifact is intentionally not reverse-engineered into
-    /// machine findings by Studio.
+    /// Automation-authored structured Original Delivery validation records. Durable report-only
+    /// reads leave this empty because Studio does not reverse-engineer Markdown into findings.
     pub files: Vec<serde_json::Value>,
+    /// Automation-authored structured Working_Audio validation/provenance records. This remains
+    /// empty for providers that predate the additive `data.audio_prep` response.
+    pub audio_prep_files: Vec<serde_json::Value>,
+    /// True only when Automation returned the additive `data.audio_prep` contract. An empty list
+    /// with this flag set therefore means a valid empty Working_Audio area, not missing support.
+    pub audio_prep_available: bool,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]

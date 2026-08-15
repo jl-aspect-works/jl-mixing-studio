@@ -52,9 +52,9 @@ pub fn run_intake_validation(
     )
 }
 
-/// Refresh Client Files using Automation's cached structured validation contract. This is a
-/// separate entry point so the existing human/report validation workflow remains backward
-/// compatible with providers that only advertise intake.validate + intake.validate.report.
+/// Refresh Client Files using Automation's cached structured validation contract. The same
+/// Automation response may also carry the additive Audio Prep status/provenance section; keeping
+/// one request avoids duplicate validation scans when Studio needs both working surfaces.
 pub fn refresh_client_files_validation(
     home: &Path,
     project_directory: &Path,
@@ -124,6 +124,8 @@ pub fn blocked_intake_operation(code: IntakeOperationCode, message: &str) -> Int
         message: message.to_owned(),
         report: None,
         files: Vec::new(),
+        audio_prep_files: Vec::new(),
+        audio_prep_available: false,
     }
 }
 
@@ -213,6 +215,17 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
                 .cloned()
                 .unwrap_or_default();
 
+            let (audio_prep_available, audio_prep_files) = match response.data.get("audio_prep") {
+                None => (false, Vec::new()),
+                Some(audio_prep) => {
+                    let Some(files) = audio_prep.get("files").and_then(|value| value.as_array())
+                    else {
+                        return unverifiable_intake_result(operation);
+                    };
+                    (true, files.clone())
+                }
+            };
+
             let parsed = intake_report::parse_report(report_markdown, &request);
             let mut result = report_result(parsed, matches!(operation, IntakeOperation::Preflight));
             let Some(report) = result.report.as_ref() else {
@@ -246,6 +259,8 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
             }
 
             result.files = structured_files;
+            result.audio_prep_files = audio_prep_files;
+            result.audio_prep_available = audio_prep_available;
             if matches!(operation, IntakeOperation::Run)
                 && result.code == IntakeOperationCode::Validated
             {
@@ -331,6 +346,8 @@ fn report_result(
                 .to_owned(),
                 report: Some(report),
                 files: Vec::new(),
+                audio_prep_files: Vec::new(),
+                audio_prep_available: false,
             }
         }
         Ok(None) => IntakeOperationResult {
@@ -339,6 +356,8 @@ fn report_result(
             message: "No intake validation has been run for this project.".into(),
             report: None,
             files: Vec::new(),
+            audio_prep_files: Vec::new(),
+            audio_prep_available: false,
         },
         Err(IntakeReportError::Missing | IntakeReportError::Unsafe) => blocked_intake_operation(
             IntakeOperationCode::ReportUnavailable,

@@ -1,19 +1,33 @@
-import type { ClientSummary, ProjectSummary } from "../types";
+import type { IntakeReportState } from "../AppShellViews";
+import type { ClientSummary, IntakeOperationResult, ProjectSummary } from "../types";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
-import { AudioPrepBrowser } from "./AudioPrepBrowser";
+import { AudioPrepBrowser, type AudioPrepValidationFile } from "./AudioPrepBrowser";
+
+type AudioPrepIntakeResult = IntakeOperationResult & {
+  audioPrepAvailable?: boolean;
+  audioPrepFiles?: AudioPrepValidationFile[];
+};
 
 export function AudioPrepView({
   client,
   project,
+  reportState,
+  onValidationRefresh,
   onSelectView,
 }: {
   client: ClientSummary;
   project: ProjectSummary;
+  reportState: IntakeReportState;
+  onValidationRefresh: () => void;
   onProjects: () => void;
   onOverview: () => void;
   onSelectView: (view: ProjectShellView) => void;
 }) {
+  const result = reportState.status === "ready" ? reportState.value as AudioPrepIntakeResult : null;
+  const validationAvailable = result?.audioPrepAvailable === true;
+  const validationFiles = Array.isArray(result?.audioPrepFiles) ? result.audioPrepFiles : [];
+
   return <>
     <ProjectNavigationBar active="audioPrep" onSelect={onSelectView} />
     <div className="client-files-summary-row">
@@ -40,7 +54,7 @@ export function AudioPrepView({
     </div>
 
     <section className="panel client-files-browser-panel" aria-label="Audio Prep file browser">
-      <AudioPrepBrowser clientId={client.clientId} projectId={project.projectId} />
+      <AudioPrepBrowser clientId={client.clientId} projectId={project.projectId} validationAvailable={validationAvailable} validationFiles={validationFiles} onValidationRefresh={onValidationRefresh} />
     </section>
   </>;
 }
