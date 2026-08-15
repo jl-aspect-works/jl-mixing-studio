@@ -9,18 +9,20 @@ interface ProjectBreadcrumbsProps {
 
 export function ProjectBreadcrumbs({ project, screen, onProjects, onOverview }: ProjectBreadcrumbsProps) {
   return (
-    <nav className="breadcrumbs" aria-label="Breadcrumb">
-      <button type="button" onClick={onProjects}>Projects</button>
-      <span aria-hidden="true">/</span>
-      {screen ? (
-        <>
-          <button type="button" onClick={onOverview}>{project.projectName}</button>
-          <span aria-hidden="true">/</span>
-          <span aria-current="page">{screen}</span>
-        </>
-      ) : (
-        <span aria-current="page">{project.projectName}</span>
-      )}
+    <nav className="breadcrumbs project-header-breadcrumbs" aria-label="Breadcrumb">
+      <span className="breadcrumb-trail">
+        <button type="button" className="breadcrumb-button" onClick={onProjects}>Projects</button>
+        <span className="breadcrumb-separator" aria-hidden="true">/</span>
+        {screen ? (
+          <>
+            <button type="button" className="breadcrumb-button" onClick={onOverview}>{project.projectName}</button>
+            <span className="breadcrumb-separator" aria-hidden="true">/</span>
+            <span aria-current="page">{screen}</span>
+          </>
+        ) : (
+          <span aria-current="page">{project.projectName}</span>
+        )}
+      </span>
     </nav>
   );
 }

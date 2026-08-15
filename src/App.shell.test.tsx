@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mockedInvoke, mockedWriteText, version, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
+import { mockedInvoke, version, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
 import App from "./App";
 
 afterEach(cleanup);
@@ -143,63 +143,26 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(Array.from(projectNavigation.querySelectorAll("button, span")).map((element) => element.textContent)).toEqual(["Overview", "Client Files", "Audio Prep", "References", "Revisions", "Delivery", "Files"]);
       expect(within(projectNavigation).getByRole("button", { name: "Client Files" })).toBeEnabled();
       expect(within(projectNavigation).getByRole("button", { name: "Revisions" })).toBeEnabled();
-      expect(screen.getByRole("button", { name: "Open folder" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Open Project Folder" })).toBeEnabled();
     });
 
-  it("resolves and opens only the validated project folder", async () => {
+  it("opens the validated project folder from the Overview without exposing path controls", async () => {
       const path = "/Users/engineer/Music/Mixes/Clients/acme/Projects/blue-sky";
       mockedInvoke.mockImplementation((command) => {
         if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
-        if (command === "resolve_folder" || command === "open_folder") return Promise.resolve({ path });
+        if (command === "open_folder") return Promise.resolve({ path });
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      expect(await screen.findByText(path)).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Open folder" }));
+      expect(screen.queryByText(path)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Copy path" })).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Open Project Folder" }));
       await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("open_folder", { request: { location: "project", clientId: "acme", projectId: "blue-sky" } }));
       expect(await screen.findByText("Folder opened.")).toBeInTheDocument();
-    });
-
-  it("copies only the freshly resolved validated project folder", async () => {
-      const path = "/Users/engineer/Music/Mixes/Clients/acme/Projects/blue-sky";
-      mockedInvoke.mockImplementation((command) => {
-        if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
-        if (command === "get_jl_mixing_version") return Promise.resolve(version);
-        if (command === "resolve_folder") return Promise.resolve({ path });
-        return Promise.reject(new Error("Unexpected command"));
-      });
-      render(<App />);
-      await screen.findByText("JL Mix Studio");
-      fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(await screen.findByRole("button", { name: "Copy path" }));
-      await waitFor(() => expect(mockedWriteText).toHaveBeenCalledWith(path));
-      expect(await screen.findByText("Path copied.")).toBeInTheDocument();
-    });
-
-  it("keeps long validated paths in a separate row above folder actions", async () => {
-      const path = `/Users/engineer/Music/Mixes/Clients/${"very-long-client-name-".repeat(6)}/Projects/blue-sky`;
-      mockedInvoke.mockImplementation((command) => {
-        if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
-        if (command === "get_jl_mixing_version") return Promise.resolve(version);
-        if (command === "resolve_folder") return Promise.resolve({ path });
-        return Promise.reject(new Error("Unexpected command"));
-      });
-      render(<App />);
-      await screen.findByText("JL Mix Studio");
-      fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      const pathText = await screen.findByText(path);
-      const folderControl = pathText.closest(".folder-control");
-      const actions = folderControl?.querySelector(".directory-actions");
-      expect(folderControl).not.toBeNull();
-      expect(pathText.nextElementSibling).toBe(actions);
-      expect(actions).toContainElement(screen.getByRole("button", { name: "Copy path" }));
-      expect(actions).toContainElement(screen.getByRole("button", { name: "Open folder" }));
     });
 
   it("uses the locked project navigation and dedicated shell views", async () => {

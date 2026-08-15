@@ -86,6 +86,28 @@ pub struct ProjectFileListing {
     pub entries: Vec<ProjectFileEntry>,
 }
 
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectFileFolderSummary {
+    pub file_count: u64,
+    pub size_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectFileSummary {
+    pub client_files: ProjectFileFolderSummary,
+    pub audio_preparation: ProjectFileFolderSummary,
+    pub daw_project: ProjectFileFolderSummary,
+    pub revisions: ProjectFileFolderSummary,
+    pub final_delivery: ProjectFileFolderSummary,
+    pub recall: ProjectFileFolderSummary,
+    pub references_count: u64,
+    pub working_audio_count: u64,
+    pub working_audio_area_present: bool,
+    pub failed_paths: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectFileMutationResult {
