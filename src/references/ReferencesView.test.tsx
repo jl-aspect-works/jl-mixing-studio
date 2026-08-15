@@ -3,11 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectFileEntry, ProjectFileListing } from "../project/files/projectFileService";
 import { ReferencesView } from "./ReferencesView";
 
-const refresh = vi.fn(async () => undefined);
-const addProjectReference = vi.fn(async () => ({ relativePath: "01_Client_Files/References/New.wav" }));
-const deleteProjectReference = vi.fn(async () => ({ relativePath: "01_Client_Files/References/Reference.wav" }));
-const openProjectFile = vi.fn(async () => ({ relativePath: "01_Client_Files/References/Reference.wav" }));
-const revealProjectFile = vi.fn(async () => ({ relativePath: "01_Client_Files/References/Reference.wav" }));
+const {
+  refresh,
+  addProjectReference,
+  deleteProjectReference,
+  openProjectFile,
+  revealProjectFile,
+} = vi.hoisted(() => ({
+  refresh: vi.fn(async () => undefined),
+  addProjectReference: vi.fn(async () => ({ relativePath: "01_Client_Files/References/New.wav" })),
+  deleteProjectReference: vi.fn(async () => ({ relativePath: "01_Client_Files/References/Reference.wav" })),
+  openProjectFile: vi.fn(async () => ({ relativePath: "01_Client_Files/References/Reference.wav" })),
+  revealProjectFile: vi.fn(async () => ({ relativePath: "01_Client_Files/References/Reference.wav" })),
+}));
 let listing: ProjectFileListing;
 
 vi.mock("../project/files/useProjectFiles", () => ({
