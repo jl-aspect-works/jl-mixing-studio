@@ -93,7 +93,7 @@ export function ReferencesView({
       <section className="panel references-intro" aria-labelledby="references-heading">
         <div>
           <h2 id="references-heading">References</h2>
-          <p>Project-owned reference tracks for quick listening while you mix.</p>
+          <p>Reference mixes for this project, used to guide tonal balance, dynamics, instrument character, and the overall mix direction.</p>
         </div>
         <button type="button" disabled={busy} onClick={() => void addReference()}>
           {busy ? "Working…" : "Add Reference"}
