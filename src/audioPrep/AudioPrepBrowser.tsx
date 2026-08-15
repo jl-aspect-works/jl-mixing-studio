@@ -56,7 +56,7 @@ function PendingStatusIcon() {
 
 export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; projectId: string }) {
   const rootPath = projectFilePaths.audioPreparationWorking;
-  const [relativePath, setRelativePath] = useState(rootPath);
+  const [relativePath, setRelativePath] = useState<string>(rootPath);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ProjectFileKindFilter>("all");
   const [sort, setSort] = useState<ProjectFileSort>("name");
