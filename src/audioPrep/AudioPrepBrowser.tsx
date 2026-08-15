@@ -11,7 +11,7 @@ import {
 import { canNavigateProjectFilesUp, projectFilePathUp } from "../project/files/projectFileNavigation";
 import { presentProjectFileListing, type ProjectFileKindFilter, type ProjectFileSort } from "../project/files/projectFilePresentation";
 import { useProjectFiles } from "../project/files/useProjectFiles";
-import { formatClientFileModified, type IntakeValidationFile } from "../intake/ClientFilesBrowser";
+import { type IntakeValidationFile } from "../intake/ClientFilesBrowser";
 import "../intake/ClientFilesBrowser.css";
 import "../intake/ClientFilesLayout.css";
 import "./AudioPrepBrowser.css";
@@ -52,6 +52,19 @@ const filenameStem = (entry: ProjectFileEntry) => {
   return entry.displayName.toLowerCase().endsWith(suffix.toLowerCase())
     ? entry.displayName.slice(0, -suffix.length)
     : entry.displayName;
+};
+
+const formatAudioPrepModified = (epochMs: number | null | undefined) => {
+  if (epochMs === null || epochMs === undefined || !Number.isFinite(epochMs)) return "—";
+  const date = new Date(epochMs);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const year = String(date.getFullYear()).slice(-2);
+  const hour24 = date.getHours();
+  const hour12 = hour24 % 12 || 12;
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  const meridiem = hour24 >= 12 ? "pm" : "am";
+  return `${month}/${day}/${year} ${String(hour12).padStart(2, "0")}:${minute}${meridiem}`;
 };
 
 const normalizedValidationPath = (record: AudioPrepValidationFile) =>
@@ -165,8 +178,8 @@ export function AudioPrepBrowser({
     setRenameState((current) => current ? { ...current, error: null } : current);
     try {
       await renameAudioPrepFile({ clientId, projectId, relativePath: entry.relativePath }, renameState.stem);
-      setRenameState(null);
       await refreshFilesAndValidation();
+      setRenameState(null);
     } catch (error) {
       setRenameState((current) => current ? { ...current, error: actionErrorMessage(error) } : current);
     } finally {
@@ -215,7 +228,7 @@ export function AudioPrepBrowser({
     {actionError && <section className="notice error" role="alert"><strong>We couldn’t complete that file action</strong><span>{actionError}</span></section>}
     {state.status === "loading" && !state.listing && <div className="client-files-loading-inline" role="status" aria-label="Reading Audio Prep"><span className="client-files-spinner" aria-hidden="true" /></div>}
 
-    {showTable && <><div className="table-scroll client-files-table audio-prep-table"><table><thead><tr><th className="client-file-status-heading"><span className="sr-only">Status</span></th><th>Filename</th><th>Original Filename</th><th>Preview</th><th>Audio Details</th><th>Modified</th></tr></thead><tbody>{visibleEntries.map((entry) => {
+    {showTable && <><div className="table-scroll client-files-table audio-prep-table"><table><thead><tr><th className="client-file-status-heading" aria-label="Status" /><th>Filename</th><th>Original Filename</th><th>Preview</th><th>Audio Details</th><th>Modified</th></tr></thead><tbody>{visibleEntries.map((entry) => {
       const record = validationByPath.get(workingRelativePath(entry));
       const editing = renameState?.path === entry.relativePath;
       const busy = busyPath === entry.relativePath;
@@ -234,12 +247,12 @@ export function AudioPrepBrowser({
       return <tr key={entry.id} className={`${editing ? "audio-prep-row-editing " : ""}${record?.status ? `validation-${record.status}` : ""}`}>
         <td className="client-file-status-cell"><span className={`client-file-status-icon client-file-status-${status.kind}`} aria-label={statusLabel} title={statusLabel}>{status.symbol}</span></td>
         <td className="client-file-name-cell audio-prep-filename-cell">
-          {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : editing ? <div className="audio-prep-inline-rename"><div className="audio-prep-inline-input"><input autoFocus aria-label={`Rename ${entry.displayName}`} value={renameState.stem} disabled={busy} onChange={(event) => setRenameState({ ...renameState, stem: event.target.value, error: null })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); } else if (event.key === "Escape") { event.preventDefault(); cancelRename(); } }} /><span className="audio-prep-extension">{entry.extension ? `.${entry.extension}` : ""}</span></div>{renameState.error && <span className="audio-prep-rename-error" role="alert">{renameState.error}</span>}</div> : <button type="button" className="client-file-select audio-prep-name-button" onClick={() => beginRename(entry)} title="Rename filename">{entry.displayName}</button>}
+          {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : editing ? <div className="audio-prep-inline-rename"><div className="audio-prep-inline-input"><input autoFocus aria-label={`Rename ${entry.displayName}`} value={renameState.stem} disabled={busy} onChange={(event) => setRenameState({ ...renameState, stem: event.target.value, error: null })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); } else if (event.key === "Escape" && !busy) { event.preventDefault(); cancelRename(); } }} /><span className="audio-prep-extension">{entry.extension ? `.${entry.extension}` : ""}</span></div>{renameState.error && <span className="audio-prep-rename-error" role="alert">{renameState.error}</span>}</div> : <button type="button" className="client-file-select audio-prep-name-button" onClick={() => beginRename(entry)} title="Rename filename">{entry.displayName}</button>}
         </td>
         <td className="audio-prep-origin-cell"><span title={provenanceTitle}>{sourceName ?? "—"}</span></td>
         <td className="client-file-preview-cell">{entry.playable ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} /> : <span className="client-file-preview-empty">—</span>}</td>
         <td className="client-file-audio-details"><span>{fileType}</span></td>
-        <td className="client-file-modified-cell"><span>{formatClientFileModified(entry.modifiedEpochMs)}</span>{hasActions && <details className="client-file-action-menu"><summary aria-label={`Actions for ${entry.displayName}`} title="File actions">⋮</summary><div className="client-file-action-popover" role="menu">
+        <td className="client-file-modified-cell"><span>{formatAudioPrepModified(entry.modifiedEpochMs)}</span>{hasActions && <details className="client-file-action-menu"><summary aria-label={`Actions for ${entry.displayName}`} title="File actions">⋮</summary><div className="client-file-action-popover" role="menu">
           {entry.entryType === "file" && entry.permissions.canRename && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); beginRename(entry); }}>Rename</button>}
           {entry.entryType === "file" && entry.permissions.canOpen && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void runAction(openProjectFile, entry); }}>Open</button>}
           {entry.permissions.canReveal && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void runAction(revealProjectFile, entry); }}>Reveal</button>}
