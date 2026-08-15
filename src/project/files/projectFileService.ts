@@ -44,6 +44,24 @@ export type ProjectFileListing = {
   entries: ProjectFileEntry[];
 };
 
+export type ProjectFileFolderSummary = {
+  fileCount: number;
+  sizeBytes: number;
+};
+
+export type ProjectFileSummary = {
+  clientFiles: ProjectFileFolderSummary;
+  audioPreparation: ProjectFileFolderSummary;
+  dawProject: ProjectFileFolderSummary;
+  revisions: ProjectFileFolderSummary;
+  finalDelivery: ProjectFileFolderSummary;
+  recall: ProjectFileFolderSummary;
+  referencesCount: number;
+  workingAudioCount: number;
+  workingAudioAreaPresent: boolean;
+  failedPaths: string[];
+};
+
 export type ProjectFileListRequest = {
   clientId: string;
   projectId: string;
@@ -103,6 +121,11 @@ export const listProjectFiles = ({ clientId, projectId, relativePath = "" }: Pro
   invoke<ProjectFileListing>("list_project_files", {
     request: { clientId, projectId, relativePath },
   }).then(withManagedMutationPermissions);
+
+export const summarizeProjectFiles = ({ clientId, projectId }: ProjectFileListRequest) =>
+  invoke<ProjectFileSummary>("summarize_project_files", {
+    request: { clientId, projectId, relativePath: "" },
+  });
 
 export const openProjectFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
   invoke<ProjectFileMutationResult>("open_project_file", {
