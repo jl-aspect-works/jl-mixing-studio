@@ -88,4 +88,8 @@ jobs:
             "$RUNNER_TEMP/jl-audio-preview-fixtures/wav24-48000-stereo.wav" \
             "$RUNNER_TEMP/jl-audio-preview-fixtures/wavf32-96000-stereo.wav" \
             "$RUNNER_TEMP/jl-audio-preview-fixtures/aiff24-48000-stereo.aiff" \
-            "$RUNNER_TEMP/jl-audio-preview-fixtures/mp3-44100-stereo.mp3"
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/mp3-44100-stereo.mp3" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/flac-48000-stereo.flac" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/aac-48000-stereo.aac" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/m4a-48000-stereo.m4a" \
+            "$RUNNER_TEMP/jl-audio-preview-fixtures/mp4-48000-stereo.mp4"
