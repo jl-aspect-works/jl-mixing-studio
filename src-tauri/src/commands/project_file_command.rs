@@ -553,7 +553,9 @@ mod tests {
 
     #[test]
     fn recognizes_common_reference_formats_as_audio() {
-        for extension in ["wav", "wave", "aif", "aiff", "mp3", "flac", "m4a", "aac", "mp4"] {
+        for extension in [
+            "wav", "wave", "aif", "aiff", "mp3", "flac", "m4a", "aac", "mp4",
+        ] {
             assert!(is_audio_extension(extension));
         }
         assert!(!is_audio_extension("txt"));

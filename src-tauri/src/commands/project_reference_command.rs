@@ -79,7 +79,8 @@ fn copy_reference_into_project(project_directory: &Path, source: &Path) -> Resul
         return Err(format!("A reference named '{file_name}' already exists"));
     }
 
-    fs::copy(source, &target).map_err(|error| filesystem_error("copy the reference into the project", error))?;
+    fs::copy(source, &target)
+        .map_err(|error| filesystem_error("copy the reference into the project", error))?;
     Ok(format!("{REFERENCES_PATH}/{file_name}"))
 }
 
@@ -93,7 +94,9 @@ fn delete_reference_from_project(
         .strip_prefix(&format!("{REFERENCES_PATH}/"))
         .ok_or("Delete is only available for project reference files")?;
     if file_name.contains('/') || file_name.is_empty() {
-        return Err("Delete is only available for reference files in the managed References folder".into());
+        return Err(
+            "Delete is only available for reference files in the managed References folder".into(),
+        );
     }
     let source = references.join(file_name);
     let metadata = fs::symlink_metadata(&source)
@@ -267,8 +270,11 @@ mod tests {
         let source_root = TestDirectory::new();
         let source = source_root.0.join("Reference.wav");
         fs::write(&source, b"audio").expect("write source");
-        fs::write(project.0.join(REFERENCES_PATH).join("reference.WAV"), b"old")
-            .expect("write existing reference");
+        fs::write(
+            project.0.join(REFERENCES_PATH).join("reference.WAV"),
+            b"old",
+        )
+        .expect("write existing reference");
         assert!(copy_reference_into_project(&project.0, &source).is_err());
 
         let text = source_root.0.join("notes.txt");
@@ -281,11 +287,9 @@ mod tests {
         let project = TestDirectory::new();
         let reference = project.0.join(REFERENCES_PATH).join("Reference.wav");
         fs::write(&reference, b"audio").expect("write reference");
-        let result = delete_reference_from_project(
-            &project.0,
-            "01_Client_Files/References/Reference.wav",
-        )
-        .expect("delete reference");
+        let result =
+            delete_reference_from_project(&project.0, "01_Client_Files/References/Reference.wav")
+                .expect("delete reference");
         assert_eq!(result, "01_Client_Files/References/Reference.wav");
         assert!(!reference.exists());
         assert!(delete_reference_from_project(

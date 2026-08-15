@@ -253,15 +253,12 @@ mod tests {
     #[test]
     fn identifies_reference_preview_candidate_formats() {
         for name in [
-            "mix.wav",
-            "mix.AIFF",
-            "mix.mp3",
-            "mix.flac",
-            "mix.m4a",
-            "mix.aac",
-            "mix.mp4",
+            "mix.wav", "mix.AIFF", "mix.mp3", "mix.flac", "mix.m4a", "mix.aac", "mix.mp4",
         ] {
-            assert!(is_preview_audio_file(Path::new(name)), "{name} should be a preview candidate");
+            assert!(
+                is_preview_audio_file(Path::new(name)),
+                "{name} should be a preview candidate"
+            );
         }
         assert!(!is_preview_audio_file(Path::new("notes.txt")));
     }
