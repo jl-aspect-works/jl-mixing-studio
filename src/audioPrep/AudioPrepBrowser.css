@@ -1,0 +1,88 @@
+.audio-prep-table .client-file-status-heading,
+.audio-prep-table .client-file-status-cell {
+  width: 34px;
+  min-width: 34px;
+  max-width: 34px;
+  padding-left: 7px;
+  padding-right: 5px;
+  text-align: center;
+}
+
+.audio-prep-table .audio-prep-filename-cell {
+  min-width: 220px;
+}
+
+.audio-prep-table .audio-prep-origin-cell {
+  min-width: 180px;
+  color: #8a94a5;
+  font-size: .7rem;
+}
+
+.audio-prep-table .client-file-preview-cell {
+  width: 290px;
+}
+
+.audio-prep-table .client-file-audio-details {
+  min-width: 105px;
+}
+
+.audio-prep-name-button {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.audio-prep-inline-rename {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.audio-prep-inline-input {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.audio-prep-inline-input input {
+  min-width: 90px;
+  width: 100%;
+  height: 28px;
+  padding: 3px 6px;
+  font-size: .72rem;
+}
+
+.audio-prep-extension {
+  flex: 0 0 auto;
+  color: #6e798c;
+  font-size: .7rem;
+  font-weight: 650;
+}
+
+.audio-prep-rename-error {
+  color: #a33a3a;
+  font-size: .62rem;
+  line-height: 1.25;
+}
+
+.audio-prep-row-editing td {
+  background: #fbfcfe;
+}
+
+.audio-prep-status-note {
+  justify-content: flex-start;
+  color: #8a94a5;
+}
+
+.audio-prep-validation-filter select:disabled {
+  opacity: .58;
+}
+
+.client-file-status-pending {
+  color: #98a2b2;
+}
+
+.client-file-action-popover .danger {
+  color: #a33a3a;
+}
