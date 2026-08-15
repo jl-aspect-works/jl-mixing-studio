@@ -2,6 +2,12 @@
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
+#[path = "project_file_open_command.rs"]
+mod project_file_open;
+#[path = "project_file_command.rs"]
+mod project_files;
+#[path = "project_revision_file_command.rs"]
+mod project_revision_files;
 #[path = "system_command.rs"]
 mod system;
 mod workspace_command_support;
@@ -10,6 +16,9 @@ mod workspace_configuration;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
+pub(super) use project_file_open::{open_project_file, reveal_project_file};
+pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
+pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
 pub(super) use workspace_configuration::{
     get_workspace_configuration, set_workspace_root, validate_workspace_root,

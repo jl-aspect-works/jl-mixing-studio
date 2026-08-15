@@ -1,0 +1,162 @@
+import { invoke } from "@tauri-apps/api/core";
+
+export type ProjectFileArea =
+  | "projectRoot"
+  | "admin"
+  | "clientOriginalDelivery"
+  | "clientReferences"
+  | "clientDocumentation"
+  | "audioPreparation"
+  | "dawProject"
+  | "revisions"
+  | "finalDelivery"
+  | "recall"
+  | "otherManaged";
+
+export type ProjectFileEntryType = "file" | "directory" | "symlink" | "other";
+
+export type ProjectFilePermissions = {
+  canOpen: boolean;
+  canReveal: boolean;
+  canRename: boolean;
+  canDelete: boolean;
+  canCopy: boolean;
+};
+
+export type ProjectFileEntry = {
+  id: string;
+  relativePath: string;
+  displayName: string;
+  extension: string | null;
+  entryType: ProjectFileEntryType;
+  area: ProjectFileArea;
+  sizeBytes: number | null;
+  modifiedEpochMs: number | null;
+  isAudio: boolean;
+  playable: boolean;
+  permissions: ProjectFilePermissions;
+};
+
+export type ProjectFileListing = {
+  relativePath: string;
+  area: ProjectFileArea;
+  permissions: ProjectFilePermissions;
+  entries: ProjectFileEntry[];
+};
+
+export type ProjectFileListRequest = {
+  clientId: string;
+  projectId: string;
+  relativePath?: string;
+};
+
+export type ProjectFileMutationRequest = {
+  clientId: string;
+  projectId: string;
+  relativePath: string;
+};
+
+export type ProjectFileMutationResult = {
+  relativePath: string;
+};
+
+export const projectFilePaths = {
+  projectRoot: "",
+  admin: "00_Admin",
+  originalDelivery: "01_Client_Files/Original_Delivery",
+  references: "01_Client_Files/References",
+  clientDocumentation: "01_Client_Files/Documentation",
+  audioPreparation: "02_Audio_Preparation",
+  audioPreparationWorking: "02_Audio_Preparation/Working_Audio",
+  audioPreparationRejected: "02_Audio_Preparation/Rejected_Files",
+  dawProject: "03_DAW_Project",
+  revisions: "04_Revisions",
+  finalDelivery: "05_Final_Delivery",
+  recall: "06_Recall",
+} as const;
+
+const isManagedRevisionFile = (entry: ProjectFileEntry) => {
+  if (entry.area !== "revisions" || entry.entryType !== "file" || entry.displayName === "Revision_Notes.md") {
+    return false;
+  }
+  const components = entry.relativePath.split("/");
+  return components.length >= 3
+    && components[0] === projectFilePaths.revisions
+    && /^Revision_\d{2,}$/.test(components[1]);
+};
+
+const withManagedMutationPermissions = (listing: ProjectFileListing): ProjectFileListing => ({
+  ...listing,
+  entries: listing.entries.map((entry) => isManagedRevisionFile(entry)
+    ? {
+        ...entry,
+        permissions: {
+          ...entry.permissions,
+          canRename: true,
+          canDelete: true,
+        },
+      }
+    : entry),
+});
+
+export const listProjectFiles = ({ clientId, projectId, relativePath = "" }: ProjectFileListRequest) =>
+  invoke<ProjectFileListing>("list_project_files", {
+    request: { clientId, projectId, relativePath },
+  }).then(withManagedMutationPermissions);
+
+export const openProjectFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("open_project_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const revealProjectFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("reveal_project_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const renameAudioPrepFile = (
+  { clientId, projectId, relativePath }: ProjectFileMutationRequest,
+  newName: string,
+) =>
+  invoke<ProjectFileMutationResult>("rename_project_file", {
+    request: { clientId, projectId, relativePath, newName },
+  });
+
+export const deleteAudioPrepFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("delete_project_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const renameRevisionFile = (
+  { clientId, projectId, relativePath }: ProjectFileMutationRequest,
+  newName: string,
+) =>
+  invoke<ProjectFileMutationResult>("rename_revision_file", {
+    request: { clientId, projectId, relativePath, newName },
+  });
+
+export const deleteRevisionFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("delete_revision_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const formatProjectFileSize = (sizeBytes: number | null) => {
+  if (sizeBytes === null) return "—";
+  if (sizeBytes < 1024) return `${sizeBytes} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let value = sizeBytes / 1024;
+  let unit = units[0];
+  for (let index = 1; index < units.length && value >= 1024; index += 1) {
+    value /= 1024;
+    unit = units[index];
+  }
+  return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${unit}`;
+};
+
+export const formatProjectFileModified = (modifiedEpochMs: number | null) => {
+  if (modifiedEpochMs === null) return "—";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(modifiedEpochMs));
+};
