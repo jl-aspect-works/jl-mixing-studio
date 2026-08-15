@@ -218,7 +218,8 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
             let (audio_prep_available, audio_prep_files) = match response.data.get("audio_prep") {
                 None => (false, Vec::new()),
                 Some(audio_prep) => {
-                    let Some(files) = audio_prep.get("files").and_then(|value| value.as_array()) else {
+                    let Some(files) = audio_prep.get("files").and_then(|value| value.as_array())
+                    else {
                         return unverifiable_intake_result(operation);
                     };
                     (true, files.clone())
