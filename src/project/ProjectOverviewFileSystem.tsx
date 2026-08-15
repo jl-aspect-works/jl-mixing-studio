@@ -44,10 +44,27 @@ export function ProjectOverviewFileSystem({ fileIndex }: { fileIndex: ProjectOve
       <div className="overview-storage-summary">
         <div
           className="overview-storage-ring"
-          style={{ background: storageRingBackground, border: 0, padding: 18, boxSizing: "border-box" }}
+          style={{
+            background: storageRingBackground,
+            border: 0,
+            padding: 0,
+            boxSizing: "border-box",
+            display: "grid",
+            placeItems: "center",
+          }}
           aria-label={loading ? "Project storage indexing" : `${totals.fileCount} project files using ${formatProjectFileSize(totals.sizeBytes)}`}
         >
-          <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: "#fff", display: "grid", placeContent: "center", justifyItems: "center" }}>
+          <div
+            style={{
+              width: 92,
+              height: 92,
+              borderRadius: "50%",
+              background: "#fff",
+              display: "grid",
+              placeContent: "center",
+              justifyItems: "center",
+            }}
+          >
             <strong>{loading ? "…" : totals.fileCount}</strong>
             <span>{loading ? "indexing" : `${formatProjectFileSize(totals.sizeBytes)} total`}</span>
           </div>
