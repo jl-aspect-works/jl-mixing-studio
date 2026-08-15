@@ -158,7 +158,7 @@ fn inventory_section(content: &str) -> Result<Vec<IntakeInventoryItem>, IntakeRe
             continue;
         }
         let cells = markdown_cells(line)?;
-        if cells.len() != 3 {
+        if !matches!(cells.len(), 3 | 4) {
             return Err(IntakeReportError::Invalid);
         }
         if cells[0] == "_No files_" {
@@ -279,6 +279,27 @@ mod tests {
         assert_eq!(report.blocking_errors, 1);
         assert_eq!(report.inventory[1].file, "notes|mix.txt");
         assert!(report.enhanced_inspection_available);
+    }
+
+    #[test]
+    fn parses_automation_1_5_inventory_status_column() {
+        let report = REPORT
+            .replace(
+                "| File | Size (bytes) | Technical details |\n|---|---:|---|",
+                "| File | Size (bytes) | Technical details | Status |\n|---|---:|---|---|",
+            )
+            .replace(
+                "| `broken.wav` | 12 | not readable |",
+                "| `broken.wav` | 12 | not readable | invalid |",
+            )
+            .replace(
+                "| `notes\\|mix.txt` | 34 | not inspected |",
+                "| `notes\\|mix.txt` | 34 | not inspected | not_applicable |",
+            );
+        let report = parse_report(&report, &request()).unwrap().unwrap();
+        assert_eq!(report.files_discovered, 2);
+        assert_eq!(report.inventory[0].file, "broken.wav");
+        assert_eq!(report.inventory[1].file, "notes|mix.txt");
     }
 
     #[test]

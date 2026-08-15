@@ -43,7 +43,7 @@ use delivery_legacy_testsupport::{
 };
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
-    run_intake_validation,
+    refresh_client_files_validation, run_intake_validation,
 };
 #[cfg(test)]
 use intake::{run_intake_operation, IntakeOperation};

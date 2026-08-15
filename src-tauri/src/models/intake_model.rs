@@ -38,13 +38,17 @@ pub struct IntakeReport {
     pub recommendations: Vec<String>,
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct IntakeOperationResult {
     pub ok: bool,
     pub code: IntakeOperationCode,
     pub message: String,
     pub report: Option<IntakeReport>,
+    /// Automation-authored structured file validation records. Durable report-only reads leave
+    /// this empty because the Markdown artifact is intentionally not reverse-engineered into
+    /// machine findings by Studio.
+    pub files: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, PartialEq, Eq)]

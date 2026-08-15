@@ -34,8 +34,8 @@ describe("JL Mixing Studio — project workflow", () => {
       fireEvent.click(screen.getByRole("button", { name: "Second Blue Sky" }));
 
       expect(screen.getByRole("heading", { name: "Second Blue Sky", level: 1 })).toBeInTheDocument();
-      expect(screen.getByText("Second Client")).toBeInTheDocument();
-      expect(screen.getByText("Second Artist")).toBeInTheDocument();
+      expect(screen.getAllByText("Second Client")).toHaveLength(2);
+      expect(screen.getAllByText("Second Artist")).toHaveLength(2);
     });
 
   it("returns safely to Projects when refresh removes the selected project", async () => {
@@ -58,7 +58,7 @@ describe("JL Mixing Studio — project workflow", () => {
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
 
-      fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+      fireEvent.click(screen.getAllByRole("button", { name: "Refresh" })[0]);
 
       expect(await screen.findByRole("status")).toHaveTextContent(/selected project is no longer available/i);
       expect(screen.getByRole("heading", { name: "Projects", level: 1 })).toBeInTheDocument();

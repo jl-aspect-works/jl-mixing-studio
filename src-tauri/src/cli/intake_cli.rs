@@ -1,11 +1,15 @@
 use std::path::Path;
 
 use crate::automation_api::{
-    invoke_api, ApiCallError, ApiStatus, ProcessRunner, SystemProcessRunner,
+    invoke_api, resolve_command, ApiCallError, ApiStatus, ProcessRunner, SystemProcessRunner,
+    AUTOMATION_EXECUTABLE,
 };
 use crate::intake as intake_report;
 use crate::intake::IntakeReportError;
 use crate::models::{IntakeOperationCode, IntakeOperationResult, IntakeRequest};
+
+const INCREMENTAL_INTAKE_CAPABILITY: &str = "intake.validate.incremental";
+const STRUCTURED_INTAKE_CAPABILITY: &str = "intake.validate.structured";
 
 pub fn read_intake_report(
     project_directory: &Path,
@@ -48,12 +52,78 @@ pub fn run_intake_validation(
     )
 }
 
+/// Refresh Client Files using Automation's cached structured validation contract. This is a
+/// separate entry point so the existing human/report validation workflow remains backward
+/// compatible with providers that only advertise intake.validate + intake.validate.report.
+pub fn refresh_client_files_validation(
+    home: &Path,
+    project_directory: &Path,
+    request: IntakeRequest,
+) -> IntakeOperationResult {
+    let runner = SystemProcessRunner;
+    if !supports_client_files_validation(home, &runner) {
+        return blocked_intake_operation(
+            IntakeOperationCode::Rejected,
+            "JL Mixing Automation does not advertise the incremental structured intake capabilities required by Client Files",
+        );
+    }
+    let result = run_intake_operation(
+        home,
+        project_directory,
+        request,
+        IntakeOperation::Run,
+        &runner,
+    );
+    if result.ok
+        && result.files.is_empty()
+        && result
+            .report
+            .as_ref()
+            .is_some_and(|report| report.files_discovered > 0)
+    {
+        return blocked_intake_operation(
+            IntakeOperationCode::Uncertain,
+            "Automation advertised structured intake validation but did not return verifiable per-file records. The intake report may have been updated; do not retry automatically.",
+        );
+    }
+    result
+}
+
+fn supports_client_files_validation<R: ProcessRunner>(home: &Path, runner: &R) -> bool {
+    let Some(executable) = resolve_command(home, AUTOMATION_EXECUTABLE) else {
+        return false;
+    };
+    let arguments = vec!["system-info".to_owned(), "--json".to_owned()];
+    let Ok(output) = runner.run(&executable, &arguments, None) else {
+        return false;
+    };
+    if !output.success {
+        return false;
+    }
+    let Ok(document) = serde_json::from_str::<serde_json::Value>(output.stdout.trim()) else {
+        return false;
+    };
+    let Some(capabilities) = document
+        .get("capabilities")
+        .and_then(|value| value.as_array())
+    else {
+        return false;
+    };
+    let has = |capability: &str| {
+        capabilities
+            .iter()
+            .any(|value| value.as_str() == Some(capability))
+    };
+    has(INCREMENTAL_INTAKE_CAPABILITY) && has(STRUCTURED_INTAKE_CAPABILITY)
+}
+
 pub fn blocked_intake_operation(code: IntakeOperationCode, message: &str) -> IntakeOperationResult {
     IntakeOperationResult {
         ok: false,
         code,
         message: message.to_owned(),
         report: None,
+        files: Vec::new(),
     }
 }
 
@@ -136,6 +206,13 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
                 return unverifiable_intake_result(operation);
             };
 
+            let structured_files = response
+                .data
+                .get("files")
+                .and_then(|value| value.as_array())
+                .cloned()
+                .unwrap_or_default();
+
             let parsed = intake_report::parse_report(report_markdown, &request);
             let mut result = report_result(parsed, matches!(operation, IntakeOperation::Preflight));
             let Some(report) = result.report.as_ref() else {
@@ -168,6 +245,7 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
                 return unverifiable_intake_result(operation);
             }
 
+            result.files = structured_files;
             if matches!(operation, IntakeOperation::Run)
                 && result.code == IntakeOperationCode::Validated
             {
@@ -252,6 +330,7 @@ fn report_result(
                 }
                 .to_owned(),
                 report: Some(report),
+                files: Vec::new(),
             }
         }
         Ok(None) => IntakeOperationResult {
@@ -259,6 +338,7 @@ fn report_result(
             code: IntakeOperationCode::NotRun,
             message: "No intake validation has been run for this project.".into(),
             report: None,
+            files: Vec::new(),
         },
         Err(IntakeReportError::Missing | IntakeReportError::Unsafe) => blocked_intake_operation(
             IntakeOperationCode::ReportUnavailable,
