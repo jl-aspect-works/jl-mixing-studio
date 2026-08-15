@@ -14,6 +14,9 @@
 .references-file-name { font-weight: 600; }
 .references-file-type { color: var(--muted, #667085); font-size: .78rem; margin-top: 2px; }
 .references-preview-cell { min-width: 300px; }
+.references-preview-cell .audio-preview-play { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.references-preview-cell .audio-preview-play:hover:not(:disabled),
+.references-preview-cell .audio-preview-play:focus:not(:disabled) { border: 0; background: transparent; box-shadow: none; }
 .references-muted { color: var(--muted, #667085); font-size: .84rem; }
 .references-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; white-space: nowrap; }
 .references-delete { background: transparent; color: #b42318; border: 1px solid rgba(180,35,24,.35); }
