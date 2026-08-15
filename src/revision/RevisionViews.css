@@ -6,7 +6,7 @@
 .revisions-quick-actions h2 { margin: 0 0 2px; font-size: .95rem; }
 .revisions-quick-actions .action-stack { display: grid; gap: 6px; }
 .revisions-quick-actions .action-stack button { width: 100%; min-height: 30px; padding: 4px 8px; font-size: .68rem; }
-.revisions-workspace { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px; align-items: start; }
+.revisions-workspace { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 12px; }
 .revision-history { padding: 0 !important; overflow: hidden; }
 .revision-history-header { padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.08); }
 .revision-history-header h2 { margin: 0; font-size: .95rem; }
@@ -39,7 +39,7 @@
 .revision-notes-heading span { color: var(--muted, #667085); font-size: .65rem; }
 .revision-notes-panel textarea { box-sizing: border-box; width: 100%; min-height: 150px; resize: vertical; font: inherit; font-size: .78rem; line-height: 1.45; }
 .revision-notes-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; }
-.revision-files-panel { padding: 0 !important; overflow: hidden; }
+.revision-files-panel { width: 100%; padding: 0 !important; overflow: hidden; }
 .revision-files-heading { padding: 12px 14px 0; }
 .revision-files-heading h2 { margin: 0; font-size: .95rem; }
 .revision-files { margin-top: 10px; }
