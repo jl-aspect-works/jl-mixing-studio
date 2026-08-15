@@ -13,7 +13,7 @@ use commands::{
     get_system_info, get_workspace_configuration, list_project_files, open_folder, open_project_file,
     prepare_project_audio_preview, rename_project_file, rename_revision_file, resolve_folder,
     reveal_project_file, set_workspace_root, summarize_project_files, update_delivery_notes,
-    update_revision_notes, validate_workspace_root,
+    update_revision_description, update_revision_notes, validate_workspace_root,
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
@@ -192,6 +192,7 @@ pub fn run() {
             delete_revision_file,
             get_revision_notes,
             update_revision_notes,
+            update_revision_description,
             get_delivery_notes,
             update_delivery_notes,
             preflight_studio_creation,
