@@ -1,10 +1,8 @@
 use super::resolve_workspace_root;
-use crate::models::{
-    ProjectFileFolderSummary, ProjectFileListRequest, ProjectFileSummary,
-};
+use crate::models::{ProjectFileFolderSummary, ProjectFileListRequest, ProjectFileSummary};
 use crate::workspace;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 const CLIENT_FILES: &str = "01_Client_Files";
 const REFERENCES: &str = "01_Client_Files/References";
@@ -100,7 +98,9 @@ fn walk_project_directory(
         let metadata = match fs::symlink_metadata(&path) {
             Ok(metadata) => metadata,
             Err(_) => {
-                summary.failed_paths.push(relative_path(project_root, &path));
+                summary
+                    .failed_paths
+                    .push(relative_path(project_root, &path));
                 continue;
             }
         };
@@ -155,7 +155,10 @@ fn add_file(summary: &mut ProjectFileFolderSummary, size_bytes: u64) {
 }
 
 fn path_matches(path: &str, prefix: &str) -> bool {
-    path == prefix || path.starts_with(&format!("{prefix}/"))
+    path == prefix
+        || path
+            .strip_prefix(prefix)
+            .is_some_and(|suffix| suffix.starts_with('/'))
 }
 
 fn relative_path(root: &Path, path: &Path) -> String {
@@ -174,16 +177,18 @@ mod tests {
 
     #[test]
     fn summary_counts_only_the_selected_project_tree() {
-        let root = std::env::temp_dir().join(format!(
-            "jl-studio-project-summary-{}",
-            std::process::id()
-        ));
+        let root =
+            std::env::temp_dir().join(format!("jl-studio-project-summary-{}", std::process::id()));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(root.join("01_Client_Files/References")).unwrap();
         fs::create_dir_all(root.join("02_Audio_Preparation/Working_Audio")).unwrap();
         fs::create_dir_all(root.join("03_DAW_Project")).unwrap();
         fs::write(root.join("01_Client_Files/References/ref.wav"), b"1234").unwrap();
-        fs::write(root.join("02_Audio_Preparation/Working_Audio/track.wav"), b"123456").unwrap();
+        fs::write(
+            root.join("02_Audio_Preparation/Working_Audio/track.wav"),
+            b"123456",
+        )
+        .unwrap();
         fs::write(root.join("03_DAW_Project/session.logicx"), b"12").unwrap();
 
         let summary = summarize_project_directory(&root).unwrap();
