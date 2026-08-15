@@ -9,17 +9,18 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
 }
 
-type InlinePart = { text: string; bold?: boolean; italic?: boolean };
+type InlinePart = { text: string; bold?: boolean; italic?: boolean; underline?: boolean };
 
 function parseInline(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
-  const pattern = /(\*\*[^*]+\*\*|\*[^*]+\*)/g;
+  const pattern = /(<u>[^<]+<\/u>|\*\*[^*]+\*\*|\*[^*]+\*)/g;
   let last = 0;
   for (const match of text.matchAll(pattern)) {
     const index = match.index ?? 0;
     if (index > last) parts.push({ text: text.slice(last, index) });
     const token = match[0];
-    if (token.startsWith("**")) parts.push({ text: token.slice(2, -2), bold: true });
+    if (token.startsWith("<u>")) parts.push({ text: token.slice(3, -4), underline: true });
+    else if (token.startsWith("**")) parts.push({ text: token.slice(2, -2), bold: true });
     else parts.push({ text: token.slice(1, -1), italic: true });
     last = index + token.length;
   }
@@ -32,6 +33,7 @@ function InlineMarkdown({ text }: { text: string }) {
     let content: ReactNode = part.text;
     if (part.bold) content = <strong>{content}</strong>;
     if (part.italic) content = <em>{content}</em>;
+    if (part.underline) content = <u>{content}</u>;
     return <span key={`${index}-${part.text}`}>{content}</span>;
   })}</>;
 }
@@ -39,20 +41,34 @@ function InlineMarkdown({ text }: { text: string }) {
 function MarkdownPreview({ value }: { value: string }) {
   const lines = value.split(/\r?\n/);
   const blocks: ReactNode[] = [];
-  let list: string[] = [];
-  const flushList = () => {
-    if (!list.length) return;
-    blocks.push(<ul key={`list-${blocks.length}`}>{list.map((item, index) => <li key={index}><InlineMarkdown text={item} /></li>)}</ul>);
-    list = [];
+  let unorderedList: string[] = [];
+  let orderedList: string[] = [];
+
+  const flushLists = () => {
+    if (unorderedList.length) {
+      blocks.push(<ul key={`ul-${blocks.length}`}>{unorderedList.map((item, index) => <li key={index}><InlineMarkdown text={item} /></li>)}</ul>);
+      unorderedList = [];
+    }
+    if (orderedList.length) {
+      blocks.push(<ol key={`ol-${blocks.length}`}>{orderedList.map((item, index) => <li key={index}><InlineMarkdown text={item} /></li>)}</ol>);
+      orderedList = [];
+    }
   };
 
   lines.forEach((line, index) => {
     const bullet = line.match(/^\s*[-*]\s+(.+)$/);
     if (bullet) {
-      list.push(bullet[1]);
+      if (orderedList.length) flushLists();
+      unorderedList.push(bullet[1]);
       return;
     }
-    flushList();
+    const numbered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+    if (numbered) {
+      if (unorderedList.length) flushLists();
+      orderedList.push(numbered[1]);
+      return;
+    }
+    flushLists();
     if (!line.trim()) {
       blocks.push(<div className="markdown-preview-spacer" key={`space-${index}`} />);
     } else if (line.startsWith("### ")) {
@@ -65,7 +81,7 @@ function MarkdownPreview({ value }: { value: string }) {
       blocks.push(<p key={index}><InlineMarkdown text={line} /></p>);
     }
   });
-  flushList();
+  flushLists();
   return <div className="markdown-preview">{blocks.length ? blocks : <p className="markdown-preview-empty">Nothing to preview.</p>}</div>;
 }
 
@@ -73,26 +89,67 @@ export function MarkdownEditor({ value, ariaLabel, disabled = false, minRows = 8
   const textarea = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
 
-  const wrapSelection = (marker: "**" | "*") => {
+  const restoreSelection = (start: number, end: number) => {
+    requestAnimationFrame(() => {
+      const element = textarea.current;
+      if (!element) return;
+      element.focus();
+      element.setSelectionRange(start, end);
+    });
+  };
+
+  const wrapSelection = (open: string, close = open, placeholder = "text") => {
     const element = textarea.current;
     if (!element || disabled) return;
     const start = element.selectionStart;
     const end = element.selectionEnd;
-    const selected = value.slice(start, end);
-    const replacement = `${marker}${selected || "text"}${marker}`;
+    const selected = value.slice(start, end) || placeholder;
+    const replacement = `${open}${selected}${close}`;
     onChange(`${value.slice(0, start)}${replacement}${value.slice(end)}`);
-    requestAnimationFrame(() => {
-      element.focus();
-      const innerStart = start + marker.length;
-      element.setSelectionRange(innerStart, innerStart + (selected || "text").length);
-    });
+    restoreSelection(start + open.length, start + open.length + selected.length);
+  };
+
+  const prefixSelectedLines = (prefixForIndex: (index: number) => string, placeholder = "item") => {
+    const element = textarea.current;
+    if (!element || disabled) return;
+    const start = element.selectionStart;
+    const end = element.selectionEnd;
+    const lineStart = value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    const nextBreak = value.indexOf("\n", end);
+    const lineEnd = nextBreak === -1 ? value.length : nextBreak;
+    const original = value.slice(lineStart, lineEnd) || placeholder;
+    const lines = original.split("\n");
+    const replacement = lines.map((line, index) => `${prefixForIndex(index)}${line || placeholder}`).join("\n");
+    onChange(`${value.slice(0, lineStart)}${replacement}${value.slice(lineEnd)}`);
+    restoreSelection(lineStart, lineStart + replacement.length);
+  };
+
+  const heading = (level: 1 | 2) => {
+    const prefix = level === 1 ? "# " : "## ";
+    const element = textarea.current;
+    if (!element || disabled) return;
+    const start = element.selectionStart;
+    const lineStart = value.lastIndexOf("\n", Math.max(0, start - 1)) + 1;
+    const lineEndCandidate = value.indexOf("\n", start);
+    const lineEnd = lineEndCandidate === -1 ? value.length : lineEndCandidate;
+    const line = value.slice(lineStart, lineEnd).replace(/^#{1,6}\s+/, "") || "Heading";
+    const replacement = `${prefix}${line}`;
+    onChange(`${value.slice(0, lineStart)}${replacement}${value.slice(lineEnd)}`);
+    restoreSelection(lineStart + prefix.length, lineStart + replacement.length);
   };
 
   return <div className="markdown-editor">
     <div className="markdown-editor-toolbar" role="toolbar" aria-label={`${ariaLabel} formatting`}>
       <div className="markdown-format-actions">
-        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => wrapSelection("**")} aria-label="Bold"><strong>B</strong></button>
-        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => wrapSelection("*")} aria-label="Italic"><em>I</em></button>
+        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => wrapSelection("**")} aria-label="Bold" title="Bold"><strong>B</strong></button>
+        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => wrapSelection("*")} aria-label="Italic" title="Italic"><em>I</em></button>
+        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => wrapSelection("<u>", "</u>")} aria-label="Underline" title="Underline"><u>U</u></button>
+        <span className="markdown-toolbar-divider" aria-hidden="true" />
+        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => heading(1)} aria-label="Heading 1" title="Heading 1">H1</button>
+        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => heading(2)} aria-label="Heading 2" title="Heading 2">H2</button>
+        <span className="markdown-toolbar-divider" aria-hidden="true" />
+        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => prefixSelectedLines(() => "- ")} aria-label="Bulleted list" title="Bulleted list">• List</button>
+        <button type="button" className="secondary" disabled={disabled || mode === "preview"} onClick={() => prefixSelectedLines((index) => `${index + 1}. `)} aria-label="Numbered list" title="Numbered list">1. List</button>
       </div>
       <div className="markdown-mode-actions" aria-label="Editor mode">
         <button type="button" className={mode === "edit" ? "active" : "secondary"} onClick={() => setMode("edit")} aria-pressed={mode === "edit"}>Edit</button>
