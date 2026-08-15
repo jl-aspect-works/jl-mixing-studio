@@ -10,9 +10,9 @@ mod workspace;
 use commands::{
     delete_project_file, delete_revision_file, discover_default_workspace, get_delivery_notes,
     get_jl_mixing_version, get_system_info, get_workspace_configuration, list_project_files,
-    open_folder, open_project_file, rename_project_file, rename_revision_file, resolve_folder,
-    reveal_project_file, set_workspace_root, summarize_project_files, update_delivery_notes,
-    validate_workspace_root,
+    open_folder, open_project_file, prepare_project_audio_preview, rename_project_file,
+    rename_revision_file, resolve_folder, reveal_project_file, set_workspace_root,
+    summarize_project_files, update_delivery_notes, validate_workspace_root,
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
@@ -109,6 +109,14 @@ fn run_intake_validation(app: tauri::AppHandle, request: IntakeRequest) -> Intak
 }
 
 #[tauri::command]
+fn refresh_client_files_validation(
+    app: tauri::AppHandle,
+    request: IntakeRequest,
+) -> IntakeOperationResult {
+    run_intake_operation(&app, request, cli::refresh_client_files_validation)
+}
+
+#[tauri::command]
 fn preflight_revision_creation(
     app: tauri::AppHandle,
     request: RevisionCreationRequest,
@@ -173,6 +181,7 @@ pub fn run() {
             summarize_project_files,
             open_project_file,
             reveal_project_file,
+            prepare_project_audio_preview,
             rename_project_file,
             delete_project_file,
             rename_revision_file,
@@ -188,6 +197,7 @@ pub fn run() {
             get_intake_report,
             preflight_intake_validation,
             run_intake_validation,
+            refresh_client_files_validation,
             preflight_revision_creation,
             create_revision,
             preflight_revision_approval,
