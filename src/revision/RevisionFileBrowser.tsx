@@ -198,7 +198,7 @@ export function RevisionFileBrowser({
               <td>
                 <div className="revision-file-actions">
                   <details className="revision-row-menu">
-                    <summary aria-label={`Actions for ${entry.displayName}`} title="More actions">…</summary>
+                    <summary aria-label={`Actions for ${entry.displayName}`} title="More actions">⋮</summary>
                     <div className="revision-row-menu-popover">
                       {confirming ? <>
                         <button type="button" className="revision-delete-confirm" disabled={busy} onClick={() => void deleteEntry(entry)}>Confirm Delete</button>
