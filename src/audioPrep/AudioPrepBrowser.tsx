@@ -68,6 +68,8 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
     if (!state.listing) return null;
     return presentProjectFileListing(state.listing, { query, kind, sort });
   }, [state.listing, query, kind, sort]);
+  const visibleEntries = listing?.entries ?? [];
+  const showTable = Boolean(listing) || workingAreaNotCreated;
 
   const beginRename = (entry: ProjectFileEntry) => {
     setActionError(null);
@@ -120,7 +122,7 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
       </div>
     </div>
 
-    {state.listing && <div className="project-file-controls client-files-controls" aria-label="Audio Prep file view controls">
+    {(state.listing || workingAreaNotCreated) && <div className="project-file-controls client-files-controls" aria-label="Audio Prep file view controls">
       <label className="client-files-control" title="Search"><span className="client-files-control-icon"><ControlIcon kind="search" /></span><input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /></label>
       <label className="client-files-control" title="Show file types"><span className="client-files-control-icon"><ControlIcon kind="show" /></span><select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select></label>
       <label className="client-files-control audio-prep-validation-filter" title="Validation status"><span className="client-files-control-icon">·</span><select aria-label="Validation status" disabled><option>All states</option></select></label>
@@ -128,11 +130,10 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
     </div>}
 
     {state.status === "error" && !workingAreaNotCreated && <section className="notice error" role="alert"><strong>We couldn’t read Audio Prep</strong><span>{state.message}</span><button type="button" onClick={() => void refresh()}>Try again</button></section>}
-    {workingAreaNotCreated && <section className="notice" role="status"><strong>No working audio yet</strong><span>The Working_Audio folder has not been created for this project. It will appear when prepared working files are available.</span></section>}
     {actionError && <section className="notice error" role="alert"><strong>We couldn’t complete that file action</strong><span>{actionError}</span></section>}
     {state.status === "loading" && !state.listing && <div className="client-files-loading-inline" role="status" aria-label="Reading Audio Prep"><span className="client-files-spinner" aria-hidden="true" /></div>}
 
-    {listing && <><div className="table-scroll client-files-table audio-prep-table"><table><thead><tr><th className="client-file-status-heading"><span className="sr-only">Status</span></th><th>Filename</th><th>Original Filename</th><th>Preview</th><th>Audio Details</th><th>Modified</th></tr></thead><tbody>{listing.entries.map((entry) => {
+    {showTable && <><div className="table-scroll client-files-table audio-prep-table"><table><thead><tr><th className="client-file-status-heading"><span className="sr-only">Status</span></th><th>Filename</th><th>Original Filename</th><th>Preview</th><th>Audio Details</th><th>Modified</th></tr></thead><tbody>{visibleEntries.map((entry) => {
       const editing = renameState?.path === entry.relativePath;
       const busy = busyPath === entry.relativePath;
       const fileType = entry.entryType === "file" ? entry.extension?.replace(/^\./, "").toUpperCase() || "File" : "Folder";
@@ -152,6 +153,6 @@ export function AudioPrepBrowser({ clientId, projectId }: { clientId: string; pr
           {entry.entryType === "file" && entry.permissions.canDelete && <button type="button" role="menuitem" className="danger" disabled={busy} onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void removeEntry(entry); }}>Delete</button>}
         </div></details>}</td>
       </tr>;
-    })}{listing.entries.length === 0 && <tr><td colSpan={6}>No files match the current search or filters.</td></tr>}</tbody></table></div><div className="client-file-status-legend audio-prep-status-note" aria-label="Validation status legend"><span><span className="client-file-status-icon client-file-status-pending" aria-hidden="true">·</span>Validation status will appear when Audio Prep validation is available</span></div></>}
+    })}{visibleEntries.length === 0 && <tr><td colSpan={6}>{workingAreaNotCreated ? "No files in Working_Audio." : "No files match the current search or filters."}</td></tr>}</tbody></table></div><div className="client-file-status-legend audio-prep-status-note" aria-label="Validation status legend"><span><span className="client-file-status-icon client-file-status-pending" aria-hidden="true">·</span>Validation status will appear when Audio Prep validation is available</span></div></>}
   </section>;
 }
