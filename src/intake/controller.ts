@@ -66,6 +66,47 @@ export function useIntakeWorkflow({
       });
   };
 
+  const refreshClientFiles = async (request: IntakeRequest, announce: boolean) => {
+    setActionError(null);
+    if (announce) setNotice(null);
+    setReportState({ status: "loading" });
+    setState({ status: "preflighting" });
+    await yieldToBrowserPaint();
+    try {
+      const result = await invoke<IntakeOperationResult>("refresh_client_files_validation", { request });
+      if (
+        result.ok &&
+        result.report &&
+        (result.code === "validated" || result.code === "blockingFindings")
+      ) {
+        setReportState({ status: "ready", value: result });
+        setState({ status: "closed" });
+        if (announce) {
+          setNotice(
+            result.report.blockingErrors > 0
+              ? "Client Files were rechecked with blocking findings."
+              : "Client Files validation is up to date.",
+          );
+        }
+        return;
+      }
+
+      setState({ status: "closed" });
+      if (result.code === "rejected") {
+        loadReport(request);
+        if (announce) setActionError(result.message);
+        return;
+      }
+
+      setActionError(result.message);
+      loadReport(request);
+    } catch (error) {
+      setState({ status: "closed" });
+      setActionError(safeError(error, "Client Files validation could not be refreshed."));
+      loadReport(request);
+    }
+  };
+
   const reload = () => {
     const request = currentRequest();
     if (request) loadReport(request);
@@ -78,7 +119,17 @@ export function useIntakeWorkflow({
     setState({ status: "closed" });
     setActionError(null);
     setNotice(null);
-    loadReport(request);
+    if (validationAvailable) {
+      void refreshClientFiles(request, false);
+    } else {
+      loadReport(request);
+    }
+  };
+
+  const recheck = () => {
+    const request = currentRequest();
+    if (!request || !validationAvailable) return;
+    void refreshClientFiles(request, true);
   };
 
   const reset = () => {
@@ -182,6 +233,7 @@ export function useIntakeWorkflow({
     reset,
     clear,
     reload,
+    recheck,
     preflight,
     confirm,
     closeDialog,

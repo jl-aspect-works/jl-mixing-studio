@@ -118,10 +118,10 @@ export function getWorkflowAvailability(
       return "Finishing the studio checks first…";
     }
     if (workspace.value.status !== "healthy") {
-      return "You can still read the current report, but fix the studio setup issues before running intake again.";
+      return "You can still review the current Client Files report, but fix the studio setup issues before rechecking validation.";
     }
     if (!version.value.intakeValidationSupported) return version.value.message;
-    return "Preview the intake check, then update the report when everything looks right.";
+    return "Validation refreshes automatically from Automation when supported. Use Recheck when you need to verify the current Client Files state again.";
   })();
 
   const revisionCreationHelp = (() => {

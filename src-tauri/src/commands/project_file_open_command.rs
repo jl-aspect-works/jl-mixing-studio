@@ -1,9 +1,13 @@
 use super::resolve_workspace_root;
 use super::workspace_command_support::validated_project_directory;
-use crate::models::{ProjectFileMutationRequest, ProjectFileMutationResult, WorkspaceStatus};
+use crate::models::{
+    ProjectAudioPreviewResult, ProjectFileMutationRequest, ProjectFileMutationResult,
+    WorkspaceStatus,
+};
 use crate::workspace;
 use std::fs;
 use std::path::{Path, PathBuf};
+use tauri::Manager;
 
 #[tauri::command]
 pub(crate) fn open_project_file(
@@ -27,6 +31,38 @@ pub(crate) fn reveal_project_file(
     let (path, relative_path) = resolve_project_entry(&project_directory, &request.relative_path)?;
     reveal_with_system(&path)?;
     Ok(ProjectFileMutationResult { relative_path })
+}
+
+#[tauri::command]
+pub(crate) fn prepare_project_audio_preview(
+    app: tauri::AppHandle,
+    request: ProjectFileMutationRequest,
+) -> Result<ProjectAudioPreviewResult, String> {
+    let project_directory =
+        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+    let (path, relative_path) = resolve_project_entry(&project_directory, &request.relative_path)?;
+
+    if !path.is_file() || !is_preview_audio_file(&path) {
+        return Err("Only supported project audio files can be previewed".into());
+    }
+
+    if !cfg!(target_os = "macos") {
+        return Ok(ProjectAudioPreviewResult {
+            supported: false,
+            relative_path,
+            file_path: None,
+        });
+    }
+
+    app.asset_protocol_scope()
+        .allow_file(&path)
+        .map_err(|error| format!("Unable to authorize this audio file for preview: {error}"))?;
+
+    Ok(ProjectAudioPreviewResult {
+        supported: true,
+        relative_path,
+        file_path: Some(path.to_string_lossy().into_owned()),
+    })
 }
 
 fn resolve_project_directory(
@@ -102,6 +138,17 @@ fn resolve_project_entry(
     }
 
     Ok((canonical, normalized))
+}
+
+fn is_preview_audio_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| {
+            matches!(
+                extension.to_ascii_lowercase().as_str(),
+                "wav" | "wave" | "aif" | "aiff" | "mp3"
+            )
+        })
 }
 
 fn open_with_system(path: &Path) -> Result<(), String> {
@@ -201,6 +248,15 @@ mod tests {
         assert_eq!(relative, "01_Client_Files/References/reference.wav");
         assert!(resolve_project_entry(&project.0, "../outside.wav").is_err());
         assert!(resolve_project_entry(&project.0, "/absolute.wav").is_err());
+    }
+
+    #[test]
+    fn identifies_only_the_formats_validated_by_the_macos_preview_spike() {
+        assert!(is_preview_audio_file(Path::new("mix.wav")));
+        assert!(is_preview_audio_file(Path::new("mix.AIFF")));
+        assert!(is_preview_audio_file(Path::new("mix.mp3")));
+        assert!(!is_preview_audio_file(Path::new("notes.txt")));
+        assert!(!is_preview_audio_file(Path::new("mix.flac")));
     }
 
     #[cfg(unix)]

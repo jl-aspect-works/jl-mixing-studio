@@ -113,3 +113,11 @@ pub struct ProjectFileSummary {
 pub struct ProjectFileMutationResult {
     pub relative_path: String,
 }
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectAudioPreviewResult {
+    pub supported: bool,
+    pub relative_path: String,
+    pub file_path: Option<String>,
+}
