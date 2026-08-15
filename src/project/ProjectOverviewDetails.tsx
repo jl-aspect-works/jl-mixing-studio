@@ -16,7 +16,7 @@ export function ProjectOverviewDetails({ client, project, tasks, intakeReport, l
       </div>
       <div className="overview-bottom-grid">
         <ProjectOverviewRecentRevisions project={project} onRevisions={onRevisions} />
-        <ProjectOverviewFileSystem project={project} intakeReport={intakeReport} />
+        <ProjectOverviewFileSystem clientId={client.clientId} projectId={project.projectId} />
       </div>
     </div>
   );
