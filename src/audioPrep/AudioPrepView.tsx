@@ -13,11 +13,13 @@ export function AudioPrepView({
   client,
   project,
   reportState,
+  onValidationRefresh,
   onSelectView,
 }: {
   client: ClientSummary;
   project: ProjectSummary;
   reportState: IntakeReportState;
+  onValidationRefresh: () => void;
   onProjects: () => void;
   onOverview: () => void;
   onSelectView: (view: ProjectShellView) => void;
@@ -52,7 +54,7 @@ export function AudioPrepView({
     </div>
 
     <section className="panel client-files-browser-panel" aria-label="Audio Prep file browser">
-      <AudioPrepBrowser clientId={client.clientId} projectId={project.projectId} validationAvailable={validationAvailable} validationFiles={validationFiles} />
+      <AudioPrepBrowser clientId={client.clientId} projectId={project.projectId} validationAvailable={validationAvailable} validationFiles={validationFiles} onValidationRefresh={onValidationRefresh} />
     </section>
   </>;
 }
