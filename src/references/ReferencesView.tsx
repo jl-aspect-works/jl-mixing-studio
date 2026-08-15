@@ -8,6 +8,7 @@ import {
   deleteProjectReference,
   formatProjectFileModified,
   formatProjectFileSize,
+  openManagedProjectFolder,
   openProjectFile,
   projectFilePaths,
   revealProjectFile,
@@ -59,6 +60,15 @@ export function ReferencesView({
     }
   };
 
+  const openReferencesFolder = async () => {
+    setActionError(null);
+    try {
+      await openManagedProjectFolder({ clientId: client.clientId, projectId: project.projectId }, "references");
+    } catch (error) {
+      setActionError(errorMessage(error));
+    }
+  };
+
   const deleteReference = async (entry: ProjectFileEntry) => {
     if (!window.confirm(`Delete the project reference “${entry.displayName}”?\n\nThe external source file will not be affected.`)) return;
     setBusy(true);
@@ -95,9 +105,15 @@ export function ReferencesView({
           <h2 id="references-heading">References</h2>
           <p>Reference mixes for this project.</p>
         </div>
-        <button type="button" disabled={busy} onClick={() => void addReference()}>
-          {busy ? "Working…" : "Add Reference"}
-        </button>
+      </section>
+      <section className="panel references-quick-actions" aria-labelledby="references-actions-heading">
+        <h2 id="references-actions-heading">Quick Actions</h2>
+        <div className="action-stack">
+          <button type="button" disabled={busy} onClick={() => void addReference()}>
+            {busy ? "Working…" : "Add Reference"}
+          </button>
+          <button type="button" className="secondary" onClick={() => void openReferencesFolder()}>Open References Folder</button>
+        </div>
       </section>
     </div>
 
