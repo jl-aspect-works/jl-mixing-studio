@@ -23,6 +23,8 @@ pub enum FolderLocation {
     Client,
     Project,
     Intake,
+    AudioPrep,
+    References,
     Revisions,
     Delivery,
 }
@@ -48,7 +50,7 @@ pub struct DeliveryNotesUpdateRequest {
     pub content: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct DeliveryNotesDocument {
     pub content: String,
