@@ -12,6 +12,7 @@ import {
   type RevisionNotesDocument,
 } from "./revisionWorkspaceService";
 import "./RevisionViews.css";
+import "./RevisionCompact.css";
 
 const formatRevisionTimestamp = (value: string) => new Intl.DateTimeFormat(undefined, {
   dateStyle: "medium",
@@ -88,6 +89,7 @@ export function RevisionsView({
   const [selectedNumber, setSelectedNumber] = useState(project.currentRevision);
   const selected = revisions.find((revision) => revision.number === selectedNumber) ?? revisions[0] ?? null;
   const [descriptionDraft, setDescriptionDraft] = useState(selected?.description ?? "");
+  const [descriptionEditing, setDescriptionEditing] = useState(false);
   const [descriptionBusy, setDescriptionBusy] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [notes, setNotes] = useState<NotesState>(emptyNotesState);
@@ -102,6 +104,7 @@ export function RevisionsView({
 
   useEffect(() => {
     setDescriptionDraft(selected?.description ?? "");
+    setDescriptionEditing(false);
     setDescriptionError(null);
   }, [selected?.number, selected?.description]);
 
@@ -127,9 +130,13 @@ export function RevisionsView({
     const description = descriptionDraft.trim();
     if (!description) {
       setDescriptionDraft(selected.description);
+      setDescriptionEditing(false);
       return;
     }
-    if (description === selected.description) return;
+    if (description === selected.description) {
+      setDescriptionEditing(false);
+      return;
+    }
     setDescriptionBusy(true);
     setDescriptionError(null);
     try {
@@ -144,6 +151,7 @@ export function RevisionsView({
         return;
       }
       setDescriptionDraft(result.revision.description);
+      setDescriptionEditing(false);
       onRefresh();
     } catch (error) {
       setDescriptionError(errorMessage(error, "The revision description could not be updated."));
@@ -237,10 +245,9 @@ export function RevisionsView({
               <RevisionBadges project={project} number={selected.number} historicallyApproved={selected.approvedAt !== null} />
             </div>
 
-            <div className="revision-description-inline">
-              <label htmlFor="revision-description">Description</label>
-              <input
-                id="revision-description"
+            <div className="revision-description-click-edit">
+              {descriptionEditing ? <input
+                autoFocus
                 aria-label="Revision description"
                 value={descriptionDraft}
                 disabled={descriptionBusy}
@@ -248,9 +255,20 @@ export function RevisionsView({
                 onBlur={() => void saveDescription()}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
-                  if (event.key === "Escape") { event.preventDefault(); setDescriptionDraft(selected.description); event.currentTarget.blur(); }
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setDescriptionDraft(selected.description);
+                    setDescriptionEditing(false);
+                  }
                 }}
-              />
+              /> : <button
+                type="button"
+                className="revision-description-display"
+                onClick={() => setDescriptionEditing(true)}
+                disabled={descriptionBusy}
+                aria-label="Edit revision description"
+                title="Click to edit"
+              >{descriptionDraft}</button>}
               {descriptionBusy && <span className="revision-description-saving">Saving…</span>}
             </div>
             {descriptionError && <div className="inline-notice error" role="alert">{descriptionError}</div>}
