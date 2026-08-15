@@ -42,9 +42,15 @@ export function ProjectOverviewFileSystem({ fileIndex }: { fileIndex: ProjectOve
         <span className="overview-index-pill">{loading ? "Indexing…" : partial ? "Partial index" : "Indexed"}</span>
       </div>
       <div className="overview-storage-summary">
-        <div className="overview-storage-ring" style={{ background: storageRingBackground }} aria-label={loading ? "Project storage indexing" : `${totals.fileCount} project files using ${formatProjectFileSize(totals.sizeBytes)}`}>
-          <strong>{loading ? "…" : totals.fileCount}</strong>
-          <span>{loading ? "indexing" : `${formatProjectFileSize(totals.sizeBytes)} total`}</span>
+        <div
+          className="overview-storage-ring"
+          style={{ background: storageRingBackground, border: 0, padding: 18, boxSizing: "border-box" }}
+          aria-label={loading ? "Project storage indexing" : `${totals.fileCount} project files using ${formatProjectFileSize(totals.sizeBytes)}`}
+        >
+          <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: "#fff", display: "grid", placeContent: "center", justifyItems: "center" }}>
+            <strong>{loading ? "…" : totals.fileCount}</strong>
+            <span>{loading ? "indexing" : `${formatProjectFileSize(totals.sizeBytes)} total`}</span>
+          </div>
         </div>
         <div className="overview-folder-list">
           {overviewFolders.map((folder) => {
@@ -52,7 +58,13 @@ export function ProjectOverviewFileSystem({ fileIndex }: { fileIndex: ProjectOve
             const unavailable = fileIndex.status === "error" || fileIndex.failedPaths.some((path) => path === folder.label || path.startsWith(`${folder.label}/`));
             return (
               <div key={folder.label}>
-                <code><i className="overview-folder-color" style={{ background: folder.color }} aria-hidden="true" />{folder.label}</code>
+                <code>
+                  <i
+                    style={{ display: "inline-block", width: 7, height: 7, marginRight: 6, borderRadius: "50%", background: folder.color }}
+                    aria-hidden="true"
+                  />
+                  {folder.label}
+                </code>
                 <span>{loading ? "Loading…" : unavailable ? "Unavailable" : `${summary.fileCount} files · ${formatProjectFileSize(summary.sizeBytes)}`}</span>
               </div>
             );
