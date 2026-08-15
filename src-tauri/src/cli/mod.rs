@@ -26,6 +26,8 @@ mod intake;
 mod project;
 #[path = "revision_cli.rs"]
 mod revision;
+#[path = "revision_description_cli.rs"]
+mod revision_description;
 #[cfg(test)]
 mod revision_api_tests;
 #[cfg(test)]
@@ -54,6 +56,7 @@ pub use revision::{
     approve_revision, blocked_approval_operation, blocked_revision_operation, create_revision,
     preflight_revision_approval, preflight_revision_creation,
 };
+pub use revision_description::update_revision_description;
 #[cfg(test)]
 use revision::{run_revision_operation, RevisionOperation};
 #[cfg(test)]
