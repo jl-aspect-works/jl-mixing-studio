@@ -8,6 +8,11 @@
   text-align: center;
 }
 
+.audio-prep-table .client-file-status-heading {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .audio-prep-table .audio-prep-filename-cell {
   min-width: 220px;
 }
@@ -32,6 +37,14 @@
   text-align: left;
 }
 
+.audio-prep-name-button:focus-visible {
+  outline: 0;
+  box-shadow: none;
+  color: #1758d5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .audio-prep-inline-rename {
   min-width: 0;
   display: grid;
@@ -49,8 +62,26 @@
   min-width: 90px;
   width: 100%;
   height: 28px;
-  padding: 3px 6px;
+  border: 0;
+  border-bottom: 1px solid #cbd3df;
+  border-radius: 0;
+  background: transparent;
+  padding: 3px 2px;
+  box-shadow: none;
+  outline: 0;
   font-size: .72rem;
+}
+
+.audio-prep-inline-input input:focus {
+  border-bottom-color: #1758d5;
+  box-shadow: none;
+  outline: 0;
+}
+
+.audio-prep-inline-input input:disabled {
+  opacity: 1;
+  color: #344159;
+  -webkit-text-fill-color: #344159;
 }
 
 .audio-prep-extension {
@@ -67,7 +98,7 @@
 }
 
 .audio-prep-row-editing td {
-  background: #fbfcfe;
+  background: transparent;
 }
 
 .audio-prep-status-note {
