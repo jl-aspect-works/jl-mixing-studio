@@ -30,6 +30,30 @@ pub struct RevisionSummary {
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+pub struct RevisionNotesRequest {
+    pub client_id: String,
+    pub project_id: String,
+    pub revision: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RevisionNotesUpdateRequest {
+    pub client_id: String,
+    pub project_id: String,
+    pub revision: u32,
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RevisionNotesDocument {
+    pub content: String,
+    pub max_bytes: usize,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct RevisionCreationRequest {
     pub client_id: String,
     pub project_id: String,
