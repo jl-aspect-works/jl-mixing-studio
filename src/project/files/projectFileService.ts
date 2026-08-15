@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { FolderLocation, FolderResult } from "../../types";
 
 export type ProjectFileArea =
   | "projectRoot"
@@ -134,6 +135,23 @@ export const openProjectFile = ({ clientId, projectId, relativePath }: ProjectFi
 
 export const revealProjectFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
   invoke<ProjectFileMutationResult>("reveal_project_file", {
+    request: { clientId, projectId, relativePath },
+  });
+
+export const openManagedProjectFolder = (
+  { clientId, projectId }: ProjectFileListRequest,
+  location: Extract<FolderLocation, "audioPrep" | "references">,
+) => invoke<FolderResult>("open_folder", {
+  request: { location, clientId, projectId },
+});
+
+export const addProjectReference = ({ clientId, projectId }: ProjectFileListRequest) =>
+  invoke<ProjectFileMutationResult | null>("add_project_reference", {
+    request: { clientId, projectId, relativePath: projectFilePaths.references },
+  });
+
+export const deleteProjectReference = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
+  invoke<ProjectFileMutationResult>("delete_project_reference", {
     request: { clientId, projectId, relativePath },
   });
 

@@ -12,7 +12,7 @@ export interface VersionCheck {
   message: string;
 }
 
-export type FolderLocation = "workspace" | "studio" | "client" | "project" | "intake" | "revisions" | "delivery";
+export type FolderLocation = "workspace" | "studio" | "client" | "project" | "intake" | "audioPrep" | "references" | "revisions" | "delivery";
 export interface FolderRequest { location: FolderLocation; clientId: string | null; projectId: string | null; }
 export interface FolderResult { path: string; }
 

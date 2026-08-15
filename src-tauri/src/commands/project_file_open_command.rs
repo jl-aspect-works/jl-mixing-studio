@@ -146,7 +146,7 @@ fn is_preview_audio_file(path: &Path) -> bool {
         .is_some_and(|extension| {
             matches!(
                 extension.to_ascii_lowercase().as_str(),
-                "wav" | "wave" | "aif" | "aiff" | "mp3"
+                "wav" | "wave" | "aif" | "aiff" | "mp3" | "flac" | "m4a" | "aac" | "mp4"
             )
         })
 }
@@ -251,12 +251,16 @@ mod tests {
     }
 
     #[test]
-    fn identifies_only_the_formats_validated_by_the_macos_preview_spike() {
-        assert!(is_preview_audio_file(Path::new("mix.wav")));
-        assert!(is_preview_audio_file(Path::new("mix.AIFF")));
-        assert!(is_preview_audio_file(Path::new("mix.mp3")));
+    fn identifies_reference_preview_candidate_formats() {
+        for name in [
+            "mix.wav", "mix.AIFF", "mix.mp3", "mix.flac", "mix.m4a", "mix.aac", "mix.mp4",
+        ] {
+            assert!(
+                is_preview_audio_file(Path::new(name)),
+                "{name} should be a preview candidate"
+            );
+        }
         assert!(!is_preview_audio_file(Path::new("notes.txt")));
-        assert!(!is_preview_audio_file(Path::new("mix.flac")));
     }
 
     #[cfg(unix)]

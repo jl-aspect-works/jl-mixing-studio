@@ -2,11 +2,11 @@ import type { ClientSummary, DerivedTask, ProjectSummary, RevisionSummary } from
 import type { IntakeReportState } from "../AppShellViews";
 import { IntakeView } from "../intake/IntakeViews";
 import { AudioPrepView } from "../audioPrep/AudioPrepView";
+import { ReferencesView } from "../references/ReferencesView";
 import { RevisionsView } from "../revision/RevisionViews";
 import { DeliveryView } from "../delivery/DeliveryView";
 import { ProjectFilesShellView } from "./ProjectFilesShellView";
 import { ProjectOverviewShell } from "./ProjectOverviewShell";
-import { ProjectPlaceholderView } from "./ProjectPlaceholderView";
 import type { ProjectShellView } from "./ProjectView";
 
 export interface ProjectRouteContentProps {
@@ -21,7 +21,7 @@ export function ProjectRouteContent(p: ProjectRouteContentProps) {
   const common = { onProjects: p.onProjects, onOverview: () => p.onSelectView("overview"), onSelectView: p.onSelectView };
   if (p.view === "intake") return <IntakeView client={p.client} project={p.project} reportState={p.intakeReport} actionError={p.intakeActionError} validationAvailable={p.intakeValidationAvailable} validationHelp={p.intakeValidationHelp} loading={p.intakeLoading} onRecheck={p.onRecheckIntake} onRefresh={p.onIntakeRefresh} {...common} />;
   if (p.view === "audioPrep") return <AudioPrepView client={p.client} project={p.project} reportState={p.intakeReport} onValidationRefresh={p.onStructuredValidationRefresh} {...common} />;
-  if (p.view === "references") return <ProjectPlaceholderView active={p.view} project={p.project} {...common} />;
+  if (p.view === "references") return <ReferencesView client={p.client} project={p.project} {...common} />;
   if (p.view === "revisions") return <RevisionsView client={p.client} project={p.project} loading={p.loading} actionError={p.revisionActionError} creationAvailable={p.revisionCreationAvailable} creationHelp={p.revisionCreationHelp} approvalAvailable={p.revisionApprovalAvailable} approvalHelp={p.revisionApprovalHelp} onRefresh={p.onRefresh} onNewRevision={p.onNewRevision} onApprove={p.onApproveRevision} {...common} />;
   if (p.view === "delivery") return <DeliveryView clientId={p.client.clientId} project={p.project} loading={p.deliveryLoading} actionError={p.deliveryActionError} creationAvailable={p.deliveryCreationAvailable} creationHelp={p.deliveryCreationHelp} onCreate={p.onCreateDelivery} onRefresh={p.onRefresh} {...common} />;
   if (p.view === "files") return <ProjectFilesShellView client={p.client} project={p.project} {...common} />;

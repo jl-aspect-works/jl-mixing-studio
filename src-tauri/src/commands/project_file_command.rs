@@ -137,9 +137,12 @@ fn project_file_entry(path: &Path, parent_relative: &str) -> Result<ProjectFileE
     };
     let is_audio = extension.as_deref().is_some_and(is_audio_extension);
     let playable = cfg!(target_os = "macos")
-        && extension
-            .as_deref()
-            .is_some_and(|extension| matches!(extension, "wav" | "wave" | "aif" | "aiff" | "mp3"));
+        && extension.as_deref().is_some_and(|extension| {
+            matches!(
+                extension,
+                "wav" | "wave" | "aif" | "aiff" | "mp3" | "flac" | "m4a" | "aac" | "mp4"
+            )
+        });
     let modified_epoch_ms = metadata
         .modified()
         .ok()
@@ -448,7 +451,7 @@ fn permissions_for(
 fn is_audio_extension(extension: &str) -> bool {
     matches!(
         extension,
-        "wav" | "wave" | "aif" | "aiff" | "mp3" | "flac" | "m4a" | "aac"
+        "wav" | "wave" | "aif" | "aiff" | "mp3" | "flac" | "m4a" | "aac" | "mp4"
     )
 }
 
@@ -546,6 +549,16 @@ mod tests {
         assert_eq!(audio.size_bytes, Some(5));
         assert!(!audio.permissions.can_rename);
         assert!(!audio.permissions.can_delete);
+    }
+
+    #[test]
+    fn recognizes_common_reference_formats_as_audio() {
+        for extension in [
+            "wav", "wave", "aif", "aiff", "mp3", "flac", "m4a", "aac", "mp4",
+        ] {
+            assert!(is_audio_extension(extension));
+        }
+        assert!(!is_audio_extension("txt"));
     }
 
     #[test]

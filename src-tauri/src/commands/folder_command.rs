@@ -36,6 +36,13 @@ pub(crate) fn resolve_folder(
         FolderLocation::Intake => intake_directory(
             &project_path().ok_or("The project folder could not be resolved safely")?,
         ),
+        FolderLocation::AudioPrep => project_path()
+            .ok_or("The project folder could not be resolved safely")?
+            .join("02_Audio_Preparation"),
+        FolderLocation::References => project_path()
+            .ok_or("The project folder could not be resolved safely")?
+            .join("01_Client_Files")
+            .join("References"),
         FolderLocation::Revisions => project_path()
             .ok_or("The project folder could not be resolved safely")?
             .join("04_Revisions"),

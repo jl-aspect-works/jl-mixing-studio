@@ -8,6 +8,8 @@ mod project_file_open;
 mod project_file_summary;
 #[path = "project_file_command.rs"]
 mod project_files;
+#[path = "project_reference_command.rs"]
+mod project_references;
 #[path = "project_revision_file_command.rs"]
 mod project_revision_files;
 #[path = "system_command.rs"]
@@ -23,6 +25,7 @@ pub(super) use project_file_open::{
 };
 pub(super) use project_file_summary::summarize_project_files;
 pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
+pub(super) use project_references::{add_project_reference, delete_project_reference};
 pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
 pub(super) use workspace_configuration::{
