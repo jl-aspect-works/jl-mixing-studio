@@ -269,12 +269,13 @@ export function RevisionsView({
               <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
             </div>
             {notes.status === "error" && <div className="inline-notice error" role="alert">{notes.message}</div>}
-            <MarkdownEditor
+            {notes.status === "loading" ? <p className="revision-muted">Loading Revision Notes…</p> : <MarkdownEditor
+              key={selected.number}
               ariaLabel="Revision Notes"
-              disabled={notes.status === "loading" || notesBusy}
+              disabled={notesBusy}
               value={notes.content}
               onChange={(content) => setNotes((current) => ({ ...current, content }))}
-            />
+            />}
             <div className="revision-notes-actions">
               <button
                 type="button"
