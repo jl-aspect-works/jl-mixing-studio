@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, ProjectSummary, RevisionSummary } from "../types";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { RevisionFileBrowser } from "./RevisionFileBrowser";
@@ -86,7 +87,6 @@ export function RevisionsView({
   );
   const [selectedNumber, setSelectedNumber] = useState(project.currentRevision);
   const selected = revisions.find((revision) => revision.number === selectedNumber) ?? revisions[0] ?? null;
-  const [descriptionEditing, setDescriptionEditing] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState(selected?.description ?? "");
   const [descriptionBusy, setDescriptionBusy] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
@@ -101,7 +101,6 @@ export function RevisionsView({
   }, [project.currentRevision, revisions, selectedNumber]);
 
   useEffect(() => {
-    setDescriptionEditing(false);
     setDescriptionDraft(selected?.description ?? "");
     setDescriptionError(null);
   }, [selected?.number, selected?.description]);
@@ -124,11 +123,13 @@ export function RevisionsView({
   }, [client.clientId, project.projectId, selected?.number]);
 
   const saveDescription = async () => {
-    if (!selected || !descriptionDraft.trim() || descriptionDraft.trim() === selected.description) {
-      setDescriptionEditing(false);
-      setDescriptionDraft(selected?.description ?? "");
+    if (!selected) return;
+    const description = descriptionDraft.trim();
+    if (!description) {
+      setDescriptionDraft(selected.description);
       return;
     }
+    if (description === selected.description) return;
     setDescriptionBusy(true);
     setDescriptionError(null);
     try {
@@ -136,14 +137,13 @@ export function RevisionsView({
         clientId: client.clientId,
         projectId: project.projectId,
         revision: selected.number,
-        description: descriptionDraft.trim(),
+        description,
       });
       if (!result.ok || !result.revision || result.revision.revision !== selected.number) {
         setDescriptionError(result.message || "The revision description could not be verified.");
         return;
       }
       setDescriptionDraft(result.revision.description);
-      setDescriptionEditing(false);
       onRefresh();
     } catch (error) {
       setDescriptionError(errorMessage(error, "The revision description could not be updated."));
@@ -239,29 +239,27 @@ export function RevisionsView({
             <div className="revision-detail-heading">
               <div>
                 <h2 id="revision-detail-heading">Revision {String(selected.number).padStart(2, "0")}</h2>
-                <small>Created {formatRevisionTimestamp(selected.createdAt)} · {selected.revisionId}</small>
+                <small>Created {formatRevisionTimestamp(selected.createdAt)}</small>
               </div>
               <RevisionBadges project={project} number={selected.number} historicallyApproved={selected.approvedAt !== null} />
             </div>
 
-            {descriptionEditing ? <div className="revision-description-edit">
+            <div className="revision-description-inline">
+              <label htmlFor="revision-description">Description</label>
               <input
-                autoFocus
+                id="revision-description"
                 aria-label="Revision description"
                 value={descriptionDraft}
                 disabled={descriptionBusy}
                 onChange={(event) => setDescriptionDraft(event.target.value)}
+                onBlur={() => void saveDescription()}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") { event.preventDefault(); void saveDescription(); }
-                  if (event.key === "Escape") { event.preventDefault(); setDescriptionEditing(false); setDescriptionDraft(selected.description); }
+                  if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
+                  if (event.key === "Escape") { event.preventDefault(); setDescriptionDraft(selected.description); event.currentTarget.blur(); }
                 }}
               />
-              <button type="button" disabled={descriptionBusy || !descriptionDraft.trim()} onClick={() => void saveDescription()}>{descriptionBusy ? "Saving…" : "Save"}</button>
-              <button type="button" className="secondary" disabled={descriptionBusy} onClick={() => { setDescriptionEditing(false); setDescriptionDraft(selected.description); }}>Cancel</button>
-            </div> : <div className="revision-description-row">
-              <p>{selected.description}</p>
-              <button type="button" className="secondary" onClick={() => setDescriptionEditing(true)}>Edit Description</button>
-            </div>}
+              {descriptionBusy && <span className="revision-description-saving">Saving…</span>}
+            </div>
             {descriptionError && <div className="inline-notice error" role="alert">{descriptionError}</div>}
           </section>
 
@@ -271,11 +269,11 @@ export function RevisionsView({
               <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
             </div>
             {notes.status === "error" && <div className="inline-notice error" role="alert">{notes.message}</div>}
-            <textarea
-              aria-label="Revision Notes"
+            <MarkdownEditor
+              ariaLabel="Revision Notes"
               disabled={notes.status === "loading" || notesBusy}
               value={notes.content}
-              onChange={(event) => setNotes((current) => ({ ...current, content: event.target.value }))}
+              onChange={(content) => setNotes((current) => ({ ...current, content }))}
             />
             <div className="revision-notes-actions">
               <button
