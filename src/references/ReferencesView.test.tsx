@@ -80,19 +80,22 @@ describe("ReferencesView", () => {
     expect(refresh).toHaveBeenCalled();
   });
 
-  it("requires confirmation before deleting a reference", async () => {
+  it("requires inline confirmation before deleting a reference", async () => {
     listing = { ...listing, entries: [reference] };
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
     renderView();
     expect(screen.getByText("Preview Reference.wav")).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(deleteProjectReference).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
     await waitFor(() => expect(deleteProjectReference).toHaveBeenCalledWith({
       clientId: "client-1",
       projectId: "project-1",
       relativePath: reference.relativePath,
     }));
-    expect(confirm).toHaveBeenCalled();
     expect(refresh).toHaveBeenCalled();
-    confirm.mockRestore();
   });
 });
