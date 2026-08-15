@@ -4,7 +4,7 @@ import type { ProjectSummary } from "../types";
 import { AudioPrepView } from "./AudioPrepView";
 
 vi.mock("./AudioPrepBrowser", () => ({
-  AudioPrepBrowser: () => <div data-testid="audio-prep-browser">browser</div>,
+  AudioPrepBrowser: ({ validationAvailable }: { validationAvailable?: boolean }) => <div data-testid="audio-prep-browser">browser:{validationAvailable ? "validated" : "fallback"}</div>,
 }));
 
 const project: ProjectSummary = {
@@ -27,10 +27,12 @@ const project: ProjectSummary = {
 };
 
 describe("AudioPrepView", () => {
-  it("renders the working-stage summary and keeps repair actions explicitly deferred", () => {
+  it("renders the working-stage summary and consumes Audio Prep validation availability", () => {
     render(<AudioPrepView
       client={{ clientId: "client", clientName: "Client", createdAt: "2026-08-14T00:00:00Z", defaultArtist: "Artist", projects: [project] }}
       project={project}
+      reportState={{ status: "ready", value: { ok: true, code: "validated", message: "ready", report: null, audioPrepAvailable: true, audioPrepFiles: [] } as never }}
+      onValidationRefresh={vi.fn()}
       onProjects={vi.fn()}
       onOverview={vi.fn()}
       onSelectView={vi.fn()}
@@ -39,6 +41,6 @@ describe("AudioPrepView", () => {
     expect(screen.getByRole("heading", { name: "Audio Prep" })).toBeInTheDocument();
     expect(screen.getByText(/Original Delivery remains unchanged/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Fix / Convert" })).toBeDisabled();
-    expect(screen.getByTestId("audio-prep-browser")).toBeInTheDocument();
+    expect(screen.getByTestId("audio-prep-browser")).toHaveTextContent("validated");
   });
 });
