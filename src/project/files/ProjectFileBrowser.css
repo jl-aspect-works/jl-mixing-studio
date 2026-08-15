@@ -1,0 +1,62 @@
+.project-file-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(120px, 160px) minmax(120px, 160px);
+  gap: 10px;
+  align-items: end;
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.project-file-controls label {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.project-file-controls label > span {
+  color: #68758a;
+  font-size: .66rem;
+  font-weight: 800;
+}
+
+.project-file-controls input,
+.project-file-controls select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid #c7d0dd;
+  border-radius: 7px;
+  background: #fff;
+  color: #24324a;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: .72rem;
+}
+
+.project-file-controls input:focus-visible,
+.project-file-controls select:focus-visible {
+  outline: 3px solid #f3a51f;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .project-file-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .project-file-controls label:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .project-file-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .project-file-controls label:first-child {
+    grid-column: auto;
+  }
+}
