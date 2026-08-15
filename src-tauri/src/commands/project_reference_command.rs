@@ -64,7 +64,7 @@ fn copy_reference_into_project(project_directory: &Path, source: &Path) -> Resul
         .map(|value| value.to_string_lossy().to_lowercase())
         .ok_or("Choose an audio reference file with a supported extension")?;
     if !is_audio_extension(&extension) {
-        return Err("Choose a WAV, AIFF, MP3, FLAC, M4A, or AAC audio reference".into());
+        return Err("Choose a WAV, AIFF, MP3, FLAC, M4A, AAC, or MP4 reference".into());
     }
 
     let file_name = source
@@ -166,7 +166,7 @@ fn reject_case_insensitive_collision(directory: &Path, target_name: &str) -> Res
 fn is_audio_extension(extension: &str) -> bool {
     matches!(
         extension,
-        "wav" | "wave" | "aif" | "aiff" | "mp3" | "flac" | "m4a" | "aac"
+        "wav" | "wave" | "aif" | "aiff" | "mp3" | "flac" | "m4a" | "aac" | "mp4"
     )
 }
 
@@ -196,7 +196,7 @@ fn choose_reference_file() -> Result<Option<PathBuf>, String> {
 
 #[cfg(target_os = "windows")]
 fn choose_reference_file() -> Result<Option<PathBuf>, String> {
-    let script = r#"Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.OpenFileDialog; $d.Title = 'Choose an audio reference'; $d.Filter = 'Audio files|*.wav;*.wave;*.aif;*.aiff;*.mp3;*.flac;*.m4a;*.aac|All files|*.*'; if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::Out.Write($d.FileName) }"#;
+    let script = r#"Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.OpenFileDialog; $d.Title = 'Choose an audio reference'; $d.Filter = 'Audio files|*.wav;*.wave;*.aif;*.aiff;*.mp3;*.flac;*.m4a;*.aac;*.mp4|All files|*.*'; if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::Out.Write($d.FileName) }"#;
     let output = Command::new("powershell.exe")
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .output()
@@ -249,11 +249,11 @@ mod tests {
     fn copies_supported_reference_without_touching_source() {
         let project = TestDirectory::new();
         let source_root = TestDirectory::new();
-        let source = source_root.0.join("Reference.wav");
+        let source = source_root.0.join("Reference.mp4");
         fs::write(&source, b"audio").expect("write source");
 
         let result = copy_reference_into_project(&project.0, &source).expect("copy reference");
-        assert_eq!(result, "01_Client_Files/References/Reference.wav");
+        assert_eq!(result, "01_Client_Files/References/Reference.mp4");
         assert_eq!(fs::read(&source).expect("read source"), b"audio");
         assert_eq!(
             fs::read(project.0.join(&result)).expect("read copied reference"),
