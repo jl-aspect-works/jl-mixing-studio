@@ -13,12 +13,12 @@ export interface ProjectRouteContentProps {
   intakeReport: IntakeReportState; intakeActionError: string | null; intakeValidationAvailable: boolean; intakeValidationHelp: string; intakeLoading: boolean;
   revisionActionError: string | null; revisionCreationAvailable: boolean; revisionCreationHelp: string; revisionApprovalAvailable: boolean; revisionApprovalHelp: string;
   deliveryActionError: string | null; deliveryCreationAvailable: boolean; deliveryCreationHelp: string; deliveryLoading: boolean;
-  onProjects: () => void; onRefresh: () => void; onIntakeRefresh: () => void; onSelectView: (view: ProjectShellView) => void; onOpenIntake: () => void; onPreviewIntake: () => void; onOpenRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onCreateDelivery: () => void;
+  onProjects: () => void; onRefresh: () => void; onIntakeRefresh: () => void; onSelectView: (view: ProjectShellView) => void; onOpenIntake: () => void; onRecheckIntake: () => void; onOpenRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onCreateDelivery: () => void;
 }
 
 export function ProjectRouteContent(p: ProjectRouteContentProps) {
   const common = { onProjects: p.onProjects, onOverview: () => p.onSelectView("overview"), onSelectView: p.onSelectView };
-  if (p.view === "intake") return <IntakeView client={p.client} project={p.project} reportState={p.intakeReport} actionError={p.intakeActionError} validationAvailable={p.intakeValidationAvailable} validationHelp={p.intakeValidationHelp} loading={p.intakeLoading} onPreview={p.onPreviewIntake} onRefresh={p.onIntakeRefresh} {...common} />;
+  if (p.view === "intake") return <IntakeView client={p.client} project={p.project} reportState={p.intakeReport} actionError={p.intakeActionError} validationAvailable={p.intakeValidationAvailable} validationHelp={p.intakeValidationHelp} loading={p.intakeLoading} onRecheck={p.onRecheckIntake} onRefresh={p.onIntakeRefresh} {...common} />;
   if (p.view === "audioPrep" || p.view === "references") return <ProjectPlaceholderView active={p.view} project={p.project} {...common} />;
   if (p.view === "revisions") return <RevisionsView client={p.client} project={p.project} loading={p.loading} actionError={p.revisionActionError} creationAvailable={p.revisionCreationAvailable} creationHelp={p.revisionCreationHelp} approvalAvailable={p.revisionApprovalAvailable} approvalHelp={p.revisionApprovalHelp} onRefresh={p.onRefresh} onNewRevision={p.onNewRevision} onApprove={p.onApproveRevision} {...common} />;
   if (p.view === "delivery") return <DeliveryView clientId={p.client.clientId} project={p.project} loading={p.deliveryLoading} actionError={p.deliveryActionError} creationAvailable={p.deliveryCreationAvailable} creationHelp={p.deliveryCreationHelp} onCreate={p.onCreateDelivery} onRefresh={p.onRefresh} {...common} />;
