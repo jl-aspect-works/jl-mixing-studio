@@ -40,9 +40,12 @@ afterEach(() => {
 
 describe("ProjectFileBrowser shared-storage resilience", () => {
   it("shows progress and disables duplicate file actions while storage is slow", async () => {
-    let finishReveal: (() => void) | null = null;
+    let finishReveal!: () => void;
+    const revealPending = new Promise<void>((resolve) => {
+      finishReveal = resolve;
+    });
     listProjectFiles.mockResolvedValue(listing);
-    revealProjectFile.mockImplementation(() => new Promise<void>((resolve) => { finishReveal = resolve; }));
+    revealProjectFile.mockReturnValue(revealPending);
 
     render(<ProjectFileBrowser clientId="client" projectId="project" initialPath="04_Revisions/Revision_01" />);
 
@@ -55,6 +58,6 @@ describe("ProjectFileBrowser shared-storage resilience", () => {
     expect(screen.getByRole("menuitem", { name: "Reveal" })).toBeDisabled();
     expect(revealProjectFile).toHaveBeenCalledTimes(1);
 
-    finishReveal?.();
+    finishReveal();
   });
 });
