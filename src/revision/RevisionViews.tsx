@@ -277,7 +277,14 @@ export function RevisionsView({
           <section className="panel revision-notes-panel" aria-labelledby="revision-notes-heading">
             <div className="revision-notes-heading">
               <h2 id="revision-notes-heading">Revision Notes</h2>
-              <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
+              <div className="revision-notes-heading-actions">
+                <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
+                <button
+                  type="button"
+                  disabled={notes.status === "loading" || notesBusy || notes.content === notes.saved || new TextEncoder().encode(notes.content).length > notes.maxBytes}
+                  onClick={() => void saveNotes()}
+                >{notesBusy ? "Saving…" : "Save Notes"}</button>
+              </div>
             </div>
             {notes.status === "error" && <div className="inline-notice error" role="alert">{notes.message}</div>}
             {notes.status === "loading" ? <p className="revision-muted">Loading Revision Notes…</p> : <MarkdownEditor
@@ -287,13 +294,6 @@ export function RevisionsView({
               value={notes.content}
               onChange={(content) => setNotes((current) => ({ ...current, content }))}
             />}
-            <div className="revision-notes-actions">
-              <button
-                type="button"
-                disabled={notes.status === "loading" || notesBusy || notes.content === notes.saved || new TextEncoder().encode(notes.content).length > notes.maxBytes}
-                onClick={() => void saveNotes()}
-              >{notesBusy ? "Saving…" : "Save Notes"}</button>
-            </div>
           </section>
         </main>}
       </div>
