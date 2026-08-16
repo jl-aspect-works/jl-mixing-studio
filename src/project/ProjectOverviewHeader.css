@@ -30,7 +30,18 @@
 .compact-global-headers > .compact-project-route-header {
   align-items: center;
   gap: 20px;
+}
+
+.compact-global-headers > .route-header {
   margin-bottom: 18px;
+}
+
+.compact-global-headers > .compact-project-route-header {
+  margin-bottom: 6px;
+}
+
+.compact-global-headers > .overview-project-header {
+  margin-top: 0;
 }
 
 .compact-global-headers > .route-header .eyebrow,
@@ -240,12 +251,8 @@
   font-size: .66rem !important;
 }
 
-.project-overview-open > .compact-project-route-header {
-  margin-bottom: 6px;
-}
-
 .project-overview-open .overview-project-header {
-  margin: 0 0 10px;
+  margin-bottom: 10px;
   padding: 16px 18px;
 }
 
