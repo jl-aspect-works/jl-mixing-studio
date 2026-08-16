@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, ProjectSummary, RevisionSummary } from "../types";
+import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -94,7 +95,13 @@ export function RevisionsView({
   const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [notes, setNotes] = useState<NotesState>(emptyNotesState);
   const [notesBusy, setNotesBusy] = useState(false);
+  const notesRef = useRef<NotesState>(notes);
+  const notesBusyRef = useRef(notesBusy);
+  const notesRequestSequence = useRef(0);
   const [folderError, setFolderError] = useState<string | null>(null);
+
+  useEffect(() => { notesRef.current = notes; }, [notes]);
+  useEffect(() => { notesBusyRef.current = notesBusy; }, [notesBusy]);
 
   useEffect(() => {
     if (!revisions.some((revision) => revision.number === selectedNumber)) {
@@ -108,22 +115,43 @@ export function RevisionsView({
     setDescriptionError(null);
   }, [selected?.number, selected?.description]);
 
-  useEffect(() => {
+  const loadRevisionNotes = useCallback(async (preserveDirty: boolean, showLoading: boolean) => {
     if (!selected) {
       setNotes({ status: "ready", content: "", saved: "", maxBytes: 65_536 });
       return;
     }
-    let current = true;
-    setNotes(emptyNotesState);
-    void getRevisionNotes({ clientId: client.clientId, projectId: project.projectId, revision: selected.number })
-      .then((document: RevisionNotesDocument) => {
-        if (current) setNotes({ status: "ready", content: document.content, saved: document.content, maxBytes: document.maxBytes });
-      })
-      .catch((error: unknown) => {
-        if (current) setNotes({ ...emptyNotesState, status: "error", message: errorMessage(error, "Revision Notes could not be loaded.") });
+    const currentNotes = notesRef.current;
+    if (preserveDirty && (notesBusyRef.current || currentNotes.content !== currentNotes.saved)) return;
+
+    const sequence = ++notesRequestSequence.current;
+    if (showLoading) setNotes(emptyNotesState);
+    try {
+      const document: RevisionNotesDocument = await getRevisionNotes({
+        clientId: client.clientId,
+        projectId: project.projectId,
+        revision: selected.number,
       });
-    return () => { current = false; };
+      if (notesRequestSequence.current !== sequence) return;
+      setNotes({ status: "ready", content: document.content, saved: document.content, maxBytes: document.maxBytes });
+    } catch (error: unknown) {
+      if (notesRequestSequence.current !== sequence) return;
+      setNotes((current) => ({
+        ...current,
+        status: "error",
+        message: errorMessage(error, "Revision Notes could not be loaded."),
+      }));
+    }
   }, [client.clientId, project.projectId, selected?.number]);
+
+  useEffect(() => {
+    void loadRevisionNotes(false, true);
+    return () => { notesRequestSequence.current += 1; };
+  }, [loadRevisionNotes]);
+
+  useEffect(
+    () => addWorkspaceRefreshListener(() => { void loadRevisionNotes(true, false); }),
+    [loadRevisionNotes],
+  );
 
   const saveDescription = async () => {
     if (!selected) return;
