@@ -6,7 +6,7 @@ import type {
   DeliveryNotesUpdateRequest,
   ProjectSummary,
 } from "../types";
-import { FolderControl, safeError, type ResourceState } from "../AppShellViews";
+import { safeError, type ResourceState } from "../AppShellViews";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -207,110 +207,120 @@ export function DeliveryView({
   return <>
     <ProjectNavigationBar active="delivery" onSelect={onSelectView} />
 
-    <section className="delivery-heading-row" aria-labelledby="delivery-heading">
-      <div>
-        <p className="kicker">Final delivery</p>
-        <h2 id="delivery-heading">Delivery</h2>
-        <p className="delivery-heading-copy">Prepare, verify, document, and package the approved mix without leaving Studio.</p>
+    <section className="panel delivery-summary-panel" aria-labelledby="delivery-heading">
+      <div className="delivery-heading-row">
+        <div>
+          <p className="kicker">Final delivery</p>
+          <h2 id="delivery-heading">Delivery</h2>
+          <p className="delivery-heading-copy">Prepare, verify, document, and package the approved mix without leaving Studio.</p>
+        </div>
+        <div className="delivery-heading-actions">
+          <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
+            {loading ? "Checking…" : delivery ? "Rebuild Delivery" : "Create Delivery"}
+          </button>
+        </div>
       </div>
-      <div className="delivery-heading-actions">
-        <FolderControl location="delivery" clientId={clientId} projectId={project.projectId} label="Open Delivery Folder" />
-        <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
-          {loading ? "Checking…" : delivery ? "Rebuild Delivery" : "Create Delivery"}
-        </button>
+
+      {actionError && <div className="form-error" role="alert">{actionError}</div>}
+      <div className={`delivery-readiness delivery-readiness-${readiness.tone}`} role="status">
+        <strong>{readiness.title}</strong>
+        <span>{readiness.detail}</span>
       </div>
-    </section>
+      {!creationAvailable && <p className="action-help">{creationHelp}</p>}
 
-    {actionError && <div className="form-error" role="alert">{actionError}</div>}
-    <section className={`delivery-readiness delivery-readiness-${readiness.tone}`} role="status">
-      <strong>{readiness.title}</strong>
-      <span>{readiness.detail}</span>
-    </section>
-    {!creationAvailable && <p className="action-help">{creationHelp}</p>}
+      <dl className="delivery-details-grid" aria-label="Delivery status summary">
+        <div>
+          <dt>Source Revision</dt>
+          <dd>{managed?.revisions.source ? `Revision ${managed.revisions.source.toString().padStart(2, "0")}` : delivery ? `Revision ${delivery.revision.toString().padStart(2, "0")}` : "—"}</dd>
+        </div>
+        <div>
+          <dt>Deliverables</dt>
+          <dd>{managed ? managed.deliverableCount : delivery?.files.length ?? "—"}</dd>
+          <small>{managed?.state === "ready" ? "Verified" : managed?.state === "needs_attention" ? "Review required" : "Not built"}</small>
+        </div>
+        <div>
+          <dt>Package</dt>
+          <dd>{managed ? packageStatusLabel(managed.packageState) : "Checking…"}</dd>
+          <small>{activePackage?.name ?? "No generated ZIP"}</small>
+        </div>
+        <div>
+          <dt>Last Build</dt>
+          <dd>{activePackage ? formatTimestamp(activePackage.modifiedAt) : delivery ? formatTimestamp(delivery.createdAt) : "—"}</dd>
+          <small>{activePackage ? formatBytes(activePackage.sizeBytes) : ""}</small>
+        </div>
+      </dl>
 
-    <section className="delivery-status-grid" aria-label="Delivery status summary">
-      <article className="delivery-status-card">
-        <span>Source revision</span>
-        <strong>{managed?.revisions.source ? `Revision ${managed.revisions.source.toString().padStart(2, "0")}` : delivery ? `Revision ${delivery.revision.toString().padStart(2, "0")}` : "—"}</strong>
-      </article>
-      <article className="delivery-status-card">
-        <span>Deliverables</span>
-        <strong>{managed ? managed.deliverableCount : delivery?.files.length ?? "—"}</strong>
-        <small>{managed?.state === "ready" ? "Verified" : managed?.state === "needs_attention" ? "Review required" : "Not built"}</small>
-      </article>
-      <article className="delivery-status-card">
-        <span>Package</span>
-        <strong>{managed ? packageStatusLabel(managed.packageState) : "Checking…"}</strong>
-        <small>{activePackage?.name ?? "No generated ZIP"}</small>
-      </article>
-      <article className="delivery-status-card">
-        <span>Last build</span>
-        <strong>{activePackage ? formatTimestamp(activePackage.modifiedAt) : delivery ? formatTimestamp(delivery.createdAt) : "—"}</strong>
-        <small>{activePackage ? formatBytes(activePackage.sizeBytes) : ""}</small>
-      </article>
+      {status.status === "loading" && <p className="delivery-status-loading" role="status">Reconciling delivery files and package state…</p>}
+      {statusMessage && <p className="delivery-inline-message" role="status">{statusMessage}</p>}
     </section>
-
-    {status.status === "loading" && <p className="delivery-status-loading" role="status">Reconciling delivery files and package state…</p>}
-    {statusMessage && <p className="delivery-inline-message" role="status">{statusMessage}</p>}
 
     {managed && managed.issues.length > 0 && <section className="delivery-issues panel" aria-labelledby="delivery-issues-heading">
       <div className="panel-heading"><div><p className="kicker">Verification</p><h2 id="delivery-issues-heading">Needs attention</h2></div><span>{managed.issues.length}</span></div>
       <ul>{managed.issues.map((issue, index) => <li key={`${issue.code}-${issue.path ?? index}`}><strong>{issue.path ? fileName(issue.path) : titleCase(issue.code)}</strong><span>{issue.message}</span></li>)}</ul>
     </section>}
 
-    <section className="delivery-package panel" aria-labelledby="delivery-package-heading">
-      <div className="panel-heading">
-        <div><p className="kicker">Package</p><h2 id="delivery-package-heading">Generated ZIP</h2></div>
-        {activePackage && <span className={`delivery-package-badge delivery-package-${activePackage.status}`}>{packageStatusLabel(activePackage.status)}</span>}
-      </div>
-      {!activePackage ? <div className="delivery-empty-inline">
-        <strong>No generated ZIP</strong>
-        <span>Create or rebuild the delivery with ZIP enabled when the deliverables and notes are ready.</span>
-      </div> : <div className="delivery-package-row">
-        <div>
-          <strong>{activePackage.name}</strong>
-          <span>{formatBytes(activePackage.sizeBytes)} · {formatTimestamp(activePackage.modifiedAt)}</span>
+    <div className="delivery-document-row">
+      <section className="panel delivery-notes-panel" aria-labelledby="delivery-notes-heading">
+        <div className="panel-heading">
+          <div><p className="kicker">Package document</p><h2 id="delivery-notes-heading">Delivery Notes</h2></div>
+          {notes.status === "ready" && <span>{new TextEncoder().encode(notesDraft).length.toLocaleString()} / {notes.value.maxBytes.toLocaleString()} bytes</span>}
         </div>
-        <div className="delivery-package-actions">
-          <button type="button" className="secondary" onClick={() => void deletePackage(activePackage)} disabled={deletingPackage !== null}>
-            {deletingPackage === activePackage.name ? "Deleting…" : "Delete ZIP"}
-          </button>
-          <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
-        </div>
-      </div>}
-      {activePackage?.issues.length ? <ul className="delivery-package-issues">{activePackage.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul> : null}
-    </section>
+        {!deliveryDocumentId && <div className="delivery-empty-inline"><span>Delivery Notes are created with the first managed delivery.</span></div>}
+        {deliveryDocumentId && notes.status === "loading" && <p>Reading <code>Delivery_Notes.md</code>…</p>}
+        {notes.status === "error" && <div className="form-error" role="alert">{notes.message}</div>}
+        {notes.status === "ready" && <>
+          <MarkdownEditor
+            ariaLabel="Delivery Notes Markdown content"
+            minRows={9}
+            disabled={notesSaving}
+            value={notesDraft}
+            onChange={(value) => {
+              setNotesDraft(value);
+              setNotesMessage(null);
+            }}
+          />
+          <div className="dialog-actions">
+            <button
+              type="button"
+              onClick={saveNotes}
+              disabled={notesSaving || notesDraft === notes.value.content || new TextEncoder().encode(notesDraft).length > notes.value.maxBytes}
+              aria-busy={notesSaving}
+            >{notesSaving ? "Saving…" : "Save Delivery Notes"}</button>
+          </div>
+        </>}
+        {notesMessage && <p role="status">{notesMessage}</p>}
+      </section>
 
-    <section className="panel delivery-notes-panel" aria-labelledby="delivery-notes-heading">
-      <div className="panel-heading">
-        <div><p className="kicker">Package document</p><h2 id="delivery-notes-heading">Delivery Notes</h2></div>
-        {notes.status === "ready" && <span>{new TextEncoder().encode(notesDraft).length.toLocaleString()} / {notes.value.maxBytes.toLocaleString()} bytes</span>}
-      </div>
-      {!deliveryDocumentId && <div className="delivery-empty-inline"><span>Delivery Notes are created with the first managed delivery.</span></div>}
-      {deliveryDocumentId && notes.status === "loading" && <p>Reading <code>Delivery_Notes.md</code>…</p>}
-      {notes.status === "error" && <div className="form-error" role="alert">{notes.message}</div>}
-      {notes.status === "ready" && <>
-        <MarkdownEditor
-          ariaLabel="Delivery Notes Markdown content"
-          minRows={9}
-          disabled={notesSaving}
-          value={notesDraft}
-          onChange={(value) => {
-            setNotesDraft(value);
-            setNotesMessage(null);
-          }}
-        />
-        <div className="dialog-actions">
-          <button
-            type="button"
-            onClick={saveNotes}
-            disabled={notesSaving || notesDraft === notes.value.content || new TextEncoder().encode(notesDraft).length > notes.value.maxBytes}
-            aria-busy={notesSaving}
-          >{notesSaving ? "Saving…" : "Save Delivery Notes"}</button>
+      <section className="delivery-package panel" aria-labelledby="delivery-package-heading">
+        <div className="panel-heading">
+          <div><p className="kicker">Package</p><h2 id="delivery-package-heading">Package Details</h2></div>
+          {activePackage && <span className={`delivery-package-badge delivery-package-${activePackage.status}`}>{packageStatusLabel(activePackage.status)}</span>}
         </div>
-      </>}
-      {notesMessage && <p role="status">{notesMessage}</p>}
-    </section>
+        {!activePackage ? <div className="delivery-empty-inline">
+          <strong>No generated ZIP</strong>
+          <span>Create or rebuild the delivery with ZIP enabled when the deliverables and notes are ready.</span>
+        </div> : <div className="delivery-package-content">
+          <div className="delivery-package-row">
+            <div>
+              <strong>{activePackage.name}</strong>
+              <span>{formatBytes(activePackage.sizeBytes)} · {formatTimestamp(activePackage.modifiedAt)}</span>
+            </div>
+          </div>
+          <dl className="delivery-package-metadata">
+            <div><dt>Status</dt><dd>{packageStatusLabel(activePackage.status)}</dd></div>
+            <div><dt>Size</dt><dd>{formatBytes(activePackage.sizeBytes)}</dd></div>
+            <div><dt>Modified</dt><dd>{formatTimestamp(activePackage.modifiedAt)}</dd></div>
+          </dl>
+          <div className="delivery-package-actions">
+            <button type="button" className="secondary" onClick={() => void deletePackage(activePackage)} disabled={deletingPackage !== null}>
+              {deletingPackage === activePackage.name ? "Deleting…" : "Delete ZIP"}
+            </button>
+            <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
+          </div>
+        </div>}
+        {activePackage?.issues.length ? <ul className="delivery-package-issues">{activePackage.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul> : null}
+      </section>
+    </div>
 
     {managed && managed.state !== "not_created"
       ? <DeliveryFilesList
