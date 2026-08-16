@@ -83,7 +83,7 @@
   border-radius: 0;
   background: transparent;
   padding: 3px 2px;
-  box-shadow: none;
+  box-shadow: 0 2px 7px rgb(31 48 77 / 14%);
   font-size: .72rem;
 }
 
@@ -92,7 +92,7 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  box-shadow: none !important;
+  box-shadow: 0 2px 7px rgb(31 48 77 / 14%) !important;
   outline: none !important;
 }
 
