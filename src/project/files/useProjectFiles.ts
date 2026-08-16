@@ -56,5 +56,11 @@ export function useProjectFiles({
     };
   }, [refresh]);
 
+  useEffect(() => {
+    const handleFocus = () => { void refresh(); };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refresh]);
+
   return { state, refresh };
 }
