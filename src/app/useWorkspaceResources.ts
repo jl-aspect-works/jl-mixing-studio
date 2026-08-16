@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceConfiguration } from "../settings/models";
 import { safeError, type ResourceState } from "../AppViews";
+import { notifyWorkspaceRefreshed } from "./workspaceRefreshEvents";
 
 const yieldToBrowserPaint = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0));
 
@@ -48,7 +49,10 @@ export function useWorkspaceResources() {
     await yieldToBrowserPaint();
     try {
       const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
-      if (workspaceRequestId.current === currentRequest) setWorkspace({ status: "ready", value });
+      if (workspaceRequestId.current === currentRequest) {
+        setWorkspace({ status: "ready", value });
+        notifyWorkspaceRefreshed();
+      }
     } catch (error: unknown) {
       if (workspaceRequestId.current === currentRequest) {
         const message = safeError(error, "Workspace discovery could not be completed.");
