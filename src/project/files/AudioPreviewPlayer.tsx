@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ProjectFileEntry } from "./projectFileService";
 import { prepareProjectAudioPreview } from "./audioPreviewService";
+import "./AudioPreviewPlayer.css";
 
 let activeAudioElement: HTMLAudioElement | null = null;
 
