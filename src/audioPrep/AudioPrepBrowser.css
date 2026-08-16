@@ -9,8 +9,13 @@
 }
 
 .audio-prep-table .client-file-status-heading {
+  overflow: hidden;
   padding-left: 0;
   padding-right: 0;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  white-space: nowrap;
 }
 
 .audio-prep-table .audio-prep-filename-cell {
@@ -37,9 +42,21 @@
   text-align: left;
 }
 
+.audio-prep-name-button,
+.audio-prep-name-button:hover:not(:disabled),
+.audio-prep-name-button:focus,
+.audio-prep-name-button:focus-visible,
+.audio-prep-name-button:active:not(:disabled) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  transform: none !important;
+}
+
+.audio-prep-name-button:focus,
 .audio-prep-name-button:focus-visible {
-  outline: 0;
-  box-shadow: none;
   color: #1758d5;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -72,10 +89,13 @@
   font-size: .72rem;
 }
 
-.audio-prep-inline-input input:focus {
-  border-bottom-color: #1758d5;
-  box-shadow: none;
-  outline: 0;
+.audio-prep-inline-input input:focus,
+.audio-prep-inline-input input:focus-visible {
+  border: 0;
+  border-bottom: 1px solid #1758d5;
+  border-radius: 0;
+  box-shadow: none !important;
+  outline: 0 !important;
 }
 
 .audio-prep-inline-input input:disabled {
