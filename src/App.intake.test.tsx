@@ -34,7 +34,7 @@ const openClientFiles = async () => {
   const clientFilesButton = within(projectNavigation).getByRole("button", { name: "Client Files" });
   await waitFor(() => expect(clientFilesButton).toBeEnabled());
   fireEvent.click(clientFilesButton);
-  await waitFor(() => expect(clientFilesButton).toHaveAttribute("aria-current", "page"));
+  await waitFor(() => expect(within(projectNavigation).getByText("Client Files")).toHaveAttribute("aria-current", "page"));
 };
 
 afterEach(cleanup);
