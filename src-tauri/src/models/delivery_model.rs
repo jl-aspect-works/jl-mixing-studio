@@ -165,7 +165,7 @@ pub struct DeliveryPackageDeleteRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryIssue {
     pub code: String,
     pub message: String,
@@ -173,7 +173,7 @@ pub struct ManagedDeliveryIssue {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryRevisions {
     pub current: u32,
     pub approved: Option<u32>,
@@ -182,7 +182,7 @@ pub struct ManagedDeliveryRevisions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliverableStatus {
     pub path: String,
     pub deliverable_type: Option<String>,
@@ -193,7 +193,7 @@ pub struct ManagedDeliverableStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryNotesStatus {
     pub path: String,
     pub present: bool,
@@ -202,7 +202,7 @@ pub struct ManagedDeliveryNotesStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryPackageStatus {
     pub name: String,
     pub path: String,
@@ -213,7 +213,7 @@ pub struct ManagedDeliveryPackageStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryStatus {
     pub delivery_path: String,
     pub delivery_manifest_path: String,
