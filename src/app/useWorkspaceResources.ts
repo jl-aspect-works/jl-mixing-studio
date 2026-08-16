@@ -42,9 +42,9 @@ export function useWorkspaceResources() {
     }
   }, []);
 
-  const refreshWorkspace = useCallback(async () => {
+  const refreshWorkspace = useCallback(async (blocking = true) => {
     const currentRequest = ++workspaceRequestId.current;
-    setRefreshingWorkspace(true);
+    if (blocking) setRefreshingWorkspace(true);
     setWorkspaceRefreshError(null);
     await yieldToBrowserPaint();
     try {
@@ -60,7 +60,7 @@ export function useWorkspaceResources() {
         setWorkspace((current) => current.status === "ready" ? current : { status: "error", message });
       }
     } finally {
-      if (workspaceRequestId.current === currentRequest) setRefreshingWorkspace(false);
+      if (blocking && workspaceRequestId.current === currentRequest) setRefreshingWorkspace(false);
     }
   }, []);
 
@@ -80,7 +80,7 @@ export function useWorkspaceResources() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   useEffect(() => {
-    const handleFocus = () => { void refreshWorkspace(); };
+    const handleFocus = () => { void refreshWorkspace(false); };
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [refreshWorkspace]);
