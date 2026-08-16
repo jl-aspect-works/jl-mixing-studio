@@ -50,7 +50,7 @@ describe("ProjectFileBrowser shared-storage resilience", () => {
     render(<ProjectFileBrowser clientId="client" projectId="project" initialPath="04_Revisions/Revision_01" />);
 
     await screen.findByText("Mix.wav");
-    fireEvent.click(screen.getByRole("button", { name: "Actions for Mix.wav" }));
+    fireEvent.click(screen.getByLabelText("Actions for Mix.wav"));
     fireEvent.click(screen.getByRole("menuitem", { name: "Reveal" }));
 
     expect(screen.getByRole("status")).toHaveTextContent("Revealing Mix.wav…");
