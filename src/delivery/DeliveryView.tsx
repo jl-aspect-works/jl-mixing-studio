@@ -7,7 +7,7 @@ import type {
   ProjectSummary,
 } from "../types";
 import { safeError, type ResourceState } from "../AppShellViews";
-import { MarkdownEditor } from "../components/MarkdownEditor";
+import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { DeliveryFilesList } from "./DeliveryFilesList";
@@ -261,26 +261,25 @@ export function DeliveryView({
 
     <div className="delivery-document-row">
       <section className="panel delivery-notes-panel" aria-labelledby="delivery-notes-heading">
-        <div className="panel-heading delivery-notes-heading">
-          <div><p className="kicker">Package document</p><h2 id="delivery-notes-heading">Delivery Notes</h2></div>
-          <div className="delivery-notes-heading-actions">
-            {notes.status === "ready" && <span>{new TextEncoder().encode(notesDraft).length.toLocaleString()} / {notes.value.maxBytes.toLocaleString()} bytes</span>}
-            {notes.status === "ready" && <button
-              type="button"
-              onClick={saveNotes}
-              disabled={notesSaving || notesDraft === notes.value.content || new TextEncoder().encode(notesDraft).length > notes.value.maxBytes}
-              aria-busy={notesSaving}
-            >{notesSaving ? "Saving…" : "Save Delivery Notes"}</button>}
-          </div>
-        </div>
-        {!deliveryDocumentId && <div className="delivery-empty-inline"><span>Delivery Notes are created with the first managed delivery.</span></div>}
-        {deliveryDocumentId && notes.status === "loading" && <p>Reading <code>Delivery_Notes.md</code>…</p>}
-        {notes.status === "error" && <div className="form-error" role="alert">{notes.message}</div>}
-        {notes.status === "ready" && <MarkdownEditor
+        {!deliveryDocumentId ? <>
+          <div className="panel-heading"><div><p className="kicker">Package document</p><h2 id="delivery-notes-heading">Delivery Notes</h2></div></div>
+          <div className="delivery-empty-inline"><span>Delivery Notes are created with the first managed delivery.</span></div>
+        </> : <MarkdownDocumentEditor
+          headingId="delivery-notes-heading"
+          kicker="Package document"
+          title="Delivery Notes"
           ariaLabel="Delivery Notes Markdown content"
-          minRows={9}
-          disabled={notesSaving}
           value={notesDraft}
+          savedValue={notes.status === "ready" ? notes.value.content : notesDraft}
+          maxBytes={notes.status === "ready" ? notes.value.maxBytes : 65_536}
+          loading={notes.status === "loading"}
+          loadingLabel="Reading Delivery_Notes.md…"
+          saving={notesSaving}
+          disabled={notes.status !== "ready"}
+          error={notes.status === "error" ? notes.message : null}
+          saveLabel="Save Delivery Notes"
+          minRows={9}
+          onSave={saveNotes}
           onChange={(value) => {
             setNotesDraft(value);
             setNotesMessage(null);
