@@ -42,8 +42,8 @@ export function ProjectFileBrowser({
   onPreview?: (entry: ProjectFileEntry) => void;
   onOpen?: (entry: ProjectFileEntry) => void;
   onReveal?: (entry: ProjectFileEntry) => void;
-  onRename?: (entry: ProjectFileEntry) => void;
-  onDelete?: (entry: ProjectFileEntry) => void;
+  onRename?: (entry: ProjectFileEntry) => void | Promise<void>;
+  onDelete?: (entry: ProjectFileEntry) => void | Promise<void>;
 }) {
   const [relativePath, setRelativePath] = useState(initialPath);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -88,6 +88,20 @@ export function ProjectFileBrowser({
     setActionError(null);
     try {
       await action({ clientId, projectId, relativePath: entry.relativePath });
+    } catch (error) {
+      setActionError(actionErrorMessage(error));
+    }
+  };
+
+  const runManagedMutation = async (
+    action: ((entry: ProjectFileEntry) => void | Promise<void>) | undefined,
+    entry: ProjectFileEntry,
+  ) => {
+    if (!action) return;
+    setActionError(null);
+    try {
+      await action(entry);
+      await refresh();
     } catch (error) {
       setActionError(actionErrorMessage(error));
     }
@@ -187,8 +201,8 @@ export function ProjectFileBrowser({
             <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} />
           )}
           onReveal={revealEntry}
-          onRename={onRename}
-          onDelete={onDelete}
+          onRename={onRename ? (entry) => void runManagedMutation(onRename, entry) : undefined}
+          onDelete={onDelete ? (entry) => void runManagedMutation(onDelete, entry) : undefined}
         />
       )}
     </section>
