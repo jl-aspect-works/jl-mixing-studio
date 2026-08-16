@@ -122,7 +122,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       expect(screen.getByText("Main Mix")).toBeInTheDocument();
       expect(screen.getByText("1.17 KB")).toBeInTheDocument();
       expect(screen.getAllByText("Verified").length).toBeGreaterThan(0);
-      expect(screen.getByRole("button", { name: "Rebuild Delivery" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Rebuild Package" })).toBeEnabled();
       expect(screen.getAllByText("No generated ZIP").length).toBeGreaterThan(0);
     });
 
@@ -206,7 +206,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
-      fireEvent.click(screen.getByRole("button", { name: "Rebuild Delivery" }));
+      fireEvent.click(screen.getByRole("button", { name: "Rebuild Package" }));
 
       const options = await screen.findByRole("dialog", { name: "Rebuild delivery package" });
       expect(within(options).getByRole("checkbox", { name: /create delivery ZIP/i })).toBeChecked();
@@ -267,7 +267,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
-      fireEvent.click(screen.getByRole("button", { name: "Rebuild Delivery" }));
+      fireEvent.click(screen.getByRole("button", { name: "Rebuild Package" }));
       const options = await screen.findByRole("dialog", { name: "Rebuild delivery package" });
       fireEvent.click(within(options).getByRole("radio", { name: /clean replacement/i }));
       expect(within(options).getByRole("alert")).toHaveTextContent(/everything currently inside 05_Final_Delivery/i);
