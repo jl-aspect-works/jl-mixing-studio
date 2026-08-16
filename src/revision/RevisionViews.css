@@ -50,6 +50,7 @@
 .revision-files-heading { padding: 12px 14px 0; }
 .revision-files-heading h2 { margin: 0; font-size: .95rem; }
 .revision-files { margin-top: 10px; }
+.revision-files .shared-managed-folder-toolbar { box-sizing: border-box; padding-left: 12px; padding-right: 12px; }
 .revision-files-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid rgba(0,0,0,.07); border-bottom: 1px solid rgba(0,0,0,.07); }
 .revision-files-toolbar code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .7rem; }
 .revision-files-search { padding: 8px 12px; }
