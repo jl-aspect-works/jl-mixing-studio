@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectFilesWorkspace } from "./ProjectFilesWorkspace";
 
-const browserProps = vi.fn();
+const { browserProps } = vi.hoisted(() => ({ browserProps: vi.fn() }));
 
 vi.mock("./ProjectFileBrowser", () => ({
   ProjectFileBrowser: (props: { initialPath: string }) => {
