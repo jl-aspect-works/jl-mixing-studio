@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type {
   DeliveryNotesDocument,
@@ -10,11 +10,11 @@ import { FolderControl, safeError, type ResourceState } from "../AppShellViews";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
+import { DeliveryFilesList } from "./DeliveryFilesList";
 import type {
   DeliveryPackageDeleteRequest,
   DeliveryStatusRequest,
   DeliveryStatusResult,
-  ManagedDeliverableStatus,
   ManagedDeliveryPackageStatus,
   ManagedDeliveryStatus,
 } from "./statusModels";
@@ -44,17 +44,6 @@ const titleCase = (value: string | null | undefined) =>
   value ? value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "—";
 
 const fileName = (path: string) => path.split("/").at(-1) ?? path;
-
-const deliverableStatusLabel = (file: ManagedDeliverableStatus) => {
-  switch (file.status) {
-    case "current": return "Verified";
-    case "missing": return "Missing";
-    case "mismatch": return "Changed";
-    case "unsafe": return "Unsafe";
-    case "unavailable": return "Unavailable";
-    default: return titleCase(file.status);
-  }
-};
 
 const packageStatusLabel = (value: string) => {
   switch (value) {
@@ -164,10 +153,6 @@ export function DeliveryView({
   const packageNeedsRebuild = managed?.packageState === "stale" || managed?.packageState === "attention";
   const displayFiles = managed?.deliverables ?? [];
   const issueCount = managed?.issues.length ?? 0;
-  const totalBytes = useMemo(
-    () => displayFiles.reduce((total, file) => total + (file.sizeBytes ?? 0), 0),
-    [displayFiles],
-  );
 
   const readiness = (() => {
     if (project.approvedRevision === null) {
@@ -324,24 +309,16 @@ export function DeliveryView({
       {notesMessage && <p role="status">{notesMessage}</p>}
     </section>
 
-    <section className="panel delivery-files-panel" aria-labelledby="delivery-files-heading">
-      <div className="panel-heading">
-        <div><p className="kicker">Deliverables</p><h2 id="delivery-files-heading">Delivery Files</h2></div>
-        <span>{displayFiles.length} files · {formatBytes(totalBytes)}</span>
-      </div>
-      {!managed || managed.state === "not_created" ? <div className="delivery-empty-inline"><span>No managed deliverables have been created yet.</span></div> : <div className="table-scroll">
-        <table className="delivery-files-table">
-          <thead><tr><th>Filename</th><th>Type</th><th>Source</th><th>Size</th><th>Status</th><th>Duration</th></tr></thead>
-          <tbody>{displayFiles.map((file) => <tr key={file.path} className={`delivery-file-${file.status}`}>
-            <td><strong>{fileName(file.path)}</strong>{file.path.includes("/") && <small>{file.path}</small>}</td>
-            <td>{titleCase(file.deliverableType)}</td>
-            <td>{managed.revisions.source ? `Rev ${managed.revisions.source.toString().padStart(2, "0")}` : "—"}</td>
-            <td>{formatBytes(file.sizeBytes)}</td>
-            <td><span className={`delivery-file-status delivery-file-status-${file.status}`}>{deliverableStatusLabel(file)}</span></td>
-            <td>—</td>
-          </tr>)}</tbody>
-        </table>
-      </div>}
-    </section>
+    {managed && managed.state !== "not_created"
+      ? <DeliveryFilesList
+          clientId={clientId}
+          projectId={project.projectId}
+          files={displayFiles}
+          sourceRevision={managed.revisions.source}
+        />
+      : <section className="panel delivery-files-panel" aria-labelledby="delivery-files-heading">
+          <div className="panel-heading"><div><p className="kicker">Deliverables</p><h2 id="delivery-files-heading">Delivery Files</h2></div></div>
+          <div className="delivery-empty-inline"><span>No managed deliverables have been created yet.</span></div>
+        </section>}
   </>;
 }
