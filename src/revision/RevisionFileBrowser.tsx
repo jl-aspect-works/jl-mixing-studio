@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
-import { ManagedFolderToolbar, RowActionMenu } from "../project/files/FileUiPrimitives";
+import { FileViewControls, ManagedFolderToolbar, RowActionMenu } from "../project/files/FileUiPrimitives";
 import {
   deleteRevisionFile,
   formatProjectFileModified,
@@ -135,15 +135,21 @@ export function RevisionFileBrowser({
       refreshLabel="Refresh files"
     />
 
-    <div className="revision-files-search">
-      <input
-        type="search"
-        aria-label="Search revision files"
-        placeholder="Search this revision"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
-    </div>
+    <FileViewControls
+      label="Revision file view controls"
+      className="revision-files-search"
+      controls={[{
+        icon: "search",
+        label: "Search",
+        control: <input
+          type="search"
+          aria-label="Search revision files"
+          placeholder="Search this revision"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />,
+      }]}
+    />
 
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}
     {state.status === "error" && <div className="inline-notice error" role="alert">{state.message}</div>}
@@ -165,9 +171,9 @@ export function RevisionFileBrowser({
               entry.entryType === "file" && entry.permissions.canDelete ? { label: "Delete", onSelect: () => setConfirmDeletePath(entry.relativePath), disabled: busy, destructive: true } : null,
             ].filter((action): action is NonNullable<typeof action> => action !== null);
             return <tr key={entry.id}>
-              <td className="revision-file-name-cell">
+              <td className={`revision-file-name-cell${entry.entryType === "directory" ? " revision-folder-name-cell" : ""}`}>
                 {entry.entryType === "directory"
-                  ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button>
+                  ? <button type="button" className="table-link revision-folder-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button>
                   : entry.permissions.canRename
                     ? <div className="revision-inline-filename">
                         <input
@@ -195,7 +201,7 @@ export function RevisionFileBrowser({
                   ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} />
                   : <span className="revision-muted">—</span>}
               </td>
-              <td>{entry.entryType === "directory" ? "Folder" : entry.extension?.toUpperCase() ?? "File"}</td>
+              <td className={entry.entryType === "directory" ? "revision-folder-type-cell" : undefined}>{entry.entryType === "directory" ? "Folder" : entry.extension?.toUpperCase() ?? "File"}</td>
               <td>{entry.entryType === "file" ? formatProjectFileSize(entry.sizeBytes) : "—"}</td>
               <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
               <td><div className="revision-file-actions"><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} /></div></td>
