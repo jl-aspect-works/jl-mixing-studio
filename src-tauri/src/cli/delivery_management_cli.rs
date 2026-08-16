@@ -43,7 +43,9 @@ pub(super) fn get_delivery_status_with_runner<R: ProcessRunner>(
                     message: "Delivery status reconciled successfully.".to_owned(),
                     delivery: Some(delivery),
                 },
-                Err(_) => failed("JL Mixing Automation returned an unverifiable delivery status."),
+                Err(_) => failed(
+                    "JL Mixing Automation returned an unverifiable delivery status.",
+                ),
             }
         }
         Ok(response) => rejected(
@@ -85,7 +87,9 @@ pub(super) fn delete_delivery_package_with_runner<R: ProcessRunner>(
     ) {
         Ok(response) if response.status == ApiStatus::Success => {
             let Some(delivery_value) = response.data.get("delivery").cloned() else {
-                return failed("JL Mixing Automation deleted the package, but the refreshed delivery state could not be verified.");
+                return failed(
+                    "JL Mixing Automation deleted the package, but the refreshed delivery state could not be verified.",
+                );
             };
             match serde_json::from_value::<ManagedDeliveryStatus>(delivery_value) {
                 Ok(delivery) => DeliveryStatusResult {
@@ -93,7 +97,9 @@ pub(super) fn delete_delivery_package_with_runner<R: ProcessRunner>(
                     message: "Generated delivery package deleted successfully.".to_owned(),
                     delivery: Some(delivery),
                 },
-                Err(_) => failed("JL Mixing Automation deleted the package, but the refreshed delivery state could not be verified."),
+                Err(_) => failed(
+                    "JL Mixing Automation deleted the package, but the refreshed delivery state could not be verified.",
+                ),
             }
         }
         Ok(response) => rejected(
