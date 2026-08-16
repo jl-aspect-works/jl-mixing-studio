@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { IntakeReportState } from "../AppShellViews";
 import { safeError } from "../AppShellViews";
+import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import type { IntakeOperationResult, IntakeRequest } from "../types";
 import type { IntakeWorkflowState } from "./models";
 
@@ -54,7 +55,7 @@ export function useIntakeWorkflow({
   const currentRequest = (): IntakeRequest | null =>
     clientId && projectId ? { clientId, projectId } : null;
 
-  const loadReport = (request: IntakeRequest) => {
+  const loadReport = useCallback((request: IntakeRequest) => {
     setReportState({ status: "loading" });
     invoke<IntakeOperationResult>("get_intake_report", { request })
       .then((result) => setReportState({ status: "ready", value: result }))
@@ -64,7 +65,13 @@ export function useIntakeWorkflow({
           message: safeError(error, "The intake report could not be read."),
         });
       });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!clientId || !projectId) return;
+    const request: IntakeRequest = { clientId, projectId };
+    return addWorkspaceRefreshListener(() => loadReport(request));
+  }, [clientId, projectId, loadReport]);
 
   const refreshClientFiles = async (request: IntakeRequest, announce: boolean) => {
     setActionError(null);
