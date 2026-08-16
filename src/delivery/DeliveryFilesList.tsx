@@ -25,7 +25,10 @@ const formatBytes = (value: number | null | undefined) => {
 const titleCase = (value: string | null | undefined) =>
   value ? value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "—";
 
-const fileName = (path: string) => path.split("/").at(-1) ?? path;
+const fileName = (path: string) => {
+  const parts = path.split("/");
+  return parts[parts.length - 1] || path;
+};
 
 const statusLabel = (file: ManagedDeliverableStatus) => {
   switch (file.status) {
@@ -86,7 +89,8 @@ export function DeliveryFilesList({
     return files
       .filter((file) => statusFilter === "all" || file.status === statusFilter)
       .filter((file) => !normalized || file.path.toLocaleLowerCase().includes(normalized) || (file.deliverableType ?? "").toLocaleLowerCase().includes(normalized))
-      .toSorted((left, right) => {
+      .slice()
+      .sort((left, right) => {
         if (sort === "type") return (left.deliverableType ?? "").localeCompare(right.deliverableType ?? "") || left.path.localeCompare(right.path);
         if (sort === "status") return left.status.localeCompare(right.status) || left.path.localeCompare(right.path);
         return left.path.localeCompare(right.path);
