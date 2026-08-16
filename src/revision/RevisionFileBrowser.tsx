@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
+import { ManagedFolderToolbar, RowActionMenu } from "../project/files/FileUiPrimitives";
 import {
   deleteRevisionFile,
   formatProjectFileModified,
@@ -125,20 +126,14 @@ export function RevisionFileBrowser({
   const canNavigateUp = canNavigateProjectFilesUp(relativePath, rootPath);
 
   return <section className="revision-files" aria-label={`Revision ${revision} files`}>
-    <div className="revision-files-toolbar">
-      <code>{relativePath}</code>
-      <div className="directory-actions">
-        <button
-          type="button"
-          className="secondary"
-          disabled={!canNavigateUp || state.status === "loading"}
-          onClick={() => navigateTo(projectFilePathUp(relativePath, rootPath))}
-        >Up</button>
-        <button type="button" className="secondary" disabled={state.status === "loading"} onClick={() => void refresh()}>
-          {state.status === "loading" ? "Refreshing…" : "Refresh files"}
-        </button>
-      </div>
-    </div>
+    <ManagedFolderToolbar
+      path={relativePath}
+      canNavigateUp={canNavigateUp}
+      loading={state.status === "loading"}
+      onUp={() => navigateTo(projectFilePathUp(relativePath, rootPath))}
+      onRefresh={() => void refresh()}
+      refreshLabel="Refresh files"
+    />
 
     <div className="revision-files-search">
       <input
@@ -161,6 +156,14 @@ export function RevisionFileBrowser({
             const editing = editingPath === entry.relativePath;
             const confirming = confirmDeletePath === entry.relativePath;
             const busy = busyPath === entry.relativePath;
+            const actions = confirming ? [
+              { label: "Confirm Delete", onSelect: () => void deleteEntry(entry), disabled: busy, destructive: true },
+              { label: "Cancel", onSelect: () => setConfirmDeletePath(null), disabled: busy },
+            ] : [
+              entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runFileAction("open", entry), disabled: busy } : null,
+              entry.permissions.canReveal ? { label: "Reveal", onSelect: () => void runFileAction("reveal", entry), disabled: busy } : null,
+              entry.entryType === "file" && entry.permissions.canDelete ? { label: "Delete", onSelect: () => setConfirmDeletePath(entry.relativePath), disabled: busy, destructive: true } : null,
+            ].filter((action): action is NonNullable<typeof action> => action !== null);
             return <tr key={entry.id}>
               <td className="revision-file-name-cell">
                 {entry.entryType === "directory"
@@ -195,23 +198,7 @@ export function RevisionFileBrowser({
               <td>{entry.entryType === "directory" ? "Folder" : entry.extension?.toUpperCase() ?? "File"}</td>
               <td>{entry.entryType === "file" ? formatProjectFileSize(entry.sizeBytes) : "—"}</td>
               <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
-              <td>
-                <div className="revision-file-actions">
-                  <details className="revision-row-menu">
-                    <summary aria-label={`Actions for ${entry.displayName}`} title="More actions">⋮</summary>
-                    <div className="revision-row-menu-popover">
-                      {confirming ? <>
-                        <button type="button" className="revision-delete-confirm" disabled={busy} onClick={() => void deleteEntry(entry)}>Confirm Delete</button>
-                        <button type="button" className="secondary" disabled={busy} onClick={() => setConfirmDeletePath(null)}>Cancel</button>
-                      </> : <>
-                        {entry.entryType === "file" && entry.permissions.canOpen && <button type="button" disabled={busy} onClick={() => void runFileAction("open", entry)}>Open</button>}
-                        {entry.permissions.canReveal && <button type="button" disabled={busy} onClick={() => void runFileAction("reveal", entry)}>Reveal</button>}
-                        {entry.entryType === "file" && entry.permissions.canDelete && <button type="button" className="revision-delete" disabled={busy} onClick={() => setConfirmDeletePath(entry.relativePath)}>Delete</button>}
-                      </>}
-                    </div>
-                  </details>
-                </div>
-              </td>
+              <td><div className="revision-file-actions"><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} /></div></td>
             </tr>;
           })}
           {!entries.length && state.status !== "loading" && <tr><td colSpan={6} className="revision-files-empty">No revision files found.</td></tr>}
