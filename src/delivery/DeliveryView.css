@@ -152,8 +152,15 @@
 }
 .delivery-package-metadata dt { color: #7a8596; font-weight: 700; }
 .delivery-package-metadata dd { overflow: hidden; margin: 0; color: #354257; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
-.delivery-package-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
-.delivery-package-actions button { min-height: 27px; padding: 3px 8px; font-size: .64rem; }
+.delivery-package-actions { display: flex; flex-wrap: nowrap; gap: 4px; margin-top: auto; }
+.delivery-package-actions button {
+  min-height: 27px;
+  height: 27px;
+  padding: 3px 8px;
+  font-size: .64rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
 .delivery-package-badge { display: inline-flex; align-items: center; min-height: 18px; padding: 1px 6px; border-radius: 999px; font-size: .58rem; font-weight: 700; }
 .delivery-package-current { background: #edf7f1; color: #356b4a; }
 .delivery-package-stale { background: #fff4df; color: #8a5b1f; }
@@ -219,6 +226,7 @@
   .delivery-heading-copy { justify-self: start; margin-top: 2px; text-align: left; white-space: normal; }
   .delivery-heading-actions,
   .delivery-package-actions { justify-content: flex-start; }
+  .delivery-package-actions { flex-wrap: wrap; }
   .delivery-summary-grid,
   .delivery-details-grid,
   .delivery-document-row { grid-template-columns: 1fr; }
