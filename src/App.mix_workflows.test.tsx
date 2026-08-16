@@ -371,8 +371,8 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
 
       expect(screen.getByRole("heading", { name: "New revision" })).toBeInTheDocument();
-      expect(screen.getByRole("textbox", { name: "Revision description" })).toHaveFocus();
-      fireEvent.change(screen.getByRole("textbox", { name: "Revision description" }), { target: { value: " Vocal lift " } });
+      expect(screen.getByRole("textbox", { name: /^Revision description/ })).toHaveFocus();
+      fireEvent.change(screen.getByRole("textbox", { name: /^Revision description/ }), { target: { value: " Vocal lift " } });
       fireEvent.click(screen.getByRole("button", { name: "Review revision" }));
 
       expect(await screen.findByRole("heading", { name: "Confirm new revision" })).toBeInTheDocument();
@@ -416,7 +416,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
-      fireEvent.change(screen.getByRole("textbox", { name: "Revision description" }), { target: { value: "Vocal lift" } });
+      fireEvent.change(screen.getByRole("textbox", { name: /^Revision description/ }), { target: { value: "Vocal lift" } });
       fireEvent.click(screen.getByRole("button", { name: "Review revision" }));
       await screen.findByRole("heading", { name: "Confirm new revision" });
       fireEvent.click(screen.getByRole("button", { name: "Create revision" }));
@@ -447,7 +447,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
-      fireEvent.change(screen.getByRole("textbox", { name: "Revision description" }), { target: { value: "Vocal lift" } });
+      fireEvent.change(screen.getByRole("textbox", { name: /^Revision description/ }), { target: { value: "Vocal lift" } });
       fireEvent.click(screen.getByRole("button", { name: "Review revision" }));
       await screen.findByRole("heading", { name: "Confirm new revision" });
       fireEvent.click(screen.getByRole("button", { name: "Create revision" }));
