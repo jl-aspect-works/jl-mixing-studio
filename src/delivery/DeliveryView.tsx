@@ -297,6 +297,9 @@ export function DeliveryView({
         {!activePackage ? <div className="delivery-empty-inline">
           <strong>No generated ZIP</strong>
           <span>Create or rebuild the delivery with ZIP enabled when the deliverables and notes are ready.</span>
+          {delivery && <div className="delivery-package-actions">
+            <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
+          </div>}
         </div> : <div className="delivery-package-content">
           <div className="delivery-package-row">
             <div>
