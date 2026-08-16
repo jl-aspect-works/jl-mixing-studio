@@ -43,9 +43,7 @@ pub(super) fn get_delivery_status_with_runner<R: ProcessRunner>(
                     message: "Delivery status reconciled successfully.".to_owned(),
                     delivery: Some(delivery),
                 },
-                Err(_) => failed(
-                    "JL Mixing Automation returned an unverifiable delivery status.",
-                ),
+                Err(_) => failed("JL Mixing Automation returned an unverifiable delivery status."),
             }
         }
         Ok(response) => rejected(
