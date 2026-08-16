@@ -54,8 +54,9 @@ describe("ProjectFileBrowser shared-storage resilience", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Reveal" }));
 
     expect(screen.getByRole("status")).toHaveTextContent("Revealing Mix.wav…");
-    fireEvent.click(screen.getByRole("button", { name: "Actions for Mix.wav" }));
-    expect(screen.getByRole("menuitem", { name: "Reveal" })).toBeDisabled();
+    const revealAction = screen.getByRole("menuitem", { name: "Reveal" });
+    expect(revealAction).toBeDisabled();
+    fireEvent.click(revealAction);
     expect(revealProjectFile).toHaveBeenCalledTimes(1);
 
     finishReveal();
