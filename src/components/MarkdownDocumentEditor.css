@@ -1,0 +1,42 @@
+.markdown-document-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.markdown-document-heading .kicker { margin-bottom: 1px; }
+.markdown-document-heading h2 { line-height: 1.05; }
+
+.markdown-document-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.markdown-document-heading-actions span {
+  color: #7c8798;
+  font-size: .61rem;
+  white-space: nowrap;
+}
+
+.markdown-document-heading-actions button {
+  min-height: 27px !important;
+  padding: 3px 8px !important;
+  font-size: .64rem !important;
+  white-space: nowrap;
+}
+
+.markdown-document-loading {
+  margin: 0;
+  color: #7c8798;
+  font-size: .68rem;
+}
+
+@media (max-width: 760px) {
+  .markdown-document-heading { align-items: flex-start; }
+  .markdown-document-heading-actions { flex-wrap: wrap; }
+}
