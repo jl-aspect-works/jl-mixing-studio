@@ -22,8 +22,7 @@ pub(crate) use commands::{
 };
 #[cfg(test)]
 use commands::{
-    intake_directory, read_delivery_notes, read_revision_notes, write_delivery_notes,
-    write_revision_notes, DELIVERY_NOTES_MAX_BYTES, REVISION_NOTES_MAX_BYTES,
+    intake_directory, read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
 };
 use models::{
     ApprovalOperationResult, ClientCreationRequest, ClientOperationResult, DeliveryCreationRequest,
