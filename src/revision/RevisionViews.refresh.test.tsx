@@ -1,0 +1,113 @@
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ClientSummary, ProjectSummary } from "../types";
+import { notifyWorkspaceRefreshed } from "../app/workspaceRefreshEvents";
+import { RevisionsView } from "./RevisionViews";
+
+const mocks = vi.hoisted(() => ({
+  getRevisionNotes: vi.fn(),
+  updateRevisionDescription: vi.fn(),
+  updateRevisionNotes: vi.fn(),
+}));
+
+vi.mock("./revisionWorkspaceService", () => ({
+  getRevisionNotes: mocks.getRevisionNotes,
+  updateRevisionDescription: mocks.updateRevisionDescription,
+  updateRevisionNotes: mocks.updateRevisionNotes,
+}));
+
+vi.mock("./RevisionFileBrowser", () => ({
+  RevisionFileBrowser: () => <div data-testid="revision-files" />,
+}));
+
+const client = {
+  clientId: "client-1",
+  clientName: "Client",
+  createdAt: "2026-08-16T12:00:00Z",
+  defaultArtist: "Artist",
+  projects: [],
+} satisfies ClientSummary;
+
+const project = {
+  projectId: "project-1",
+  projectName: "Project",
+  artist: "Artist",
+  schemaVersion: "1.1.0",
+  createdWith: "jl-mixing 1.5.0",
+  createdAt: "2026-08-16T12:00:00Z",
+  deadline: null,
+  sampleRate: 48000,
+  bitDepth: 24,
+  fileFormat: "WAV",
+  deliveryMethod: "Digital",
+  currentRevision: 1,
+  approvedRevision: null,
+  deliveredRevision: null,
+  delivery: null,
+  revisions: [{
+    number: 1,
+    revisionId: "revision-1",
+    createdAt: "2026-08-16T12:00:00Z",
+    description: "First revision",
+    approvedAt: null,
+    approvedBy: null,
+  }],
+} satisfies ProjectSummary;
+
+const renderView = () => render(<RevisionsView
+  client={client}
+  project={project}
+  loading={false}
+  actionError={null}
+  creationAvailable
+  creationHelp=""
+  approvalAvailable
+  approvalHelp=""
+  onProjects={vi.fn()}
+  onOverview={vi.fn()}
+  onRefresh={vi.fn()}
+  onNewRevision={vi.fn()}
+  onApprove={vi.fn()}
+  onSelectView={vi.fn()}
+/>);
+
+beforeEach(() => {
+  mocks.getRevisionNotes.mockReset();
+  mocks.updateRevisionDescription.mockReset();
+  mocks.updateRevisionNotes.mockReset();
+});
+
+afterEach(cleanup);
+
+describe("RevisionsView workspace refresh", () => {
+  it("reloads clean Revision Notes after a successful workspace refresh", async () => {
+    mocks.getRevisionNotes
+      .mockResolvedValueOnce({ content: "Original notes", maxBytes: 65_536 })
+      .mockResolvedValueOnce({ content: "Externally updated notes", maxBytes: 65_536 });
+
+    renderView();
+    expect(await screen.findByText("Original notes")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.getByRole("textbox", { name: "Revision Notes" })).toHaveValue("Original notes");
+
+    notifyWorkspaceRefreshed();
+
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "Revision Notes" })).toHaveValue("Externally updated notes"));
+    expect(mocks.getRevisionNotes).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not overwrite unsaved local Revision Notes during automatic refresh", async () => {
+    mocks.getRevisionNotes.mockResolvedValue({ content: "Original notes", maxBytes: 65_536 });
+
+    renderView();
+    expect(await screen.findByText("Original notes")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    const editor = screen.getByRole("textbox", { name: "Revision Notes" });
+    fireEvent.change(editor, { target: { value: "Unsaved local edit" } });
+
+    notifyWorkspaceRefreshed();
+
+    await waitFor(() => expect(editor).toHaveValue("Unsaved local edit"));
+    expect(mocks.getRevisionNotes).toHaveBeenCalledTimes(1);
+  });
+});
