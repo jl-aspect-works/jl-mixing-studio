@@ -62,7 +62,9 @@ function Harness() {
   return <>
     <span>{workspaceLabel}</span>
     <span>{resources.loading ? "refreshing" : "idle"}</span>
+    {resources.workspaceRefreshError && <span role="alert">{resources.workspaceRefreshError}</span>}
     <button type="button" onClick={() => void resources.refresh()}>Refresh resources</button>
+    <button type="button" onClick={() => void resources.refreshWorkspace()}>Refresh workspace</button>
   </>;
 }
 
@@ -134,5 +136,34 @@ describe("useWorkspaceResources", () => {
 
     expect(await screen.findByText("Refreshed Studio")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
+  });
+
+  it("preserves the last workspace after a transient refresh failure and clears the error on retry", async () => {
+    let workspaceCalls = 0;
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "discover_default_workspace") {
+        workspaceCalls += 1;
+        if (workspaceCalls === 1) return Promise.resolve(snapshot("Initial Studio"));
+        if (workspaceCalls === 2) return Promise.reject(new Error("NAS read timed out"));
+        return Promise.resolve(snapshot("Recovered Studio"));
+      }
+      if (command === "get_workspace_configuration") return Promise.resolve(configuration);
+      if (command === "get_jl_mixing_version") return Promise.resolve(version);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
+    render(<Harness />);
+    expect(await screen.findByText("Initial Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh workspace" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("NAS read timed out");
+    expect(screen.getByText("Initial Studio")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh workspace" }));
+
+    expect(await screen.findByText("Recovered Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   });
 });
