@@ -10,38 +10,87 @@ export function useWorkspaceResources() {
   const [workspace, setWorkspace] = useState<ResourceState<WorkspaceSnapshot>>({ status: "loading" });
   const [workspaceConfiguration, setWorkspaceConfiguration] = useState<ResourceState<WorkspaceConfiguration>>({ status: "loading" });
   const [version, setVersion] = useState<ResourceState<VersionCheck>>({ status: "loading" });
-  const requestId = useRef(0);
+  const [refreshingWorkspace, setRefreshingWorkspace] = useState(false);
+  const [refreshingResources, setRefreshingResources] = useState(false);
+  const workspaceRequestId = useRef(0);
+  const configurationRequestId = useRef(0);
+  const versionRequestId = useRef(0);
 
-  const reloadWorkspaceConfiguration = useCallback(() => {
-    invoke<WorkspaceConfiguration>("get_workspace_configuration")
-      .then((value) => setWorkspaceConfiguration({ status: "ready", value }))
-      .catch((error: unknown) => setWorkspaceConfiguration({ status: "error", message: safeError(error, "Workspace configuration could not be loaded.") }));
+  const reloadWorkspaceConfiguration = useCallback(async () => {
+    const currentRequest = ++configurationRequestId.current;
+    try {
+      const value = await invoke<WorkspaceConfiguration>("get_workspace_configuration");
+      if (configurationRequestId.current === currentRequest) setWorkspaceConfiguration({ status: "ready", value });
+    } catch (error: unknown) {
+      if (configurationRequestId.current === currentRequest) {
+        setWorkspaceConfiguration({ status: "error", message: safeError(error, "Workspace configuration could not be loaded.") });
+      }
+    }
+  }, []);
+
+  const refreshVersion = useCallback(async () => {
+    const currentRequest = ++versionRequestId.current;
+    try {
+      const value = await invoke<VersionCheck>("get_jl_mixing_version");
+      if (versionRequestId.current === currentRequest) setVersion({ status: "ready", value });
+    } catch (error: unknown) {
+      if (versionRequestId.current === currentRequest) {
+        setVersion({ status: "error", message: safeError(error, "JL Mixing Automation could not be checked.") });
+      }
+    }
+  }, []);
+
+  const refreshWorkspace = useCallback(async () => {
+    const currentRequest = ++workspaceRequestId.current;
+    setRefreshingWorkspace(true);
+    await yieldToBrowserPaint();
+    try {
+      const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
+      if (workspaceRequestId.current === currentRequest) setWorkspace({ status: "ready", value });
+    } catch (error: unknown) {
+      if (workspaceRequestId.current === currentRequest) {
+        setWorkspace({ status: "error", message: safeError(error, "Workspace discovery could not be completed.") });
+      }
+    } finally {
+      if (workspaceRequestId.current === currentRequest) setRefreshingWorkspace(false);
+    }
   }, []);
 
   const refresh = useCallback(async () => {
-    const currentRequest = ++requestId.current;
-    setWorkspace({ status: "loading" });
-    setWorkspaceConfiguration({ status: "loading" });
-    setVersion({ status: "loading" });
-    await yieldToBrowserPaint();
-    invoke<WorkspaceSnapshot>("discover_default_workspace").then((value) => {
-      if (requestId.current === currentRequest) setWorkspace({ status: "ready", value });
-    }).catch((error: unknown) => {
-      if (requestId.current === currentRequest) setWorkspace({ status: "error", message: safeError(error, "Workspace discovery could not be completed.") });
-    });
-    invoke<WorkspaceConfiguration>("get_workspace_configuration").then((value) => {
-      if (requestId.current === currentRequest) setWorkspaceConfiguration({ status: "ready", value });
-    }).catch((error: unknown) => {
-      if (requestId.current === currentRequest) setWorkspaceConfiguration({ status: "error", message: safeError(error, "Workspace configuration could not be loaded.") });
-    });
-    invoke<VersionCheck>("get_jl_mixing_version").then((value) => {
-      if (requestId.current === currentRequest) setVersion({ status: "ready", value });
-    }).catch((error: unknown) => {
-      if (requestId.current === currentRequest) setVersion({ status: "error", message: safeError(error, "JL Mixing Automation could not be checked.") });
-    });
-  }, []);
+    setRefreshingResources(true);
+    try {
+      await Promise.all([
+        refreshWorkspace(),
+        reloadWorkspaceConfiguration(),
+        refreshVersion(),
+      ]);
+    } finally {
+      setRefreshingResources(false);
+    }
+  }, [refreshWorkspace, reloadWorkspaceConfiguration, refreshVersion]);
 
   useEffect(() => { void refresh(); }, [refresh]);
-  const loading = workspace.status === "loading" || workspaceConfiguration.status === "loading" || version.status === "loading";
-  return { workspace, setWorkspace, workspaceConfiguration, version, refresh, reloadWorkspaceConfiguration, loading };
+
+  useEffect(() => {
+    const handleFocus = () => { void refreshWorkspace(); };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refreshWorkspace]);
+
+  const loading = workspace.status === "loading"
+    || workspaceConfiguration.status === "loading"
+    || version.status === "loading"
+    || refreshingWorkspace
+    || refreshingResources;
+
+  return {
+    workspace,
+    setWorkspace,
+    workspaceConfiguration,
+    version,
+    refresh,
+    refreshWorkspace,
+    reloadWorkspaceConfiguration,
+    loading,
+  };
 }
