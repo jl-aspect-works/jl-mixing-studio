@@ -44,7 +44,7 @@ describe("JL Mixing Studio — project workflow", () => {
         if (command === "discover_default_workspace") {
           workspaceCalls += 1;
           const snapshot = healthyWorkspace();
-          if (workspaceCalls > 1) {
+          if (workspaceCalls > 2) {
             snapshot.clients[0].projects = [];
             snapshot.counts.projects = 0;
           }
@@ -58,6 +58,7 @@ describe("JL Mixing Studio — project workflow", () => {
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
 
+      await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
       fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
 
       expect(await screen.findByRole("status")).toHaveTextContent(/selected project is no longer available/i);
