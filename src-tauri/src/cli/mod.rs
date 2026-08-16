@@ -22,6 +22,8 @@ mod delivery_api_tests;
 mod delivery_legacy_testsupport;
 #[path = "delivery_management_cli.rs"]
 mod delivery_management;
+#[cfg(test)]
+mod delivery_management_api_tests;
 #[path = "intake_cli.rs"]
 mod intake;
 #[path = "project_cli.rs"]
