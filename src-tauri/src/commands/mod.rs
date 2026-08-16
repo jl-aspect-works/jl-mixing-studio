@@ -44,10 +44,6 @@ pub(super) use delivery_notes::{
 };
 #[cfg(test)]
 pub(super) use folders::intake_directory;
-#[cfg(test)]
-pub(super) use revision_notes::{
-    read_revision_notes, write_revision_notes, REVISION_NOTES_MAX_BYTES,
-};
 
 pub(crate) use workspace_command_support::{
     find_project_summary, resolve_home, validated_project_directory,
