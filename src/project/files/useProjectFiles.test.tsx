@@ -1,5 +1,6 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { notifyWorkspaceRefreshed } from "../../app/workspaceRefreshEvents";
 import type { ProjectFileListing } from "./projectFileService";
 import { useProjectFiles } from "./useProjectFiles";
 
@@ -40,7 +41,7 @@ afterEach(() => {
 });
 
 describe("useProjectFiles", () => {
-  it("refreshes the active folder listing when the Studio window regains focus", async () => {
+  it("refreshes the active folder listing after a successful workspace refresh", async () => {
     listProjectFiles
       .mockResolvedValueOnce(listing("Mix v1.wav"))
       .mockResolvedValueOnce(listing("Mix renamed.wav"));
@@ -48,7 +49,7 @@ describe("useProjectFiles", () => {
     render(<Harness />);
     expect(await screen.findByText("Mix v1.wav")).toBeInTheDocument();
 
-    fireEvent.focus(window);
+    notifyWorkspaceRefreshed();
 
     expect(await screen.findByText("Mix renamed.wav")).toBeInTheDocument();
     await waitFor(() => expect(listProjectFiles).toHaveBeenCalledTimes(2));
