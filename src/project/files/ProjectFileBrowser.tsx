@@ -50,6 +50,7 @@ export function ProjectFileBrowser({
 }) {
   const [relativePath, setRelativePath] = useState(initialPath);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ProjectFileKindFilter>("all");
   const [sort, setSort] = useState<ProjectFileSort>("name");
@@ -58,6 +59,7 @@ export function ProjectFileBrowser({
   useEffect(() => {
     setRelativePath(initialPath);
     setActionError(null);
+    setActionBusy(null);
     setQuery("");
     setKind("all");
     setSort("name");
@@ -72,76 +74,94 @@ export function ProjectFileBrowser({
     [state.listing, query, kind, sort],
   );
   const filtersActive = query.trim() !== "" || kind !== "all";
+  const actionsDisabled = actionBusy !== null;
 
   const navigateTo = (nextPath: string) => {
+    if (actionsDisabled) return;
     setActionError(null);
     setQuery("");
     setRelativePath(nextPath);
   };
 
   const navigateUp = () => {
-    if (!canNavigateUp) return;
+    if (!canNavigateUp || actionsDisabled) return;
     navigateTo(projectFilePathUp(relativePath, rootPath));
   };
 
   const runDefaultAction = async (
     action: typeof openProjectFile | typeof revealProjectFile,
     entry: ProjectFileEntry,
+    busyMessage: string,
   ) => {
+    if (actionsDisabled) return;
     setActionError(null);
+    setActionBusy(busyMessage);
     try {
       await action({ clientId, projectId, relativePath: entry.relativePath });
     } catch (error) {
       setActionError(actionErrorMessage(error));
+    } finally {
+      setActionBusy(null);
     }
   };
 
   const runManagedMutation = async (
     action: ((entry: ProjectFileEntry) => void | Promise<void>) | undefined,
     entry: ProjectFileEntry,
+    busyMessage: string,
   ) => {
-    if (!action) return;
+    if (!action || actionsDisabled) return;
     setActionError(null);
+    setActionBusy(busyMessage);
     try {
       await action(entry);
       await refresh();
     } catch (error) {
       setActionError(actionErrorMessage(error));
+    } finally {
+      setActionBusy(null);
     }
   };
 
   const openFolder = async () => {
-    if (!onOpenFolder) return;
+    if (!onOpenFolder || actionsDisabled) return;
     setActionError(null);
+    setActionBusy("Opening folder…");
     try {
       await onOpenFolder(relativePath);
     } catch (error) {
       setActionError(actionErrorMessage(error));
+    } finally {
+      setActionBusy(null);
     }
   };
 
   const openEntry = (entry: ProjectFileEntry) => {
+    if (actionsDisabled) return;
     if (onOpen) {
-      onOpen(entry);
+      setActionBusy(`Opening ${entry.displayName}…`);
+      Promise.resolve(onOpen(entry)).finally(() => setActionBusy(null));
       return;
     }
-    void runDefaultAction(openProjectFile, entry);
+    void runDefaultAction(openProjectFile, entry, `Opening ${entry.displayName}…`);
   };
 
   const revealEntry = (entry: ProjectFileEntry) => {
+    if (actionsDisabled) return;
     if (onReveal) {
-      onReveal(entry);
+      setActionBusy(`Revealing ${entry.displayName}…`);
+      Promise.resolve(onReveal(entry)).finally(() => setActionBusy(null));
       return;
     }
-    void runDefaultAction(revealProjectFile, entry);
+    void runDefaultAction(revealProjectFile, entry, `Revealing ${entry.displayName}…`);
   };
 
   return (
     <section className="project-file-browser" aria-label="Project files">
       <ManagedFolderToolbar
         path={relativePath}
-        canNavigateUp={canNavigateUp}
-        loading={state.status === "loading"}
+        canNavigateUp={canNavigateUp && !actionsDisabled}
+        loading={state.status === "loading" || actionsDisabled}
         onUp={navigateUp}
         onRefresh={() => void refresh()}
         onOpenFolder={onOpenFolder ? () => void openFolder() : undefined}
@@ -171,6 +191,8 @@ export function ProjectFileBrowser({
         </section>
       )}
 
+      {actionBusy && <section className="notice" role="status" aria-live="polite">{actionBusy}</section>}
+
       {state.status === "loading" && state.listing === null && (
         <section className="notice" aria-live="polite">Reading project files…</section>
       )}
@@ -179,6 +201,7 @@ export function ProjectFileBrowser({
         <ProjectFileList
           listing={visibleListing}
           emptyMessage={filtersActive ? "No files match the current search or filter." : emptyMessage}
+          actionsDisabled={actionsDisabled}
           onOpenDirectory={(entry) => navigateTo(entry.relativePath)}
           onOpen={openEntry}
           onPreview={onPreview}
@@ -186,8 +209,8 @@ export function ProjectFileBrowser({
             <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} />
           )}
           onReveal={revealEntry}
-          onRename={onRename ? (entry) => void runManagedMutation(onRename, entry) : undefined}
-          onDelete={onDelete ? (entry) => void runManagedMutation(onDelete, entry) : undefined}
+          onRename={onRename ? (entry) => void runManagedMutation(onRename, entry, `Renaming ${entry.displayName}…`) : undefined}
+          onDelete={onDelete ? (entry) => void runManagedMutation(onDelete, entry, `Deleting ${entry.displayName}…`) : undefined}
         />
       )}
     </section>
