@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  defaultWorkspaceConfiguration,
   healthyWorkspace,
   intakePreview,
   mockedInvoke,
@@ -26,12 +27,14 @@ const emptyClientFilesListing = {
 const openClientFiles = async () => {
   await screen.findByText("JL Mix Studio");
   fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-  fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-  const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+  const projectButton = await screen.findByRole("button", { name: "Blue Sky" });
+  await waitFor(() => expect(projectButton).toBeEnabled());
+  fireEvent.click(projectButton);
+  const projectNavigation = await screen.findByRole("navigation", { name: "Project navigation" });
   const clientFilesButton = within(projectNavigation).getByRole("button", { name: "Client Files" });
   await waitFor(() => expect(clientFilesButton).toBeEnabled());
   fireEvent.click(clientFilesButton);
-  expect(within(projectNavigation).getByText("Client Files")).toHaveAttribute("aria-current", "page");
+  await waitFor(() => expect(clientFilesButton).toHaveAttribute("aria-current", "page"));
 };
 
 afterEach(cleanup);
@@ -50,6 +53,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
 
     mockedInvoke.mockImplementation((command) => {
       if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
+      if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
       if (command === "refresh_client_files_validation") return Promise.resolve(refreshed);
       if (command === "list_project_files") return Promise.resolve(emptyClientFilesListing);
@@ -72,6 +76,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
   it("falls back to the durable intake report when structured cached validation is unavailable", async () => {
     mockedInvoke.mockImplementation((command) => {
       if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
+      if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
       if (command === "refresh_client_files_validation") {
         return Promise.resolve({
@@ -103,6 +108,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
     let refreshCalls = 0;
     mockedInvoke.mockImplementation((command) => {
       if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
+      if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
       if (command === "refresh_client_files_validation") {
         refreshCalls += 1;
@@ -136,6 +142,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
 
     mockedInvoke.mockImplementation((command) => {
       if (command === "discover_default_workspace") return Promise.resolve(partial);
+      if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
       if (command === "get_intake_report") {
         return Promise.resolve({ ...intakePreview, code: "validated" } satisfies IntakeOperationResult);
