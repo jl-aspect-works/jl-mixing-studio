@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mockedInvoke, version, revisionPreviewResult, revisionCreateResult, deliveryPreviewResult, deliveryCreateResult, approvalPreviewResult, approvalResult, intakeNotRun, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
+import { mockedInvoke, version, revisionPreviewResult, revisionCreateResult, deliveryPreviewResult, deliveryCreateResult, approvalPreviewResult, approvalResult, intakeNotRun, healthyWorkspace, respondWith, resetAppTestState, deliveryStatusForProject } from "./App.testSupport";
 import App from "./App";
 import type { ApprovalOperationResult, DeliveryOperationResult, RevisionOperationResult } from "./types";
 
@@ -60,8 +60,8 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
 
       expect(screen.getByRole("heading", { name: "Delivery", level: 2 })).toBeInTheDocument();
       expect(screen.getByText("Ready for first delivery")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Create delivery" })).toBeEnabled();
-      expect(screen.getByText("No delivery package yet")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Create Delivery" })).toBeEnabled();
+      expect(screen.getByText("No generated ZIP")).toBeInTheDocument();
     });
 
   it("previews the fixed first-delivery plan and cancels without creating", async () => {
@@ -69,6 +69,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
         if (command === "get_intake_report") return Promise.resolve(intakeNotRun);
+        if (command === "get_delivery_status") return Promise.resolve(deliveryStatusForProject(healthyWorkspace().clients[0].projects[0]));
         if (command === "preflight_delivery_creation") return Promise.resolve(deliveryPreviewResult);
         return Promise.reject(new Error("Unexpected command"));
       });
@@ -77,7 +78,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
-      fireEvent.click(screen.getByRole("button", { name: "Create delivery" }));
+      fireEvent.click(screen.getByRole("button", { name: "Create Delivery" }));
       const options = await screen.findByRole("dialog", { name: "Create delivery package" });
       expect(within(options).getByRole("checkbox", { name: /create delivery ZIP/i })).not.toBeChecked();
       fireEvent.click(within(options).getByRole("button", { name: "Preview package" }));
@@ -93,7 +94,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       expect(mockedInvoke.mock.calls.some(([command]) => command === "create_delivery")).toBe(false);
     });
 
-  it("displays a validated current delivery manifest and recorded checksums", async () => {
+  it("displays authoritative managed deliverables and package state", async () => {
       const workspace = healthyWorkspace();
       const project = workspace.clients[0].projects[0];
       project.deliveredRevision = 1;
@@ -116,13 +117,13 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
 
-      expect(screen.getByText("Delivery is current")).toBeInTheDocument();
+      expect(await screen.findByText("Delivery files are verified")).toBeInTheDocument();
       expect(screen.getByText("Blue Sky Main Mix.wav")).toBeInTheDocument();
-      expect(screen.getByText("main mix")).toBeInTheDocument();
-      expect(screen.getAllByText("1,200")).toHaveLength(2);
-      expect(screen.getByText(/did not re-check the delivery files/i)).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Rebuild delivery" })).toBeEnabled();
-      expect(screen.getByText(/same-path overwrite.*Delivery Notes/i)).toBeInTheDocument();
+      expect(screen.getByText("Main Mix")).toBeInTheDocument();
+      expect(screen.getByText("1.17 KB")).toBeInTheDocument();
+      expect(screen.getByText("Verified")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Rebuild Delivery" })).toBeEnabled();
+      expect(screen.getByText("No generated ZIP")).toBeInTheDocument();
     });
 
   it("edits and verifies the fixed Delivery Notes document", async () => {
@@ -145,6 +146,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         if (command === "discover_default_workspace") return Promise.resolve(workspace);
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
         if (command === "get_intake_report") return Promise.resolve(intakeNotRun);
+        if (command === "get_delivery_status") return Promise.resolve(deliveryStatusForProject(project));
         if (command === "resolve_folder") return Promise.resolve({ path: "/Users/engineer/Music/Mixes/Clients/acme/Projects/blue-sky/05_Final_Delivery" });
         if (command === "get_delivery_notes") return Promise.resolve({ content: "# Delivery\n\nOriginal notes.\n", maxBytes: 65536 });
         if (command === "update_delivery_notes") {
@@ -164,7 +166,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.change(editor, { target: { value: "# Delivery\n\nUpdated handoff.\n" } });
       fireEvent.click(screen.getByRole("button", { name: "Save Delivery Notes" }));
 
-      expect(await screen.findByText("Delivery Notes saved and verified.")).toBeInTheDocument();
+      expect(await screen.findByText("Delivery Notes saved.")).toBeInTheDocument();
       expect(mockedInvoke).toHaveBeenCalledWith("update_delivery_notes", {
         request: { clientId: "acme", projectId: "blue-sky", content: "# Delivery\n\nUpdated handoff.\n" },
       });
@@ -192,6 +194,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         if (command === "discover_default_workspace") return Promise.resolve(workspace);
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
         if (command === "get_intake_report") return Promise.resolve(intakeNotRun);
+        if (command === "get_delivery_status") return Promise.resolve(deliveryStatusForProject(project));
         if (command === "resolve_folder") return Promise.resolve({ path: "/Users/engineer/Music/Mixes/Clients/acme/Projects/blue-sky/05_Final_Delivery" });
         if (command === "get_delivery_notes") return Promise.resolve({ content: "Edited notes\n", maxBytes: 65536 });
         if (command === "preflight_delivery_creation") return Promise.resolve(preview);
@@ -203,7 +206,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
-      fireEvent.click(screen.getByRole("button", { name: "Rebuild delivery" }));
+      fireEvent.click(screen.getByRole("button", { name: "Rebuild Delivery" }));
 
       const options = await screen.findByRole("dialog", { name: "Rebuild delivery package" });
       expect(within(options).getByRole("checkbox", { name: /create delivery ZIP/i })).toBeChecked();
@@ -252,6 +255,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         if (command === "discover_default_workspace") return Promise.resolve(workspace);
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
         if (command === "get_intake_report") return Promise.resolve(intakeNotRun);
+        if (command === "get_delivery_status") return Promise.resolve(deliveryStatusForProject(project));
         if (command === "resolve_folder") return Promise.resolve({ path: "/Users/engineer/Music/Mixes/Clients/acme/Projects/blue-sky/05_Final_Delivery" });
         if (command === "get_delivery_notes") return Promise.resolve({ content: "Fresh template\n", maxBytes: 65536 });
         if (command === "preflight_delivery_creation") return Promise.resolve(preview);
@@ -263,7 +267,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
-      fireEvent.click(screen.getByRole("button", { name: "Rebuild delivery" }));
+      fireEvent.click(screen.getByRole("button", { name: "Rebuild Delivery" }));
       const options = await screen.findByRole("dialog", { name: "Rebuild delivery package" });
       fireEvent.click(within(options).getByRole("radio", { name: /clean replacement/i }));
       expect(within(options).getByRole("alert")).toHaveTextContent(/everything currently inside 05_Final_Delivery/i);
@@ -314,6 +318,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         if (command === "discover_default_workspace") return Promise.resolve(discoveries++ === 0 ? before : after);
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
         if (command === "get_intake_report") return Promise.resolve(intakeNotRun);
+        if (command === "get_delivery_status") return Promise.resolve(deliveryStatusForProject(discoveries > 1 ? project : before.clients[0].projects[0]));
         if (command === "preflight_delivery_creation") return Promise.resolve(deliveryPreviewResult);
         if (command === "create_delivery") return Promise.resolve(deliveryCreateResult);
         return Promise.reject(new Error("Unexpected command"));
@@ -323,17 +328,17 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
-      fireEvent.click(screen.getByRole("button", { name: "Create delivery" }));
+      fireEvent.click(screen.getByRole("button", { name: "Create Delivery" }));
       fireEvent.click(await screen.findByRole("button", { name: "Preview package" }));
       const dialog = await screen.findByRole("dialog", { name: "Confirm delivery package" });
       fireEvent.click(within(dialog).getByRole("button", { name: "Create delivery" }));
 
       expect(await screen.findByText(/Revision 1 was packaged and verified with 2 delivered files/)).toBeInTheDocument();
-      expect(screen.getByText("Delivery is current")).toBeInTheDocument();
+      expect(await screen.findByText("Delivery files are verified")).toBeInTheDocument();
       expect(screen.getByText("Stems/Blue Sky Stems.wav")).toBeInTheDocument();
     });
 
-  it("identifies an existing package that requires replacement review", async () => {
+  it("identifies an existing delivery built from an older approved revision", async () => {
       const workspace = healthyWorkspace();
       const project = workspace.clients[0].projects[0];
       project.deliveredRevision = 1;
@@ -351,8 +356,8 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
-      expect(screen.getByText("New delivery available")).toBeInTheDocument();
-      expect(screen.getByText(/current package contains Revision 1.*approved Revision 2/i)).toBeInTheDocument();
+      expect(await screen.findByText("Delivery needs attention")).toBeInTheDocument();
+      expect(screen.getByText(/built from Revision 01.*Revision 02 is approved/i)).toBeInTheDocument();
     });
 
   it("preflights a trimmed revision description and cancels without creating", async () => {
