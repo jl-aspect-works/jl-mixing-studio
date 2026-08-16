@@ -1,8 +1,6 @@
-import type { DeliveryCreationRequest } from "../types";
 import type { DeliveryWorkflowState } from "./models";
 
 export function DeliveryOptionsDialog({
-  request,
   approvedRevision,
   showCleanOption,
   cleanFirst,
@@ -10,7 +8,6 @@ export function DeliveryOptionsDialog({
   onBuild,
   onClose,
 }: {
-  request: DeliveryCreationRequest;
   approvedRevision: number;
   showCleanOption: boolean;
   cleanFirst: boolean;
