@@ -93,6 +93,7 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none !important;
+  outline: none !important;
 }
 
 .audio-prep-inline-input input:disabled {
