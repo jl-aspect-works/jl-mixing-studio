@@ -12,10 +12,8 @@ import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { DeliveryFilesList } from "./DeliveryFilesList";
 import type {
-  DeliveryPackageDeleteRequest,
   DeliveryStatusRequest,
   DeliveryStatusResult,
-  ManagedDeliveryPackageStatus,
   ManagedDeliveryStatus,
 } from "./statusModels";
 import "./DeliveryView.css";
@@ -88,7 +86,6 @@ export function DeliveryView({
   const [notesMessage, setNotesMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<ResourceState<ManagedDeliveryStatus>>({ status: "loading" });
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [deletingPackage, setDeletingPackage] = useState<string | null>(null);
 
   const refreshStatus = useCallback(async () => {
     setStatus({ status: "loading" });
@@ -190,31 +187,6 @@ export function DeliveryView({
     }
   };
 
-  const deletePackage = async (pkg: ManagedDeliveryPackageStatus) => {
-    if (deletingPackage) return;
-    if (!window.confirm(`Delete generated package “${pkg.name}”?\n\nThe managed deliverables and Delivery Notes will not be changed.`)) return;
-    setDeletingPackage(pkg.name);
-    setStatusMessage(null);
-    const request: DeliveryPackageDeleteRequest = {
-      clientId,
-      projectId: project.projectId,
-      zipName: pkg.name,
-    };
-    try {
-      const result = await invoke<DeliveryStatusResult>("delete_delivery_package", { request });
-      if (!result.ok || !result.delivery) {
-        setStatusMessage(result.message || "The generated package could not be deleted.");
-        return;
-      }
-      setStatus({ status: "ready", value: result.delivery });
-      setStatusMessage("Generated ZIP deleted. Delivery files were not changed.");
-    } catch (error: unknown) {
-      setStatusMessage(safeError(error, "The generated package could not be deleted."));
-    } finally {
-      setDeletingPackage(null);
-    }
-  };
-
   return <>
     <ProjectNavigationBar active="delivery" onSelect={onSelectView} />
 
@@ -308,7 +280,7 @@ export function DeliveryView({
           <strong>No generated ZIP</strong>
           <span>Create or rebuild the delivery with ZIP enabled when the deliverables and notes are ready.</span>
           {delivery && <div className="delivery-package-actions">
-            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open In Folder</button>
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
             <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
           </div>}
         </div> : <div className="delivery-package-content">
@@ -324,10 +296,7 @@ export function DeliveryView({
             <div><dt>Modified</dt><dd>{formatTimestamp(activePackage.modifiedAt)}</dd></div>
           </dl>
           <div className="delivery-package-actions">
-            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open In Folder</button>
-            <button type="button" className="secondary" onClick={() => void deletePackage(activePackage)} disabled={deletingPackage !== null}>
-              {deletingPackage === activePackage.name ? "Deleting…" : "Delete ZIP"}
-            </button>
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
             <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
           </div>
         </div>}
