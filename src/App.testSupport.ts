@@ -101,7 +101,7 @@ export const deliveryPreviewResult: DeliveryOperationResult = {
     deliveredRevision: null,
     deliveryMethod: "Download",
     replacementMode: "default",
-    createZip: false,
+    createZip: true,
     zipName: null,
     selected: [
       { sourceName: "Blue Sky Main Mix.wav", deliverableType: "main_mix", path: "Blue Sky Main Mix.wav" },
