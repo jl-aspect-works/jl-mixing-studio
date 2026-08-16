@@ -649,4 +649,3 @@ impl DocumentFailure {
 
 #[cfg(test)]
 mod workspace_tests;
-
