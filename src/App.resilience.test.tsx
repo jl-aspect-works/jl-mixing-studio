@@ -58,14 +58,15 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     });
 
     render(<App />);
-    await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(1));
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
     fireEvent.click(await screen.findByRole("button", { name: "Blue Sky" }));
 
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
 
     const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
-    fireEvent.click(within(projectNavigation).getByRole("button", { name: "Files" }));
+    const filesButton = within(projectNavigation).getByRole("button", { name: "Files" });
+    await waitFor(() => expect(filesButton).toBeEnabled());
+    fireEvent.click(filesButton);
 
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(3));
     expect(screen.getByText("Externally Updated Artist")).toBeInTheDocument();
@@ -85,7 +86,6 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     });
 
     render(<App />);
-    await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(1));
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
     fireEvent.click(await screen.findByRole("button", { name: "Blue Sky" }));
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
