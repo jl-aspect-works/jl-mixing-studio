@@ -16,12 +16,12 @@ mod automation_api_compat_tests;
 mod client;
 #[path = "delivery_cli.rs"]
 mod delivery;
-#[path = "delivery_management_cli.rs"]
-mod delivery_management;
 #[cfg(test)]
 mod delivery_api_tests;
 #[cfg(test)]
 mod delivery_legacy_testsupport;
+#[path = "delivery_management_cli.rs"]
+mod delivery_management;
 #[path = "intake_cli.rs"]
 mod intake;
 #[path = "project_cli.rs"]
@@ -41,11 +41,11 @@ pub use client::{blocked_client_operation, create_client, preflight_client_creat
 #[cfg(test)]
 use client::{run_client_operation, ClientOperation};
 pub use delivery::{blocked_delivery_operation, create_delivery, preflight_delivery_creation};
-pub use delivery_management::{delete_delivery_package, get_delivery_status};
 #[cfg(test)]
 use delivery_legacy_testsupport::{
     parse_delivery_output, run_delivery_operation, DeliveryOperation, DELIVERY_EXECUTABLE,
 };
+pub use delivery_management::{delete_delivery_package, get_delivery_status};
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
     refresh_client_files_validation, run_intake_validation,
