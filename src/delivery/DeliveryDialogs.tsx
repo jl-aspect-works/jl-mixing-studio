@@ -1,4 +1,5 @@
 import type { DeliveryWorkflowState } from "./models";
+import "./DeliveryDialogs.css";
 
 export function DeliveryOptionsDialog({
   approvedRevision,
@@ -21,16 +22,16 @@ export function DeliveryOptionsDialog({
       <h2 id="delivery-options-title">Build Package</h2>
       <p className="dialog-intro">Create a delivery package from <strong>Approved Revision {String(approvedRevision).padStart(2, "0")}</strong>.</p>
       <p className="dialog-intro">Delivery Notes are included automatically.</p>
-      {showCleanOption && <label className="setting-row delivery-clean-option">
-        <span>
-          <strong>Clean delivery first</strong>
-          <small>Remove existing generated ZIPs before creating the new package.</small>
-        </span>
+      {showCleanOption && <label className="delivery-clean-option">
         <input
           type="checkbox"
           checked={cleanFirst}
           onChange={(event) => onCleanFirstChange(event.target.checked)}
         />
+        <span>
+          <strong>Clean delivery first</strong>
+          <small>Remove existing generated ZIPs before creating the new package.</small>
+        </span>
       </label>}
       <div className="dialog-actions">
         <button type="button" className="secondary" onClick={onClose}>Cancel</button>
@@ -51,6 +52,12 @@ export function DeliveryDialog({
 }) {
   const pending = state.status === "preflighting" || state.status === "creating";
   const revision = state.status === "creating" ? state.preview.approvedRevision : approvedRevision;
+  const progressText = state.status === "preflighting"
+    ? "Preparing and validating the approved revision…"
+    : state.cleanFirst
+      ? "Cleaning generated ZIPs, then creating and verifying the new package…"
+      : "Creating and verifying the new package…";
+
   return <div className="dialog-backdrop">
     <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="delivery-dialog-title">
       <p className="kicker">Delivery package</p>
@@ -62,9 +69,9 @@ export function DeliveryDialog({
       </> : <>
         <h2 id="delivery-dialog-title">Building Package…</h2>
         <p className="dialog-intro">Building package from <strong>Approved Revision {String(revision).padStart(2, "0")}</strong>…</p>
-        <div className="notice" role="status">
-          <span className="spinner" aria-hidden="true" />
-          <span>{state.status === "preflighting" ? "Preparing and validating the approved revision…" : state.cleanFirst ? "Cleaning generated ZIPs, then creating and verifying the new package…" : "Creating and verifying the new package…"}</span>
+        <div className="delivery-build-progress" role="status" aria-live="polite">
+          <div className="delivery-build-progress-track" aria-hidden="true"><span /></div>
+          <span className="delivery-build-progress-text">{progressText}</span>
         </div>
         <p className="dialog-intro">Delivery Notes are included automatically.</p>
         {pending && <div className="dialog-actions"><button type="button" className="secondary" disabled>Building…</button></div>}
