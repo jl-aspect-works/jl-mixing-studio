@@ -9,10 +9,11 @@ mod workspace;
 
 use commands::{
     add_project_reference, delete_project_file, delete_project_reference, delete_revision_file,
-    discover_default_workspace, get_delivery_notes, get_jl_mixing_version, get_system_info,
-    get_workspace_configuration, list_project_files, open_folder, open_project_file,
-    prepare_project_audio_preview, rename_project_file, rename_revision_file, resolve_folder,
-    reveal_project_file, set_workspace_root, summarize_project_files, update_delivery_notes,
+    discover_default_workspace, get_delivery_notes, get_jl_mixing_version, get_revision_notes,
+    get_system_info, get_workspace_configuration, list_project_files, open_folder,
+    open_project_file, prepare_project_audio_preview, rename_project_file, rename_revision_file,
+    resolve_folder, reveal_project_file, set_workspace_root, summarize_project_files,
+    update_delivery_notes, update_revision_description, update_revision_notes,
     validate_workspace_root,
 };
 pub(crate) use commands::{
@@ -189,6 +190,9 @@ pub fn run() {
             delete_project_reference,
             rename_revision_file,
             delete_revision_file,
+            get_revision_notes,
+            update_revision_notes,
+            update_revision_description,
             get_delivery_notes,
             update_delivery_notes,
             preflight_studio_creation,

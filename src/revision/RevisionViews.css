@@ -1,0 +1,84 @@
+.revisions-summary-row { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 12px; margin-bottom: 12px; }
+.revisions-context { min-height: 126px; display: grid; align-content: center; padding: 16px 18px !important; }
+.revisions-context h2 { margin: 0 0 6px; font-size: 1.16rem; }
+.revisions-context p { margin: 0; color: var(--muted, #667085); font-size: .82rem; line-height: 1.4; }
+.revisions-quick-actions { min-height: 126px; display: grid; align-content: center; gap: 8px; padding: 14px 16px !important; }
+.revisions-quick-actions h2 { margin: 0 0 2px; font-size: .95rem; }
+.revisions-quick-actions .action-stack { display: grid; gap: 6px; }
+.revisions-quick-actions .action-stack button { width: 100%; min-height: 30px; padding: 4px 8px; font-size: .68rem; }
+.workflow-tabs-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.workflow-tabs-row .workflow-tabs { min-width: 0; flex: 1 1 auto; margin-bottom: 0 !important; }
+.workflow-tabs-actions { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.workflow-tabs-actions button { min-height: 32px !important; padding: 5px 10px !important; font-size: .72rem !important; }
+.revisions-workspace { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 12px; align-items: stretch; margin-bottom: 12px; }
+.revision-history { min-height: 0; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
+.revision-history-header { flex: 0 0 auto; padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.08); }
+.revision-history-header h2 { margin: 0; font-size: .95rem; }
+.revision-history-list { display: grid; flex: 1 1 auto; min-height: 0; max-height: 318px; overflow-y: auto; align-content: start; }
+.revision-history-item { border: 0; border-bottom: 1px solid rgba(0,0,0,.07); border-radius: 0; background: transparent; color: inherit; padding: 11px 12px; text-align: left; box-shadow: none; }
+.revision-history-item:last-child { border-bottom: 0; }
+.revision-history-item:hover { background: #f7f9fc; }
+.revision-history-item.active { background: #eef4fb; box-shadow: inset 3px 0 0 #3974c6; }
+.revision-history-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.revision-history-title strong { font-size: .82rem; }
+.revision-history-description { display: block; margin-top: 4px; color: #4f5d73; font-size: .72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.revision-history-date { display: block; margin-top: 3px; color: #8a94a6; font-size: .64rem; }
+.revision-history-footer { flex: 0 0 auto; margin-top: auto; padding: 9px 12px; border-top: 1px solid rgba(0,0,0,.08); background: #fafbfd; }
+.revision-history-footer button { width: 100%; min-height: 30px !important; padding: 4px 8px !important; font-size: .68rem !important; }
+.revision-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.revision-badge { display: inline-flex; align-items: center; min-height: 18px; padding: 1px 6px; border-radius: 999px; background: #f1f4f8; color: #647086; font-size: .56rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.revision-badge.current { background: #edf4ff; color: #3567a5; }
+.revision-badge.approved { background: #edf8f2; color: #277a52; }
+.revision-badge.delivered { background: #f7f0ff; color: #76509b; }
+.revision-detail { min-width: 0; display: grid; gap: 12px; }
+.revision-detail-header { padding: 14px 16px !important; }
+.revision-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.revision-detail-heading h2 { margin: 0; font-size: 1.08rem; }
+.revision-detail-heading small { display: block; margin-top: 4px; color: var(--muted, #667085); font-size: .68rem; }
+.revision-description-inline { position: relative; margin-top: 12px; }
+.revision-description-inline label { display: block; margin-bottom: 3px; color: var(--muted, #667085); font-size: .64rem; font-weight: 600; }
+.revision-description-inline input { box-sizing: border-box; width: 100%; height: 31px; padding: 3px 54px 3px 0; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: #3f4b5f; font-size: .82rem; box-shadow: none; }
+.revision-description-inline input:hover:not(:disabled) { border-bottom-color: rgba(0,0,0,.12); }
+.revision-description-inline input:focus { border-bottom-color: #3974c6; outline: none; box-shadow: none; }
+.revision-description-saving { position: absolute; right: 0; bottom: 8px; color: var(--muted, #667085); font-size: .62rem; }
+.revision-notes-panel { padding: 14px 16px !important; }
+.revision-notes-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+.revision-notes-heading h2 { margin: 0; font-size: .95rem; }
+.revision-notes-heading span { color: var(--muted, #667085); font-size: .65rem; }
+.revision-notes-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+.revision-files-panel { width: 100%; padding: 0 !important; overflow: hidden; }
+.revision-files-heading { padding: 12px 14px 0; }
+.revision-files-heading h2 { margin: 0; font-size: .95rem; }
+.revision-files { margin-top: 10px; }
+.revision-files-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid rgba(0,0,0,.07); border-bottom: 1px solid rgba(0,0,0,.07); }
+.revision-files-toolbar code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .7rem; }
+.revision-files-search { padding: 8px 12px; }
+.revision-files-search input { box-sizing: border-box; width: min(360px, 100%); height: 30px; }
+.revision-files-table-wrap { overflow-x: auto; }
+.revision-files-table { width: 100%; min-width: 900px; border-collapse: collapse; }
+.revision-files-table th { padding: 9px 10px; text-align: left; color: var(--muted, #667085); font-size: .7rem; border-bottom: 1px solid rgba(0,0,0,.08); }
+.revision-files-table td { padding: 10px; border-bottom: 1px solid rgba(0,0,0,.07); vertical-align: middle; font-size: .75rem; }
+.revision-files-table tr:last-child td { border-bottom: 0; }
+.revision-file-name-cell { min-width: 210px; }
+.revision-inline-filename { display: flex; align-items: center; min-width: 0; }
+.revision-inline-filename input { box-sizing: border-box; min-width: 0; width: min(260px, 100%); height: 28px; padding: 2px 1px; border: 0; border-bottom: 1px solid transparent; border-radius: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; box-shadow: none; }
+.revision-inline-filename input:hover:not(:disabled) { border-bottom-color: rgba(0,0,0,.12); }
+.revision-inline-filename input:focus { border-bottom-color: #3974c6; outline: none; box-shadow: none; }
+.revision-inline-filename > span { flex: 0 0 auto; color: inherit; font-weight: 600; }
+.revision-inline-filename small { margin-left: 6px; color: var(--muted, #667085); font-size: .6rem; }
+.revision-file-preview-cell { min-width: 280px; }
+.revision-file-preview-cell .audio-preview-play { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.revision-file-preview-cell .audio-preview-play:hover:not(:disabled), .revision-file-preview-cell .audio-preview-play:focus:not(:disabled) { border: 0; background: transparent; box-shadow: none; }
+.revision-file-actions { display: flex; align-items: center; justify-content: flex-end; white-space: nowrap; }
+.revision-row-menu { position: relative; }
+.revision-row-menu > summary { display: inline-grid; place-items: center; width: 30px; height: 28px; border-radius: 5px; cursor: pointer; color: #536176; font-size: 1rem; font-weight: 700; line-height: 1; list-style: none; user-select: none; }
+.revision-row-menu > summary::-webkit-details-marker { display: none; }
+.revision-row-menu > summary:hover, .revision-row-menu[open] > summary { background: #f0f3f7; }
+.revision-row-menu-popover { position: absolute; z-index: 20; top: calc(100% + 4px); right: 0; display: grid; min-width: 132px; padding: 5px; border: 1px solid rgba(0,0,0,.12); border-radius: 7px; background: #fff; box-shadow: 0 8px 24px rgba(16,24,40,.14); }
+.revision-row-menu-popover button { width: 100%; min-height: 28px; padding: 4px 8px; border: 0; background: transparent; color: #344054; text-align: left; box-shadow: none; }
+.revision-row-menu-popover button:hover:not(:disabled) { background: #f5f7fa; }
+.revision-row-menu-popover .revision-delete, .revision-row-menu-popover .revision-delete-confirm { color: #b42318; }
+.revision-muted { color: var(--muted, #667085); }
+.revision-files-empty { text-align: center; color: var(--muted, #667085); padding: 28px 12px !important; }
+@media (max-width: 1050px) { .revisions-workspace { grid-template-columns: minmax(230px, 1fr) minmax(0, 2fr); } }
+@media (max-width: 850px) { .workflow-tabs-row { align-items: stretch; flex-direction: column; } .workflow-tabs-actions { justify-content: flex-end; } .revisions-summary-row, .revisions-workspace { grid-template-columns: 1fr; } .revisions-context, .revisions-quick-actions { min-height: 0; } .revision-history-list { max-height: 260px; } }

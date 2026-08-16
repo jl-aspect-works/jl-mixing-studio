@@ -28,6 +28,8 @@ mod project;
 mod revision;
 #[cfg(test)]
 mod revision_api_tests;
+#[path = "revision_description_cli.rs"]
+mod revision_description;
 #[cfg(test)]
 mod revision_legacy_testsupport;
 #[path = "studio_cli.rs"]
@@ -56,6 +58,7 @@ pub use revision::{
 };
 #[cfg(test)]
 use revision::{run_revision_operation, RevisionOperation};
+pub use revision_description::update_revision_description;
 #[cfg(test)]
 use revision_legacy_testsupport::{run_approval_operation, ApprovalOperation, APPROVAL_EXECUTABLE};
 pub use studio::{blocked_studio_operation, create_studio, preflight_studio_creation};

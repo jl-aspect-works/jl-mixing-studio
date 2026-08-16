@@ -1,25 +1,307 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, ProjectSummary, RevisionSummary } from "../types";
-import { FolderControl } from "../AppShellViews";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
+import { RevisionFileBrowser } from "./RevisionFileBrowser";
+import {
+  getRevisionNotes,
+  updateRevisionDescription,
+  updateRevisionNotes,
+  type RevisionNotesDocument,
+} from "./revisionWorkspaceService";
+import "./RevisionViews.css";
+import "./RevisionCompact.css";
 
-const formatRevisionTimestamp = (value: string) => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const formatRevisionTimestamp = (value: string) => new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "short",
+}).format(new Date(value));
 
-export function RevisionBadges({ project, number, historicallyApproved }: { project: ProjectSummary; number: number; historicallyApproved: boolean }) {
+const errorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message
+    ? error.message
+    : typeof error === "string" && error
+      ? error
+      : fallback;
+
+export function RevisionBadges({
+  project,
+  number,
+  historicallyApproved,
+}: {
+  project: ProjectSummary;
+  number: number;
+  historicallyApproved: boolean;
+}) {
   const badges: Array<[string, string]> = [];
   if (number === project.currentRevision) badges.push(["Current", "current"]);
   if (number === project.approvedRevision) badges.push(["Approved", "approved"]);
   if (number === project.deliveredRevision) badges.push(["Delivered", "delivered"]);
-  if (historicallyApproved && number !== project.approvedRevision) badges.push(["Previously approved", "historical"]);
-  if (badges.length === 0 && number < project.currentRevision) badges.push(["Superseded", "superseded"]);
-  return <span className="revision-badges">{badges.map(([label, className]) => <span key={label} className={`revision-badge ${className}`}>{label}</span>)}</span>;
+  if (historicallyApproved && number !== project.approvedRevision) badges.push(["Previously approved", "approved"]);
+  if (badges.length === 0 && number < project.currentRevision) badges.push(["Superseded", ""]);
+  return <span className="revision-badges">
+    {badges.map(([label, className]) => <span key={label} className={`revision-badge ${className}`}>{label}</span>)}
+  </span>;
 }
 
-export function RevisionsView({ client, project, loading, actionError, creationAvailable, creationHelp, approvalAvailable, approvalHelp, onNewRevision, onApprove, onSelectView }: { client: ClientSummary; project: ProjectSummary; loading: boolean; actionError: string | null; creationAvailable: boolean; creationHelp: string; approvalAvailable: boolean; approvalHelp: string; onProjects: () => void; onOverview: () => void; onRefresh: () => void; onNewRevision: () => void; onApprove: (revision: RevisionSummary) => void; onSelectView: (view: ProjectShellView) => void; }) {
-  const revisions = [...project.revisions].sort((left, right) => right.number - left.number);
+type NotesState =
+  | { status: "loading"; content: string; saved: string; maxBytes: number }
+  | { status: "ready"; content: string; saved: string; maxBytes: number }
+  | { status: "error"; content: string; saved: string; maxBytes: number; message: string };
+
+const emptyNotesState: NotesState = { status: "loading", content: "", saved: "", maxBytes: 65_536 };
+
+export function RevisionsView({
+  client,
+  project,
+  loading,
+  actionError,
+  creationAvailable,
+  creationHelp,
+  approvalAvailable,
+  approvalHelp,
+  onRefresh,
+  onNewRevision,
+  onApprove,
+  onSelectView,
+}: {
+  client: ClientSummary;
+  project: ProjectSummary;
+  loading: boolean;
+  actionError: string | null;
+  creationAvailable: boolean;
+  creationHelp: string;
+  approvalAvailable: boolean;
+  approvalHelp: string;
+  onProjects: () => void;
+  onOverview: () => void;
+  onRefresh: () => void;
+  onNewRevision: () => void;
+  onApprove: (revision: RevisionSummary) => void;
+  onSelectView: (view: ProjectShellView) => void;
+}) {
+  const revisions = useMemo(
+    () => [...project.revisions].sort((left, right) => right.number - left.number),
+    [project.revisions],
+  );
   const [selectedNumber, setSelectedNumber] = useState(project.currentRevision);
   const selected = revisions.find((revision) => revision.number === selectedNumber) ?? revisions[0] ?? null;
-  useEffect(() => setSelectedNumber(project.currentRevision), [project.currentRevision]);
-  return <><ProjectNavigationBar active="revisions" onSelect={onSelectView} /><section className="directory-toolbar revision-toolbar" aria-labelledby="revisions-heading"><div><p className="kicker">{client.clientName}</p><h2 id="revisions-heading">Revision history</h2></div><div className="directory-actions"><button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading}>New revision</button><button type="button" onClick={() => { if (selected) onApprove(selected); }} disabled={!selected || !approvalAvailable || selected.number === project.approvedRevision || loading}>Approve revision</button></div></section><p className="action-help directory-help">{creationHelp}</p><p className="action-help directory-help">{selected?.number === project.approvedRevision ? "The selected revision is already approved." : approvalHelp}</p><FolderControl location="revisions" clientId={client.clientId} projectId={project.projectId} label="Open revisions folder" />{actionError && <div className="notice error" role="alert">{actionError}</div>}{revisions.length === 0 ? <section className="empty-state"><h2>No revisions recorded</h2><p>This project doesn’t have a revision yet.</p></section> : <div className="revision-history-layout"><nav className="revision-list panel" aria-label="Revision history">{revisions.map((revision) => <button key={revision.revisionId} type="button" className="revision-list-item" aria-pressed={revision.number === selected?.number} onClick={() => setSelectedNumber(revision.number)}><span><strong>Revision {revision.number}</strong><small>{formatRevisionTimestamp(revision.createdAt)}</small></span><RevisionBadges project={project} number={revision.number} historicallyApproved={revision.approvedAt !== null} /></button>)}</nav>{selected && <section className="panel revision-detail" aria-labelledby="revision-detail-heading"><div className="panel-heading"><div><p className="kicker">Selected revision</p><h2 id="revision-detail-heading">Revision {selected.number}</h2></div><RevisionBadges project={project} number={selected.number} historicallyApproved={selected.approvedAt !== null} /></div><dl className="metadata-list"><div><dt>Created</dt><dd><time dateTime={selected.createdAt}>{formatRevisionTimestamp(selected.createdAt)}</time></dd></div><div><dt>Revision ID</dt><dd><code>{selected.revisionId}</code></dd></div><div><dt>Description</dt><dd>{selected.description}</dd></div><div><dt>Approval</dt><dd>{selected.approvedAt && selected.approvedBy ? <><span>Approved by {selected.approvedBy}</span><small><time dateTime={selected.approvedAt}>{formatRevisionTimestamp(selected.approvedAt)}</time></small></> : "Not approved"}</dd></div></dl><aside className="route-note"><strong>Revision details</strong><span>These details come from the project record. No project files were scanned or changed.</span></aside></section>}</div>}</>;
+  const [descriptionDraft, setDescriptionDraft] = useState(selected?.description ?? "");
+  const [descriptionEditing, setDescriptionEditing] = useState(false);
+  const [descriptionBusy, setDescriptionBusy] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
+  const [notes, setNotes] = useState<NotesState>(emptyNotesState);
+  const [notesBusy, setNotesBusy] = useState(false);
+  const [folderError, setFolderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!revisions.some((revision) => revision.number === selectedNumber)) {
+      setSelectedNumber(project.currentRevision);
+    }
+  }, [project.currentRevision, revisions, selectedNumber]);
+
+  useEffect(() => {
+    setDescriptionDraft(selected?.description ?? "");
+    setDescriptionEditing(false);
+    setDescriptionError(null);
+  }, [selected?.number, selected?.description]);
+
+  useEffect(() => {
+    if (!selected) {
+      setNotes({ status: "ready", content: "", saved: "", maxBytes: 65_536 });
+      return;
+    }
+    let current = true;
+    setNotes(emptyNotesState);
+    void getRevisionNotes({ clientId: client.clientId, projectId: project.projectId, revision: selected.number })
+      .then((document: RevisionNotesDocument) => {
+        if (current) setNotes({ status: "ready", content: document.content, saved: document.content, maxBytes: document.maxBytes });
+      })
+      .catch((error: unknown) => {
+        if (current) setNotes({ ...emptyNotesState, status: "error", message: errorMessage(error, "Revision Notes could not be loaded.") });
+      });
+    return () => { current = false; };
+  }, [client.clientId, project.projectId, selected?.number]);
+
+  const saveDescription = async () => {
+    if (!selected) return;
+    const description = descriptionDraft.trim();
+    if (!description) {
+      setDescriptionDraft(selected.description);
+      setDescriptionEditing(false);
+      return;
+    }
+    if (description === selected.description) {
+      setDescriptionEditing(false);
+      return;
+    }
+    setDescriptionBusy(true);
+    setDescriptionError(null);
+    try {
+      const result = await updateRevisionDescription({
+        clientId: client.clientId,
+        projectId: project.projectId,
+        revision: selected.number,
+        description,
+      });
+      if (!result.ok || !result.revision || result.revision.revision !== selected.number) {
+        setDescriptionError(result.message || "The revision description could not be verified.");
+        return;
+      }
+      setDescriptionDraft(result.revision.description);
+      setDescriptionEditing(false);
+      onRefresh();
+    } catch (error) {
+      setDescriptionError(errorMessage(error, "The revision description could not be updated."));
+    } finally {
+      setDescriptionBusy(false);
+    }
+  };
+
+  const saveNotes = async () => {
+    if (!selected || notes.status === "loading" || notes.content === notes.saved) return;
+    setNotesBusy(true);
+    try {
+      const document = await updateRevisionNotes({
+        clientId: client.clientId,
+        projectId: project.projectId,
+        revision: selected.number,
+        content: notes.content,
+      });
+      setNotes({ status: "ready", content: document.content, saved: document.content, maxBytes: document.maxBytes });
+    } catch (error) {
+      setNotes((current) => ({ ...current, status: "error", message: errorMessage(error, "Revision Notes could not be saved.") }));
+    } finally {
+      setNotesBusy(false);
+    }
+  };
+
+  const openRevisionsFolder = async () => {
+    setFolderError(null);
+    try {
+      await invoke("open_folder", {
+        request: { location: "revisions", clientId: client.clientId, projectId: project.projectId },
+      });
+    } catch (error) {
+      setFolderError(errorMessage(error, "The Revisions folder could not be opened."));
+    }
+  };
+
+  const selectedAlreadyApproved = selected?.number === project.approvedRevision;
+
+  return <>
+    <ProjectNavigationBar
+      active="revisions"
+      onSelect={onSelectView}
+      actions={<>
+        <button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}>New Revision</button>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => { if (selected) onApprove(selected); }}
+          disabled={!selected || !approvalAvailable || selectedAlreadyApproved || loading}
+          title={selectedAlreadyApproved ? "The selected revision is already approved." : approvalHelp}
+        >Approve Revision</button>
+      </>}
+    />
+
+    {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}
+    {folderError && <div className="inline-notice error" role="alert">{folderError}</div>}
+
+    {revisions.length === 0 ? <section className="empty-state"><h2>No revisions recorded</h2><p>This project doesn’t have a revision yet.</p></section> : <>
+      <div className="revisions-workspace">
+        <nav className="panel revision-history" aria-label="Revision history">
+          <div className="revision-history-header"><h2>Revision History</h2></div>
+          <div className="revision-history-list">
+            {revisions.map((revision) => <button
+              key={revision.revisionId}
+              type="button"
+              className={`revision-history-item${revision.number === selected?.number ? " active" : ""}`}
+              aria-current={revision.number === selected?.number ? "true" : undefined}
+              onClick={() => setSelectedNumber(revision.number)}
+            >
+              <span className="revision-history-title">
+                <strong>Revision {String(revision.number).padStart(2, "0")}</strong>
+                <RevisionBadges project={project} number={revision.number} historicallyApproved={revision.approvedAt !== null} />
+              </span>
+              <span className="revision-history-description">{revision.description}</span>
+              <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
+            </button>)}
+          </div>
+          <div className="revision-history-footer">
+            <button type="button" className="secondary" onClick={() => void openRevisionsFolder()}>Open Revisions Folder</button>
+          </div>
+        </nav>
+
+        {selected && <main className="revision-detail">
+          <section className="panel revision-detail-header" aria-labelledby="revision-detail-heading">
+            <div className="revision-detail-heading">
+              <div>
+                <h2 id="revision-detail-heading">Revision {String(selected.number).padStart(2, "0")}</h2>
+                <small>Created {formatRevisionTimestamp(selected.createdAt)}</small>
+              </div>
+              <RevisionBadges project={project} number={selected.number} historicallyApproved={selected.approvedAt !== null} />
+            </div>
+
+            <div className="revision-description-click-edit">
+              {descriptionEditing ? <input
+                autoFocus
+                aria-label="Revision description"
+                value={descriptionDraft}
+                disabled={descriptionBusy}
+                onChange={(event) => setDescriptionDraft(event.target.value)}
+                onBlur={() => void saveDescription()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur(); }
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setDescriptionDraft(selected.description);
+                    setDescriptionEditing(false);
+                  }
+                }}
+              /> : <button
+                type="button"
+                className="revision-description-display"
+                onClick={() => setDescriptionEditing(true)}
+                disabled={descriptionBusy}
+                aria-label="Edit revision description"
+                title="Click to edit"
+              >{descriptionDraft}</button>}
+              {descriptionBusy && <span className="revision-description-saving">Saving…</span>}
+            </div>
+            {descriptionError && <div className="inline-notice error" role="alert">{descriptionError}</div>}
+          </section>
+
+          <section className="panel revision-notes-panel" aria-labelledby="revision-notes-heading">
+            <div className="revision-notes-heading">
+              <h2 id="revision-notes-heading">Revision Notes</h2>
+              <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
+            </div>
+            {notes.status === "error" && <div className="inline-notice error" role="alert">{notes.message}</div>}
+            {notes.status === "loading" ? <p className="revision-muted">Loading Revision Notes…</p> : <MarkdownEditor
+              key={selected.number}
+              ariaLabel="Revision Notes"
+              disabled={notesBusy}
+              value={notes.content}
+              onChange={(content) => setNotes((current) => ({ ...current, content }))}
+            />}
+            <div className="revision-notes-actions">
+              <button
+                type="button"
+                disabled={notes.status === "loading" || notesBusy || notes.content === notes.saved || new TextEncoder().encode(notes.content).length > notes.maxBytes}
+                onClick={() => void saveNotes()}
+              >{notesBusy ? "Saving…" : "Save Notes"}</button>
+            </div>
+          </section>
+        </main>}
+      </div>
+
+      {selected && <section className="panel revision-files-panel" aria-labelledby="revision-files-heading">
+        <div className="revision-files-heading"><h2 id="revision-files-heading">Revision Files</h2></div>
+        <RevisionFileBrowser key={selected.number} clientId={client.clientId} projectId={project.projectId} revision={selected.number} />
+      </section>}
+    </>}
+  </>;
 }
