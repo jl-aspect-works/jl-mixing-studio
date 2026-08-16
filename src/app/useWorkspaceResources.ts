@@ -12,6 +12,7 @@ export function useWorkspaceResources() {
   const [version, setVersion] = useState<ResourceState<VersionCheck>>({ status: "loading" });
   const [refreshingWorkspace, setRefreshingWorkspace] = useState(false);
   const [refreshingResources, setRefreshingResources] = useState(false);
+  const [workspaceRefreshError, setWorkspaceRefreshError] = useState<string | null>(null);
   const workspaceRequestId = useRef(0);
   const configurationRequestId = useRef(0);
   const versionRequestId = useRef(0);
@@ -43,13 +44,16 @@ export function useWorkspaceResources() {
   const refreshWorkspace = useCallback(async () => {
     const currentRequest = ++workspaceRequestId.current;
     setRefreshingWorkspace(true);
+    setWorkspaceRefreshError(null);
     await yieldToBrowserPaint();
     try {
       const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
       if (workspaceRequestId.current === currentRequest) setWorkspace({ status: "ready", value });
     } catch (error: unknown) {
       if (workspaceRequestId.current === currentRequest) {
-        setWorkspace({ status: "error", message: safeError(error, "Workspace discovery could not be completed.") });
+        const message = safeError(error, "Workspace discovery could not be completed.");
+        setWorkspaceRefreshError(message);
+        setWorkspace((current) => current.status === "ready" ? current : { status: "error", message });
       }
     } finally {
       if (workspaceRequestId.current === currentRequest) setRefreshingWorkspace(false);
@@ -91,6 +95,7 @@ export function useWorkspaceResources() {
     refresh,
     refreshWorkspace,
     reloadWorkspaceConfiguration,
+    workspaceRefreshError,
     loading,
   };
 }
