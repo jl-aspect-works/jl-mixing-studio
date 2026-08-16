@@ -4,7 +4,7 @@ import { notifyWorkspaceRefreshed } from "../../app/workspaceRefreshEvents";
 import type { ProjectFileListing } from "./projectFileService";
 import { useProjectFiles } from "./useProjectFiles";
 
-const listProjectFiles = vi.fn();
+const { listProjectFiles } = vi.hoisted(() => ({ listProjectFiles: vi.fn() }));
 
 vi.mock("./projectFileService", async () => {
   const actual = await vi.importActual<typeof import("./projectFileService")>("./projectFileService");
