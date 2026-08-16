@@ -2,16 +2,15 @@ import type { DeliveryCreationPreview, DeliveryCreationRequest } from "../types"
 
 export type DeliveryWorkflowState =
   | { status: "closed" }
-  | { status: "options"; request: DeliveryCreationRequest }
-  | { status: "preflighting"; request: DeliveryCreationRequest }
-  | { status: "confirming"; request: DeliveryCreationRequest; preview: DeliveryCreationPreview }
-  | { status: "creating"; request: DeliveryCreationRequest; preview: DeliveryCreationPreview }
+  | { status: "options"; request: DeliveryCreationRequest; cleanFirst: boolean }
+  | { status: "preflighting"; request: DeliveryCreationRequest; cleanFirst: boolean }
+  | { status: "creating"; request: DeliveryCreationRequest; preview: DeliveryCreationPreview; cleanFirst: boolean }
   | { status: "uncertain"; message: string };
 
 /**
- * A delivery commit is allowed only for the exact plan the user reviewed.
+ * A delivery commit is allowed only for the exact plan Studio preflighted.
  * Keep this comparison in lockstep with preview fields that can change paths,
- * destructive scope, or packaged contents.
+ * packaged contents, or delivery semantics.
  */
 export const sameDeliveryPlan = (
   left: DeliveryCreationPreview,
