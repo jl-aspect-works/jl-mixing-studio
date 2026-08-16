@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ProjectFileEntry, ProjectFileListing } from "./projectFileService";
 import { formatProjectFileModified, formatProjectFileSize } from "./projectFileService";
 
@@ -7,6 +8,7 @@ export function ProjectFileList({
   onOpenDirectory,
   onOpen,
   onPreview,
+  renderPreview,
   onReveal,
   onRename,
   onDelete,
@@ -16,6 +18,7 @@ export function ProjectFileList({
   onOpenDirectory?: (entry: ProjectFileEntry) => void;
   onOpen?: (entry: ProjectFileEntry) => void;
   onPreview?: (entry: ProjectFileEntry) => void;
+  renderPreview?: (entry: ProjectFileEntry) => ReactNode;
   onReveal?: (entry: ProjectFileEntry) => void;
   onRename?: (entry: ProjectFileEntry) => void;
   onDelete?: (entry: ProjectFileEntry) => void;
@@ -53,10 +56,11 @@ export function ProjectFileList({
               <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
               <td>
                 <div className="directory-actions">
+                  {entry.playable && renderPreview && renderPreview(entry)}
                   {entry.entryType === "file" && entry.permissions.canOpen && onOpen && (
                     <button type="button" className="secondary" onClick={() => onOpen(entry)}>Open</button>
                   )}
-                  {entry.playable && onPreview && (
+                  {entry.playable && !renderPreview && onPreview && (
                     <button type="button" className="secondary" onClick={() => onPreview(entry)}>Preview</button>
                   )}
                   {entry.permissions.canReveal && onReveal && (
