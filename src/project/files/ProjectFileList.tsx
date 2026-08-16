@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { RowActionMenu } from "./FileUiPrimitives";
 import type { ProjectFileEntry, ProjectFileListing } from "./projectFileService";
 import { formatProjectFileModified, formatProjectFileSize } from "./projectFileService";
 
@@ -42,10 +43,12 @@ export function ProjectFileList({
         </thead>
         <tbody>
           {listing.entries.map((entry) => {
-            const hasActions = (entry.entryType === "file" && entry.permissions.canOpen && onOpen)
-              || (entry.permissions.canReveal && onReveal)
-              || (entry.permissions.canRename && onRename)
-              || (entry.permissions.canDelete && onDelete);
+            const actions = [
+              entry.entryType === "file" && entry.permissions.canOpen && onOpen ? { label: "Open", onSelect: () => onOpen(entry) } : null,
+              entry.permissions.canReveal && onReveal ? { label: "Reveal", onSelect: () => onReveal(entry) } : null,
+              entry.permissions.canRename && onRename ? { label: "Rename", onSelect: () => onRename(entry) } : null,
+              entry.permissions.canDelete && onDelete ? { label: "Delete", onSelect: () => onDelete(entry), destructive: true } : null,
+            ].filter((action): action is NonNullable<typeof action> => action !== null);
             return (
               <tr key={entry.id}>
                 <td>
@@ -67,27 +70,7 @@ export function ProjectFileList({
                 <td>{entry.entryType === "file" ? entry.extension?.toUpperCase() || "File" : entry.entryType}</td>
                 <td>{formatProjectFileSize(entry.sizeBytes)}</td>
                 <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
-                <td className="project-file-actions-cell">
-                  {hasActions && (
-                    <details className="project-file-row-menu">
-                      <summary aria-label={`Actions for ${entry.displayName}`} title="More actions">⋮</summary>
-                      <div className="project-file-row-menu-popover">
-                        {entry.entryType === "file" && entry.permissions.canOpen && onOpen && (
-                          <button type="button" onClick={() => onOpen(entry)}>Open</button>
-                        )}
-                        {entry.permissions.canReveal && onReveal && (
-                          <button type="button" onClick={() => onReveal(entry)}>Reveal</button>
-                        )}
-                        {entry.permissions.canRename && onRename && (
-                          <button type="button" onClick={() => onRename(entry)}>Rename</button>
-                        )}
-                        {entry.permissions.canDelete && onDelete && (
-                          <button type="button" className="project-file-delete" onClick={() => onDelete(entry)}>Delete</button>
-                        )}
-                      </div>
-                    </details>
-                  )}
-                </td>
+                <td className="project-file-actions-cell"><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} /></td>
               </tr>
             );
           })}
