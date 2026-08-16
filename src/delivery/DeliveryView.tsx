@@ -179,6 +179,17 @@ export function DeliveryView({
     return { tone: "good", title: "Delivery is current", detail: `Revision ${managed.revisions.source ?? project.deliveredRevision ?? project.approvedRevision} is verified and the generated package is current.` };
   })();
 
+  const openDeliveryFolder = async () => {
+    setStatusMessage(null);
+    try {
+      await invoke("open_folder", {
+        request: { location: "delivery", clientId, projectId: project.projectId },
+      });
+    } catch (error: unknown) {
+      setStatusMessage(safeError(error, "The Final Delivery folder could not be opened."));
+    }
+  };
+
   const deletePackage = async (pkg: ManagedDeliveryPackageStatus) => {
     if (deletingPackage) return;
     if (!window.confirm(`Delete generated package “${pkg.name}”?\n\nThe managed deliverables and Delivery Notes will not be changed.`)) return;
@@ -297,6 +308,7 @@ export function DeliveryView({
           <strong>No generated ZIP</strong>
           <span>Create or rebuild the delivery with ZIP enabled when the deliverables and notes are ready.</span>
           {delivery && <div className="delivery-package-actions">
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
             <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
           </div>}
         </div> : <div className="delivery-package-content">
@@ -312,6 +324,7 @@ export function DeliveryView({
             <div><dt>Modified</dt><dd>{formatTimestamp(activePackage.modifiedAt)}</dd></div>
           </dl>
           <div className="delivery-package-actions">
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
             <button type="button" className="secondary" onClick={() => void deletePackage(activePackage)} disabled={deletingPackage !== null}>
               {deletingPackage === activePackage.name ? "Deleting…" : "Delete ZIP"}
             </button>
