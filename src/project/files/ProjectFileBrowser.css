@@ -41,79 +41,97 @@
   outline-offset: 2px;
 }
 
-.project-file-preview-cell {
-  min-width: 180px;
+.project-file-toolbar .project-file-open-folder {
+  margin-left: 2px;
 }
 
-.project-file-muted {
-  color: #98a2b3;
+.project-file-preview-cell {
+  min-width: 310px;
+}
+
+.project-file-list .audio-preview-play {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.project-file-list .audio-preview-play:hover:not(:disabled) {
+  border: 0;
+  background: transparent;
+  color: #1758d5;
 }
 
 .project-file-actions-cell {
-  width: 40px;
+  position: relative;
+  width: 36px;
+  padding-left: 3px;
+  padding-right: 3px;
   text-align: right;
 }
 
-.project-file-row-menu {
+.project-file-action-menu {
   position: relative;
   display: inline-block;
 }
 
-.project-file-row-menu > summary {
-  list-style: none;
-  width: 30px;
-  height: 30px;
+.project-file-action-menu > summary {
   display: grid;
   place-items: center;
-  border-radius: 7px;
-  color: #475467;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #526078;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  font-weight: 800;
   line-height: 1;
+  list-style: none;
+  user-select: none;
 }
 
-.project-file-row-menu > summary::-webkit-details-marker {
+.project-file-action-menu > summary::-webkit-details-marker {
   display: none;
 }
 
-.project-file-row-menu > summary:hover,
-.project-file-row-menu[open] > summary {
-  background: #f2f4f7;
-  color: #182230;
+.project-file-action-menu > summary:hover,
+.project-file-action-menu[open] > summary {
+  background: #eef2f7;
+  color: #223750;
 }
 
-.project-file-row-menu-popover {
+.project-file-action-popover {
   position: absolute;
-  z-index: 20;
-  top: 32px;
+  top: calc(100% + 3px);
   right: 0;
-  min-width: 120px;
+  z-index: 20;
   display: grid;
-  padding: 5px;
-  border: 1px solid #d0d5dd;
+  min-width: 140px;
+  padding: 4px;
+  border: 1px solid #cbd3df;
   border-radius: 8px;
   background: #fff;
-  box-shadow: 0 8px 20px rgb(16 24 40 / 12%);
+  box-shadow: 0 8px 22px rgb(25 39 58 / 16%);
 }
 
-.project-file-row-menu-popover button {
+.project-file-action-popover button {
+  min-height: 30px;
+  padding: 5px 9px;
   border: 0;
+  border-radius: 5px;
   background: transparent;
-  color: #344054;
-  padding: 7px 9px;
-  border-radius: 6px;
+  color: #263b54;
   text-align: left;
-  font: inherit;
-  font-size: .72rem;
-  cursor: pointer;
+  font-size: .76rem;
+  font-weight: 700;
 }
 
-.project-file-row-menu-popover button:hover {
-  background: #f2f4f7;
+.project-file-action-popover button:hover:not(:disabled) {
+  background: #eef2f7;
 }
 
-.project-file-row-menu-popover .project-file-delete {
-  color: #b42318;
+.project-file-action-popover .project-file-delete-action {
+  color: #9b2f2f;
 }
 
 @media (max-width: 720px) {
