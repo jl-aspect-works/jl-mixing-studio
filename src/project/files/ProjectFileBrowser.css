@@ -49,19 +49,6 @@
   min-width: 310px;
 }
 
-.project-file-list .audio-preview-play {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.project-file-list .audio-preview-play:hover:not(:disabled) {
-  border: 0;
-  background: transparent;
-  color: #1758d5;
-}
-
 .project-file-actions-cell {
   position: relative;
   width: 36px;
