@@ -134,7 +134,13 @@ fn delivery_status_uses_explicit_project_api_contract() {
     assert_eq!(invocations.len(), 1);
     assert_eq!(
         invocations[0].arguments,
-        vec!["delivery", "status", "--json", "--project", "/fixed/project"]
+        vec![
+            "delivery",
+            "status",
+            "--json",
+            "--project",
+            "/fixed/project"
+        ]
     );
     assert_eq!(invocations[0].current_directory, Some(project.to_owned()));
 }
