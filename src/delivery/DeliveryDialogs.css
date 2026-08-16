@@ -1,4 +1,8 @@
 .delivery-clean-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
   margin: 18px 0 0;
   cursor: pointer;
 }
@@ -8,12 +12,16 @@
 }
 
 .delivery-clean-option > span > strong {
+  display: block;
   color: #344054;
 }
 
 .delivery-clean-option > input {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
   flex: 0 0 auto;
-  margin: 0;
+  margin: 2px 0 0;
 }
 
 .delivery-build-progress {
