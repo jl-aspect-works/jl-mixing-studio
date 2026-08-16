@@ -112,10 +112,15 @@
   font-size: .7rem;
 }
 
-.shared-file-view-control input:focus-visible,
 .shared-file-view-control select:focus-visible {
   outline: 3px solid #f3a51f;
   outline-offset: 2px;
+}
+
+.shared-file-view-control input[type="search"]:focus,
+.shared-file-view-control input[type="search"]:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .shared-managed-folder-toolbar {
