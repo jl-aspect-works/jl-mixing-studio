@@ -18,20 +18,20 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
 
-      expect(screen.getByRole("heading", { name: "Revision history" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "New revision" })).toBeEnabled();
-      expect(screen.getByRole("button", { name: "Approve revision" })).toBeEnabled();
-      expect(screen.getByRole("heading", { name: "Revision 2" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Revision History" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "New Revision" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Approve Revision" })).toBeEnabled();
+      expect(screen.getByRole("heading", { name: "Revision 02" })).toBeInTheDocument();
       expect(screen.getByText("Balance update")).toBeInTheDocument();
       expect(screen.getAllByText("Current").length).toBeGreaterThan(0);
 
-      fireEvent.click(within(screen.getByRole("navigation", { name: "Revision history" })).getByRole("button", { name: /Revision 1/ }));
+      fireEvent.click(within(screen.getByRole("navigation", { name: "Revision history" })).getByRole("button", { name: /Revision 01/ }));
 
-      expect(screen.getByRole("heading", { name: "Revision 1" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Revision 01" })).toBeInTheDocument();
       expect(screen.getByText("Initial mix")).toBeInTheDocument();
       expect(screen.getByText("Approved by Client Reviewer")).toBeInTheDocument();
       expect(screen.getAllByText("Approved").length).toBeGreaterThan(0);
-      expect(screen.getByRole("button", { name: "Approve revision" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Approve Revision" })).toBeDisabled();
     });
 
   it("keeps revision history readable in a partial workspace", async () => {
@@ -46,10 +46,10 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
 
-      expect(screen.getByRole("heading", { name: "Revision history" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Revision History" })).toBeInTheDocument();
       expect(screen.getByText("Balance update")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "New revision" })).toBeDisabled();
-      expect(screen.getByRole("button", { name: "Approve revision" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "New Revision" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Approve Revision" })).toBeDisabled();
       expect(screen.getAllByText(/still read the revision history/i)).toHaveLength(2);
     });
 
@@ -161,6 +161,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
 
+      fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
       const editor = await screen.findByRole("textbox", { name: "Delivery Notes Markdown content" });
       fireEvent.change(editor, { target: { value: "# Delivery\n\nUpdated handoff.\n" } });
       fireEvent.click(screen.getByRole("button", { name: "Save Delivery Notes" }));
@@ -368,7 +369,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
-      fireEvent.click(screen.getByRole("button", { name: "New revision" }));
+      fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
 
       expect(screen.getByRole("heading", { name: "New revision" })).toBeInTheDocument();
       expect(screen.getByLabelText(/revision description/i)).toHaveFocus();
@@ -414,15 +415,15 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "New revision" }));
+      fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
       fireEvent.change(screen.getByLabelText(/revision description/i), { target: { value: "Vocal lift" } });
       fireEvent.click(screen.getByRole("button", { name: "Review revision" }));
       await screen.findByRole("heading", { name: "Confirm new revision" });
       fireEvent.click(screen.getByRole("button", { name: "Create revision" }));
 
       expect(await screen.findByText("Revision 3 was created and verified.")).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: "Revision history" })).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: "Revision 3" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Revision History" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Revision 03" })).toBeInTheDocument();
       expect(screen.getAllByText("Vocal lift").length).toBeGreaterThan(0);
       expect(mockedInvoke.mock.calls.filter(([command]) => command === "create_revision")).toHaveLength(1);
     });
@@ -444,7 +445,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      fireEvent.click(screen.getByRole("button", { name: "New revision" }));
+      fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
       fireEvent.change(screen.getByLabelText(/revision description/i), { target: { value: "Vocal lift" } });
       fireEvent.click(screen.getByRole("button", { name: "Review revision" }));
       await screen.findByRole("heading", { name: "Confirm new revision" });
@@ -467,7 +468,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
-      fireEvent.click(screen.getByRole("button", { name: "Approve revision" }));
+      fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
 
       expect(screen.getByRole("heading", { name: "Approve Revision 2" })).toBeInTheDocument();
       expect(within(screen.getByRole("dialog")).getByRole("textbox", { name: /approved by/i })).toHaveValue("Client");
@@ -506,13 +507,13 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
-      fireEvent.click(screen.getByRole("button", { name: "Approve revision" }));
+      fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Review approval" }));
       await screen.findByRole("heading", { name: "Confirm revision approval" });
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Approve revision" }));
 
       expect(await screen.findByText("Revision 2 was approved by Client and verified.")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Approve revision" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Approve Revision" })).toBeDisabled();
       expect(screen.getByText("Approved by Client")).toBeInTheDocument();
       expect(mockedInvoke.mock.calls.filter(([command]) => command === "approve_revision")).toHaveLength(1);
     });
@@ -538,8 +539,8 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
-      fireEvent.click(within(screen.getByRole("navigation", { name: "Revision history" })).getByRole("button", { name: /Revision 1/ }));
-      fireEvent.click(screen.getByRole("button", { name: "Approve revision" }));
+      fireEvent.click(within(screen.getByRole("navigation", { name: "Revision history" })).getByRole("button", { name: /Revision 01/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Review approval" }));
 
       const warning = await screen.findByText("Check what will change");
@@ -564,7 +565,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
-      fireEvent.click(screen.getByRole("button", { name: "Approve revision" }));
+      fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Review approval" }));
       await screen.findByRole("heading", { name: "Confirm revision approval" });
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Approve revision" }));
