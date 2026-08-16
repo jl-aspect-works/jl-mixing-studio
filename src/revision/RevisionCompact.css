@@ -7,9 +7,9 @@
 .revision-description-display:hover:not(:disabled) { color: #27364d !important; }
 .revision-description-display:focus,
 .revision-description-display:focus-visible { outline: none !important; background: transparent !important; box-shadow: none !important; }
-.revision-description-click-edit input { box-sizing: border-box; width: 100%; height: 28px; padding: 3px 0; border: 0; border-radius: 0; background: transparent; color: #3f4b5f; font-size: .8rem; box-shadow: none; }
+.revision-description-click-edit input { box-sizing: border-box; width: 100%; height: 28px; padding: 3px 0; border: 0; border-radius: 0; background: transparent; color: #3f4b5f; font-size: .8rem; box-shadow: 0 2px 7px rgb(31 48 77 / 14%); }
 .revision-description-click-edit input:focus,
-.revision-description-click-edit input:focus-visible { outline: none !important; border: 0; border-radius: 0; background: transparent; box-shadow: none !important; }
+.revision-description-click-edit input:focus-visible { outline: none !important; border: 0; border-radius: 0; background: transparent; box-shadow: 0 2px 7px rgb(31 48 77 / 14%) !important; }
 .revision-description-saving { right: 5px; bottom: 6px; }
 .revision-notes-panel { padding: 10px 14px !important; }
 .revision-notes-heading { margin-bottom: 6px; }
