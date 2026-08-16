@@ -1,29 +1,28 @@
-.delivery-clean-option {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 10px;
-  align-items: start;
+.setting-row.delivery-clean-option {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
   margin: 18px 0 0;
   cursor: pointer;
 }
 
-.delivery-clean-option > span {
-  grid-column: 2;
-  grid-row: 1;
+.setting-row.delivery-clean-option > span {
+  display: grid;
+  gap: 3px;
   min-width: 0;
 }
 
-.delivery-clean-option > span > strong {
+.setting-row.delivery-clean-option > span > strong {
   display: block;
   color: #344054;
 }
 
-.delivery-clean-option > input {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: start;
+.setting-row.delivery-clean-option > input {
   flex: 0 0 auto;
-  margin: 2px 0 0;
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
 }
 
 .delivery-build-progress {
