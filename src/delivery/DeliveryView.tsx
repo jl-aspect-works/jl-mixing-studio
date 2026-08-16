@@ -214,42 +214,42 @@ export function DeliveryView({
           <h2 id="delivery-heading">Delivery</h2>
           <p className="delivery-heading-copy">Prepare, verify, document, and package the approved mix without leaving Studio.</p>
         </div>
-        <div className="delivery-heading-actions">
+        {!delivery && <div className="delivery-heading-actions">
           <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
-            {loading ? "Checking…" : delivery ? "Rebuild Delivery" : "Create Delivery"}
+            {loading ? "Checking…" : "Create Delivery"}
           </button>
-        </div>
+        </div>}
       </div>
 
       {actionError && <div className="form-error" role="alert">{actionError}</div>}
-      <div className={`delivery-readiness delivery-readiness-${readiness.tone}`} role="status">
-        <strong>{readiness.title}</strong>
-        <span>{readiness.detail}</span>
+      <div className="delivery-summary-grid">
+        <div className={`delivery-readiness delivery-readiness-${readiness.tone}`} role="status">
+          <strong>{readiness.title}</strong>
+          <span>{readiness.detail}</span>
+        </div>
+        <dl className="delivery-details-grid" aria-label="Delivery status summary">
+          <div>
+            <dt>Source Revision</dt>
+            <dd>{managed?.revisions.source ? `Revision ${managed.revisions.source.toString().padStart(2, "0")}` : delivery ? `Revision ${delivery.revision.toString().padStart(2, "0")}` : "—"}</dd>
+          </div>
+          <div>
+            <dt>Deliverables</dt>
+            <dd>{managed ? managed.deliverableCount : delivery?.files.length ?? "—"}</dd>
+            <small>{managed?.state === "ready" ? "Verified" : managed?.state === "needs_attention" ? "Review required" : "Not built"}</small>
+          </div>
+          <div>
+            <dt>Package</dt>
+            <dd>{managed ? packageStatusLabel(managed.packageState) : "Checking…"}</dd>
+            <small>{activePackage?.name ?? "No generated ZIP"}</small>
+          </div>
+          <div>
+            <dt>Last Build</dt>
+            <dd>{activePackage ? formatTimestamp(activePackage.modifiedAt) : delivery ? formatTimestamp(delivery.createdAt) : "—"}</dd>
+            <small>{activePackage ? formatBytes(activePackage.sizeBytes) : ""}</small>
+          </div>
+        </dl>
       </div>
       {!creationAvailable && <p className="action-help">{creationHelp}</p>}
-
-      <dl className="delivery-details-grid" aria-label="Delivery status summary">
-        <div>
-          <dt>Source Revision</dt>
-          <dd>{managed?.revisions.source ? `Revision ${managed.revisions.source.toString().padStart(2, "0")}` : delivery ? `Revision ${delivery.revision.toString().padStart(2, "0")}` : "—"}</dd>
-        </div>
-        <div>
-          <dt>Deliverables</dt>
-          <dd>{managed ? managed.deliverableCount : delivery?.files.length ?? "—"}</dd>
-          <small>{managed?.state === "ready" ? "Verified" : managed?.state === "needs_attention" ? "Review required" : "Not built"}</small>
-        </div>
-        <div>
-          <dt>Package</dt>
-          <dd>{managed ? packageStatusLabel(managed.packageState) : "Checking…"}</dd>
-          <small>{activePackage?.name ?? "No generated ZIP"}</small>
-        </div>
-        <div>
-          <dt>Last Build</dt>
-          <dd>{activePackage ? formatTimestamp(activePackage.modifiedAt) : delivery ? formatTimestamp(delivery.createdAt) : "—"}</dd>
-          <small>{activePackage ? formatBytes(activePackage.sizeBytes) : ""}</small>
-        </div>
-      </dl>
-
       {status.status === "loading" && <p className="delivery-status-loading" role="status">Reconciling delivery files and package state…</p>}
       {statusMessage && <p className="delivery-inline-message" role="status">{statusMessage}</p>}
     </section>
@@ -261,33 +261,31 @@ export function DeliveryView({
 
     <div className="delivery-document-row">
       <section className="panel delivery-notes-panel" aria-labelledby="delivery-notes-heading">
-        <div className="panel-heading">
+        <div className="panel-heading delivery-notes-heading">
           <div><p className="kicker">Package document</p><h2 id="delivery-notes-heading">Delivery Notes</h2></div>
-          {notes.status === "ready" && <span>{new TextEncoder().encode(notesDraft).length.toLocaleString()} / {notes.value.maxBytes.toLocaleString()} bytes</span>}
-        </div>
-        {!deliveryDocumentId && <div className="delivery-empty-inline"><span>Delivery Notes are created with the first managed delivery.</span></div>}
-        {deliveryDocumentId && notes.status === "loading" && <p>Reading <code>Delivery_Notes.md</code>…</p>}
-        {notes.status === "error" && <div className="form-error" role="alert">{notes.message}</div>}
-        {notes.status === "ready" && <>
-          <MarkdownEditor
-            ariaLabel="Delivery Notes Markdown content"
-            minRows={9}
-            disabled={notesSaving}
-            value={notesDraft}
-            onChange={(value) => {
-              setNotesDraft(value);
-              setNotesMessage(null);
-            }}
-          />
-          <div className="dialog-actions">
-            <button
+          <div className="delivery-notes-heading-actions">
+            {notes.status === "ready" && <span>{new TextEncoder().encode(notesDraft).length.toLocaleString()} / {notes.value.maxBytes.toLocaleString()} bytes</span>}
+            {notes.status === "ready" && <button
               type="button"
               onClick={saveNotes}
               disabled={notesSaving || notesDraft === notes.value.content || new TextEncoder().encode(notesDraft).length > notes.value.maxBytes}
               aria-busy={notesSaving}
-            >{notesSaving ? "Saving…" : "Save Delivery Notes"}</button>
+            >{notesSaving ? "Saving…" : "Save Delivery Notes"}</button>}
           </div>
-        </>}
+        </div>
+        {!deliveryDocumentId && <div className="delivery-empty-inline"><span>Delivery Notes are created with the first managed delivery.</span></div>}
+        {deliveryDocumentId && notes.status === "loading" && <p>Reading <code>Delivery_Notes.md</code>…</p>}
+        {notes.status === "error" && <div className="form-error" role="alert">{notes.message}</div>}
+        {notes.status === "ready" && <MarkdownEditor
+          ariaLabel="Delivery Notes Markdown content"
+          minRows={9}
+          disabled={notesSaving}
+          value={notesDraft}
+          onChange={(value) => {
+            setNotesDraft(value);
+            setNotesMessage(null);
+          }}
+        />}
         {notesMessage && <p role="status">{notesMessage}</p>}
       </section>
 
