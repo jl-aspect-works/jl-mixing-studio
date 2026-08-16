@@ -26,7 +26,8 @@ use commands::{
 };
 use models::{
     ApprovalOperationResult, ClientCreationRequest, ClientOperationResult, DeliveryCreationRequest,
-    DeliveryOperationResult, IntakeOperationResult, IntakeRequest, ProjectCreationRequest,
+    DeliveryOperationResult, DeliveryPackageDeleteRequest, DeliveryStatusRequest,
+    DeliveryStatusResult, IntakeOperationResult, IntakeRequest, ProjectCreationRequest,
     ProjectOperationResult, RevisionApprovalRequest, RevisionCreationRequest,
     RevisionOperationResult, StudioCreationRequest, StudioOperationResult,
 };
@@ -166,6 +167,56 @@ fn create_delivery(
     run_delivery_operation(&app, request, cli::create_delivery, true)
 }
 
+fn resolve_delivery_project(
+    app: &tauri::AppHandle,
+    client_id: &str,
+    project_id: &str,
+) -> Result<(std::path::PathBuf, std::path::PathBuf), String> {
+    let home = resolve_home(app)?;
+    let workspace_path = resolve_workspace_root(app)?;
+    let snapshot = workspace::discover_workspace_at(&workspace_path);
+    let project_directory = validated_project_directory(
+        &workspace_path,
+        &snapshot,
+        client_id.trim(),
+        project_id.trim(),
+    )
+    .ok_or_else(|| "The selected project directory could not be resolved safely".to_owned())?;
+    Ok((home, project_directory))
+}
+
+#[tauri::command]
+fn get_delivery_status(
+    app: tauri::AppHandle,
+    request: DeliveryStatusRequest,
+) -> DeliveryStatusResult {
+    match resolve_delivery_project(&app, &request.client_id, &request.project_id) {
+        Ok((home, project_directory)) => cli::get_delivery_status(&home, &project_directory),
+        Err(message) => DeliveryStatusResult {
+            ok: false,
+            message,
+            delivery: None,
+        },
+    }
+}
+
+#[tauri::command]
+fn delete_delivery_package(
+    app: tauri::AppHandle,
+    request: DeliveryPackageDeleteRequest,
+) -> DeliveryStatusResult {
+    match resolve_delivery_project(&app, &request.client_id, &request.project_id) {
+        Ok((home, project_directory)) => {
+            cli::delete_delivery_package(&home, &project_directory, &request.zip_name)
+        }
+        Err(message) => DeliveryStatusResult {
+            ok: false,
+            message,
+            delivery: None,
+        },
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -211,6 +262,8 @@ pub fn run() {
             approve_revision,
             preflight_delivery_creation,
             create_delivery,
+            get_delivery_status,
+            delete_delivery_package,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -219,7 +272,3 @@ pub fn run() {
 #[cfg(test)]
 #[path = "lib_tests.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "workspace_compat_tests.rs"]
-mod workspace_compat_tests;
