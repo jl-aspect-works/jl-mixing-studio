@@ -212,7 +212,7 @@ export function DeliveryView({
         <div>
           <p className="kicker">Final delivery</p>
           <h2 id="delivery-heading">Delivery</h2>
-          <p className="delivery-heading-copy">Prepare, verify, document, and package the approved mix without leaving Studio.</p>
+          <p className="delivery-heading-copy">Prepare, verify, document and package the approved mix.</p>
         </div>
         {!delivery && <div className="delivery-heading-actions">
           <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
