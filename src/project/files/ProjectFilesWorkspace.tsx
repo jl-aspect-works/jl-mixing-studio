@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
 import { ProjectFileBrowser } from "./ProjectFileBrowser";
-import { projectFilePaths } from "./projectFileService";
+import {
+  deleteAudioPrepFile,
+  deleteRevisionFile,
+  projectFilePaths,
+  renameAudioPrepFile,
+  renameRevisionFile,
+  type ProjectFileEntry,
+} from "./projectFileService";
 import "./ProjectFilesWorkspace.css";
 
 type TreeNode = {
@@ -36,6 +43,14 @@ const projectTree: TreeNode[] = [
 
 const pathLabel = (path: string) => path || "Project root";
 
+const filenameStem = (entry: ProjectFileEntry) => {
+  if (!entry.extension) return entry.displayName;
+  const suffix = `.${entry.extension}`;
+  return entry.displayName.toLowerCase().endsWith(suffix.toLowerCase())
+    ? entry.displayName.slice(0, -suffix.length)
+    : entry.displayName;
+};
+
 const policyText = (path: string) => {
   if (path.startsWith(projectFilePaths.originalDelivery)) {
     return "Original Delivery is read-only. Files may be inspected, opened, revealed, and previewed where supported.";
@@ -47,10 +62,10 @@ const policyText = (path: string) => {
     return "Reference files are project-owned. Use References for add/delete workflow operations.";
   }
   if (path.startsWith(projectFilePaths.audioPreparation)) {
-    return "Audio Preparation is a working area. Safe file operations are enabled only where Studio can preserve project consistency.";
+    return "Audio Preparation is a working area. Rename/delete are available only when the validated file service marks a file safe to modify.";
   }
   if (path.startsWith(projectFilePaths.revisions)) {
-    return "Revision files are managed project assets. Safe file operations must preserve revision metadata.";
+    return "Revision files are managed project assets. Supported rename/delete operations use the revision-aware managed file service.";
   }
   return "Browse the managed JL project structure. File actions remain constrained to this project.";
 };
@@ -109,6 +124,38 @@ export function ProjectFilesWorkspace({ clientId, projectId }: { clientId: strin
   const [selectedPath, setSelectedPath] = useState("");
   const selectedLabel = useMemo(() => pathLabel(selectedPath), [selectedPath]);
 
+  const renameEntry = async (entry: ProjectFileEntry) => {
+    const currentStem = filenameStem(entry);
+    const nextStem = window.prompt(`Rename ${entry.displayName}`, currentStem)?.trim();
+    if (!nextStem || nextStem === currentStem) return;
+
+    const request = { clientId, projectId, relativePath: entry.relativePath };
+    if (entry.area === "audioPreparation") {
+      await renameAudioPrepFile(request, nextStem);
+      return;
+    }
+    if (entry.area === "revisions") {
+      await renameRevisionFile(request, nextStem);
+      return;
+    }
+    throw new Error("Rename is not available for this managed project area.");
+  };
+
+  const deleteEntry = async (entry: ProjectFileEntry) => {
+    if (!window.confirm(`Delete ${entry.displayName}? This action cannot be undone.`)) return;
+
+    const request = { clientId, projectId, relativePath: entry.relativePath };
+    if (entry.area === "audioPreparation") {
+      await deleteAudioPrepFile(request);
+      return;
+    }
+    if (entry.area === "revisions") {
+      await deleteRevisionFile(request);
+      return;
+    }
+    throw new Error("Delete is not available for this managed project area.");
+  };
+
   return (
     <section className="project-files-workspace" aria-label="Project file workspace">
       <aside className="project-files-tree" aria-label="Project folders">
@@ -144,6 +191,8 @@ export function ProjectFilesWorkspace({ clientId, projectId }: { clientId: strin
           initialPath={selectedPath}
           rootPath=""
           emptyMessage="No files in this project folder."
+          onRename={renameEntry}
+          onDelete={deleteEntry}
         />
       </div>
     </section>
