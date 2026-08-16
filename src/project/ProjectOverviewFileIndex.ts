@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import { summarizeProjectFiles } from "./files/projectFileService";
 
 export type ProjectOverviewFolderKey =
@@ -54,32 +55,41 @@ export function useProjectOverviewFileIndex(clientId: string, projectId: string)
 
   useEffect(() => {
     let cancelled = false;
-    setIndex(emptyProjectOverviewFileIndex());
 
-    void summarizeProjectFiles({ clientId, projectId })
-      .then((summary) => {
-        if (cancelled) return;
-        setIndex({
-          status: summary.failedPaths.length > 0 ? "partial" : "ready",
-          folders: {
-            clientFiles: summary.clientFiles,
-            audioPreparation: summary.audioPreparation,
-            dawProject: summary.dawProject,
-            revisions: summary.revisions,
-            finalDelivery: summary.finalDelivery,
-            recall: summary.recall,
-          },
-          referencesCount: summary.referencesCount,
-          workingAudioCount: summary.workingAudioCount,
-          workingAudioAreaPresent: summary.workingAudioAreaPresent,
-          failedPaths: summary.failedPaths,
+    const load = (showLoading: boolean) => {
+      if (showLoading) setIndex(emptyProjectOverviewFileIndex());
+
+      void summarizeProjectFiles({ clientId, projectId })
+        .then((summary) => {
+          if (cancelled) return;
+          setIndex({
+            status: summary.failedPaths.length > 0 ? "partial" : "ready",
+            folders: {
+              clientFiles: summary.clientFiles,
+              audioPreparation: summary.audioPreparation,
+              dawProject: summary.dawProject,
+              revisions: summary.revisions,
+              finalDelivery: summary.finalDelivery,
+              recall: summary.recall,
+            },
+            referencesCount: summary.referencesCount,
+            workingAudioCount: summary.workingAudioCount,
+            workingAudioAreaPresent: summary.workingAudioAreaPresent,
+            failedPaths: summary.failedPaths,
+          });
+        })
+        .catch(() => {
+          if (!cancelled) setIndex((current) => ({ ...current, status: "error" }));
         });
-      })
-      .catch(() => {
-        if (!cancelled) setIndex({ ...emptyProjectOverviewFileIndex(), status: "error" });
-      });
+    };
 
-    return () => { cancelled = true; };
+    load(true);
+    const removeRefreshListener = addWorkspaceRefreshListener(() => load(false));
+
+    return () => {
+      cancelled = true;
+      removeRefreshListener();
+    };
   }, [clientId, projectId]);
 
   return index;
