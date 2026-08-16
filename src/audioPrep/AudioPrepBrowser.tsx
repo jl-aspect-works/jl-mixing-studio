@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
+import { FileStatusIcon, FileStatusLegend, FileViewControls, ManagedFolderToolbar, RowActionMenu, type FileStatusKind } from "../project/files/FileUiPrimitives";
 import type { ProjectFileEntry } from "../project/files/projectFileService";
 import {
   deleteAudioPrepFile,
@@ -27,8 +28,6 @@ export type AudioPrepValidationFile = IntakeValidationFile & {
 
 type RenameState = { path: string; stem: string; error: string | null } | null;
 type ValidationFilter = "all" | "attention" | "info" | "valid";
-type ControlIconKind = "search" | "show" | "health" | "sort";
-type StatusIconKind = "valid" | "attention" | "error" | "info" | "pending" | "none";
 
 const actionErrorMessage = (error: unknown) =>
   error instanceof Error && error.message
@@ -92,25 +91,16 @@ const matchesValidationFilter = (entry: ProjectFileEntry, record: AudioPrepValid
   return record?.status === "valid";
 };
 
-const statusPresentation = (record: AudioPrepValidationFile | undefined, entry: ProjectFileEntry, validationAvailable: boolean) => {
-  if (entry.entryType !== "file" || !entry.isAudio || record?.status === "not_applicable") {
-    return { kind: "none" as StatusIconKind, symbol: "", label: "Not applicable" };
-  }
-  if (!validationAvailable) return { kind: "pending" as StatusIconKind, symbol: "·", label: "Validation not available" };
-  if (!record) return { kind: "pending" as StatusIconKind, symbol: "·", label: "Checking" };
-  if (record.status === "blocked") return { kind: "error" as StatusIconKind, symbol: "×", label: "Error" };
-  if (record.status === "needs_attention") return { kind: "attention" as StatusIconKind, symbol: "!", label: "Needs attention" };
-  if (record.status === "info") return { kind: "info" as StatusIconKind, symbol: "i", label: "Info" };
-  if (record.status === "valid") return { kind: "valid" as StatusIconKind, symbol: "✓", label: "Valid" };
-  return { kind: "pending" as StatusIconKind, symbol: "·", label: "Status unavailable" };
+const statusPresentation = (record: AudioPrepValidationFile | undefined, entry: ProjectFileEntry, validationAvailable: boolean): { kind: FileStatusKind; label: string } => {
+  if (entry.entryType !== "file" || !entry.isAudio || record?.status === "not_applicable") return { kind: "none", label: "Not applicable" };
+  if (!validationAvailable) return { kind: "pending", label: "Validation not available" };
+  if (!record) return { kind: "pending", label: "Checking" };
+  if (record.status === "blocked") return { kind: "error", label: "Error" };
+  if (record.status === "needs_attention") return { kind: "attention", label: "Needs attention" };
+  if (record.status === "info") return { kind: "info", label: "Info" };
+  if (record.status === "valid") return { kind: "valid", label: "Valid" };
+  return { kind: "pending", label: "Status unavailable" };
 };
-
-function ControlIcon({ kind }: { kind: ControlIconKind }) {
-  if (kind === "search") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>;
-  if (kind === "show") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>;
-  if (kind === "health") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></svg>;
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14m0 0-3-3m3 3 3-3M16 19V5m0 0-3 3m3-3 3 3" /></svg>;
-}
 
 export function AudioPrepBrowser({
   clientId,
@@ -209,56 +199,72 @@ export function AudioPrepBrowser({
   };
 
   return <section className="client-files-browser audio-prep-browser" aria-label="Audio Prep working files">
-    <div className="project-file-toolbar client-files-file-toolbar">
-      <code>{relativePath}</code>
-      <div className="directory-actions">
-        <button type="button" className="secondary" disabled={!canNavigateUp || state.status === "loading"} onClick={() => navigateTo(projectFilePathUp(relativePath, rootPath))}>Up</button>
-        <button type="button" className="secondary" disabled={state.status === "loading"} onClick={() => void refreshFilesAndValidation()}>{state.status === "loading" ? "Refreshing…" : "Refresh files"}</button>
-      </div>
-    </div>
+    <ManagedFolderToolbar
+      path={relativePath}
+      canNavigateUp={canNavigateUp}
+      loading={state.status === "loading"}
+      onUp={() => navigateTo(projectFilePathUp(relativePath, rootPath))}
+      onRefresh={() => void refreshFilesAndValidation()}
+      refreshLabel="Refresh files"
+    />
 
-    {(state.listing || workingAreaNotCreated) && <div className="project-file-controls client-files-controls" aria-label="Audio Prep file view controls">
-      <label className="client-files-control" title="Search"><span className="client-files-control-icon"><ControlIcon kind="search" /></span><input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /></label>
-      <label className="client-files-control" title="Show file types"><span className="client-files-control-icon"><ControlIcon kind="show" /></span><select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select></label>
-      <label className="client-files-control audio-prep-validation-filter" title="Validation status"><span className="client-files-control-icon"><ControlIcon kind="health" /></span><select aria-label="Validation status" value={validationFilter} disabled={!validationAvailable} onChange={(event) => setValidationFilter(event.target.value as ValidationFilter)}><option value="all">All states</option><option value="attention">Needs attention</option><option value="info">Info</option><option value="valid">Valid</option></select></label>
-      <label className="client-files-control" title="Sort"><span className="client-files-control-icon"><ControlIcon kind="sort" /></span><select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select></label>
-    </div>}
+    {(state.listing || workingAreaNotCreated) && <FileViewControls
+      label="Audio Prep file view controls"
+      controls={[
+        { icon: "search", label: "Search", control: <input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /> },
+        { icon: "show", label: "Show file types", control: <select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select> },
+        { icon: "health", label: "Validation status", control: <select aria-label="Validation status" value={validationFilter} disabled={!validationAvailable} onChange={(event) => setValidationFilter(event.target.value as ValidationFilter)}><option value="all">All states</option><option value="attention">Needs attention</option><option value="info">Info</option><option value="valid">Valid</option></select> },
+        { icon: "sort", label: "Sort", control: <select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select> },
+      ]}
+    />}
 
     {state.status === "error" && !workingAreaNotCreated && <section className="notice error" role="alert"><strong>We couldn’t read Audio Prep</strong><span>{state.message}</span><button type="button" onClick={() => void refreshFilesAndValidation()}>Try again</button></section>}
     {actionError && <section className="notice error" role="alert"><strong>We couldn’t complete that file action</strong><span>{actionError}</span></section>}
     {state.status === "loading" && !state.listing && <div className="client-files-loading-inline" role="status" aria-label="Reading Audio Prep"><span className="client-files-spinner" aria-hidden="true" /></div>}
 
-    {showTable && <><div className="table-scroll client-files-table audio-prep-table"><table><thead><tr><th className="client-file-status-heading" aria-label="Status" /><th>Filename</th><th>Original Filename</th><th>Preview</th><th>Audio Details</th><th>Modified</th></tr></thead><tbody>{visibleEntries.map((entry) => {
-      const record = validationByPath.get(workingRelativePath(entry));
-      const editing = renameState?.path === entry.relativePath;
-      const busy = busyPath === entry.relativePath;
-      const fileType = entry.entryType === "file" ? entry.extension?.replace(/^\./, "").toUpperCase() || "File" : "Folder";
-      const hasActions = (entry.entryType === "file" && entry.permissions.canOpen) || entry.permissions.canReveal || entry.permissions.canRename || entry.permissions.canDelete;
-      const status = statusPresentation(record, entry, validationAvailable);
-      const findings = record?.findings ?? [];
-      const statusLabel = findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
-      const sourceName = originalFilename(record);
-      const provenance = provenanceState(record);
-      const provenanceTitle = sourceName
-        ? `Original Delivery: ${sourceName}`
-        : provenance === "ambiguous"
-          ? "Multiple Original Delivery files have identical content; Automation will not guess the source."
-          : "Authoritative Original Delivery provenance is not available for this working file.";
-      return <tr key={entry.id} className={`${editing ? "audio-prep-row-editing " : ""}${record?.status ? `validation-${record.status}` : ""}`}>
-        <td className="client-file-status-cell"><span className={`client-file-status-icon client-file-status-${status.kind}`} aria-label={statusLabel} title={statusLabel}>{status.symbol}</span></td>
-        <td className="client-file-name-cell audio-prep-filename-cell">
-          {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : editing ? <div className="audio-prep-inline-rename"><div className="audio-prep-inline-input"><input autoFocus aria-label={`Rename ${entry.displayName}`} value={renameState.stem} disabled={busy} onChange={(event) => setRenameState({ ...renameState, stem: event.target.value, error: null })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); } else if (event.key === "Escape" && !busy) { event.preventDefault(); cancelRename(); } }} /><span className="audio-prep-extension">{entry.extension ? `.${entry.extension}` : ""}</span></div>{renameState.error && <span className="audio-prep-rename-error" role="alert">{renameState.error}</span>}</div> : <button type="button" className="client-file-select audio-prep-name-button" onClick={() => beginRename(entry)} title="Rename filename">{entry.displayName}</button>}
-        </td>
-        <td className="audio-prep-origin-cell"><span title={provenanceTitle}>{sourceName ?? "—"}</span></td>
-        <td className="client-file-preview-cell">{entry.playable ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} /> : <span className="client-file-preview-empty">—</span>}</td>
-        <td className="client-file-audio-details"><span>{fileType}</span></td>
-        <td className="client-file-modified-cell"><span>{formatAudioPrepModified(entry.modifiedEpochMs)}</span>{hasActions && <details className="client-file-action-menu"><summary aria-label={`Actions for ${entry.displayName}`} title="File actions">⋮</summary><div className="client-file-action-popover" role="menu">
-          {entry.entryType === "file" && entry.permissions.canRename && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); beginRename(entry); }}>Rename</button>}
-          {entry.entryType === "file" && entry.permissions.canOpen && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void runAction(openProjectFile, entry); }}>Open</button>}
-          {entry.permissions.canReveal && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void runAction(revealProjectFile, entry); }}>Reveal</button>}
-          {entry.entryType === "file" && entry.permissions.canDelete && <button type="button" role="menuitem" className="danger" disabled={busy} onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void removeEntry(entry); }}>Delete</button>}
-        </div></details>}</td>
-      </tr>;
-    })}{visibleEntries.length === 0 && <tr><td colSpan={6}>{workingAreaNotCreated ? "No files in Working_Audio." : "No files match the current search or filters."}</td></tr>}</tbody></table></div><div className="client-file-status-legend audio-prep-status-note" aria-label="Validation status legend">{validationAvailable ? <><span><span className="client-file-status-icon client-file-status-valid" aria-hidden="true">✓</span>Valid</span><span><span className="client-file-status-icon client-file-status-attention" aria-hidden="true">!</span>Needs attention</span><span><span className="client-file-status-icon client-file-status-error" aria-hidden="true">×</span>Error</span><span><span className="client-file-status-icon client-file-status-info" aria-hidden="true">i</span>Info</span></> : <span><span className="client-file-status-icon client-file-status-pending" aria-hidden="true">·</span>Validation status requires newer Automation support</span>}</div></>}
+    {showTable && <>
+      <div className="table-scroll client-files-table audio-prep-table"><table><thead><tr><th className="client-file-status-heading" aria-label="Status" /><th>Filename</th><th>Original Filename</th><th>Preview</th><th>Audio Details</th><th>Modified</th></tr></thead><tbody>{visibleEntries.map((entry) => {
+        const record = validationByPath.get(workingRelativePath(entry));
+        const editing = renameState?.path === entry.relativePath;
+        const busy = busyPath === entry.relativePath;
+        const fileType = entry.entryType === "file" ? entry.extension?.replace(/^\./, "").toUpperCase() || "File" : "Folder";
+        const status = statusPresentation(record, entry, validationAvailable);
+        const findings = record?.findings ?? [];
+        const statusLabel = findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
+        const sourceName = originalFilename(record);
+        const provenance = provenanceState(record);
+        const provenanceTitle = sourceName
+          ? `Original Delivery: ${sourceName}`
+          : provenance === "ambiguous"
+            ? "Multiple Original Delivery files have identical content; Automation will not guess the source."
+            : "Authoritative Original Delivery provenance is not available for this working file.";
+        const actions = [
+          entry.entryType === "file" && entry.permissions.canRename ? { label: "Rename", onSelect: () => beginRename(entry) } : null,
+          entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runAction(openProjectFile, entry) } : null,
+          entry.permissions.canReveal ? { label: "Reveal", onSelect: () => void runAction(revealProjectFile, entry) } : null,
+          entry.entryType === "file" && entry.permissions.canDelete ? { label: "Delete", onSelect: () => void removeEntry(entry), disabled: busy, destructive: true } : null,
+        ].filter((action): action is NonNullable<typeof action> => action !== null);
+        return <tr key={entry.id} className={`${editing ? "audio-prep-row-editing " : ""}${record?.status ? `validation-${record.status}` : ""}`}>
+          <td className="client-file-status-cell"><FileStatusIcon kind={status.kind} label={statusLabel} /></td>
+          <td className="client-file-name-cell audio-prep-filename-cell">
+            {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : editing ? <div className="audio-prep-inline-rename"><div className="audio-prep-inline-input"><input autoFocus aria-label={`Rename ${entry.displayName}`} value={renameState.stem} disabled={busy} onChange={(event) => setRenameState({ ...renameState, stem: event.target.value, error: null })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); } else if (event.key === "Escape" && !busy) { event.preventDefault(); cancelRename(); } }} /><span className="audio-prep-extension">{entry.extension ? `.${entry.extension}` : ""}</span></div>{renameState.error && <span className="audio-prep-rename-error" role="alert">{renameState.error}</span>}</div> : <button type="button" className="client-file-select audio-prep-name-button" onClick={() => beginRename(entry)} title="Rename filename">{entry.displayName}</button>}
+          </td>
+          <td className="audio-prep-origin-cell"><span title={provenanceTitle}>{sourceName ?? "—"}</span></td>
+          <td className="client-file-preview-cell">{entry.playable ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} /> : <span className="client-file-preview-empty">—</span>}</td>
+          <td className="client-file-audio-details"><span>{fileType}</span></td>
+          <td className="client-file-modified-cell"><span>{formatAudioPrepModified(entry.modifiedEpochMs)}</span><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} /></td>
+        </tr>;
+      })}{visibleEntries.length === 0 && <tr><td colSpan={6}>{workingAreaNotCreated ? "No files in Working_Audio." : "No files match the current search or filters."}</td></tr>}</tbody></table></div>
+      <FileStatusLegend
+        label="Validation status legend"
+        className="audio-prep-status-note"
+        items={validationAvailable ? [
+          { kind: "valid", label: "Valid" },
+          { kind: "attention", label: "Needs attention" },
+          { kind: "error", label: "Error" },
+          { kind: "info", label: "Info" },
+        ] : [{ kind: "pending", label: "Validation status requires newer Automation support" }]}
+      />
+    </>}
   </section>;
 }
