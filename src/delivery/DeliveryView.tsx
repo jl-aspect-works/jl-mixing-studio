@@ -43,7 +43,10 @@ const formatBytes = (value: number | null | undefined) => {
 const titleCase = (value: string | null | undefined) =>
   value ? value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "—";
 
-const fileName = (path: string) => path.split("/").at(-1) ?? path;
+const fileName = (path: string) => {
+  const parts = path.split("/");
+  return parts[parts.length - 1] || path;
+};
 
 const packageStatusLabel = (value: string) => {
   switch (value) {
