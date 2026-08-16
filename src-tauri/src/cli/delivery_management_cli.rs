@@ -1,6 +1,8 @@
 use std::path::Path;
 
-use crate::automation_api::{invoke_api, ApiCallError, ApiStatus, ProcessRunner, SystemProcessRunner};
+use crate::automation_api::{
+    invoke_api, ApiCallError, ApiStatus, ProcessRunner, SystemProcessRunner,
+};
 use crate::models::{DeliveryStatusResult, ManagedDeliveryStatus};
 
 pub fn get_delivery_status(home: &Path, project_directory: &Path) -> DeliveryStatusResult {
@@ -107,9 +109,9 @@ fn delete_delivery_package_with_runner<R: ProcessRunner>(
 
 fn api_error(error: ApiCallError) -> DeliveryStatusResult {
     match error {
-        ApiCallError::Unavailable => failed(
-            "JL Mixing Automation was not found in its default install location or on PATH.",
-        ),
+        ApiCallError::Unavailable => {
+            failed("JL Mixing Automation was not found in its default install location or on PATH.")
+        }
         ApiCallError::IncompatibleVersion(version) => failed(&format!(
             "JL Mixing Automation returned API {version}; Studio requires Automation API 1.0."
         )),
