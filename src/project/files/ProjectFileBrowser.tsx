@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { AudioPreviewPlayer } from "./AudioPreviewPlayer";
 import { ProjectFileList } from "./ProjectFileList";
 import { canNavigateProjectFilesUp, projectFilePathUp } from "./projectFileNavigation";
 import {
@@ -182,6 +183,9 @@ export function ProjectFileBrowser({
           onOpenDirectory={(entry) => navigateTo(entry.relativePath)}
           onOpen={openEntry}
           onPreview={onPreview}
+          renderPreview={onPreview ? undefined : (entry) => (
+            <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} />
+          )}
           onReveal={revealEntry}
           onRename={onRename}
           onDelete={onDelete}
