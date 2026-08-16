@@ -138,7 +138,7 @@
 .delivery-empty-inline strong { color: #3b485c; }
 
 .delivery-notes-panel { min-width: 0; }
-.delivery-notes-panel .markdown-editor textarea { min-height: 82px; }
+.delivery-notes-panel .markdown-editor textarea { height: 82px; min-height: 82px; }
 .delivery-notes-panel .dialog-actions { margin-top: 5px; }
 .delivery-notes-panel .dialog-actions button { min-height: 27px; padding: 3px 8px; font-size: .64rem; }
 .delivery-notes-panel > p:last-child { margin: 4px 0 0; font-size: .64rem; }
