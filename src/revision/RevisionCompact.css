@@ -12,11 +12,7 @@
 .revision-description-click-edit input:focus-visible { outline: none !important; border: 0; border-radius: 0; background: transparent; box-shadow: 0 2px 7px rgb(31 48 77 / 14%) !important; }
 .revision-description-saving { right: 5px; bottom: 6px; }
 .revision-notes-panel { padding: 10px 14px !important; }
-.revision-notes-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
-.revision-notes-heading h2 { font-size: .9rem; }
-.revision-notes-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; }
-.revision-notes-heading-actions span { color: #7c8798; font-size: .61rem; white-space: nowrap; }
-.revision-notes-heading-actions button { min-height: 27px !important; padding: 3px 8px !important; font-size: .64rem !important; white-space: nowrap; }
+.revision-notes-panel .markdown-document-heading h2 { font-size: .9rem; }
 .revision-notes-panel .markdown-editor textarea { min-height: 105px; }
 .revision-notes-panel .markdown-preview { min-height: 105px; padding-top: 8px; padding-bottom: 8px; }
 .revision-notes-panel .markdown-editor-toolbar { padding-top: 4px; padding-bottom: 4px; }
@@ -28,8 +24,3 @@
 .revisions-workspace { gap: 10px; margin-bottom: 9px; }
 .revision-files-heading { padding-top: 9px; }
 .revision-files { margin-top: 7px; }
-
-@media (max-width: 760px) {
-  .revision-notes-heading { align-items: flex-start; }
-  .revision-notes-heading-actions { flex-wrap: wrap; }
-}
