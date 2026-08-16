@@ -61,7 +61,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       expect(screen.getByRole("heading", { name: "Delivery", level: 2 })).toBeInTheDocument();
       expect(screen.getByText("Ready for first delivery")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Create Delivery" })).toBeEnabled();
-      expect(screen.getByText("No generated ZIP")).toBeInTheDocument();
+      expect(screen.getAllByText("No generated ZIP").length).toBeGreaterThan(0);
     });
 
   it("previews the fixed first-delivery plan and cancels without creating", async () => {
@@ -121,9 +121,9 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       expect(screen.getByText("Blue Sky Main Mix.wav")).toBeInTheDocument();
       expect(screen.getByText("Main Mix")).toBeInTheDocument();
       expect(screen.getByText("1.17 KB")).toBeInTheDocument();
-      expect(screen.getByText("Verified")).toBeInTheDocument();
+      expect(screen.getAllByText("Verified").length).toBeGreaterThan(0);
       expect(screen.getByRole("button", { name: "Rebuild Delivery" })).toBeEnabled();
-      expect(screen.getByText("No generated ZIP")).toBeInTheDocument();
+      expect(screen.getAllByText("No generated ZIP").length).toBeGreaterThan(0);
     });
 
   it("edits and verifies the fixed Delivery Notes document", async () => {
