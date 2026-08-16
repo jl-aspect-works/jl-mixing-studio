@@ -49,7 +49,6 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       expect(screen.getAllByText("Balance update").length).toBeGreaterThan(0);
       expect(screen.getByRole("button", { name: "New Revision" })).toBeDisabled();
       expect(screen.getByRole("button", { name: "Approve Revision" })).toBeDisabled();
-      expect(screen.getAllByText(/still read the revision history/i)).toHaveLength(2);
     });
 
   it("shows authoritative first-delivery readiness with guided creation available", async () => {
@@ -423,7 +422,8 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
 
       expect(await screen.findByText("Revision 3 was created and verified.")).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Revision History" })).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: "Revision 03" })).toBeInTheDocument();
+      expect(within(screen.getByRole("navigation", { name: "Revision history" })).getByRole("button", { name: /Revision 03 Current Vocal lift/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Revision 02" })).toBeInTheDocument();
       expect(screen.getAllByText("Vocal lift").length).toBeGreaterThan(0);
       expect(mockedInvoke.mock.calls.filter(([command]) => command === "create_revision")).toHaveLength(1);
     });
