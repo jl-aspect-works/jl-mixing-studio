@@ -58,6 +58,7 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     });
 
     render(<App />);
+    await screen.findByText("JL Mix Studio");
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
     fireEvent.click(await screen.findByRole("button", { name: "Blue Sky" }));
 
@@ -84,6 +85,7 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     });
 
     render(<App />);
+    await screen.findByText("JL Mix Studio");
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
     fireEvent.click(await screen.findByRole("button", { name: "Blue Sky" }));
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
