@@ -1,4 +1,4 @@
-.audio-preview-inline {
+.shared-audio-preview-inline {
   display: grid;
   grid-template-columns: 26px auto 88px auto 28px 18px auto;
   align-items: center;
@@ -11,12 +11,12 @@
   background: transparent;
 }
 
-.audio-preview-inline audio {
+.shared-audio-preview-inline audio {
   display: none;
 }
 
-.audio-preview-play,
-.audio-preview-mute {
+.shared-audio-preview-play,
+.shared-audio-preview-mute {
   display: inline-grid;
   place-items: center;
   min-width: 24px;
@@ -33,16 +33,16 @@
   line-height: 1;
 }
 
-.audio-preview-play:hover:not(:disabled),
-.audio-preview-play:focus:not(:disabled),
-.audio-preview-mute:hover:not(:disabled),
-.audio-preview-mute:focus:not(:disabled) {
+.shared-audio-preview-play:hover:not(:disabled),
+.shared-audio-preview-play:focus:not(:disabled),
+.shared-audio-preview-mute:hover:not(:disabled),
+.shared-audio-preview-mute:focus:not(:disabled) {
   border: 0;
   background: transparent;
   box-shadow: none;
 }
 
-.audio-preview-mute {
+.shared-audio-preview-mute {
   min-width: 28px;
   width: 28px;
   min-height: 26px;
@@ -50,7 +50,7 @@
   border-radius: 5px;
 }
 
-.audio-preview-volume-icon {
+.shared-audio-preview-volume-icon {
   width: 20px;
   height: 20px;
   fill: none;
@@ -60,18 +60,18 @@
   stroke-linejoin: round;
 }
 
-.audio-preview-seek,
-.audio-preview-volume {
+.shared-audio-preview-seek,
+.shared-audio-preview-volume {
   min-width: 0;
   margin: 0;
   accent-color: var(--blue);
 }
 
-.audio-preview-seek {
+.shared-audio-preview-seek {
   width: 88px;
 }
 
-.audio-preview-volume {
+.shared-audio-preview-volume {
   width: 16px;
   height: 34px;
   writing-mode: vertical-lr;
@@ -79,26 +79,26 @@
   -webkit-appearance: slider-vertical;
 }
 
-.audio-preview-seek::-webkit-slider-thumb,
-.audio-preview-volume::-webkit-slider-thumb {
+.shared-audio-preview-seek::-webkit-slider-thumb,
+.shared-audio-preview-volume::-webkit-slider-thumb {
   width: 9px;
   height: 9px;
 }
 
-.audio-preview-seek::-moz-range-thumb,
-.audio-preview-volume::-moz-range-thumb {
+.shared-audio-preview-seek::-moz-range-thumb,
+.shared-audio-preview-volume::-moz-range-thumb {
   width: 9px;
   height: 9px;
 }
 
-.audio-preview-time {
+.shared-audio-preview-time {
   color: var(--muted);
   font-size: .62rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.audio-preview-error {
+.shared-audio-preview-error {
   display: inline-grid;
   place-items: center;
   width: 18px;
