@@ -12,13 +12,10 @@
 .revision-description-click-edit input:focus-visible { outline: none !important; border: 0; border-radius: 0; background: transparent; box-shadow: 0 2px 7px rgb(31 48 77 / 14%) !important; }
 .revision-description-saving { right: 5px; bottom: 6px; }
 .revision-notes-panel { padding: 10px 14px !important; }
-.revision-notes-heading { margin-bottom: 6px; }
-.revision-notes-heading h2 { font-size: .9rem; }
+.revision-notes-panel .markdown-document-heading h2 { font-size: .9rem; }
 .revision-notes-panel .markdown-editor textarea { min-height: 105px; }
 .revision-notes-panel .markdown-preview { min-height: 105px; padding-top: 8px; padding-bottom: 8px; }
 .revision-notes-panel .markdown-editor-toolbar { padding-top: 4px; padding-bottom: 4px; }
-.revision-notes-actions { margin-top: 5px; }
-.revision-notes-actions button { min-height: 30px !important; padding: 4px 9px !important; font-size: .7rem !important; }
 .revision-history-header { padding: 9px 12px; }
 .revision-history-list { max-height: 250px; }
 .revision-history-item { padding: 8px 10px; }

@@ -148,3 +148,91 @@ pub enum DeliveryOperationCode {
     Uncertain,
     Failed,
 }
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DeliveryStatusRequest {
+    pub client_id: String,
+    pub project_id: String,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DeliveryPackageDeleteRequest {
+    pub client_id: String,
+    pub project_id: String,
+    pub zip_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+pub struct ManagedDeliveryIssue {
+    pub code: String,
+    pub message: String,
+    pub path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+pub struct ManagedDeliveryRevisions {
+    pub current: u32,
+    pub approved: Option<u32>,
+    pub delivered: Option<u32>,
+    pub source: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+pub struct ManagedDeliverableStatus {
+    pub path: String,
+    pub deliverable_type: Option<String>,
+    pub size_bytes: Option<u64>,
+    pub expected_sha256: Option<String>,
+    pub actual_sha256: Option<String>,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+pub struct ManagedDeliveryNotesStatus {
+    pub path: String,
+    pub present: bool,
+    pub size_bytes: Option<u64>,
+    pub modified_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+pub struct ManagedDeliveryPackageStatus {
+    pub name: String,
+    pub path: String,
+    pub size_bytes: Option<u64>,
+    pub modified_at: Option<String>,
+    pub status: String,
+    pub issues: Vec<ManagedDeliveryIssue>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+pub struct ManagedDeliveryStatus {
+    pub delivery_path: String,
+    pub delivery_manifest_path: String,
+    pub state: String,
+    pub revisions: ManagedDeliveryRevisions,
+    pub deliverables: Vec<ManagedDeliverableStatus>,
+    pub deliverable_count: usize,
+    pub untracked: Vec<String>,
+    pub issues: Vec<ManagedDeliveryIssue>,
+    pub notes: ManagedDeliveryNotesStatus,
+    pub packages: Vec<ManagedDeliveryPackageStatus>,
+    pub package_state: String,
+    pub current_package: Option<ManagedDeliveryPackageStatus>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DeliveryStatusResult {
+    pub ok: bool,
+    pub message: String,
+    pub delivery: Option<ManagedDeliveryStatus>,
+}

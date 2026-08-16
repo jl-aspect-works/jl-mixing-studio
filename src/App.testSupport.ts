@@ -8,11 +8,13 @@ import type {
   IntakeOperationResult,
   IntakeReport,
   ProjectOperationResult,
+  ProjectSummary,
   RevisionOperationResult,
   VersionCheck,
   WorkspaceSnapshot
 } from "./types";
 import type { WorkspaceConfiguration } from "./settings/models";
+import type { DeliveryStatusResult } from "./delivery/statusModels";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/plugin-clipboard-manager", () => ({ writeText: vi.fn() }));
@@ -99,7 +101,7 @@ export const deliveryPreviewResult: DeliveryOperationResult = {
     deliveredRevision: null,
     deliveryMethod: "Download",
     replacementMode: "default",
-    createZip: false,
+    createZip: true,
     zipName: null,
     selected: [
       { sourceName: "Blue Sky Main Mix.wav", deliverableType: "main_mix", path: "Blue Sky Main Mix.wav" },
@@ -241,6 +243,58 @@ export const healthyWorkspace = (projectName = "Blue Sky"): WorkspaceSnapshot =>
   activity: [],
 });
 
+export const deliveryStatusForProject = (project: ProjectSummary): DeliveryStatusResult => {
+  const delivery = project.delivery;
+  const sourceRevision = delivery?.revision ?? null;
+  const staleSource = sourceRevision !== null && project.approvedRevision !== sourceRevision;
+  const issues = staleSource
+    ? [{
+        code: "DELIVERY_SOURCE_STALE",
+        message: project.approvedRevision === null
+          ? `Delivery was built from Revision ${sourceRevision.toString().padStart(2, "0")}, but there is no approved revision.`
+          : `Delivery was built from Revision ${sourceRevision.toString().padStart(2, "0")}, but Revision ${project.approvedRevision.toString().padStart(2, "0")} is approved.`,
+        path: null,
+      }]
+    : [];
+  const deliverables = (delivery?.files ?? []).map((file) => ({
+    path: file.path,
+    deliverableType: file.deliverableType,
+    sizeBytes: file.sizeBytes,
+    expectedSha256: file.sha256,
+    actualSha256: file.sha256,
+    status: "current",
+  }));
+
+  return {
+    ok: true,
+    message: "Delivery status reconciled successfully.",
+    delivery: {
+      deliveryPath: `/workspace/Clients/acme/Projects/${project.projectId}/05_Final_Delivery`,
+      deliveryManifestPath: `/workspace/Clients/acme/Projects/${project.projectId}/05_Final_Delivery/delivery-manifest.json`,
+      state: delivery ? (issues.length > 0 ? "needs_attention" : "ready") : "not_created",
+      revisions: {
+        current: project.currentRevision,
+        approved: project.approvedRevision,
+        delivered: project.deliveredRevision,
+        source: sourceRevision,
+      },
+      deliverables,
+      deliverableCount: deliverables.length,
+      untracked: [],
+      issues,
+      notes: {
+        path: `/workspace/Clients/acme/Projects/${project.projectId}/05_Final_Delivery/Delivery_Notes.md`,
+        present: Boolean(delivery),
+        sizeBytes: delivery ? 64 : null,
+        modifiedAt: delivery?.createdAt ?? null,
+      },
+      packages: [],
+      packageState: "none",
+      currentPackage: null,
+    },
+  };
+};
+
 export const defaultWorkspaceConfiguration: WorkspaceConfiguration = {
   workspacePath: "/Users/engineer/Music/Mixes",
   configured: false,
@@ -256,6 +310,7 @@ export const respondWith = (
     if (command === "get_workspace_configuration") return Promise.resolve(workspaceConfiguration);
     if (command === "get_jl_mixing_version") return Promise.resolve(automation);
     if (command === "get_intake_report") return Promise.resolve(intakeNotRun);
+    if (command === "get_delivery_status") return Promise.resolve(deliveryStatusForProject(workspace.clients[0].projects[0]));
     return Promise.reject(new Error("Unexpected command"));
   });
 };

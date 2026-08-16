@@ -1,9 +1,27 @@
+.overview-project-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  margin-bottom: 6px;
+}
+
 .overview-project-title {
-  margin: 0 0 8px;
+  min-width: 0;
+  margin: 0;
   color: #172033;
   font-size: 1.55rem;
   font-weight: 800;
   line-height: 1.2;
+}
+
+.overview-project-format {
+  flex: 0 0 auto;
+  margin: 0 !important;
+  color: #8290a5;
+  font-size: .72rem;
+  white-space: nowrap;
 }
 
 /* Shared Studio density standard. Keep common controls and spacing consistent
@@ -12,7 +30,18 @@
 .compact-global-headers > .compact-project-route-header {
   align-items: center;
   gap: 20px;
+}
+
+.compact-global-headers > .route-header {
   margin-bottom: 18px;
+}
+
+.compact-global-headers > .compact-project-route-header {
+  margin-bottom: 6px;
+}
+
+.compact-global-headers > .overview-project-header {
+  margin-top: 0;
 }
 
 .compact-global-headers > .route-header .eyebrow,
@@ -222,12 +251,8 @@
   font-size: .66rem !important;
 }
 
-.project-overview-open > .compact-project-route-header {
-  margin-bottom: 6px;
-}
-
 .project-overview-open .overview-project-header {
-  margin: 0 0 10px;
+  margin-bottom: 10px;
   padding: 16px 18px;
 }
 
@@ -273,6 +298,12 @@
 
   .compact-project-route-context {
     width: min(330px, 46vw);
+  }
+
+  .overview-project-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
   }
 }
 

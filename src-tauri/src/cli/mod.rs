@@ -20,6 +20,10 @@ mod delivery;
 mod delivery_api_tests;
 #[cfg(test)]
 mod delivery_legacy_testsupport;
+#[path = "delivery_management_cli.rs"]
+mod delivery_management;
+#[cfg(test)]
+mod delivery_management_api_tests;
 #[path = "intake_cli.rs"]
 mod intake;
 #[path = "project_cli.rs"]
@@ -43,6 +47,7 @@ pub use delivery::{blocked_delivery_operation, create_delivery, preflight_delive
 use delivery_legacy_testsupport::{
     parse_delivery_output, run_delivery_operation, DeliveryOperation, DELIVERY_EXECUTABLE,
 };
+pub use delivery_management::{delete_delivery_package, get_delivery_status};
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
     refresh_client_files_validation, run_intake_validation,

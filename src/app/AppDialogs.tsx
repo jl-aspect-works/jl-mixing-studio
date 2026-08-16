@@ -33,7 +33,18 @@ export function AppDialogs({ workspace, project, studio, clients, projects, inta
     {intake.state.status !== "closed" && intake.state.status !== "preflighting" && <IntakeDialog state={intake.state} onConfirm={intake.confirm} onClose={intake.closeDialog} />}
     {revision.state.status !== "closed" && project && <RevisionDialog state={revision.state} values={revision.form} project={project} onChange={revision.setForm} onPreflight={revision.preflight} onConfirm={revision.confirm} onBack={revision.back} onClose={revision.close} />}
     {approval.state.status !== "closed" && project && <ApprovalDialog state={approval.state} values={approval.form} project={project} onChange={approval.setForm} onPreflight={approval.preflight} onConfirm={approval.confirm} onBack={approval.back} onClose={approval.close} />}
-    {delivery.state.status === "options" && project && <DeliveryOptionsDialog request={delivery.state.request} projectName={project.projectName} onChange={delivery.setRequest} onPreview={delivery.preflight} onClose={delivery.close} />}
-    {delivery.state.status !== "closed" && delivery.state.status !== "options" && delivery.state.status !== "preflighting" && <DeliveryDialog state={delivery.state} onConfirm={delivery.confirm} onClose={() => { delivery.close(); if (delivery.state.status === "uncertain") onRefresh(); }} />}
+    {delivery.state.status === "options" && project?.approvedRevision !== null && project?.approvedRevision !== undefined && <DeliveryOptionsDialog
+      approvedRevision={project.approvedRevision}
+      showCleanOption={project.delivery !== null}
+      cleanFirst={delivery.state.cleanFirst}
+      onCleanFirstChange={delivery.setCleanFirst}
+      onBuild={delivery.preflight}
+      onClose={delivery.close}
+    />}
+    {delivery.state.status !== "closed" && delivery.state.status !== "options" && project?.approvedRevision !== null && project?.approvedRevision !== undefined && <DeliveryDialog
+      state={delivery.state}
+      approvedRevision={project.approvedRevision}
+      onClose={() => { delivery.close(); if (delivery.state.status === "uncertain") onRefresh(); }}
+    />}
   </>;
 }
