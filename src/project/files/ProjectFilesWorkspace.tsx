@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { ProjectFileBrowser } from "./ProjectFileBrowser";
 import {
   deleteAudioPrepFile,
   deleteRevisionFile,
+  openProjectFile,
   projectFilePaths,
   renameAudioPrepFile,
   renameRevisionFile,
@@ -124,6 +126,14 @@ export function ProjectFilesWorkspace({ clientId, projectId }: { clientId: strin
   const [selectedPath, setSelectedPath] = useState("");
   const selectedLabel = useMemo(() => pathLabel(selectedPath), [selectedPath]);
 
+  const openFolder = async (relativePath: string) => {
+    if (!relativePath) {
+      await invoke("open_folder", { request: { location: "project", clientId, projectId } });
+      return;
+    }
+    await openProjectFile({ clientId, projectId, relativePath });
+  };
+
   const renameEntry = async (entry: ProjectFileEntry) => {
     const currentStem = filenameStem(entry);
     const nextStem = window.prompt(`Rename ${entry.displayName}`, currentStem)?.trim();
@@ -191,6 +201,7 @@ export function ProjectFilesWorkspace({ clientId, projectId }: { clientId: strin
           initialPath={selectedPath}
           rootPath=""
           emptyMessage="No files in this project folder."
+          onOpenFolder={openFolder}
           onRename={renameEntry}
           onDelete={deleteEntry}
         />
