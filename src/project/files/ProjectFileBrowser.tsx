@@ -28,6 +28,7 @@ export function ProjectFileBrowser({
   initialPath,
   rootPath = initialPath,
   emptyMessage,
+  onOpenFolder,
   onPreview,
   onOpen,
   onReveal,
@@ -39,6 +40,7 @@ export function ProjectFileBrowser({
   initialPath: string;
   rootPath?: string;
   emptyMessage?: string;
+  onOpenFolder?: (relativePath: string) => void | Promise<void>;
   onPreview?: (entry: ProjectFileEntry) => void;
   onOpen?: (entry: ProjectFileEntry) => void;
   onReveal?: (entry: ProjectFileEntry) => void;
@@ -107,6 +109,16 @@ export function ProjectFileBrowser({
     }
   };
 
+  const openFolder = async () => {
+    if (!onOpenFolder) return;
+    setActionError(null);
+    try {
+      await onOpenFolder(relativePath);
+    } catch (error) {
+      setActionError(actionErrorMessage(error));
+    }
+  };
+
   const openEntry = (entry: ProjectFileEntry) => {
     if (onOpen) {
       onOpen(entry);
@@ -131,6 +143,7 @@ export function ProjectFileBrowser({
           <code>{relativePath || "Project root"}</code>
         </div>
         <div className="directory-actions">
+          {onOpenFolder && <button type="button" onClick={() => void openFolder()}>Open Folder</button>}
           <button type="button" className="secondary" onClick={navigateUp} disabled={!canNavigateUp}>
             Up
           </button>
