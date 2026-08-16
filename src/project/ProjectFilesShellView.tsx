@@ -2,7 +2,18 @@ import type { ClientSummary, ProjectSummary } from "../types";
 import { FolderControl } from "../AppShellViews";
 import { ProjectNavigationBar } from "./ProjectNavigationBar";
 import type { ProjectShellView } from "./ProjectView";
+import { ProjectFilesWorkspace } from "./files/ProjectFilesWorkspace";
 
 export function ProjectFilesShellView({ client, project, onSelectView }: { client: ClientSummary; project: ProjectSummary; onProjects: () => void; onOverview: () => void; onSelectView: (view: ProjectShellView) => void }) {
-  return <><ProjectNavigationBar active="files" onSelect={onSelectView} /><section className="directory-toolbar"><div><p className="kicker">{client.clientName}</p><h2>Files</h2></div></section><section className="empty-state"><h2>Project file workspace</h2><p>The project-wide Files browser will be implemented in issue #195 on top of the shared file service.</p></section><FolderControl location="project" clientId={client.clientId} projectId={project.projectId} /></>;
+  return <>
+    <ProjectNavigationBar active="files" onSelect={onSelectView} />
+    <section className="directory-toolbar">
+      <div>
+        <p className="kicker">{client.clientName}</p>
+        <h2>Files</h2>
+      </div>
+      <FolderControl location="project" clientId={client.clientId} projectId={project.projectId} />
+    </section>
+    <ProjectFilesWorkspace clientId={client.clientId} projectId={project.projectId} />
+  </>;
 }
