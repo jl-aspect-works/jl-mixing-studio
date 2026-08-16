@@ -8,8 +8,8 @@ export type RowAction = {
   destructive?: boolean;
 };
 
-export function RowActionMenu({ label, actions }: { label: string; actions: RowAction[] }) {
-  if (actions.length === 0) return null;
+export function RowActionMenu({ label, actions, extraContent }: { label: string; actions: RowAction[]; extraContent?: ReactNode }) {
+  if (actions.length === 0 && !extraContent) return null;
   return <details className="shared-row-action-menu">
     <summary aria-label={label} title="More actions">⋮</summary>
     <div className="shared-row-action-popover" role="menu">
@@ -24,6 +24,7 @@ export function RowActionMenu({ label, actions }: { label: string; actions: RowA
           action.onSelect();
         }}
       >{action.label}</button>)}
+      {extraContent}
     </div>
   </details>;
 }
