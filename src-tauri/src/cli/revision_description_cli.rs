@@ -43,7 +43,9 @@ pub fn update_revision_description(
     ) {
         Ok(response) if response.status == ApiStatus::Success => {
             let Some(revision) = response.data.get("revision") else {
-                return failed("Automation updated the description, but Studio could not verify the result.");
+                return failed(
+                    "Automation updated the description, but Studio could not verify the result.",
+                );
             };
             let number = revision.get("number").and_then(serde_json::Value::as_u64);
             let returned_description = revision
@@ -58,7 +60,9 @@ pub fn update_revision_description(
                 || returned_description != Some(description.as_str())
                 || project != Some(project_id.as_str())
             {
-                return failed("Automation updated the description, but Studio could not verify the returned revision identity.");
+                return failed(
+                    "Automation updated the description, but Studio could not verify the returned revision identity.",
+                );
             }
             RevisionDescriptionUpdateResult {
                 ok: true,
