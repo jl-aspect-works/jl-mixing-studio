@@ -48,7 +48,7 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
         workspaceCalls += 1;
         const snapshot = sharedHealthyWorkspace();
         if (workspaceCalls >= 3) {
-          snapshot.clients[0].projects[0].artist = "Externally Updated Artist";
+          snapshot.clients[0].projects[0].projectName = "Externally Updated Blue Sky";
         }
         return Promise.resolve(snapshot);
       }
@@ -72,7 +72,7 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     fireEvent.click(filesButton);
 
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(3));
-    expect(screen.getByText("Externally Updated Artist")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Externally Updated Blue Sky", level: 1 })).toBeInTheDocument();
   });
 
   it("preserves the configured workspace and selected project through disconnect and retry", async () => {
