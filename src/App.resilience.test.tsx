@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import App from "./App";
 import { healthyWorkspace, mockedInvoke, resetAppTestState, version } from "./App.testSupport";
+import App from "./App";
 import type { WorkspaceSnapshot } from "./types";
 
 const configuredWorkspace = {
@@ -58,12 +58,15 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     });
 
     render(<App />);
+    await screen.findByText("JL Mix Studio");
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Blue Sky" }));
+    const projectButton = await screen.findByRole("button", { name: "Blue Sky" });
+    await waitFor(() => expect(projectButton).toBeEnabled());
+    fireEvent.click(projectButton);
 
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
 
-    const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+    const projectNavigation = await screen.findByRole("navigation", { name: "Project navigation" });
     const filesButton = within(projectNavigation).getByRole("button", { name: "Files" });
     await waitFor(() => expect(filesButton).toBeEnabled());
     fireEvent.click(filesButton);
@@ -86,8 +89,11 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     });
 
     render(<App />);
+    await screen.findByText("JL Mix Studio");
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Blue Sky" }));
+    const projectButton = await screen.findByRole("button", { name: "Blue Sky" });
+    await waitFor(() => expect(projectButton).toBeEnabled());
+    fireEvent.click(projectButton);
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
     expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
 
