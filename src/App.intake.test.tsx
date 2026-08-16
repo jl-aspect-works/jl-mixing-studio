@@ -27,8 +27,10 @@ const openClientFiles = async () => {
   await screen.findByText("JL Mix Studio");
   fireEvent.click(screen.getByRole("button", { name: "Projects" }));
   fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-  fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
   const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+  const clientFilesButton = within(projectNavigation).getByRole("button", { name: "Client Files" });
+  await waitFor(() => expect(clientFilesButton).toBeEnabled());
+  fireEvent.click(clientFilesButton);
   expect(within(projectNavigation).getByText("Client Files")).toHaveAttribute("aria-current", "page");
 };
 
