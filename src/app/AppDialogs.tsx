@@ -34,7 +34,6 @@ export function AppDialogs({ workspace, project, studio, clients, projects, inta
     {revision.state.status !== "closed" && project && <RevisionDialog state={revision.state} values={revision.form} project={project} onChange={revision.setForm} onPreflight={revision.preflight} onConfirm={revision.confirm} onBack={revision.back} onClose={revision.close} />}
     {approval.state.status !== "closed" && project && <ApprovalDialog state={approval.state} values={approval.form} project={project} onChange={approval.setForm} onPreflight={approval.preflight} onConfirm={approval.confirm} onBack={approval.back} onClose={approval.close} />}
     {delivery.state.status === "options" && project?.approvedRevision !== null && project?.approvedRevision !== undefined && <DeliveryOptionsDialog
-      request={delivery.state.request}
       approvedRevision={project.approvedRevision}
       showCleanOption={project.delivery !== null}
       cleanFirst={delivery.state.cleanFirst}
