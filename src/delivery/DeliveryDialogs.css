@@ -1,33 +1,19 @@
 .delivery-clean-option {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 10px;
   margin: 18px 0 0;
-  padding: 0;
   cursor: pointer;
 }
 
-.delivery-clean-option input {
-  width: 16px;
-  height: 16px;
-  margin: 2px 0 0;
+.delivery-clean-option > span {
+  min-width: 0;
 }
 
-.delivery-clean-option span {
-  display: grid;
-  gap: 3px;
-}
-
-.delivery-clean-option strong {
+.delivery-clean-option > span > strong {
   color: #344054;
-  font-size: .72rem;
 }
 
-.delivery-clean-option small {
-  color: #738096;
-  font-size: .62rem;
-  line-height: 1.35;
+.delivery-clean-option > input {
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .delivery-build-progress {
@@ -61,8 +47,7 @@
   z-index: 1;
   display: block;
   color: #42526a;
-  font-size: .68rem;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 @keyframes delivery-progress-indeterminate {
