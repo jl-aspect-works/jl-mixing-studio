@@ -35,7 +35,7 @@ describe("JL Mixing Studio — project workflow", () => {
 
       expect(screen.getByRole("heading", { name: "Second Blue Sky", level: 1 })).toBeInTheDocument();
       expect(screen.getByText("Second Client")).toBeInTheDocument();
-      expect(screen.getByText("Second Artist")).toBeInTheDocument();
+      expect(screen.queryByText("Second Artist")).not.toBeInTheDocument();
     });
 
   it("returns safely to Projects when refresh removes the selected project", async () => {
