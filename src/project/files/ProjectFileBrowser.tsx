@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { AudioPreviewPlayer } from "./AudioPreviewPlayer";
+import { FileViewControls, ManagedFolderToolbar } from "./FileUiPrimitives";
 import { ProjectFileList } from "./ProjectFileList";
 import { canNavigateProjectFilesUp, projectFilePathUp } from "./projectFileNavigation";
 import {
@@ -27,6 +29,7 @@ export function ProjectFileBrowser({
   initialPath,
   rootPath = initialPath,
   emptyMessage,
+  onOpenFolder,
   onPreview,
   onOpen,
   onReveal,
@@ -38,11 +41,12 @@ export function ProjectFileBrowser({
   initialPath: string;
   rootPath?: string;
   emptyMessage?: string;
+  onOpenFolder?: (relativePath: string) => void | Promise<void>;
   onPreview?: (entry: ProjectFileEntry) => void;
   onOpen?: (entry: ProjectFileEntry) => void;
   onReveal?: (entry: ProjectFileEntry) => void;
-  onRename?: (entry: ProjectFileEntry) => void;
-  onDelete?: (entry: ProjectFileEntry) => void;
+  onRename?: (entry: ProjectFileEntry) => void | Promise<void>;
+  onDelete?: (entry: ProjectFileEntry) => void | Promise<void>;
 }) {
   const [relativePath, setRelativePath] = useState(initialPath);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -92,6 +96,30 @@ export function ProjectFileBrowser({
     }
   };
 
+  const runManagedMutation = async (
+    action: ((entry: ProjectFileEntry) => void | Promise<void>) | undefined,
+    entry: ProjectFileEntry,
+  ) => {
+    if (!action) return;
+    setActionError(null);
+    try {
+      await action(entry);
+      await refresh();
+    } catch (error) {
+      setActionError(actionErrorMessage(error));
+    }
+  };
+
+  const openFolder = async () => {
+    if (!onOpenFolder) return;
+    setActionError(null);
+    try {
+      await onOpenFolder(relativePath);
+    } catch (error) {
+      setActionError(actionErrorMessage(error));
+    }
+  };
+
   const openEntry = (entry: ProjectFileEntry) => {
     if (onOpen) {
       onOpen(entry);
@@ -110,51 +138,23 @@ export function ProjectFileBrowser({
 
   return (
     <section className="project-file-browser" aria-label="Project files">
-      <div className="directory-toolbar project-file-toolbar">
-        <div>
-          <p className="kicker">Project files</p>
-          <code>{relativePath || "Project root"}</code>
-        </div>
-        <div className="directory-actions">
-          <button type="button" className="secondary" onClick={navigateUp} disabled={!canNavigateUp}>
-            Up
-          </button>
-          <button type="button" className="secondary" onClick={() => void refresh()} disabled={state.status === "loading"}>
-            {state.status === "loading" ? "Refreshing…" : "Refresh"}
-          </button>
-        </div>
-      </div>
+      <ManagedFolderToolbar
+        path={relativePath}
+        canNavigateUp={canNavigateUp}
+        loading={state.status === "loading"}
+        onUp={navigateUp}
+        onRefresh={() => void refresh()}
+        onOpenFolder={onOpenFolder ? () => void openFolder() : undefined}
+      />
 
-      {state.listing && (
-        <div className="project-file-controls" aria-label="File view controls">
-          <label>
-            <span>Search</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search this folder"
-            />
-          </label>
-          <label>
-            <span>Show</span>
-            <select value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}>
-              <option value="all">Everything</option>
-              <option value="audio">Audio</option>
-              <option value="files">Files</option>
-              <option value="folders">Folders</option>
-            </select>
-          </label>
-          <label>
-            <span>Sort</span>
-            <select value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}>
-              <option value="name">Name</option>
-              <option value="modified">Modified</option>
-              <option value="size">Size</option>
-            </select>
-          </label>
-        </div>
-      )}
+      {state.listing && <FileViewControls
+        label="File view controls"
+        controls={[
+          { icon: "search", label: "Search", control: <input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /> },
+          { icon: "show", label: "Show file types", control: <select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select> },
+          { icon: "sort", label: "Sort", control: <select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select> },
+        ]}
+      />}
 
       {state.status === "error" && (
         <section className="notice error" role="alert">
@@ -182,9 +182,12 @@ export function ProjectFileBrowser({
           onOpenDirectory={(entry) => navigateTo(entry.relativePath)}
           onOpen={openEntry}
           onPreview={onPreview}
+          renderPreview={onPreview ? undefined : (entry) => (
+            <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} />
+          )}
           onReveal={revealEntry}
-          onRename={onRename}
-          onDelete={onDelete}
+          onRename={onRename ? (entry) => void runManagedMutation(onRename, entry) : undefined}
+          onDelete={onDelete ? (entry) => void runManagedMutation(onDelete, entry) : undefined}
         />
       )}
     </section>

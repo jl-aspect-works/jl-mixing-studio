@@ -24,3 +24,17 @@
 .revisions-workspace { gap: 10px; margin-bottom: 9px; }
 .revision-files-heading { padding-top: 9px; }
 .revision-files { margin-top: 7px; }
+
+.revision-files-search.shared-file-view-controls {
+  width: min(380px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+  padding: 8px 12px;
+}
+
+.revision-folder-link {
+  padding-left: 12px !important;
+}
+
+.revision-folder-type-cell {
+  padding-left: 18px !important;
+}

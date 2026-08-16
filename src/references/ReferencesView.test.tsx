@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectFileEntry, ProjectFileListing } from "../project/files/projectFileService";
 import { ReferencesView } from "./ReferencesView";
@@ -94,12 +94,17 @@ describe("ReferencesView", () => {
     renderView();
     expect(screen.getByText("Preview Reference.wav")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    const actions = screen.getByLabelText("Actions for Reference.wav");
+    fireEvent.click(actions);
+    fireEvent.click(within(actions.closest("details") as HTMLElement).getByRole("menuitem", { name: "Delete" }));
     expect(deleteProjectReference).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    fireEvent.click(screen.getByLabelText("Actions for Reference.wav"));
+    const confirmMenu = within(screen.getByLabelText("Actions for Reference.wav").closest("details") as HTMLElement);
+    expect(confirmMenu.getByRole("menuitem", { name: "Confirm Delete" })).toBeInTheDocument();
+    expect(confirmMenu.getByRole("menuitem", { name: "Cancel" })).toBeInTheDocument();
+
+    fireEvent.click(confirmMenu.getByRole("menuitem", { name: "Confirm Delete" }));
     await waitFor(() => expect(deleteProjectReference).toHaveBeenCalledWith({
       clientId: "client-1",
       projectId: "project-1",

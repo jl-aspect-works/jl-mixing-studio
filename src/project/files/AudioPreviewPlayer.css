@@ -1,0 +1,111 @@
+.shared-audio-preview-inline {
+  display: grid;
+  grid-template-columns: 26px auto 88px auto 28px 18px auto;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  width: 292px;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.shared-audio-preview-inline audio {
+  display: none;
+}
+
+.shared-audio-preview-play,
+.shared-audio-preview-mute {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  width: 24px;
+  min-height: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #31405a;
+  font-size: .64rem;
+  line-height: 1;
+}
+
+.shared-audio-preview-play:hover:not(:disabled),
+.shared-audio-preview-play:focus:not(:disabled),
+.shared-audio-preview-mute:hover:not(:disabled),
+.shared-audio-preview-mute:focus:not(:disabled) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.shared-audio-preview-mute {
+  min-width: 28px;
+  width: 28px;
+  min-height: 26px;
+  height: 26px;
+  border-radius: 5px;
+}
+
+.shared-audio-preview-volume-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.shared-audio-preview-seek,
+.shared-audio-preview-volume {
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--blue);
+}
+
+.shared-audio-preview-seek {
+  width: 88px;
+}
+
+.shared-audio-preview-volume {
+  width: 16px;
+  height: 34px;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+}
+
+.shared-audio-preview-seek::-webkit-slider-thumb,
+.shared-audio-preview-volume::-webkit-slider-thumb {
+  width: 9px;
+  height: 9px;
+}
+
+.shared-audio-preview-seek::-moz-range-thumb,
+.shared-audio-preview-volume::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+}
+
+.shared-audio-preview-time {
+  color: var(--muted);
+  font-size: .62rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.shared-audio-preview-error {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff3ee;
+  color: #8a3828;
+  font-size: .66rem;
+  font-weight: 850;
+}

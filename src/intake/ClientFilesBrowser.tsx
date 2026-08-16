@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
+import { FileStatusIcon, FileStatusLegend, FileViewControls, ManagedFolderToolbar, RowActionMenu, type FileStatusKind } from "../project/files/FileUiPrimitives";
 import type { ProjectFileEntry } from "../project/files/projectFileService";
 import {
   openProjectFile,
@@ -61,8 +62,6 @@ export type ClientFilesSelection = {
 };
 
 type ValidationFilter = "all" | "attention" | "info" | "valid";
-type ControlIconKind = "search" | "show" | "health" | "sort";
-type StatusIconKind = "valid" | "attention" | "error" | "info" | "pending" | "none";
 
 const normalizedValidationPath = (record: IntakeValidationFile) =>
   (record.relativePath ?? record.relative_path ?? "").replace(/\\/g, "/").replace(/^\/+/, "");
@@ -91,16 +90,14 @@ export const intakeStatusLabel = (record: IntakeValidationFile | undefined | nul
   return "Unknown";
 };
 
-const statusIconPresentation = (record: IntakeValidationFile | undefined | null, entry: ProjectFileEntry) => {
-  if (entry.entryType !== "file" || !entry.isAudio || record?.status === "not_applicable") {
-    return { kind: "none" as StatusIconKind, symbol: "", label: "Not applicable" };
-  }
-  if (!record) return { kind: "pending" as StatusIconKind, symbol: "·", label: "Checking" };
-  if (record.status === "blocked") return { kind: "error" as StatusIconKind, symbol: "×", label: "Error" };
-  if (record.status === "needs_attention") return { kind: "attention" as StatusIconKind, symbol: "!", label: "Needs attention" };
-  if (record.status === "info") return { kind: "info" as StatusIconKind, symbol: "i", label: "Info" };
-  if (record.status === "valid") return { kind: "valid" as StatusIconKind, symbol: "✓", label: "Valid" };
-  return { kind: "pending" as StatusIconKind, symbol: "·", label: "Status unavailable" };
+const statusIconPresentation = (record: IntakeValidationFile | undefined | null, entry: ProjectFileEntry): { kind: FileStatusKind; label: string } => {
+  if (entry.entryType !== "file" || !entry.isAudio || record?.status === "not_applicable") return { kind: "none", label: "Not applicable" };
+  if (!record) return { kind: "pending", label: "Checking" };
+  if (record.status === "blocked") return { kind: "error", label: "Error" };
+  if (record.status === "needs_attention") return { kind: "attention", label: "Needs attention" };
+  if (record.status === "info") return { kind: "info", label: "Info" };
+  if (record.status === "valid") return { kind: "valid", label: "Valid" };
+  return { kind: "pending", label: "Status unavailable" };
 };
 
 const matchesValidationFilter = (entry: ProjectFileEntry, record: IntakeValidationFile | undefined, filter: ValidationFilter) => {
@@ -141,13 +138,6 @@ const actionErrorMessage = (error: unknown) =>
     : typeof error === "string" && error
       ? error
       : "The project file action could not be completed.";
-
-function ClientFilesControlIcon({ kind }: { kind: ControlIconKind }) {
-  if (kind === "search") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" /><path d="m16 16 4 4" /></svg>;
-  if (kind === "show") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>;
-  if (kind === "health") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-4" /></svg>;
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14m0 0-3-3m3 3 3-3M16 19V5m0 0-3 3m3-3 3 3" /></svg>;
-}
 
 export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], selectedPath = null, onSelectionChange }: {
   clientId: string;
@@ -205,20 +195,24 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
   };
 
   return <section className="client-files-browser" aria-label="Original Delivery files">
-    <div className="project-file-toolbar client-files-file-toolbar">
-      <code>{relativePath}</code>
-      <div className="directory-actions">
-        <button type="button" className="secondary" disabled={!canNavigateUp} onClick={() => navigateTo(projectFilePathUp(relativePath, rootPath))}>Up</button>
-        <button type="button" className="secondary" disabled={state.status === "loading"} onClick={() => void refresh()}>{state.status === "loading" ? "Refreshing…" : "Refresh files"}</button>
-      </div>
-    </div>
+    <ManagedFolderToolbar
+      path={relativePath}
+      canNavigateUp={canNavigateUp}
+      loading={state.status === "loading"}
+      onUp={() => navigateTo(projectFilePathUp(relativePath, rootPath))}
+      onRefresh={() => void refresh()}
+      refreshLabel="Refresh files"
+    />
 
-    {state.listing && <div className="project-file-controls client-files-controls" aria-label="Client file view controls">
-      <label className="client-files-control" title="Search"><span className="client-files-control-icon"><ClientFilesControlIcon kind="search" /></span><input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /></label>
-      <label className="client-files-control" title="Show file types"><span className="client-files-control-icon"><ClientFilesControlIcon kind="show" /></span><select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select></label>
-      <label className="client-files-control" title="Filter by validation"><span className="client-files-control-icon"><ClientFilesControlIcon kind="health" /></span><select aria-label="Filter by validation" value={validationFilter} onChange={(event) => setValidationFilter(event.target.value as ValidationFilter)}><option value="all">All states</option><option value="attention">Needs attention</option><option value="info">Info</option><option value="valid">Valid</option></select></label>
-      <label className="client-files-control" title="Sort"><span className="client-files-control-icon"><ClientFilesControlIcon kind="sort" /></span><select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select></label>
-    </div>}
+    {state.listing && <FileViewControls
+      label="Client file view controls"
+      controls={[
+        { icon: "search", label: "Search", control: <input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /> },
+        { icon: "show", label: "Show file types", control: <select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select> },
+        { icon: "health", label: "Filter by validation", control: <select aria-label="Filter by validation" value={validationFilter} onChange={(event) => setValidationFilter(event.target.value as ValidationFilter)}><option value="all">All states</option><option value="attention">Needs attention</option><option value="info">Info</option><option value="valid">Valid</option></select> },
+        { icon: "sort", label: "Sort", control: <select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select> },
+      ]}
+    />}
 
     {state.status === "error" && <section className="notice error" role="alert"><strong>We couldn’t read Original Delivery</strong><span>{state.message}</span><button type="button" onClick={() => void refresh()}>Try again</button></section>}
     {actionError && <section className="notice error" role="alert"><strong>We couldn’t complete that file action</strong><span>{actionError}</span></section>}
@@ -238,37 +232,40 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
         const dualMono = record?.dualMono ?? record?.dual_mono;
         const cacheState = record?.cacheState ?? record?.cache_state;
         const findings = record?.findings ?? [];
-        const hasActions = (entry.entryType === "file" && entry.permissions.canOpen) || entry.permissions.canReveal || Boolean(record);
         const fileType = entry.entryType === "file" ? entry.extension?.replace(/^\./, "").toUpperCase() || "File" : "Folder";
         const audioDetails = entry.isAudio ? [fileType, formatIntakeDuration(duration), sampleRate ? `${(sampleRate / 1000).toLocaleString()}kHz` : null, bitDepth ? `${bitDepth}-bit` : null, channels ? `${channels}ch` : null].filter(Boolean) : [fileType];
         const status = statusIconPresentation(record, entry);
         const statusLabel = findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
+        const actions = [
+          entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runAction(openProjectFile, entry) } : null,
+          entry.permissions.canReveal ? { label: "Reveal", onSelect: () => void runAction(revealProjectFile, entry) } : null,
+        ].filter((action): action is NonNullable<typeof action> => action !== null);
+        const validationDetails = record && entry.entryType === "file" ? <details className="client-file-menu-validation"><summary>Validation details</summary><div className="validation-details-content">
+          {(codec || format || cacheState) && <p>{codec && <>Codec: <strong>{codec}</strong></>}{codec && (format || cacheState) ? " · " : ""}{format && <>Format: <strong>{format}</strong></>}{format && cacheState ? " · " : ""}{cacheState && <>Cache: <strong>{cacheState}</strong></>}</p>}
+          {(decodeOk !== null && decodeOk !== undefined) && <p>Decode integrity: <strong>{decodeOk ? "Passed" : "Failed"}</strong></p>}
+          {dualMono === true && <p>Channels: <strong>Exact dual mono</strong></p>}
+          {record.sha256 && <p className="validation-hash">SHA-256: <code>{record.sha256}</code></p>}
+          {findings.length > 0 ? <ul>{findings.map((finding, index) => { const related = finding.relatedPaths ?? finding.related_paths ?? []; const expected = displayValue(finding.expected); const actual = displayValue(finding.actual); return <li key={`${finding.code}-${index}`}><strong>{finding.message}</strong>{(expected || actual) && <span>{expected && <> Expected: {expected}.</>}{actual && <> Actual: {actual}.</>}</span>}{related.length > 0 && <span> Related: {related.join(", ")}.</span>}</li>; })}</ul> : <p>No findings.</p>}
+        </div></details> : undefined;
         return <tr key={entry.id} className={`${record?.status ? `validation-${record.status}` : ""}${selectedPath === entry.relativePath ? " client-file-selected" : ""}`}>
-          <td className="client-file-status-cell"><span className={`client-file-status-icon client-file-status-${status.kind}`} aria-label={statusLabel} title={statusLabel}>{status.symbol}</span></td>
+          <td className="client-file-status-cell"><FileStatusIcon kind={status.kind} label={statusLabel} /></td>
           <td className="client-file-name-cell">
             {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : <button type="button" className="client-file-select" aria-pressed={selectedPath === entry.relativePath} onClick={() => selectEntry(entry)}>{entry.displayName}</button>}
           </td>
           <td className="client-file-preview-cell">{entry.playable ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} durationSeconds={duration} /> : <span className="client-file-preview-empty">—</span>}</td>
           <td className="client-file-audio-details">{audioDetails.map((detail, index) => <span key={`${detail}-${index}`}>{detail}</span>)}</td>
-          <td className="client-file-modified-cell"><span>{formatClientFileModified(entry.modifiedEpochMs)}</span>{hasActions && <details className="client-file-action-menu"><summary aria-label={`Actions for ${entry.displayName}`} title="File actions">⋮</summary><div className="client-file-action-popover" role="menu">
-            {entry.entryType === "file" && entry.permissions.canOpen && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void runAction(openProjectFile, entry); }}>Open</button>}
-            {entry.permissions.canReveal && <button type="button" role="menuitem" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); void runAction(revealProjectFile, entry); }}>Reveal</button>}
-            {record && entry.entryType === "file" && <details className="client-file-menu-validation"><summary>Validation details</summary><div className="validation-details-content">
-              {(codec || format || cacheState) && <p>{codec && <>Codec: <strong>{codec}</strong></>}{codec && (format || cacheState) ? " · " : ""}{format && <>Format: <strong>{format}</strong></>}{format && cacheState ? " · " : ""}{cacheState && <>Cache: <strong>{cacheState}</strong></>}</p>}
-              {(decodeOk !== null && decodeOk !== undefined) && <p>Decode integrity: <strong>{decodeOk ? "Passed" : "Failed"}</strong></p>}
-              {dualMono === true && <p>Channels: <strong>Exact dual mono</strong></p>}
-              {record.sha256 && <p className="validation-hash">SHA-256: <code>{record.sha256}</code></p>}
-              {findings.length > 0 ? <ul>{findings.map((finding, index) => { const related = finding.relatedPaths ?? finding.related_paths ?? []; const expected = displayValue(finding.expected); const actual = displayValue(finding.actual); return <li key={`${finding.code}-${index}`}><strong>{finding.message}</strong>{(expected || actual) && <span>{expected && <> Expected: {expected}.</>}{actual && <> Actual: {actual}.</>}</span>}{related.length > 0 && <span> Related: {related.join(", ")}.</span>}</li>; })}</ul> : <p>No findings.</p>}
-            </div></details>}
-          </div></details>}</td>
+          <td className="client-file-modified-cell"><span>{formatClientFileModified(entry.modifiedEpochMs)}</span><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} extraContent={validationDetails} /></td>
         </tr>;
       })}{listing.entries.length === 0 && <tr><td colSpan={5}>No files match the current search or filters.</td></tr>}</tbody></table></div>
-      <div className="client-file-status-legend" aria-label="Validation status legend">
-        <span><span className="client-file-status-icon client-file-status-valid" aria-hidden="true">✓</span>Valid</span>
-        <span><span className="client-file-status-icon client-file-status-attention" aria-hidden="true">!</span>Needs attention</span>
-        <span><span className="client-file-status-icon client-file-status-error" aria-hidden="true">×</span>Error</span>
-        <span><span className="client-file-status-icon client-file-status-info" aria-hidden="true">i</span>Info</span>
-      </div>
+      <FileStatusLegend
+        label="Validation status legend"
+        items={[
+          { kind: "valid", label: "Valid" },
+          { kind: "attention", label: "Needs attention" },
+          { kind: "error", label: "Error" },
+          { kind: "info", label: "Info" },
+        ]}
+      />
     </>}
   </section>;
 }

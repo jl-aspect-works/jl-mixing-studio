@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ProjectFileEntry } from "./projectFileService";
 import { prepareProjectAudioPreview } from "./audioPreviewService";
+import "./AudioPreviewPlayer.css";
 
 let activeAudioElement: HTMLAudioElement | null = null;
 
@@ -19,7 +20,7 @@ const formatPreviewTime = (seconds: number) => {
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
 };
 
-const VolumeIcon = ({ muted }: { muted: boolean }) => <svg className="audio-preview-volume-icon" viewBox="0 0 24 24" aria-hidden="true">
+const VolumeIcon = ({ muted }: { muted: boolean }) => <svg className="shared-audio-preview-volume-icon" viewBox="0 0 24 24" aria-hidden="true">
   <path d="M4.5 9.5H8l4-3.5v12l-4-3.5H4.5z" />
   {!muted && <>
     <path d="M15.2 9.1c1.1 1.1 1.1 4.7 0 5.8" />
@@ -138,7 +139,7 @@ export function AudioPreviewPlayer({
     if (audioRef.current) audioRef.current.muted = nextMuted;
   };
 
-  return <div className="audio-preview-inline" aria-label={`Preview ${entry.displayName}`} aria-busy={loading}>
+  return <div className="shared-audio-preview-inline" aria-label={`Preview ${entry.displayName}`} aria-busy={loading}>
     <audio
       ref={audioRef}
       preload="none"
@@ -149,12 +150,12 @@ export function AudioPreviewPlayer({
       onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
       onError={() => sourceUrl && setError("This audio file could not be played by the macOS WebView.")}
     />
-    <button type="button" className="audio-preview-play" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : playing ? "❚❚" : "▶"}</button>
-    <span className="audio-preview-time">{formatPreviewTime(currentTime)}</span>
-    <input className="audio-preview-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} aria-label={`Seek ${entry.displayName}`} disabled={!duration} onChange={(event) => seek(Number(event.target.value))} />
-    <span className="audio-preview-time">{formatPreviewTime(duration)}</span>
-    <button type="button" className="audio-preview-mute" aria-label={muted ? `Unmute ${entry.displayName}` : `Mute ${entry.displayName}`} title={muted ? "Unmute" : "Mute"} onClick={toggleMute}><VolumeIcon muted={muted || volume === 0} /></button>
-    <input className="audio-preview-volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} aria-label={`Volume ${entry.displayName}`} onChange={(event) => changeVolume(Number(event.target.value))} />
-    {error && <span className="audio-preview-error" title={error}>!</span>}
+    <button type="button" className="shared-audio-preview-play" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : playing ? "❚❚" : "▶"}</button>
+    <span className="shared-audio-preview-time">{formatPreviewTime(currentTime)}</span>
+    <input className="shared-audio-preview-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} aria-label={`Seek ${entry.displayName}`} disabled={!duration} onChange={(event) => seek(Number(event.target.value))} />
+    <span className="shared-audio-preview-time">{formatPreviewTime(duration)}</span>
+    <button type="button" className="shared-audio-preview-mute" aria-label={muted ? `Unmute ${entry.displayName}` : `Mute ${entry.displayName}`} title={muted ? "Unmute" : "Mute"} onClick={toggleMute}><VolumeIcon muted={muted || volume === 0} /></button>
+    <input className="shared-audio-preview-volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} aria-label={`Volume ${entry.displayName}`} onChange={(event) => changeVolume(Number(event.target.value))} />
+    {error && <span className="shared-audio-preview-error" title={error}>!</span>}
   </div>;
 }

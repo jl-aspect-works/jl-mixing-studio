@@ -3,6 +3,7 @@ import type { ClientSummary, ProjectSummary } from "../types";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
+import { RowActionMenu } from "../project/files/FileUiPrimitives";
 import {
   addProjectReference,
   deleteProjectReference,
@@ -142,29 +143,31 @@ export function ReferencesView({
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => <tr key={entry.id}>
-              <td>
-                <div className="references-file-name">{entry.displayName}</div>
-                <div className="references-file-type">{entry.extension?.toUpperCase() ?? "Audio"}</div>
-              </td>
-              <td>{formatProjectFileSize(entry.sizeBytes)}</td>
-              <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
-              <td className="references-preview-cell">
-                {entry.playable
-                  ? <AudioPreviewPlayer clientId={client.clientId} projectId={project.projectId} entry={entry} />
-                  : <span className="references-muted">Preview unavailable</span>}
-              </td>
-              <td>
-                <div className="references-actions">
-                  <button type="button" className="secondary" onClick={() => void fileAction("open", entry)}>Open</button>
-                  <button type="button" className="secondary" onClick={() => void fileAction("reveal", entry)}>Reveal</button>
-                  {deletePendingPath === entry.relativePath ? <>
-                    <button type="button" className="references-delete-confirm" disabled={busy} onClick={() => void deleteReference(entry)}>{busy ? "Deleting…" : "Confirm"}</button>
-                    <button type="button" className="secondary" disabled={busy} onClick={() => setDeletePendingPath(null)}>Cancel</button>
-                  </> : <button type="button" className="references-delete" disabled={busy} onClick={() => { setActionError(null); setDeletePendingPath(entry.relativePath); }}>Delete</button>}
-                </div>
-              </td>
-            </tr>)}
+            {entries.map((entry) => {
+              const confirming = deletePendingPath === entry.relativePath;
+              const actions = confirming ? [
+                { label: busy ? "Deleting…" : "Confirm Delete", onSelect: () => void deleteReference(entry), disabled: busy, destructive: true },
+                { label: "Cancel", onSelect: () => setDeletePendingPath(null), disabled: busy },
+              ] : [
+                { label: "Open", onSelect: () => void fileAction("open", entry) },
+                { label: "Reveal", onSelect: () => void fileAction("reveal", entry) },
+                { label: "Delete", onSelect: () => { setActionError(null); setDeletePendingPath(entry.relativePath); }, disabled: busy, destructive: true },
+              ];
+              return <tr key={entry.id}>
+                <td>
+                  <div className="references-file-name">{entry.displayName}</div>
+                  <div className="references-file-type">{entry.extension?.toUpperCase() ?? "Audio"}</div>
+                </td>
+                <td>{formatProjectFileSize(entry.sizeBytes)}</td>
+                <td>{formatProjectFileModified(entry.modifiedEpochMs)}</td>
+                <td className="references-preview-cell">
+                  {entry.playable
+                    ? <AudioPreviewPlayer clientId={client.clientId} projectId={project.projectId} entry={entry} />
+                    : <span className="references-muted">Preview unavailable</span>}
+                </td>
+                <td><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} /></td>
+              </tr>;
+            })}
             {!entries.length && state.status !== "loading" && <tr>
               <td colSpan={5} className="references-empty">No reference tracks have been added.</td>
             </tr>}

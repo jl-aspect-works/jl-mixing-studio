@@ -180,8 +180,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(screen.getByRole("heading", { name: "References" })).toBeInTheDocument();
       expect(within(screen.getByRole("navigation", { name: "Project navigation" })).getByText("References")).toHaveAttribute("aria-current", "page");
       fireEvent.click(within(screen.getByRole("navigation", { name: "Project navigation" })).getByRole("button", { name: "Files" }));
-      expect(screen.getByRole("heading", { name: "Files" })).toBeInTheDocument();
-      expect(screen.getByRole("heading", { name: "Project file workspace" })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Project file workspace" })).toBeInTheDocument();
       expect(within(screen.getByRole("navigation", { name: "Project navigation" })).getByText("Files")).toHaveAttribute("aria-current", "page");
       expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
     });

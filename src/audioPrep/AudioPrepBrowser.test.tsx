@@ -76,7 +76,8 @@ describe("AudioPrepBrowser", () => {
       }]}
     />);
 
-    expect(screen.getByLabelText("Valid")).toHaveTextContent("✓");
+    const fileRow = screen.getByRole("row", { name: /Vocal\.wav/ });
+    expect(within(fileRow).getByLabelText("Valid")).toHaveTextContent("✓");
     expect(screen.getByText("Client Vocal.wav")).toBeInTheDocument();
     expect(screen.getByTitle("Original Delivery: Client Vocal.wav")).toBeInTheDocument();
     expect(screen.getByLabelText("Validation status")).toBeEnabled();
