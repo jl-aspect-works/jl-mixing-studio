@@ -52,10 +52,9 @@ export function DeliveryDialog({
 }) {
   const pending = state.status === "preflighting" || state.status === "creating";
   const revision = state.status === "creating" ? state.preview.approvedRevision : approvedRevision;
-  const cleanFirst = pending ? state.cleanFirst : false;
   const progressText = state.status === "preflighting"
     ? "Preparing and validating the approved revision…"
-    : cleanFirst
+    : state.status === "creating" && state.cleanFirst
       ? "Cleaning generated ZIPs, then creating and verifying the new package…"
       : "Creating and verifying the new package…";
 
