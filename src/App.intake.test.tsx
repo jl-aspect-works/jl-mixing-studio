@@ -24,6 +24,8 @@ const emptyClientFilesListing = {
   entries: [],
 };
 
+const validatedIntakeReport = () => ({ ...intakePreview, code: "validated" } satisfies IntakeOperationResult);
+
 const openClientFiles = async () => {
   await screen.findByText("JL Mix Studio");
   fireEvent.click(screen.getByRole("button", { name: "Projects" }));
@@ -56,6 +58,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
       if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
       if (command === "refresh_client_files_validation") return Promise.resolve(refreshed);
+      if (command === "get_intake_report") return Promise.resolve(validatedIntakeReport());
       if (command === "list_project_files") return Promise.resolve(emptyClientFilesListing);
       return Promise.reject(new Error(`Unexpected command: ${command}`));
     });
@@ -86,9 +89,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
           report: null,
         } satisfies IntakeOperationResult);
       }
-      if (command === "get_intake_report") {
-        return Promise.resolve({ ...intakePreview, code: "validated" } satisfies IntakeOperationResult);
-      }
+      if (command === "get_intake_report") return Promise.resolve(validatedIntakeReport());
       if (command === "list_project_files") return Promise.resolve(emptyClientFilesListing);
       return Promise.reject(new Error(`Unexpected command: ${command}`));
     });
@@ -112,8 +113,9 @@ describe("JL Mixing Studio — Client Files workflow", () => {
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
       if (command === "refresh_client_files_validation") {
         refreshCalls += 1;
-        return Promise.resolve({ ...intakePreview, code: "validated" } satisfies IntakeOperationResult);
+        return Promise.resolve(validatedIntakeReport());
       }
+      if (command === "get_intake_report") return Promise.resolve(validatedIntakeReport());
       if (command === "list_project_files") return Promise.resolve(emptyClientFilesListing);
       return Promise.reject(new Error(`Unexpected command: ${command}`));
     });
@@ -144,9 +146,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
       if (command === "discover_default_workspace") return Promise.resolve(partial);
       if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
-      if (command === "get_intake_report") {
-        return Promise.resolve({ ...intakePreview, code: "validated" } satisfies IntakeOperationResult);
-      }
+      if (command === "get_intake_report") return Promise.resolve(validatedIntakeReport());
       if (command === "list_project_files") return Promise.resolve(emptyClientFilesListing);
       return Promise.reject(new Error(`Unexpected command: ${command}`));
     });
