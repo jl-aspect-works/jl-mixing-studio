@@ -17,7 +17,7 @@ pub fn delete_delivery_package(
     delete_delivery_package_with_runner(home, project_directory, zip_name, &SystemProcessRunner)
 }
 
-fn get_delivery_status_with_runner<R: ProcessRunner>(
+pub(super) fn get_delivery_status_with_runner<R: ProcessRunner>(
     home: &Path,
     project_directory: &Path,
     runner: &R,
@@ -57,7 +57,7 @@ fn get_delivery_status_with_runner<R: ProcessRunner>(
     }
 }
 
-fn delete_delivery_package_with_runner<R: ProcessRunner>(
+pub(super) fn delete_delivery_package_with_runner<R: ProcessRunner>(
     home: &Path,
     project_directory: &Path,
     zip_name: &str,
