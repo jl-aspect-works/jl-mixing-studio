@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, ProjectSummary, RevisionSummary } from "../types";
-import { MarkdownEditor } from "../components/MarkdownEditor";
+import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { RevisionFileBrowser } from "./RevisionFileBrowser";
@@ -275,25 +275,22 @@ export function RevisionsView({
           </section>
 
           <section className="panel revision-notes-panel" aria-labelledby="revision-notes-heading">
-            <div className="revision-notes-heading">
-              <h2 id="revision-notes-heading">Revision Notes</h2>
-              <div className="revision-notes-heading-actions">
-                <span>{notes.status === "loading" ? "Loading…" : `${new TextEncoder().encode(notes.content).length.toLocaleString()} / ${notes.maxBytes.toLocaleString()} bytes`}</span>
-                <button
-                  type="button"
-                  disabled={notes.status === "loading" || notesBusy || notes.content === notes.saved || new TextEncoder().encode(notes.content).length > notes.maxBytes}
-                  onClick={() => void saveNotes()}
-                >{notesBusy ? "Saving…" : "Save Notes"}</button>
-              </div>
-            </div>
-            {notes.status === "error" && <div className="inline-notice error" role="alert">{notes.message}</div>}
-            {notes.status === "loading" ? <p className="revision-muted">Loading Revision Notes…</p> : <MarkdownEditor
-              key={selected.number}
+            <MarkdownDocumentEditor
+              headingId="revision-notes-heading"
+              title="Revision Notes"
               ariaLabel="Revision Notes"
-              disabled={notesBusy}
               value={notes.content}
+              savedValue={notes.saved}
+              maxBytes={notes.maxBytes}
+              loading={notes.status === "loading"}
+              loadingLabel="Loading Revision Notes…"
+              saving={notesBusy}
+              disabled={notes.status === "loading"}
+              error={notes.status === "error" ? notes.message : null}
+              saveLabel="Save Notes"
+              onSave={() => void saveNotes()}
               onChange={(content) => setNotes((current) => ({ ...current, content }))}
-            />}
+            />
           </section>
         </main>}
       </div>
