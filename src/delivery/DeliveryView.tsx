@@ -308,7 +308,7 @@ export function DeliveryView({
           <strong>No generated ZIP</strong>
           <span>Create or rebuild the delivery with ZIP enabled when the deliverables and notes are ready.</span>
           {delivery && <div className="delivery-package-actions">
-            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open In Folder</button>
             <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
           </div>}
         </div> : <div className="delivery-package-content">
@@ -324,7 +324,7 @@ export function DeliveryView({
             <div><dt>Modified</dt><dd>{formatTimestamp(activePackage.modifiedAt)}</dd></div>
           </dl>
           <div className="delivery-package-actions">
-            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open In Folder</button>
             <button type="button" className="secondary" onClick={() => void deletePackage(activePackage)} disabled={deletingPackage !== null}>
               {deletingPackage === activePackage.name ? "Deleting…" : "Delete ZIP"}
             </button>
