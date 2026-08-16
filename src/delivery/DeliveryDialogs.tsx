@@ -23,15 +23,15 @@ export function DeliveryOptionsDialog({
       <p className="dialog-intro">Create a delivery package from <strong>Approved Revision {String(approvedRevision).padStart(2, "0")}</strong>.</p>
       <p className="dialog-intro">Delivery Notes are included automatically.</p>
       {showCleanOption && <label className="setting-row delivery-clean-option">
-        <span>
-          <strong>Clean delivery first</strong>
-          <small>Remove existing generated ZIPs before creating the new package.</small>
-        </span>
         <input
           type="checkbox"
           checked={cleanFirst}
           onChange={(event) => onCleanFirstChange(event.target.checked)}
         />
+        <span>
+          <strong>Clean delivery first</strong>
+          <small>Remove existing generated ZIPs before creating the new package.</small>
+        </span>
       </label>}
       <div className="dialog-actions">
         <button type="button" className="secondary" onClick={onClose}>Cancel</button>
