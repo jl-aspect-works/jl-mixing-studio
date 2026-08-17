@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { addWorkspaceRefreshListener } from "../../app/workspaceRefreshEvents";
 import {
   listProjectFiles,
   type ProjectFileListing,
@@ -55,6 +56,8 @@ export function useProjectFiles({
       requestSequence.current += 1;
     };
   }, [refresh]);
+
+  useEffect(() => addWorkspaceRefreshListener(() => { void refresh(); }), [refresh]);
 
   return { state, refresh };
 }

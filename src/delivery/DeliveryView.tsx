@@ -7,6 +7,7 @@ import type {
   ProjectSummary,
 } from "../types";
 import { safeError, type ResourceState } from "../AppShellViews";
+import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -126,6 +127,23 @@ export function DeliveryView({
         message: safeError(error, "Delivery Notes could not be read."),
       }));
   }, [clientId, project.projectId, deliveryDocumentId]);
+
+  useEffect(() => addWorkspaceRefreshListener(() => {
+    void refreshStatus();
+    if (!deliveryDocumentId || notesSaving) return;
+    if (notes.status === "ready" && notesDraft !== notes.value.content) return;
+
+    const request: DeliveryNotesRequest = { clientId, projectId: project.projectId };
+    void invoke<DeliveryNotesDocument>("get_delivery_notes", { request })
+      .then((document) => {
+        setNotes({ status: "ready", value: document });
+        setNotesDraft(document.content);
+        setNotesMessage(null);
+      })
+      .catch((error: unknown) => {
+        setNotesMessage(safeError(error, "Delivery Notes could not be refreshed."));
+      });
+  }), [clientId, project.projectId, deliveryDocumentId, notes, notesDraft, notesSaving, refreshStatus]);
 
   const saveNotes = () => {
     if (notes.status !== "ready" || notesSaving || notesDraft === notes.value.content) return;
