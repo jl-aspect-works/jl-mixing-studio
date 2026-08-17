@@ -67,7 +67,9 @@ fn walk_workspace_directory(
         let metadata = match fs::symlink_metadata(&path) {
             Ok(metadata) => metadata,
             Err(_) => {
-                summary.failed_paths.push(relative_path(workspace_root, &path));
+                summary
+                    .failed_paths
+                    .push(relative_path(workspace_root, &path));
                 continue;
             }
         };
