@@ -12,6 +12,7 @@ import type {
   VersionCheck,
   WorkspaceSnapshot,
 } from "./types";
+import type { WorkspaceStorageState, WorkspaceStorageSummary } from "./app/useWorkspaceStorageSummary";
 import appIcon from "../src-tauri/icons/128x128.png";
 import { routes, type PrimaryRoute, type RouteDefinition } from "./ui/routes";
 import { copy as productCopy } from "./resources/copy";
@@ -53,6 +54,27 @@ const displayWorkspacePath = (path: string) =>
     .replace(/^\/Users\/[^/]+(?=\/)/, "~")
     .replace(/^\/home\/[^/]+(?=\/)/, "~")
     .replace(/^[A-Za-z]:\\Users\\[^\\]+(?=\\)/, "~");
+
+const formatWorkspaceStorageBytes = (bytes: number) => {
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let value = bytes / 1024;
+  let unit = units[0];
+  for (let index = 1; index < units.length && value >= 1024; index += 1) {
+    value /= 1024;
+    unit = units[index];
+  }
+  return `${value >= 10 ? value.toFixed(1) : value.toFixed(2)} ${unit}`;
+};
+
+const formatWorkspaceStorage = (summary: WorkspaceStorageSummary) =>
+  `${formatWorkspaceStorageBytes(summary.sizeBytes)} · ${summary.fileCount.toLocaleString()} ${summary.fileCount === 1 ? "file" : "files"}`;
+
+const storageSummaryText = (storage: WorkspaceStorageState) => {
+  if (storage.value) return formatWorkspaceStorage(storage.value);
+  if (storage.status === "loading") return "Calculating…";
+  return "Unavailable";
+};
 
 export const safeError = (error: unknown, fallback: string) =>
   error instanceof Error && error.message
@@ -151,10 +173,12 @@ export function Sidebar({
   activeRoute,
   onNavigate,
   workspace,
+  storage,
 }: {
   activeRoute: PrimaryRoute;
   onNavigate: (route: PrimaryRoute) => void;
   workspace: ResourceState<WorkspaceSnapshot>;
+  storage: WorkspaceStorageState;
 }) {
   const [workspaceFolderMessage, setWorkspaceFolderMessage] = useState<string | null>(null);
   const workspaceFolderAvailable = workspace.status === "ready" && workspace.value.status !== "unavailable" && workspace.value.status !== "invalid";
@@ -164,6 +188,9 @@ export function Sidebar({
       .then(() => setWorkspaceFolderMessage(productCopy.common.folderOpened))
       .catch((error: unknown) => setWorkspaceFolderMessage(safeError(error, productCopy.common.folderOpenFailed)));
   };
+  const compactStorage = storage.value
+    ? `${formatWorkspaceStorageBytes(storage.value.sizeBytes)} used${storage.value.failedPaths.length > 0 ? " · partial" : ""}`
+    : storage.status === "loading" ? "Calculating storage…" : "Storage unavailable";
 
   return (
     <aside className="sidebar">
@@ -207,6 +234,7 @@ export function Sidebar({
           {workspace.status === "ready" && (
             <code>{displayWorkspacePath(workspace.value.workspacePath)}</code>
           )}
+          <small>{compactStorage}</small>
           <button type="button" className="secondary" onClick={openWorkspaceFolder} disabled={!workspaceFolderAvailable}>
             {productCopy.studio.openWorkspace} folder
           </button>
@@ -254,6 +282,7 @@ export function ActivitySummary({ event, onOpenProject }: { event: ActivityEvent
 
 export function Dashboard({
   workspace,
+  storage,
   version,
   automationReady,
   loading,
@@ -269,6 +298,7 @@ export function Dashboard({
   onOpenProject,
 }: {
   workspace: ResourceState<WorkspaceSnapshot>;
+  storage: WorkspaceStorageState;
   version: ResourceState<VersionCheck>;
   automationReady: boolean;
   loading: boolean;
@@ -300,6 +330,8 @@ export function Dashboard({
         invalid: "Invalid",
       }[snapshot.status]
     : workspace.status === "loading" ? productCopy.navigation.checking : productCopy.navigation.unavailable;
+  const storageHasPartialData = (storage.value?.failedPaths.length ?? 0) > 0;
+  const storageGood = storage.value !== null && !storageHasPartialData && storage.status !== "error";
 
   return (
     <>
@@ -342,9 +374,12 @@ export function Dashboard({
           <div className="panel-heading"><div><p className="kicker">Studio health</p><h2 id="health-heading">Current checks</h2></div></div>
           <dl className="health-list">
             <div><dt>Workspace</dt><dd><span className={`status-dot ${snapshot?.status === "healthy" || snapshot?.status === "empty" ? "good" : "attention"}`} />{workspaceStatus}</dd></div>
+            <div><dt>Storage</dt><dd><span className={`status-dot ${storageGood ? "good" : "attention"}`} />{storageSummaryText(storage)}</dd></div>
             <div><dt>JL Mixing Automation</dt><dd><span className={`status-dot ${automationReady ? "good" : "attention"}`} />{version.status === "loading" ? productCopy.navigation.checking : automationReady ? "Detected" : "Needs attention"}</dd></div>
           </dl>
           {snapshot && <code className="workspace-path">{snapshot.workspacePath}</code>}
+          {storageHasPartialData && <p className="health-detail">Storage usage is partial because {storage.value!.failedPaths.length} {storage.value!.failedPaths.length === 1 ? "folder could" : "folders could"} not be read.</p>}
+          {storage.status === "error" && <p className="health-detail">{storage.message}</p>}
           <p className="health-detail">
             {version.status === "ready" ? version.value.message : version.status === "error" ? version.message : "Checking the installed release."}
           </p>
