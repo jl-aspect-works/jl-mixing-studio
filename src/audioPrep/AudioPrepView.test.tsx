@@ -40,7 +40,8 @@ describe("AudioPrepView", () => {
 
     expect(screen.getByRole("heading", { name: "Audio Prep" })).toBeInTheDocument();
     expect(screen.getByText(/Original Delivery remains unchanged/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Fix / Convert" })).toBeDisabled();
+    expect(screen.getByText(/Technical repair and conversion are deferred beyond Studio 2\.0/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Fix / Convert" })).not.toBeInTheDocument();
     expect(screen.getByTestId("audio-prep-browser")).toHaveTextContent("validated");
   });
 });

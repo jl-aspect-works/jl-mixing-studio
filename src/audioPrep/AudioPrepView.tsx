@@ -60,7 +60,7 @@ export function AudioPrepView({
             <p>Prepare working copies for mixing while Original Delivery remains unchanged.</p>
           </div>
         </div>
-        <p className="intake-format client-files-format">Rename file stems inline. Technical repair and conversion actions will appear when Automation support is available.</p>
+        <p className="intake-format client-files-format">Rename file stems inline and review validation/provenance here. Technical repair and conversion are deferred beyond Studio 2.0.</p>
       </section>
 
       <section className="panel client-files-quick-actions" aria-labelledby="audio-prep-actions-heading">
@@ -68,7 +68,6 @@ export function AudioPrepView({
         <div className="action-stack">
           <button type="button" className="secondary" onClick={() => onSelectView("intake")}>Go to Client Files</button>
           <button type="button" className="secondary" onClick={() => void openAudioPrepFolder()}>Open Audio Prep Folder</button>
-          <button type="button" disabled title="Requires Automation Audio Prep repair support">Fix / Convert</button>
         </div>
       </section>
     </div>
