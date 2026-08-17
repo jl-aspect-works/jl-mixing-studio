@@ -117,13 +117,15 @@ export const formatIntakeDuration = (seconds: number | null | undefined) => {
 
 export const formatClientFileModified = (epochMs: number | null | undefined) => {
   if (epochMs === null || epochMs === undefined || !Number.isFinite(epochMs)) return "—";
-  return new Intl.DateTimeFormat(undefined, {
-    month: "numeric",
-    day: "numeric",
-    year: "2-digit",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(epochMs));
+  const date = new Date(epochMs);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const year = String(date.getFullYear()).slice(-2);
+  const hour24 = date.getHours();
+  const hour12 = hour24 % 12 || 12;
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  const meridiem = hour24 >= 12 ? "pm" : "am";
+  return `${month}/${day}/${year} ${String(hour12).padStart(2, "0")}:${minute}${meridiem}`;
 };
 
 const displayValue = (value: unknown) => {
