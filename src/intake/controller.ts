@@ -67,16 +67,14 @@ export function useIntakeWorkflow({
       });
   }, []);
 
-  useEffect(() => {
-    if (!clientId || !projectId) return;
-    const request: IntakeRequest = { clientId, projectId };
-    return addWorkspaceRefreshListener(() => loadReport(request));
-  }, [clientId, projectId, loadReport]);
-
-  const refreshClientFiles = async (request: IntakeRequest, announce: boolean) => {
+  const refreshClientFiles = useCallback(async (
+    request: IntakeRequest,
+    announce: boolean,
+    preserveCurrentReport = false,
+  ) => {
     setActionError(null);
     if (announce) setNotice(null);
-    setReportState({ status: "loading" });
+    if (!preserveCurrentReport) setReportState({ status: "loading" });
     setState({ status: "preflighting" });
     await yieldToBrowserPaint();
     try {
@@ -112,7 +110,19 @@ export function useIntakeWorkflow({
       setActionError(safeError(error, "Project file validation could not be refreshed."));
       loadReport(request);
     }
-  };
+  }, [loadReport]);
+
+  useEffect(() => {
+    if (!clientId || !projectId) return;
+    const request: IntakeRequest = { clientId, projectId };
+    return addWorkspaceRefreshListener(() => {
+      if (validationAvailable) {
+        void refreshClientFiles(request, false, true);
+      } else {
+        loadReport(request);
+      }
+    });
+  }, [clientId, projectId, validationAvailable, loadReport, refreshClientFiles]);
 
   const reload = () => {
     const request = currentRequest();
@@ -122,7 +132,7 @@ export function useIntakeWorkflow({
   const refreshStructured = () => {
     const request = currentRequest();
     if (!request || !validationAvailable) return;
-    void refreshClientFiles(request, false);
+    void refreshClientFiles(request, false, true);
   };
 
   const open = () => {
@@ -142,7 +152,7 @@ export function useIntakeWorkflow({
   const recheck = () => {
     const request = currentRequest();
     if (!request || !validationAvailable) return;
-    void refreshClientFiles(request, true);
+    void refreshClientFiles(request, true, true);
   };
 
   const reset = () => {
