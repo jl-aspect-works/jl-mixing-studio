@@ -40,12 +40,12 @@ export default function StudioApp() {
   const [clientNotice, setClientNotice] = useState<string | null>(null);
   const [projectNotice, setProjectNotice] = useState<string | null>(null);
   const resources = useWorkspaceResources();
-  const workspaceReady = resources.workspace.status === "ready";
-  const workspaceStorageAvailable = workspaceReady
-    && resources.workspace.value.status !== "unavailable"
-    && resources.workspace.value.status !== "invalid";
+  const workspaceSnapshot = resources.workspace.status === "ready" ? resources.workspace.value : null;
+  const workspaceStorageAvailable = workspaceSnapshot !== null
+    && workspaceSnapshot.status !== "unavailable"
+    && workspaceSnapshot.status !== "invalid";
   const workspaceStorage = useWorkspaceStorageSummary({
-    workspacePath: workspaceReady ? resources.workspace.value.workspacePath : null,
+    workspacePath: workspaceSnapshot?.workspacePath ?? null,
     available: workspaceStorageAvailable,
   });
   const availability = getWorkflowAvailability(resources.workspace, resources.version);
