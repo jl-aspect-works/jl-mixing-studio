@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import "../SuccessFeedback.css";
+import successFeedbackCss from "../SuccessFeedback.css?raw";
 import { AppNotices } from "./AppNotices";
 
 afterEach(cleanup);
@@ -17,20 +17,20 @@ const emptyNotices = {
 };
 
 describe("Studio success feedback", () => {
-  it("renders routine success as a fixed auto-clearing overlay", () => {
+  it("renders routine success with the fixed auto-clearing toast treatment", () => {
     render(<AppNotices {...emptyNotices} revisionNotice="Revision 2 was created." />);
 
     const notice = screen.getByText("Revision 2 was created.").closest("section");
     expect(notice).toHaveClass("notice", "success");
-    expect(getComputedStyle(notice!).position).toBe("fixed");
-    expect(getComputedStyle(notice!).animationName).toContain("studio-success-toast");
+    expect(successFeedbackCss).toMatch(/\.notice\.success\s*\{[\s\S]*?position:\s*fixed;/);
+    expect(successFeedbackCss).toMatch(/animation:\s*studio-success-toast\s+4s/);
   });
 
-  it("keeps attention messages in normal page flow", () => {
+  it("keeps attention messages out of the transient success treatment", () => {
     render(<AppNotices {...emptyNotices} routeNotice="The selected project is no longer available." />);
 
     const notice = screen.getByText("The selected project is no longer available.").closest("section");
     expect(notice).toHaveClass("notice", "warning");
-    expect(getComputedStyle(notice!).position).not.toBe("fixed");
+    expect(notice).not.toHaveClass("success");
   });
 });
