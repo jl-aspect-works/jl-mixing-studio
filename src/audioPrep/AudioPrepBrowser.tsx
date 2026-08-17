@@ -84,6 +84,15 @@ const originalFilename = (record: AudioPrepValidationFile | undefined) =>
 const provenanceState = (record: AudioPrepValidationFile | undefined) =>
   record?.provenanceState ?? record?.provenance_state ?? null;
 
+const provenanceLabel = (record: AudioPrepValidationFile | undefined) => {
+  const sourceName = originalFilename(record);
+  if (sourceName) return sourceName;
+  const provenance = provenanceState(record);
+  if (provenance === "ambiguous") return "Ambiguous";
+  if (provenance === "unavailable") return "Not matched";
+  return "—";
+};
+
 const matchesValidationFilter = (entry: ProjectFileEntry, record: AudioPrepValidationFile | undefined, filter: ValidationFilter, validationAvailable: boolean) => {
   if (!validationAvailable || filter === "all" || entry.entryType === "directory") return true;
   if (filter === "attention") return record?.status === "blocked" || record?.status === "needs_attention";
@@ -233,6 +242,7 @@ export function AudioPrepBrowser({
         const statusLabel = findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
         const sourceName = originalFilename(record);
         const provenance = provenanceState(record);
+        const sourceLabel = provenanceLabel(record);
         const provenanceTitle = sourceName
           ? `Original Delivery: ${sourceName}`
           : provenance === "ambiguous"
@@ -249,7 +259,7 @@ export function AudioPrepBrowser({
           <td className="client-file-name-cell audio-prep-filename-cell">
             {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : editing ? <div className="audio-prep-inline-rename"><div className="audio-prep-inline-input"><input autoFocus aria-label={`Rename ${entry.displayName}`} value={renameState.stem} disabled={busy} onChange={(event) => setRenameState({ ...renameState, stem: event.target.value, error: null })} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void saveRename(entry); } else if (event.key === "Escape" && !busy) { event.preventDefault(); cancelRename(); } }} /><span className="audio-prep-extension">{entry.extension ? `.${entry.extension}` : ""}</span></div>{renameState.error && <span className="audio-prep-rename-error" role="alert">{renameState.error}</span>}</div> : <button type="button" className="client-file-select audio-prep-name-button" onClick={() => beginRename(entry)} title="Rename filename">{entry.displayName}</button>}
           </td>
-          <td className="audio-prep-origin-cell"><span title={provenanceTitle}>{sourceName ?? "—"}</span></td>
+          <td className="audio-prep-origin-cell"><span title={provenanceTitle}>{sourceLabel}</span></td>
           <td className="client-file-preview-cell">{entry.playable ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} /> : <span className="client-file-preview-empty">—</span>}</td>
           <td className="client-file-audio-details"><span>{fileType}</span></td>
           <td className="client-file-modified-cell"><span>{formatAudioPrepModified(entry.modifiedEpochMs)}</span><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} /></td>

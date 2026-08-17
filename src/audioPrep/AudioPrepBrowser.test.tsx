@@ -84,7 +84,7 @@ describe("AudioPrepBrowser", () => {
     expect(screen.getByTestId("audio-prep-preview")).toHaveTextContent("Previewing Vocal.wav");
   });
 
-  it("keeps provenance unavailable rather than guessing and supports validation filtering", () => {
+  it("shows ambiguous provenance explicitly rather than guessing and supports validation filtering", () => {
     render(<AudioPrepBrowser
       clientId="client"
       projectId="project"
@@ -100,11 +100,29 @@ describe("AudioPrepBrowser", () => {
     />);
 
     expect(screen.getByLabelText("Needs attention — 1 finding")).toHaveTextContent("!");
-    expect(screen.getByTitle("Multiple Original Delivery files have identical content; Automation will not guess the source.")).toHaveTextContent("—");
+    expect(screen.getByTitle("Multiple Original Delivery files have identical content; Automation will not guess the source.")).toHaveTextContent("Ambiguous");
 
     fireEvent.change(screen.getByLabelText("Validation status"), { target: { value: "valid" } });
     expect(screen.queryByRole("button", { name: "Vocal.wav" })).not.toBeInTheDocument();
     expect(screen.getByText("No files match the current search or filters.")).toBeInTheDocument();
+  });
+
+  it("shows unavailable provenance as not matched", () => {
+    render(<AudioPrepBrowser
+      clientId="client"
+      projectId="project"
+      validationAvailable
+      validationFiles={[{
+        relative_path: "Vocal.wav",
+        is_audio: true,
+        status: "valid",
+        findings: [],
+        original_filename: null,
+        provenance_state: "unavailable",
+      }]}
+    />);
+
+    expect(screen.getByTitle("Authoritative Original Delivery provenance is not available for this working file.")).toHaveTextContent("Not matched");
   });
 
   it("falls back cleanly when Automation does not expose Audio Prep status", () => {
