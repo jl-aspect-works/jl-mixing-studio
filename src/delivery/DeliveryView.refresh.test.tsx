@@ -1,55 +1,20 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { invoke } from "@tauri-apps/api/core";
+import { healthyWorkspace, mockedInvoke } from "../App.testSupport";
 import { notifyWorkspaceRefreshed } from "../app/workspaceRefreshEvents";
-import type { ProjectSummary } from "../types";
 import type { DeliveryStatusResult, ManagedDeliveryStatus } from "./statusModels";
 import { DeliveryView } from "./DeliveryView";
-
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
 vi.mock("./DeliveryFilesList", () => ({
   DeliveryFilesList: () => <div data-testid="delivery-files" />,
 }));
 
-const mockedInvoke = vi.mocked(invoke);
-
 const project = {
-  projectId: "project-1",
-  projectName: "Project",
-  artist: "Artist",
-  schemaVersion: "1.1.0",
-  createdWith: "jl-mixing 1.5.0",
-  createdAt: "2026-08-16T12:00:00Z",
-  deadline: null,
-  sampleRate: 48000,
-  bitDepth: 24,
-  fileFormat: "WAV",
-  deliveryMethod: "Digital",
+  ...healthyWorkspace().clients[0].projects[0],
   currentRevision: 1,
   approvedRevision: 1,
   deliveredRevision: 1,
-  delivery: {
-    documentId: "delivery-1",
-    createdWith: "jl-mixing 1.5.0",
-    createdAt: "2026-08-16T12:00:00Z",
-    method: "Digital",
-    revision: 1,
-    revisionId: "revision-1",
-    description: "First delivery",
-    approvedAt: "2026-08-16T12:00:00Z",
-    approvedBy: "Engineer",
-    files: [],
-  },
-  revisions: [{
-    number: 1,
-    revisionId: "revision-1",
-    createdAt: "2026-08-16T12:00:00Z",
-    description: "First revision",
-    approvedAt: "2026-08-16T12:00:00Z",
-    approvedBy: "Engineer",
-  }],
-} satisfies ProjectSummary;
+};
 
 const managedDelivery: ManagedDeliveryStatus = {
   deliveryPath: "05_Final_Delivery",
