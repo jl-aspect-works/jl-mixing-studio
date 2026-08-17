@@ -16,10 +16,12 @@ import { useIntakeWorkflow } from "../intake";
 import { useRevisionWorkflow } from "../revision";
 import { useApprovalWorkflow } from "../approval";
 import { useDeliveryWorkflow } from "../delivery";
+import type { WorkspaceStorageState } from "./useWorkspaceStorageSummary";
 
 export interface AppRoutesProps {
   activeRoute: PrimaryRoute;
   workspace: ResourceState<WorkspaceSnapshot>;
+  workspaceStorage: WorkspaceStorageState;
   workspaceConfiguration: ResourceState<WorkspaceConfiguration>;
   version: ResourceState<VersionCheck>;
   loading: boolean;
@@ -50,7 +52,7 @@ export interface AppRoutesProps {
 }
 
 export function AppRoutes(p: AppRoutesProps) {
-  if (p.activeRoute === "dashboard") return <Dashboard workspace={p.workspace} version={p.version} automationReady={p.availability.automationReady} loading={p.loading} clientCreationAvailable={p.availability.clientCreationAvailable} clientCreationHelp={p.availability.clientCreationHelp} projectCreationAvailable={p.availability.projectCreationAvailable} projectCreationHelp={p.availability.projectCreationHelp} onRefresh={p.onRefresh} onNewClient={p.onNewClient} onNewProject={() => p.projects.open(null, false)} onTasks={() => p.onNavigate("tasks")} onActivity={() => p.onNavigate("activity")} onOpenProject={p.onOpenDerivedProject} />;
+  if (p.activeRoute === "dashboard") return <Dashboard workspace={p.workspace} storage={p.workspaceStorage} version={p.version} automationReady={p.availability.automationReady} loading={p.loading} clientCreationAvailable={p.availability.clientCreationAvailable} clientCreationHelp={p.availability.clientCreationHelp} projectCreationAvailable={p.availability.projectCreationAvailable} projectCreationHelp={p.availability.projectCreationHelp} onRefresh={p.onRefresh} onNewClient={p.onNewClient} onNewProject={() => p.projects.open(null, false)} onTasks={() => p.onNavigate("tasks")} onActivity={() => p.onNavigate("activity")} onOpenProject={p.onOpenDerivedProject} />;
   if (p.activeRoute === "studio") return <StudioRoute workspace={p.workspace} version={p.version} loading={p.loading} setupAvailable={p.studioCreationAvailable} setupHelp={p.studioCreationHelp} onSetup={p.studio.openStudioWorkflow} onRefresh={p.onRefresh} />;
   if (p.activeRoute === "tasks") return <TasksRoute workspace={p.workspace} loading={p.loading} onRefresh={p.onRefresh} onOpenProject={p.onOpenDerivedProject} />;
   if (p.activeRoute === "activity") return <ActivityRoute workspace={p.workspace} loading={p.loading} onRefresh={p.onRefresh} onOpenProject={p.onOpenDerivedProject} />;
