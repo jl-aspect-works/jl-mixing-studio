@@ -14,6 +14,18 @@ const project = {
   currentRevision: 1,
   approvedRevision: 1,
   deliveredRevision: 1,
+  delivery: {
+    documentId: "delivery-1",
+    createdWith: "jl-mixing 1.5.0",
+    createdAt: "2026-08-16T12:00:00Z",
+    method: "Digital",
+    revision: 1,
+    revisionId: "revision-1",
+    description: "First delivery",
+    approvedAt: "2026-08-16T12:00:00Z",
+    approvedBy: "Engineer",
+    files: [],
+  },
 };
 
 const managedDelivery: ManagedDeliveryStatus = {
