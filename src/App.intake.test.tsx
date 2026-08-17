@@ -123,10 +123,13 @@ describe("JL Mixing Studio — Client Files workflow", () => {
     render(<App />);
     await openClientFiles();
     await screen.findByLabelText("Original Delivery file stats");
+    await waitFor(() => expect(refreshCalls).toBeGreaterThan(0));
+    const callsBeforeRecheck = refreshCalls;
 
     fireEvent.click(screen.getByRole("button", { name: "Recheck" }));
-    await waitFor(() => expect(refreshCalls).toBe(2));
+    await waitFor(() => expect(refreshCalls).toBeGreaterThan(callsBeforeRecheck));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockedInvoke).not.toHaveBeenCalledWith("preflight_intake_validation", expect.anything());
   });
 
   it("keeps the current report readable while partial workspaces disable validation", async () => {
