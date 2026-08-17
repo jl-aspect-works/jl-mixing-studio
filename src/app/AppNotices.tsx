@@ -11,7 +11,7 @@ export interface AppNoticesProps {
 
 function Notice({ title, message, warning = false }: { title: string; message: string | null; warning?: boolean }) {
   if (!message) return null;
-  return <section className={`notice ${warning ? "warning" : "success"}`} role="status"><strong>{title}</strong><span>{message}</span></section>;
+  return <section key={message} className={`notice ${warning ? "warning" : "success"}`} role="status"><strong>{title}</strong><span>{message}</span></section>;
 }
 
 export function AppNotices(props: AppNoticesProps) {

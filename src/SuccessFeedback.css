@@ -1,0 +1,37 @@
+/* Routine success is confirmation, not durable page content. Errors and warnings remain in normal flow. */
+.notice.success {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 120;
+  width: min(390px, calc(100vw - 36px));
+  margin: 0;
+  box-sizing: border-box;
+  box-shadow: 0 10px 30px rgb(24 39 61 / 18%);
+  pointer-events: none;
+  animation: studio-success-toast 4s ease forwards;
+}
+
+@keyframes studio-success-toast {
+  0%, 78% {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice.success {
+    animation-name: studio-success-toast-reduced;
+  }
+
+  @keyframes studio-success-toast-reduced {
+    0%, 78% { opacity: 1; visibility: visible; }
+    100% { opacity: 0; visibility: hidden; }
+  }
+}
