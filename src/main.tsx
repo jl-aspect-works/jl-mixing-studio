@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./WorkspaceSidebar.css";
 import "./ButtonHierarchy.css";
+import "./SuccessFeedback.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
