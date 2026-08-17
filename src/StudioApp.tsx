@@ -4,6 +4,7 @@ import { type AppPreferences, loadPreferences } from "./AppWorkflowModels";
 import { getWorkflowAvailability } from "./AppWorkflowAvailability";
 import { getAppRouteContext } from "./AppRouteContext";
 import { useWorkspaceResources } from "./app/useWorkspaceResources";
+import { useWorkspaceStorageSummary } from "./app/useWorkspaceStorageSummary";
 import { AppNotices } from "./app/AppNotices";
 import { AppRoutes } from "./app/AppRoutes";
 import { AppDialogs } from "./app/AppDialogs";
@@ -39,6 +40,14 @@ export default function StudioApp() {
   const [clientNotice, setClientNotice] = useState<string | null>(null);
   const [projectNotice, setProjectNotice] = useState<string | null>(null);
   const resources = useWorkspaceResources();
+  const workspaceReady = resources.workspace.status === "ready";
+  const workspaceStorageAvailable = workspaceReady
+    && resources.workspace.value.status !== "unavailable"
+    && resources.workspace.value.status !== "invalid";
+  const workspaceStorage = useWorkspaceStorageSummary({
+    workspacePath: workspaceReady ? resources.workspace.value.workspacePath : null,
+    available: workspaceStorageAvailable,
+  });
   const availability = getWorkflowAvailability(resources.workspace, resources.version);
   const explicitlyConfigured = resources.workspaceConfiguration.status === "ready" && resources.workspaceConfiguration.value.configured;
   const configuredUnavailable = explicitlyConfigured && resources.workspace.status === "ready" && resources.workspace.value.status === "unavailable";
@@ -86,14 +95,14 @@ export default function StudioApp() {
   const configuredWorkspacePath = resources.workspaceConfiguration.status === "ready" ? resources.workspaceConfiguration.value.workspacePath : workspacePath;
 
   return <div className={`app-shell${preferences.compactLayout ? " compact-layout" : ""}${preferences.reduceMotion ? " reduce-motion" : ""}`}>
-    <Sidebar activeRoute={activeRoute} onNavigate={navigate} workspace={resources.workspace} />
+    <Sidebar activeRoute={activeRoute} onNavigate={navigate} workspace={resources.workspace} storage={workspaceStorage.state} />
     <main className={`main-content compact-global-headers${showOverviewToolbar ? " project-overview-open" : ""}`} id="main-content">
       {projectOpen && projectHeaderProject ? <header className="route-header compact-project-route-header"><div><p className="eyebrow">{route.activeRouteDefinition.eyebrow}</p><h1>{route.activeRouteDefinition.title}</h1><p className="lede">{route.activeRouteDefinition.description}</p></div><div className="compact-project-route-context"><div className="compact-project-route-actions"><GlobalSearch /><button type="button" className="secondary overview-refresh-button" onClick={resources.refresh} disabled={resources.loading}>{resources.loading ? "Refreshing…" : "Refresh"}</button></div><ProjectBreadcrumbs project={projectHeaderProject} screen={projectScreenLabel[projectView]} onProjects={leaveProject} onOverview={() => selectProjectView("overview")} /></div></header> : <RouteHeader route={route.activeRouteDefinition} />}
       {projectHeaderClient && projectHeaderProject && <ProjectOverviewHeader client={projectHeaderClient} project={projectHeaderProject} workspacePath={workspacePath} />}
       {configuredUnavailable && <section className="notice warning workspace-unavailable-notice" role="alert"><strong>Workspace unavailable</strong><span>{configuredWorkspacePath}</span><p>Reconnect the configured drive, NAS share, or cloud-mounted folder, then retry. Studio will keep this workspace configured and will not switch to the default workspace.</p><button type="button" className="secondary" onClick={() => void resources.refreshWorkspace()} disabled={resources.loading}>{resources.loading ? "Retrying…" : "Retry workspace"}</button></section>}
       {!configuredUnavailable && resources.workspace.status === "ready" && resources.workspaceRefreshError && <section className="notice warning workspace-refresh-error" role="alert"><strong>Workspace refresh failed</strong><span>{resources.workspaceRefreshError}</span><p>The last successfully loaded workspace remains in view. Check the mounted storage connection and retry.</p><button type="button" className="secondary" onClick={() => void resources.refreshWorkspace()} disabled={resources.loading}>{resources.loading ? "Retrying…" : "Retry workspace"}</button></section>}
       <AppNotices routeNotice={routeNotice} studioNotice={studio.studioNotice} clientNotice={clientNotice} projectNotice={projectNotice} intakeNotice={intake.notice} revisionNotice={revision.notice} approvalNotice={approval.notice} deliveryNotice={delivery.notice} />
-      <AppRoutes activeRoute={activeRoute} workspace={resources.workspace} workspaceConfiguration={resources.workspaceConfiguration} version={resources.version} loading={resources.loading} availability={availability} route={route} projectView={projectView} selectedProject={selectedProject !== null} preferences={preferences} setPreferences={setPreferences} studioCreationAvailable={studioCreationAvailable} studioCreationHelp={studioCreationHelp} studio={studio} projects={projects} intake={intake} revision={revision} approval={approval} delivery={delivery} onRefresh={resources.refresh} onWorkspaceConfigurationReload={resources.reloadWorkspaceConfiguration} onNewClient={openClientWorkflow} onNavigate={navigate} onOpenDerivedProject={openProject} onSelectClient={(clientId) => { setSelectedClientId(clientId); setRouteNotice(null); }} onOpenClientProject={openClientProject} onProjects={leaveProject} onSelectProjectView={selectProjectView} onOpenRevisions={openRevisions} />
+      <AppRoutes activeRoute={activeRoute} workspace={resources.workspace} workspaceStorage={workspaceStorage.state} workspaceConfiguration={resources.workspaceConfiguration} version={resources.version} loading={resources.loading} availability={availability} route={route} projectView={projectView} selectedProject={selectedProject !== null} preferences={preferences} setPreferences={setPreferences} studioCreationAvailable={studioCreationAvailable} studioCreationHelp={studioCreationHelp} studio={studio} projects={projects} intake={intake} revision={revision} approval={approval} delivery={delivery} onRefresh={resources.refresh} onWorkspaceConfigurationReload={resources.reloadWorkspaceConfiguration} onNewClient={openClientWorkflow} onNavigate={navigate} onOpenDerivedProject={openProject} onSelectClient={(clientId) => { setSelectedClientId(clientId); setRouteNotice(null); }} onOpenClientProject={openClientProject} onProjects={leaveProject} onSelectProjectView={selectProjectView} onOpenRevisions={openRevisions} />
     </main>
     <AppDialogs workspace={resources.workspace} project={route.resolvedProject} studio={studio} clients={clients} projects={projects} intake={intake} revision={revision} approval={approval} delivery={delivery} onRefresh={resources.refresh} />
   </div>;
