@@ -94,12 +94,11 @@ describe("DeliveryView workspace refresh", () => {
     });
 
     renderView();
-    const editor = await screen.findByRole("textbox", { name: "Delivery Notes Markdown content" });
-    await waitFor(() => expect(editor).toHaveValue("Original notes"));
+    await screen.findByText("Original notes");
 
     notifyWorkspaceRefreshed();
 
-    await waitFor(() => expect(editor).toHaveValue("Externally updated notes"));
+    await screen.findByText("Externally updated notes");
     expect(notesCalls).toBe(2);
     expect(statusCalls).toBeGreaterThanOrEqual(2);
   });
@@ -116,6 +115,8 @@ describe("DeliveryView workspace refresh", () => {
     });
 
     renderView();
+    await screen.findByText("Original notes");
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
     const editor = await screen.findByRole("textbox", { name: "Delivery Notes Markdown content" });
     await waitFor(() => expect(editor).toHaveValue("Original notes"));
     fireEvent.change(editor, { target: { value: "Unsaved local edit" } });
