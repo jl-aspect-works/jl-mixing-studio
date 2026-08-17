@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { ClientFilesBrowser } from "./ClientFilesBrowser";
+import { ClientFilesBrowser, formatClientFileModified } from "./ClientFilesBrowser";
 
 vi.mock("../project/files/AudioPreviewPlayer", () => ({
   AudioPreviewPlayer: ({ entry }: { entry: { displayName: string } }) => <span data-testid="inline-preview">Previewing {entry.displayName}</span>,
@@ -50,6 +50,12 @@ vi.mock("../project/files/useProjectFiles", () => ({
 }));
 
 describe("ClientFilesBrowser", () => {
+  it("formats modified date and time without a comma", () => {
+    const formatted = formatClientFileModified(new Date(2026, 7, 17, 7, 10).getTime());
+    expect(formatted).toBe("8/17/26 07:10am");
+    expect(formatted).not.toContain(",");
+  });
+
   it("shows compact status icons, preview/audio details, and validation details in overflow", () => {
     render(<ClientFilesBrowser clientId="client" projectId="project" validationFiles={[{
       relative_path: "Lead.wav",
