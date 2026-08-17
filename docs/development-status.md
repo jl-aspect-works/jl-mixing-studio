@@ -1,116 +1,174 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-08-11
+Last updated: 2026-08-17
 
 ## Current release
 
-- Latest stable release: `v1.1.1`
-- Release status: Released and coordinated with JL Mixing Automation `v1.5.0` through Automation API `1.0`.
+- Latest stable Studio release: `v1.1.2`
+- Current stable Automation baseline: JL Mixing Automation `v1.5.1`
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
-- Current Automation provider baseline: JL Mixing Automation `v1.5.0`
+- Application identifier: `com.jlaudio.jlmixingstudio`
+
+Studio and Automation remain independently versioned products. Studio compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
 ## Active development target
 
-- Target release: `v1.1.2`
-- Studio release line: `v1.1.x`
-- Scope: Windows UX patch for hidden Automation subprocess execution.
-- Primary objective: promote the accepted `v1.1.2-rc.1` behavior to stable with release metadata only.
-- Versioning policy: Studio and Automation retain independent product versions. Studio compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
+- Target Studio release: `v2.0.0`
+- Target Automation release: `v2.0.0`
+- Planned first coordinated candidate: `v2.0.0-rc.1`
+- Coordination tracker: Studio issue #201
+- Coordinated acceptance source of truth: `docs/v2.0-coordinated-acceptance.md`
+- Status: **implementation scope complete; pre-RC release acceptance/packaging preparation**
 
-## Windows console-window fix
+No additional 2.0 feature expansion is permitted unless a release-blocking defect requires a narrowly scoped change.
 
-Issue #185 reported that Studio v1.1.1 could display a transient terminal window whenever Automation was invoked on Windows.
+## Studio 2.0 implementation status
 
-PR #186 fixes the shared Automation subprocess boundary by applying the Windows `CREATE_NO_WINDOW` creation flag while preserving stdout/stderr capture, exit-code handling, PATH handling, working-directory handling, and existing non-Windows behavior. The fix is merged to `main` in merge commit `7d698b85c840a059dd053d229eae34f277fa5ff4`.
+Approved Daily Workflow screen work is complete:
 
-Automated validation for PR #186 passed:
+- #190 Project Overview
+- #191 Client Files
+- #192 Audio Prep
+- #193 References
+- #189 Revisions
+- #194 Delivery
+- #195 Project Files
+- #196 Workspace configuration and health
 
-- Windows desktop compile check;
-- Intel macOS compile check;
-- Apple Silicon macOS compile check;
-- frontend checks;
-- Rust formatting and clippy;
-- full Rust test suite.
+Foundation work is complete:
 
-The existing Windows-only `SystemProcessRunner` regression continues to execute a `.cmd` launcher and verify captured stdout with the no-window creation flag applied.
+- #197 macOS embedded audio-preview spike — ship on macOS; Windows preview deferred
+- #198 common validated project file service/browser
+- #199 shared workspace refresh and resilience
+- #200 shared project navigation/shell
 
-## v1.1.2 RC acceptance
+Final 2.0 polish is complete:
 
-Studio `v1.1.2-rc.1` was built and published successfully from merge commit `30d9eb4daf1f4c3790e95be659bba6ba0b5f55fb`.
+- #214 workspace storage usage in Dashboard/navigator
+- #215 primary/secondary button hierarchy
+- #220 non-disruptive success feedback
 
-Release automation produced and published:
+## Automation 2.0 dependencies
 
-- Windows x64 NSIS installer;
-- Intel macOS DMG;
-- Apple Silicon macOS DMG;
-- `SHA256SUMS.txt`.
+All linked Automation dependencies required by Studio 2.0 are complete:
 
-Packaged Windows acceptance against JL Mixing Automation `v1.5.0` is complete. The previously visible terminal/PowerShell-style window no longer appears during Studio Automation subprocess execution. The fix was confirmed working in the packaged Windows RC.
+- Automation #114 incremental cached intake validation
+- Automation #115 revision-description API support
+- Automation #116 Audio Prep structured validation/provenance; repair/conversion deferred beyond 2.0
+- Automation #117 managed Delivery status/package reconciliation and failed-mutation safety
 
-No release-blocking defect remains for the v1.1.2 patch objective.
+Automation #117 was completed through PR #122 plus final failure-safety regression PR #123.
 
-## Stable v1.1.2 release gate
+## Daily Workflow product contract
 
-Before publishing stable `v1.1.2`:
+After initial workspace configuration, normal work should be possible with Studio plus the DAW without requiring Finder, Explorer, Terminal, or PowerShell.
 
-1. set all Studio application/release metadata from `1.1.2-rc.1` to `1.1.2`;
-2. regenerate `package-lock.json` without dependency changes;
-3. run `npm run release:verify -- v1.1.2` and `npm run check`;
-4. require the complete GitHub CI matrix to pass on the final-release prep commit;
-5. merge the final-release prep PR;
-6. create tag `v1.1.2` on the exact green merge commit;
-7. verify the release workflow publishes the expected macOS and Windows installers plus checksums;
-8. close issue #185 after the stable release is verified.
+Global navigation:
 
-No additional functional or compatibility changes are permitted in the final promotion unless a release-blocking defect is discovered.
+1. Dashboard
+2. Studio
+3. Clients
+4. Projects
+5. Tasks
+6. Activities
+7. Settings
 
-## Current provider contract
+Project navigation:
 
-Studio v1.1 consumes Automation API `1.0` capabilities including:
+1. Overview
+2. Client Files
+3. Audio Prep
+4. References
+5. Revisions
+6. Delivery
+7. Files
 
-- `system.info`
-- `client.create`
-- `project.create`
-- `intake.validate`
-- `revision.create`
-- `revision.approve`
-- `delivery.create`
+Core ownership rules:
 
-Additional provider capabilities may be advertised by Automation without requiring Studio to consume them. Studio must tolerate compatible additive provider behavior within API 1.0.
+- Original Delivery is read-only in Studio.
+- Audio Prep is the mutable working/fixup stage for supported 2.0 operations.
+- Files is a controlled project filesystem view, not an unrestricted file manager.
+- Revisions and Delivery remain purpose-built workflow surfaces.
+- Automation owns workflow/metadata semantics and managed semantic mutation.
+- Studio owns presentation, safe interaction, filesystem inspection and explicitly permitted filesystem operations.
+- Workspace/Automation state remains authoritative; Studio does not create a competing project-state database.
 
-## Completed v1.1.1 / Automation v1.5 compatibility work
+## Shared-workspace contract
 
-Merged Windows/Automation v1.5 work includes:
+Studio 2.0 treats local, NAS, and OS-mounted synchronized/cloud workspace paths as ordinary filesystems.
 
-- PR #176 — native Windows Automation discovery and launcher-extension support.
-- PR #178 — Automation v1.5 Windows `root_path` schema support.
-- PR #180 — capability-backed workflow support on Windows.
-- PR #181 — Windows path regression coverage and version-neutral provider guidance.
-- PR #182 — current documentation refresh for Automation API 1.0 and Windows support.
-- PR #183 — Studio `v1.1.1-rc.1` release preparation and coordinated acceptance plan.
-- PR #184 — Studio `v1.1.1` stable release preparation.
-- PR #186 — suppress Automation subprocess console windows on Windows.
-- PR #187 — Studio `v1.1.2-rc.1` release preparation.
+Implemented behavior includes:
 
-The coordinated v1.1.1 / Automation v1.5 acceptance record remains in `docs/v1.1.1-v1.5-coordinated-acceptance.md`.
+- targeted refresh on useful boundaries rather than an always-on watcher;
+- refresh on window focus and project/workflow entry;
+- one shared workspace-refresh invalidation boundary for screen-local authoritative data;
+- configured-path preservation during temporary workspace unavailability;
+- no silent fallback to `~/Music/Mixes` after a configured workspace becomes unavailable;
+- explicit Retry/recovery behavior;
+- preservation of dirty local Revision Notes/Delivery Notes while clean documents refresh from authoritative state;
+- visible busy states and duplicate-action suppression for slow storage operations;
+- one background workspace storage index shared by Dashboard and navigator.
+
+Real-time simultaneous collaborative conflict resolution remains out of scope.
+
+## Audio preview contract
+
+Studio 2.0 ships embedded audio preview on macOS through the existing Tauri/WKWebView + HTML media path.
+
+- shared preview component/capability across supported project-file screens;
+- one file playing at a time;
+- Play/Pause, seek/progress, elapsed and total duration;
+- no waveform UI;
+- no proxy/transcode playback;
+- Windows preview omitted cleanly for 2.0.
+
+CI exercises the required WKWebView format matrix on Intel and Apple Silicon macOS runners. Packaged acceptance must still confirm actual audible playback with representative real project/bounce files.
 
 ## Architecture and safety invariants
 
-- Automation owns workflow rules, filesystem mutation, provider schemas, capability names, and structured machine responses.
-- Studio owns presentation, provider discovery/admission, confirmation UX, operating-system integration, and post-operation reconciliation.
-- Human CLI output is not parsed as an Automation API contract.
-- No automatic retry occurs after uncertain mutation outcomes.
-- Destructive delivery clean replacement remains guarded by preview, revalidation, explicit confirmation, and authoritative post-operation checks.
-- Workspace metadata remains authoritative; Studio does not create a second project-state database.
-- Application identifier `com.jlaudio.jlmixingstudio` remains unchanged for upgrade/settings compatibility.
+- Automation API contract remains `1.0` for this release line unless explicitly changed.
+- Workspace metadata schema remains `1.1.0` unless explicitly changed.
+- Human CLI output is not parsed as the Automation API contract.
+- No automatic retry occurs after uncertain non-idempotent mutation outcomes.
+- Canonical containment/path traversal/symlink protections remain mandatory for project file access.
+- Original Delivery remains immutable from Studio.
+- Manifest-managed Delivery files are not blindly renamed/deleted by Studio.
+- Failed managed Delivery mutations must preserve authoritative state.
+- Application identifier remains unchanged for upgrade/settings compatibility.
+
+## Explicitly deferred beyond 2.0
+
+- Windows embedded audio preview/playback
+- Audio Prep Fix/Convert, repair, normalization, or format conversion
+- generic Add/Import Files in Files or Audio Prep
+- Client Files import/re-import workflow
+- mutation of Original Delivery
+- provider-specific OneDrive/iDrive/NAS integrations
+- real-time multi-machine conflict merging
+- unrestricted generic filesystem browsing
+- waveform editing, playlists, A/B comparison, DAW-like transport
+- reference linking/sharing to external files instead of project-owned copies
+
+## Release gate
+
+The next development step is coordinated `v2.0.0-rc.1` preparation, not additional feature implementation.
+
+Before an RC is accepted:
+
+1. align Studio and Automation application versions to their respective `2.0.0-rc.1` release metadata;
+2. require all existing CI/test gates to pass on the exact RC-prep commits;
+3. publish new immutable RC tags rather than moving/reusing a candidate tag;
+4. verify expected release packages/checksums;
+5. execute `docs/v2.0-coordinated-acceptance.md` against packaged candidates;
+6. track every failed or unexpectedly blocked result with a GitHub issue;
+7. fix only release blockers/regressions during RC acceptance;
+8. create final `v2.0.0` tags only after explicit coordinated release approval.
 
 ## Historical acceptance
 
-The original Studio v1.1.0 release was coordinated against JL Mixing Automation v1.4.0. That historical record remains in `docs/v1.1-v1.4-coordinated-acceptance.md` and must not be rewritten to imply v1.5 testing.
+Historical release records remain authoritative for their original releases and should not be rewritten:
 
-Studio v1.1.1 was subsequently accepted and released with Automation v1.5 cross-platform compatibility under the same Automation API `1.0` and metadata schema `1.1.0` identities.
-
-## Known issues and technical debt
-
-- Legacy approval/delivery regression support remains intentionally test-only until remaining parser-era assertions have explicit structured API equivalents.
+- `docs/v1.1-v1.4-coordinated-acceptance.md`
+- `docs/v1.1.1-v1.5-coordinated-acceptance.md`
+- `docs/release-candidate-acceptance.md`
