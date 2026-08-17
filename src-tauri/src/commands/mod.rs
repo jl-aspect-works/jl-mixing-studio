@@ -21,6 +21,8 @@ mod system;
 mod workspace_command_support;
 #[path = "workspace_configuration_command.rs"]
 mod workspace_configuration;
+#[path = "workspace_storage_summary_command.rs"]
+mod workspace_storage_summary;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
@@ -37,6 +39,7 @@ pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_s
 pub(super) use workspace_configuration::{
     get_workspace_configuration, set_workspace_root, validate_workspace_root,
 };
+pub(super) use workspace_storage_summary::summarize_workspace_storage;
 
 #[cfg(test)]
 pub(super) use delivery_notes::{
