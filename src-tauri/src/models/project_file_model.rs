@@ -108,6 +108,14 @@ pub struct ProjectFileSummary {
     pub failed_paths: Vec<String>,
 }
 
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceStorageSummary {
+    pub file_count: u64,
+    pub size_bytes: u64,
+    pub failed_paths: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectFileMutationResult {
