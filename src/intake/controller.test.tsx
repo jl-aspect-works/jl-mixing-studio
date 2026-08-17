@@ -46,7 +46,7 @@ describe("useIntakeWorkflow background refresh", () => {
   beforeEach(() => mockedInvoke.mockReset());
   afterEach(() => vi.restoreAllMocks());
 
-  it("keeps structured validation visible and refreshes it through the structured API", async () => {
+  it("loads structured validation automatically and keeps it visible during background refresh", async () => {
     let refreshCalls = 0;
     let resolveBackground: ((value: IntakeOperationResult) => void) | null = null;
 
@@ -66,15 +66,14 @@ describe("useIntakeWorkflow background refresh", () => {
       projectId: "blue-sky",
     }));
 
-    await waitFor(() => expect(result.current.reportState.status).toBe("ready"));
-
-    act(() => result.current.open());
     await waitFor(() => {
+      expect(refreshCalls).toBe(1);
       expect(result.current.reportState.status).toBe("ready");
       if (result.current.reportState.status === "ready") {
         expect(result.current.reportState.value).toBe(structuredResult);
       }
     });
+    expect(mockedInvoke.mock.calls.filter(([command]) => command === "get_intake_report")).toHaveLength(0);
 
     act(() => notifyWorkspaceRefreshed());
 
@@ -84,7 +83,7 @@ describe("useIntakeWorkflow background refresh", () => {
       expect(result.current.reportState.value).toBe(structuredResult);
       expect("files" in result.current.reportState.value).toBe(true);
     }
-    expect(mockedInvoke.mock.calls.filter(([command]) => command === "get_intake_report")).toHaveLength(1);
+    expect(mockedInvoke.mock.calls.filter(([command]) => command === "get_intake_report")).toHaveLength(0);
 
     act(() => resolveBackground?.(structuredResult));
     await waitFor(() => expect(result.current.state.status).toBe("closed"));
