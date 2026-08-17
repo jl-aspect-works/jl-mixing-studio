@@ -1,0 +1,40 @@
+/* Studio 2.0 button hierarchy: blue is reserved for the primary action in a logical group. */
+
+/* Dashboard: creating a project is the daily-workflow primary; client creation is supporting. */
+.quick-actions .action-grid > button:first-child {
+  background: #fff;
+  color: #31405a;
+  border-color: #c6d0de;
+}
+
+.quick-actions .action-grid > button:first-child:hover:not(:disabled) {
+  background: #f3f6fa;
+  border-color: #9eabc0;
+}
+
+/* Shared FolderControl: Copy Path and Open Folder are both supporting filesystem actions. */
+.folder-control > code + .directory-actions > button {
+  background: #fff;
+  color: #31405a;
+  border-color: #c6d0de;
+}
+
+.folder-control > code + .directory-actions > button:hover:not(:disabled) {
+  background: #f3f6fa;
+  border-color: #9eabc0;
+}
+
+/* Disabled actions are neutral regardless of the role they have when enabled. */
+button:disabled:not(.nav-item):not(.table-link):not(.revision-history-item):not(.revision-description-display) {
+  background: #eef1f5;
+  color: #8a94a6;
+  border-color: #d7dee8;
+  box-shadow: none;
+}
+
+/* Menu items remain visually menu-like when disabled rather than becoming button blocks. */
+.shared-row-action-popover button:disabled {
+  background: transparent;
+  border-color: transparent;
+  color: #9aa3b2;
+}

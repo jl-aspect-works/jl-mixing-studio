@@ -73,7 +73,7 @@ export function ManagedFolderToolbar({
   return <div className="shared-managed-folder-toolbar">
     <code>{path || "Project root"}</code>
     <div className="directory-actions">
-      {onOpenFolder && <button type="button" onClick={onOpenFolder}>Open Folder</button>}
+      {onOpenFolder && <button type="button" className="secondary" onClick={onOpenFolder}>Open Folder</button>}
       <button type="button" className="secondary" disabled={!canNavigateUp || loading} onClick={onUp}>Up</button>
       <button type="button" className="secondary" disabled={loading} onClick={onRefresh}>{loading ? "Refreshing…" : refreshLabel}</button>
     </div>
