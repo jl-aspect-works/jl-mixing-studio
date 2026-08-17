@@ -8,6 +8,8 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
 const mockedInvoke = vi.mocked(invoke);
 
+type StorageResult = { fileCount: number; sizeBytes: number; failedPaths: string[] };
+
 function Harness() {
   const { state } = useWorkspaceStorageSummary({
     workspacePath: "/Volumes/Shared/Mixes",
@@ -49,7 +51,7 @@ describe("useWorkspaceStorageSummary", () => {
   });
 
   it("keeps the last summary visible while a refresh is pending", async () => {
-    let resolveRefresh: ((value: { fileCount: number; sizeBytes: number; failedPaths: string[] }) => void) | null = null;
+    let resolveRefresh: (value: StorageResult) => void = () => undefined;
     let calls = 0;
     mockedInvoke.mockImplementation((command) => {
       if (command !== "summarize_workspace_storage") {
@@ -57,7 +59,7 @@ describe("useWorkspaceStorageSummary", () => {
       }
       calls += 1;
       if (calls === 1) return Promise.resolve({ fileCount: 4, sizeBytes: 4096, failedPaths: [] });
-      return new Promise((resolve) => { resolveRefresh = resolve; });
+      return new Promise<StorageResult>((resolve) => { resolveRefresh = resolve; });
     });
 
     render(<Harness />);
@@ -67,7 +69,7 @@ describe("useWorkspaceStorageSummary", () => {
     await waitFor(() => expect(calls).toBe(2));
     expect(screen.getByText("4:4096")).toBeInTheDocument();
 
-    resolveRefresh?.({ fileCount: 5, sizeBytes: 5120, failedPaths: [] });
+    resolveRefresh({ fileCount: 5, sizeBytes: 5120, failedPaths: [] });
     expect(await screen.findByText("5:5120")).toBeInTheDocument();
   });
 });
