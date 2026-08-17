@@ -159,8 +159,11 @@ describe("JL Mixing Studio — workspace and studio states", () => {
       expect(screen.getByRole("button", { name: "New client" })).toBeDisabled();
     });
 
-  it("refreshes workspace, configuration, and version state independently", async () => {
+  it("refreshes workspace, configuration, version, and storage state independently", async () => {
       let workspaceCalls = 0;
+      let configurationCalls = 0;
+      let versionCalls = 0;
+      let storageCalls = 0;
       mockedInvoke.mockImplementation((command) => {
         if (command === "discover_default_workspace") {
           workspaceCalls += 1;
@@ -168,8 +171,18 @@ describe("JL Mixing Studio — workspace and studio states", () => {
           if (workspaceCalls > 1 && snapshot.studio) snapshot.studio.studioName = "After Refresh";
           return Promise.resolve(snapshot);
         }
-        if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
-        if (command === "get_jl_mixing_version") return Promise.resolve(version);
+        if (command === "get_workspace_configuration") {
+          configurationCalls += 1;
+          return Promise.resolve(defaultWorkspaceConfiguration);
+        }
+        if (command === "get_jl_mixing_version") {
+          versionCalls += 1;
+          return Promise.resolve(version);
+        }
+        if (command === "summarize_workspace_storage") {
+          storageCalls += 1;
+          return Promise.resolve({ fileCount: 12, sizeBytes: 4096, failedPaths: [] });
+        }
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
@@ -179,7 +192,9 @@ describe("JL Mixing Studio — workspace and studio states", () => {
 
       expect(await screen.findByText("After Refresh")).toBeInTheDocument();
       expect(workspaceCalls).toBe(2);
-      expect(mockedInvoke).toHaveBeenCalledTimes(6);
+      expect(configurationCalls).toBe(2);
+      expect(versionCalls).toBe(2);
+      expect(storageCalls).toBe(2);
     });
 
   it("offers retry after an unexpected discovery failure", async () => {
