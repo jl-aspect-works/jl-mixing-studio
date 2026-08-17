@@ -84,8 +84,10 @@ const originalFilename = (record: AudioPrepValidationFile | undefined) =>
 const provenanceState = (record: AudioPrepValidationFile | undefined) =>
   record?.provenanceState ?? record?.provenance_state ?? null;
 
-const provenanceLabel = (sourceName: string | null, provenance: string | null) => {
+const provenanceLabel = (record: AudioPrepValidationFile | undefined) => {
+  const sourceName = originalFilename(record);
   if (sourceName) return sourceName;
+  const provenance = provenanceState(record);
   if (provenance === "ambiguous") return "Ambiguous";
   if (provenance === "unavailable") return "Not matched";
   return "—";
@@ -240,12 +242,12 @@ export function AudioPrepBrowser({
         const statusLabel = findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
         const sourceName = originalFilename(record);
         const provenance = provenanceState(record);
+        const sourceLabel = provenanceLabel(record);
         const provenanceTitle = sourceName
           ? `Original Delivery: ${sourceName}`
           : provenance === "ambiguous"
             ? "Multiple Original Delivery files have identical content; Automation will not guess the source."
             : "Authoritative Original Delivery provenance is not available for this working file.";
-        const sourceLabel = provenanceLabel(sourceName, provenance);
         const actions = [
           entry.entryType === "file" && entry.permissions.canRename ? { label: "Rename", onSelect: () => beginRename(entry) } : null,
           entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runAction(openProjectFile, entry) } : null,
