@@ -5,6 +5,7 @@ import {
   WorkspaceContent,
   type ResourceState,
 } from "../AppShellViews";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
 const revisionLabel = (revision: number | null) =>
@@ -35,7 +36,7 @@ export function ClientsRoute({
     <>
       <section className="directory-toolbar" aria-labelledby="client-directory-heading">
         <div><p className="kicker">{productCopy.clients.studioKicker}</p><h2 id="client-directory-heading">{snapshot.counts.clients} {snapshot.counts.clients === 1 ? productCopy.clients.singular : productCopy.clients.plural}</h2></div>
-        <div className="directory-actions"><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button><button type="button" onClick={onNewClient} disabled={!clientCreationAvailable} aria-describedby="clients-new-client-help">{productCopy.clients.newClient}</button></div>
+        <div className="directory-actions"><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button><button type="button" onClick={onNewClient} disabled={!clientCreationAvailable} aria-describedby="clients-new-client-help"><ActionIcon name="add" />{productCopy.clients.newClient}</button></div>
       </section>
       <p id="clients-new-client-help" className="action-help directory-help">{clientCreationHelp}</p>
       <ContextSearch label={productCopy.clients.searchLabel} />
@@ -87,8 +88,8 @@ export function ClientDetails({
   return (
     <>
       <div className="detail-navigation-row"><nav className="breadcrumbs" aria-label={productCopy.common.breadcrumbLabel}>
-        <button type="button" onClick={onBack}>Clients</button><span aria-hidden="true">/</span><span aria-current="page">{client.clientName}</span>
-      </nav><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button></div>
+        <button type="button" onClick={onBack}><ActionIcon name="back" />Clients</button><span aria-hidden="true">/</span><span aria-current="page">{client.clientName}</span>
+      </nav><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button></div>
       <section className="detail-summary" aria-label={productCopy.clients.detailsLabel}>
         <article><span>{productCopy.clients.tableClientId}</span><strong><code>{client.clientId}</code></strong></article>
         <article><span>{productCopy.clients.tableDefaultArtist}</span><strong>{client.defaultArtist || productCopy.common.notSet}</strong></article>
@@ -96,7 +97,7 @@ export function ClientDetails({
       </section>
       <aside className="route-note"><strong>{productCopy.clients.readOnly}</strong><span>{productCopy.clients.editingUnavailable}</span></aside>
       <section className="detail-section" aria-labelledby="client-projects-heading">
-        <div className="panel-heading"><div><p className="kicker">{productCopy.clients.projectsKicker}</p><h2 id="client-projects-heading">{productCopy.clients.projectsFor} {client.clientName}</h2></div><div className="directory-actions"><button type="button" disabled className="planned-action">{productCopy.clients.editClient} <span>{productCopy.common.planned}</span></button><button type="button" onClick={onNewProject} disabled={!projectCreationAvailable} aria-describedby="client-new-project-help">{productCopy.clients.newProject}</button></div></div>
+        <div className="panel-heading"><div><p className="kicker">{productCopy.clients.projectsKicker}</p><h2 id="client-projects-heading">{productCopy.clients.projectsFor} {client.clientName}</h2></div><div className="directory-actions"><button type="button" disabled className="planned-action"><ActionIcon name="edit" />{productCopy.clients.editClient} <span>{productCopy.common.planned}</span></button><button type="button" onClick={onNewProject} disabled={!projectCreationAvailable} aria-describedby="client-new-project-help"><ActionIcon name="add" />{productCopy.clients.newProject}</button></div></div>
         <p id="client-new-project-help" className="action-help directory-help">{projectCreationHelp}</p>
         {client.projects.length === 0 ? (
           <div className="planned-message compact"><strong>{productCopy.clients.noProjects}</strong><p>{productCopy.clients.createFirstProject}</p></div>
