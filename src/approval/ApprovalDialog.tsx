@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef } from "react";
 import type { ProjectSummary } from "../types";
 import type { ApprovalFormValues, ApprovalWorkflowState } from "../AppWorkflowModels";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
 export function ApprovalDialog({
@@ -53,7 +54,7 @@ export function ApprovalDialog({
               <input ref={approverInput} name="approvedBy" value={values.approvedBy} onChange={(event) => onChange({ approvedBy: event.target.value })} autoComplete="name" disabled={pending} />
               <small>{productCopy.approval.approvedByHelp}</small>
             </label>
-            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}>{productCopy.common.cancel}</button><button type="submit" disabled={pending} aria-busy={pending}>{pending ? productCopy.common.checking : productCopy.approval.review}</button></div>
+            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button><button type="submit" disabled={pending} aria-busy={pending}><ActionIcon name="check" />{pending ? productCopy.common.checking : productCopy.approval.review}</button></div>
           </form>
         )}
         {(state.status === "confirming" || state.status === "approving") && (
@@ -71,11 +72,11 @@ export function ApprovalDialog({
               olderThanCurrent ? `${productCopy.projects.revisionPrefix} ${state.revision.number} ${productCopy.approval.olderThanCurrentConnector} ${productCopy.projects.revisionPrefix} ${project.currentRevision}.` : null,
               deliveryWillDiffer ? `${productCopy.approval.deliveryRemainsPrefix} ${productCopy.projects.revisionPrefix} ${project.deliveredRevision}.` : null,
             ].filter(Boolean).join(" ")}</span></div>}
-            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}>{productCopy.common.cancel}</button><button type="button" className="secondary" onClick={onBack} disabled={pending}>{productCopy.common.back}</button><button ref={confirmButton} type="button" onClick={onConfirm} disabled={pending} aria-busy={pending}>{pending ? productCopy.approval.approving : productCopy.approval.approve}</button></div>
+            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button><button type="button" className="secondary" onClick={onBack} disabled={pending}><ActionIcon name="back" />{productCopy.common.back}</button><button ref={confirmButton} type="button" onClick={onConfirm} disabled={pending} aria-busy={pending}><ActionIcon name="check" />{pending ? productCopy.approval.approving : productCopy.approval.approve}</button></div>
           </div>
         )}
         {state.status === "uncertain" && (
-          <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.approval.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}>{productCopy.common.close}</button></div></div>
+          <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.approval.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></div>
         )}
       </section>
     </div>
