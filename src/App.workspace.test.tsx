@@ -63,7 +63,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
       expect(screen.queryByText(/studio details are planned/i)).not.toBeInTheDocument();
     });
 
-  it("preflights, creates, and configures a selected studio workspace once", async () => {
+  it("creates and configures a selected studio workspace with one submit action", async () => {
       const unavailable: WorkspaceSnapshot = {
         workspacePath: "/Users/engineer/Music/Mixes", status: "unavailable", studio: null,
         counts: { clients: 0, projects: 0, issues: 1 }, clients: [], tasks: [], activity: [],
@@ -98,11 +98,9 @@ describe("JL Mixing Studio — workspace and studio states", () => {
       expect(await screen.findByText(workspaceRoot)).toBeInTheDocument();
       fireEvent.change(screen.getByLabelText("Studio name"), { target: { value: " New Studio " } });
       fireEvent.change(screen.getByLabelText("Mix engineer"), { target: { value: " Engineer " } });
-      fireEvent.click(screen.getByRole("button", { name: "Review studio" }));
-      expect(await screen.findByRole("heading", { name: "Confirm new studio" })).toBeInTheDocument();
-      expect(mockedInvoke).toHaveBeenCalledWith("preflight_studio_creation", { request: requestSummary });
-      fireEvent.click(screen.getByRole("button", { name: "Create studio" }));
+      fireEvent.click(screen.getByRole("button", { name: "Create Workspace" }));
       expect(await screen.findByText("New Studio was created and verified.")).toBeInTheDocument();
+      expect(mockedInvoke).toHaveBeenCalledWith("preflight_studio_creation", { request: requestSummary });
       expect(mockedInvoke).toHaveBeenCalledWith("set_workspace_root", { path: workspaceRoot });
       expect(mockedInvoke.mock.calls.filter(([command]) => command === "create_studio")).toHaveLength(1);
     });
