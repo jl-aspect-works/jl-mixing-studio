@@ -53,6 +53,7 @@ pub struct StudioSummary {
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct StudioCreationRequest {
+    pub workspace_root: String,
     pub studio_name: String,
     pub mix_engineer: Option<String>,
     pub sample_rate: u32,
@@ -63,6 +64,7 @@ pub struct StudioCreationRequest {
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct StudioCreationSummary {
+    pub workspace_root: String,
     pub studio_name: String,
     pub mix_engineer: Option<String>,
     pub sample_rate: u32,
@@ -87,7 +89,6 @@ pub enum StudioOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     Rejected,
     Uncertain,

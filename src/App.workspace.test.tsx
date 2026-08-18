@@ -63,40 +63,45 @@ describe("JL Mixing Studio — workspace and studio states", () => {
       expect(screen.queryByText(/studio details are planned/i)).not.toBeInTheDocument();
     });
 
-  it("preflights and creates the default studio workspace once", async () => {
+  it("creates and configures a selected studio workspace with one submit action", async () => {
       const unavailable: WorkspaceSnapshot = {
         workspacePath: "/Users/engineer/Music/Mixes", status: "unavailable", studio: null,
         counts: { clients: 0, projects: 0, issues: 1 }, clients: [], tasks: [], activity: [],
         issues: [{ scope: "workspace", code: "notFound", displayName: null, relativePath: null, message: "Workspace not found", recovery: "Create it with guided setup." }],
       };
-      const requestSummary = { studioName: "New Studio", mixEngineer: "Engineer", sampleRate: 48000, bitDepth: 24, fileFormat: "WAV" };
+      const workspaceRoot = "/Volumes/Studio/Mixes";
+      const requestSummary = { workspaceRoot, studioName: "New Studio", mixEngineer: "Engineer", sampleRate: 48000, bitDepth: 24, fileFormat: "WAV" };
       const preflight: StudioOperationResult = { ok: true, code: "ready", message: "Ready", studio: requestSummary };
       const created: StudioOperationResult = { ok: true, code: "created", message: "Created", studio: requestSummary };
       const refreshed = healthyWorkspace();
+      refreshed.workspacePath = workspaceRoot;
       refreshed.status = "empty";
       refreshed.clients = [];
       refreshed.counts = { clients: 0, projects: 0, issues: 0 };
       refreshed.studio!.studioName = "New Studio";
-      let discoveryCalls = 0;
+      refreshed.studio!.rootPath = workspaceRoot;
       mockedInvoke.mockImplementation((command) => {
-        if (command === "discover_default_workspace") return Promise.resolve(discoveryCalls++ === 0 ? unavailable : refreshed);
+        if (command === "discover_default_workspace") return Promise.resolve(unavailable);
         if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
         if (command === "get_jl_mixing_version") return Promise.resolve(version);
+        if (command === "choose_workspace_folder") return Promise.resolve("/Volumes/Studio");
         if (command === "preflight_studio_creation") return Promise.resolve(preflight);
         if (command === "create_studio") return Promise.resolve(created);
-        return Promise.reject(new Error("Unexpected command"));
+        if (command === "set_workspace_root") return Promise.resolve(refreshed);
+        return Promise.reject(new Error(`Unexpected command: ${command}`));
       });
       render(<App />);
       await screen.findByRole("heading", { name: "Your studio workspace isn’t ready yet" });
       fireEvent.click(screen.getByRole("button", { name: "Studio" }));
       fireEvent.click(screen.getByRole("button", { name: "New studio" }));
+      fireEvent.click(screen.getByRole("button", { name: "Choose Location…" }));
+      expect(await screen.findByText(workspaceRoot)).toBeInTheDocument();
       fireEvent.change(screen.getByLabelText("Studio name"), { target: { value: " New Studio " } });
       fireEvent.change(screen.getByLabelText("Mix engineer"), { target: { value: " Engineer " } });
-      fireEvent.click(screen.getByRole("button", { name: "Review studio" }));
-      expect(await screen.findByRole("heading", { name: "Confirm new studio" })).toBeInTheDocument();
-      expect(mockedInvoke).toHaveBeenCalledWith("preflight_studio_creation", { request: requestSummary });
-      fireEvent.click(screen.getByRole("button", { name: "Create studio" }));
+      fireEvent.click(screen.getByRole("button", { name: "Create Workspace" }));
       expect(await screen.findByText("New Studio was created and verified.")).toBeInTheDocument();
+      expect(mockedInvoke).toHaveBeenCalledWith("preflight_studio_creation", { request: requestSummary });
+      expect(mockedInvoke).toHaveBeenCalledWith("set_workspace_root", { path: workspaceRoot });
       expect(mockedInvoke.mock.calls.filter(([command]) => command === "create_studio")).toHaveLength(1);
     });
 

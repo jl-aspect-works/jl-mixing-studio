@@ -125,12 +125,19 @@ fn rejected_studio_operation(
 fn normalize_studio_request(
     request: StudioCreationRequest,
 ) -> Result<StudioCreationSummary, String> {
+    let workspace_root = request.workspace_root.trim().to_owned();
     let studio_name = request.studio_name.trim().to_owned();
     let mix_engineer = request
         .mix_engineer
         .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty());
     let file_format = request.file_format.trim().to_ascii_uppercase();
+    if workspace_root.is_empty() {
+        return Err("Choose where to create the workspace".into());
+    }
+    if !Path::new(&workspace_root).is_absolute() {
+        return Err("Workspace paths must be absolute".into());
+    }
     if studio_name.is_empty() {
         return Err("Studio name is required".into());
     }
@@ -151,6 +158,7 @@ fn normalize_studio_request(
         return Err("Select WAV or AIFF as the file format".into());
     }
     Ok(StudioCreationSummary {
+        workspace_root,
         studio_name,
         mix_engineer,
         sample_rate: request.sample_rate,
@@ -160,7 +168,12 @@ fn normalize_studio_request(
 }
 
 fn studio_arguments(studio: &StudioCreationSummary, operation: StudioOperation) -> Vec<String> {
-    let mut arguments = vec!["--name".into(), studio.studio_name.clone()];
+    let mut arguments = vec![
+        "--root".into(),
+        studio.workspace_root.clone(),
+        "--name".into(),
+        studio.studio_name.clone(),
+    ];
     if let Some(engineer) = &studio.mix_engineer {
         arguments.push("--engineer".into());
         arguments.push(engineer.clone());

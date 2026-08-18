@@ -214,7 +214,7 @@ describe("JL Mixing Studio — project workflow", () => {
       fireEvent.click(screen.getByRole("button", { name: "Create project" }));
 
       expect(await screen.findByRole("heading", { name: "Night Drive", level: 1 })).toBeInTheDocument();
-      expect(screen.getByText(/was created with Revision 1/i)).toBeInTheDocument();
+      expect(await screen.findByText(/was created with Revision 1/i)).toBeInTheDocument();
       expect(screen.getByText("Revision 1")).toBeInTheDocument();
       expect(
         within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", { name: "Projects" }),

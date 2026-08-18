@@ -37,7 +37,8 @@ pub(super) use revision_description::update_revision_description;
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
 pub(super) use workspace_configuration::{
-    get_workspace_configuration, set_workspace_root, validate_workspace_root,
+    choose_workspace_folder, get_workspace_configuration, set_workspace_root,
+    validate_workspace_root,
 };
 pub(super) use workspace_storage_summary::summarize_workspace_storage;
 
@@ -51,4 +52,4 @@ pub(super) use folders::intake_directory;
 pub(crate) use workspace_command_support::{
     find_project_summary, resolve_home, validated_project_directory,
 };
-pub(crate) use workspace_configuration::{resolve_workspace_root, workspace_configuration};
+pub(crate) use workspace_configuration::resolve_workspace_root;

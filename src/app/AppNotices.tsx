@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 export interface AppNoticesProps {
   routeNotice: string | null;
   studioNotice: string | null;
@@ -10,8 +12,17 @@ export interface AppNoticesProps {
 }
 
 function Notice({ title, message, warning = false }: { title: string; message: string | null; warning?: boolean }) {
-  if (!message) return null;
-  return <section key={message} className={`notice ${warning ? "warning" : "success"}`} role="status"><strong>{title}</strong><span>{message}</span></section>;
+  const [visible, setVisible] = useState(Boolean(message));
+
+  useEffect(() => {
+    setVisible(Boolean(message));
+    if (!message || warning) return;
+    const timer = window.setTimeout(() => setVisible(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [message, warning]);
+
+  if (!message || !visible) return null;
+  return <section className={`notice ${warning ? "warning" : "success"}`} role="status"><strong>{title}</strong><span>{message}</span></section>;
 }
 
 export function AppNotices(props: AppNoticesProps) {

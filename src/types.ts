@@ -21,6 +21,7 @@ export interface DeliveryNotesUpdateRequest extends DeliveryNotesRequest { conte
 export interface DeliveryNotesDocument { content: string; maxBytes: number; }
 
 export interface StudioCreationRequest {
+  workspaceRoot: string;
   studioName: string;
   mixEngineer: string | null;
   sampleRate: number;

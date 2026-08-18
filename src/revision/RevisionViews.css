@@ -15,17 +15,17 @@
 .revision-history-header { flex: 0 0 auto; padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.08); }
 .revision-history-header h2 { margin: 0; font-size: .95rem; }
 .revision-history-list { display: grid; flex: 1 1 auto; min-height: 0; max-height: 318px; overflow-y: auto; align-content: start; }
-.revision-history-item { border: 0; border-bottom: 1px solid rgba(0,0,0,.07); border-radius: 0; background: transparent; color: inherit; padding: 11px 12px; text-align: left; box-shadow: none; }
+.revision-history-item { box-sizing: border-box; width: 100%; min-width: 0; border: 0; border-bottom: 1px solid rgba(0,0,0,.07); border-radius: 0; background: transparent; color: inherit; padding: 11px 12px; text-align: left; box-shadow: none; }
 .revision-history-item:last-child { border-bottom: 0; }
 .revision-history-item:hover { background: #f7f9fc; }
 .revision-history-item.active { background: #eef4fb; box-shadow: inset 3px 0 0 #3974c6; }
-.revision-history-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.revision-history-title strong { font-size: .82rem; }
-.revision-history-description { display: block; margin-top: 4px; color: #4f5d73; font-size: .72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.revision-history-date { display: block; margin-top: 3px; color: #8a94a6; font-size: .64rem; }
+.revision-history-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px; }
+.revision-history-title strong { min-width: 0; font-size: .82rem; line-height: 1.3; }
+.revision-history-description { display: block; margin-top: 4px; color: #4f5d73; font-size: .72rem; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.revision-history-date { display: block; margin-top: 3px; color: #8a94a6; font-size: .64rem; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .revision-history-footer { flex: 0 0 auto; margin-top: auto; padding: 9px 12px; border-top: 1px solid rgba(0,0,0,.08); background: #fafbfd; }
 .revision-history-footer button { width: 100%; min-height: 30px !important; padding: 4px 8px !important; font-size: .68rem !important; }
-.revision-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.revision-badges { display: flex; flex: 0 0 auto; max-width: 100%; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .revision-badge { display: inline-flex; align-items: center; min-height: 18px; padding: 1px 6px; border-radius: 999px; background: #f1f4f8; color: #647086; font-size: .56rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
 .revision-badge.current { background: #edf4ff; color: #3567a5; }
 .revision-badge.approved { background: #edf8f2; color: #277a52; }

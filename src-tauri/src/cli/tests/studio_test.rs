@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn studio_preflight_uses_fixed_default_workspace_arguments() {
+fn studio_preflight_uses_selected_workspace_arguments() {
     let home = installed_home("1.3.1");
     let runner = FakeRunner::new(vec![success("help"), success("ready")]);
     let result = run_studio_operation(
@@ -13,7 +13,9 @@ fn studio_preflight_uses_fixed_default_workspace_arguments() {
 
     assert!(result.ok);
     assert_eq!(result.code, StudioOperationCode::Ready);
-    assert_eq!(result.studio.unwrap().studio_name, "New Studio");
+    let studio = result.studio.unwrap();
+    assert_eq!(studio.studio_name, "New Studio");
+    assert_eq!(studio.workspace_root, "/fixed/workspace");
     let invocation = &runner.invocations.borrow()[1];
     assert_eq!(
         invocation.executable,
@@ -23,6 +25,8 @@ fn studio_preflight_uses_fixed_default_workspace_arguments() {
     assert_eq!(
         invocation.arguments,
         vec![
+            "--root",
+            "/fixed/workspace",
             "--name",
             "New Studio",
             "--engineer",

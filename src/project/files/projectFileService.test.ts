@@ -141,7 +141,10 @@ describe("projectFileService", () => {
     expect(formatProjectFileSize(10 * 1024 * 1024)).toBe("10 MB");
   });
 
-  it("handles missing modified timestamps", () => {
+  it("formats modified timestamps without the inconsistent date/time comma", () => {
     expect(formatProjectFileModified(null)).toBe("—");
+    const formatted = formatProjectFileModified(new Date(2026, 7, 17, 7, 10).getTime());
+    expect(formatted).not.toContain(",");
+    expect(formatted).toMatch(/^\d{1,2}\/\d{1,2}\/\d{2} \d{1,2}:\d{2}(am|pm)$/);
   });
 });
