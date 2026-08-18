@@ -196,8 +196,16 @@ export const formatProjectFileSize = (sizeBytes: number | null) => {
 
 export const formatProjectFileModified = (modifiedEpochMs: number | null) => {
   if (modifiedEpochMs === null) return "—";
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(modifiedEpochMs));
+  const date = new Date(modifiedEpochMs);
+  if (Number.isNaN(date.getTime())) return "—";
+  const parts = new Intl.DateTimeFormat(undefined, {
+    month: "numeric",
+    day: "numeric",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("month")}/${value("day")}/${value("year")} ${value("hour")}:${value("minute")}${value("dayPeriod").toLowerCase()}`;
 };
