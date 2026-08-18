@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, ProjectSummary, RevisionSummary } from "../types";
 import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
+import { ActionIcon } from "../components/ActionIcon";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -224,14 +225,14 @@ export function RevisionsView({
       active="revisions"
       onSelect={onSelectView}
       actions={<>
-        <button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}>New Revision</button>
+        <button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button>
         <button
           type="button"
           className="secondary"
           onClick={() => { if (selected) onApprove(selected); }}
           disabled={!selected || !approvalAvailable || selectedAlreadyApproved || loading}
           title={selectedAlreadyApproved ? "The selected revision is already approved." : approvalHelp}
-        >Approve Revision</button>
+        ><ActionIcon name="check" />Approve Revision</button>
       </>}
     />
 
@@ -259,7 +260,7 @@ export function RevisionsView({
             </button>)}
           </div>
           <div className="revision-history-footer">
-            <button type="button" className="secondary" onClick={() => void openRevisionsFolder()}>Open Revisions Folder</button>
+            <button type="button" className="secondary" onClick={() => void openRevisionsFolder()}><ActionIcon name="folder" />Open Revisions Folder</button>
           </div>
         </nav>
 
