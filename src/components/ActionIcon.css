@@ -1,9 +1,17 @@
+button:has(> .action-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 4px;
+}
+
 .action-icon {
   width: 16px;
   height: 16px;
   display: inline-block;
   flex: 0 0 16px;
-  margin-right: 8px;
+  margin: 0;
   vertical-align: -3px;
   fill: none;
   stroke: currentColor;
@@ -21,6 +29,7 @@ button[aria-busy="true"] .action-icon {
   opacity: .72;
 }
 
-.icon-only .action-icon {
-  margin-right: 0;
+button.icon-only:has(> .action-icon) {
+  gap: 0;
+  padding-inline: 12px;
 }
