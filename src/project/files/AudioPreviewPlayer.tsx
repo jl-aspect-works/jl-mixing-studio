@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ActionIcon } from "../../components/ActionIcon";
 import type { ProjectFileEntry } from "./projectFileService";
 import { prepareProjectAudioPreview } from "./audioPreviewService";
 import "./AudioPreviewPlayer.css";
@@ -150,7 +151,7 @@ export function AudioPreviewPlayer({
       onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
       onError={() => sourceUrl && setError("This audio file could not be played by the macOS WebView.")}
     />
-    <button type="button" className="shared-audio-preview-play" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : playing ? "❚❚" : "▶"}</button>
+    <button type="button" className="shared-audio-preview-play icon-only" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : <ActionIcon name={playing ? "pause" : "play"} />}</button>
     <span className="shared-audio-preview-time">{formatPreviewTime(currentTime)}</span>
     <input className="shared-audio-preview-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} aria-label={`Seek ${entry.displayName}`} disabled={!duration} onChange={(event) => seek(Number(event.target.value))} />
     <span className="shared-audio-preview-time">{formatPreviewTime(duration)}</span>
