@@ -1,6 +1,6 @@
 # JL Mixing Studio Product Requirements Document
 
-**Status:** Current v1.1 product baseline
+**Status:** Historical v1.1 product baseline. The current Studio 2.0 release contract is defined by `docs/development-status.md` and `docs/v2.0-coordinated-acceptance.md`.
 
 **Product:** JL Mixing Studio  
 **License:** Apache-2.0  
