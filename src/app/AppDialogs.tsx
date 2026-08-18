@@ -24,7 +24,7 @@ export interface AppDialogsProps {
 
 export function AppDialogs({ workspace, project, studio, clients, projects, intake, revision, approval, delivery, onRefresh }: AppDialogsProps) {
   return <>
-    {studio.studioWorkflow.status !== "closed" && <StudioDialog state={studio.studioWorkflow} values={studio.studioForm} onChange={studio.setStudioForm} onPreflight={studio.preflightStudio} onConfirm={studio.confirmStudioCreation} onBack={() => studio.setStudioWorkflow({ status: "editing" })} onClose={studio.closeStudioWorkflow} />}
+    {studio.studioWorkflow.status !== "closed" && <StudioDialog state={studio.studioWorkflow} values={studio.studioForm} onChange={studio.setStudioForm} onChooseLocation={studio.chooseWorkspaceLocation} onPreflight={studio.preflightStudio} onConfirm={studio.confirmStudioCreation} onBack={() => studio.setStudioWorkflow({ status: "editing" })} onClose={studio.closeStudioWorkflow} />}
     {clients.state.status !== "closed" && <ClientDialog state={clients.state} values={clients.form} onChange={clients.setForm} onPreflight={clients.preflight} onConfirm={clients.confirm} onBack={() => clients.setState({ status: "editing" })} onClose={clients.close} />}
     {projects.state.status !== "closed" && <ProjectDialog state={projects.state} values={projects.form} clients={workspace.status === "ready" ? workspace.value.clients : []} onChange={projects.setForm} onPreflight={projects.preflight} onConfirm={projects.confirm} onBack={() => {
       if (projects.state.status !== "confirming") return;
