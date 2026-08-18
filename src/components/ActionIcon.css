@@ -1,0 +1,26 @@
+.action-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex: 0 0 16px;
+  margin-right: 8px;
+  vertical-align: -3px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+button:disabled .action-icon {
+  opacity: .82;
+}
+
+button[aria-busy="true"] .action-icon {
+  opacity: .72;
+}
+
+.icon-only .action-icon {
+  margin-right: 0;
+}
