@@ -17,8 +17,8 @@
 .revision-notes-panel .markdown-preview { min-height: 105px; padding-top: 8px; padding-bottom: 8px; }
 .revision-notes-panel .markdown-editor-toolbar { padding-top: 4px; padding-bottom: 4px; }
 .revision-history-header { padding: 9px 12px; }
-.revision-history-list { max-height: 250px; }
-.revision-history-item { padding: 8px 10px; }
+.revision-history-list { max-height: 250px; display: flex; flex-direction: column; align-content: initial; }
+.revision-history-item { padding: 8px 10px; flex: 0 0 auto; }
 .revision-history-footer { padding: 6px 10px; }
 .revision-history-footer button { min-height: 28px !important; }
 .revisions-workspace { gap: 10px; margin-bottom: 9px; }
