@@ -5,7 +5,6 @@
     <img alt="JL Mixing Studio by JL Aspect Works" width="420" src="https://raw.githubusercontent.com/jl-aspect-works/jl-brand/main/jl-mixing-studio-light-product.png">
   </picture>
 </p>
-
 JL Mixing Studio is an open-source desktop application for small-studio and home-studio mix engineers. It provides a visual Daily Workflow over the project structure and authoritative workflow capabilities supplied by [JL Mixing Automation](https://github.com/jl-aspect-works/jl-mixing-automation).
 
 ## Current release line
