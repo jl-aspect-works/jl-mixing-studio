@@ -17,6 +17,7 @@ export type ActionIconName =
   | "retry"
   | "save"
   | "search"
+  | "up"
   | "upload"
   | "download";
 
@@ -36,6 +37,7 @@ const iconPaths: Record<ActionIconName, ReactNode> = {
   retry: <><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 0-2.3 5.7"/></>,
   save: <><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3"/><path d="M8 21v-7h8v7"/></>,
   search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>,
+  up: <><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></>,
   upload: <><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></>,
   download: <><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></>,
 };
