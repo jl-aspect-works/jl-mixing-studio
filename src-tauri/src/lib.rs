@@ -8,13 +8,13 @@ mod workflows;
 mod workspace;
 
 use commands::{
-    add_project_reference, delete_project_file, delete_project_reference, delete_revision_file,
-    discover_default_workspace, get_delivery_notes, get_jl_mixing_version, get_revision_notes,
-    get_system_info, get_workspace_configuration, list_project_files, open_folder,
-    open_project_file, prepare_project_audio_preview, rename_project_file, rename_revision_file,
-    resolve_folder, reveal_project_file, set_workspace_root, summarize_project_files,
-    summarize_workspace_storage, update_delivery_notes, update_revision_description,
-    update_revision_notes, validate_workspace_root,
+    add_project_reference, choose_workspace_folder, delete_project_file, delete_project_reference,
+    delete_revision_file, discover_default_workspace, get_delivery_notes, get_jl_mixing_version,
+    get_revision_notes, get_system_info, get_workspace_configuration, list_project_files,
+    open_folder, open_project_file, prepare_project_audio_preview, rename_project_file,
+    rename_revision_file, resolve_folder, reveal_project_file, set_workspace_root,
+    summarize_project_files, summarize_workspace_storage, update_delivery_notes,
+    update_revision_description, update_revision_notes, validate_workspace_root,
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
@@ -225,6 +225,7 @@ pub fn run() {
             get_system_info,
             get_jl_mixing_version,
             get_workspace_configuration,
+            choose_workspace_folder,
             validate_workspace_root,
             set_workspace_root,
             discover_default_workspace,
