@@ -52,9 +52,10 @@ export default function StudioApp() {
   const explicitlyConfigured = resources.workspaceConfiguration.status === "ready" && resources.workspaceConfiguration.value.configured;
   const configuredUnavailable = explicitlyConfigured && resources.workspace.status === "ready" && resources.workspace.value.status === "unavailable";
   const studioSetupAvailable = availability.studioCreationAvailable && resources.workspaceConfiguration.status === "ready" && !explicitlyConfigured;
+  const studioCreationSupported = resources.version.status === "ready" && resources.version.value.studioCreationSupported;
   const studioCreationHelp = configuredUnavailable ? "Reconnect the configured workspace or choose another workspace in Settings. Studio will not replace it with a new default workspace." : availability.studioCreationHelp;
 
-  const studio = useStudioWorkflow({ studioCreationAvailable: availability.studioCreationAvailable, onWorkspaceRefreshed: (value) => { resources.setWorkspace({ status: "ready", value }); void resources.reloadWorkspaceConfiguration(); } });
+  const studio = useStudioWorkflow({ studioCreationAvailable: studioCreationSupported, onWorkspaceRefreshed: (value) => { resources.setWorkspace({ status: "ready", value }); void resources.reloadWorkspaceConfiguration(); } });
   const clients = useClientWorkflow({ creationAvailable: availability.clientCreationAvailable, setWorkspace: resources.setWorkspace, setNotice: setClientNotice });
   const projects = useProjectWorkflow({ creationAvailable: availability.projectCreationAvailable, workspace: resources.workspace, setWorkspace: resources.setWorkspace, setNotice: setProjectNotice, onOpen: () => clients.setState({ status: "closed" }), onCreated: (clientId, projectId, fromClient) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); } });
   const route = getAppRouteContext(resources.workspace, resources.version, selectedClientId, selectedProject, activeRoute, projectView, availability.deliveryCreationSupported);
