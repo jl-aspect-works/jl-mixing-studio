@@ -3,6 +3,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { invoke } from "@tauri-apps/api/core";
 import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { ResourceState } from "../AppViews";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 import type { AppPreferences } from "../AppWorkflowModels";
 import type { WorkspaceConfiguration } from "./models";
@@ -143,10 +144,10 @@ export function SettingsRoute({
               ? "Saved locally for this Studio installation. Other computers may use a different path to the same shared workspace."
               : "No explicit workspace has been saved yet; Studio is using the default ~/Music/Mixes location."}</small>
             <div className="directory-actions">
-              <button type="button" onClick={() => void changeWorkspace()} disabled={workspaceAction !== "idle"} aria-busy={workspaceAction === "changing"}>{workspaceAction === "changing" ? "Changing…" : "Change Workspace…"}</button>
-              <button type="button" className="secondary" onClick={onCreateWorkspace} disabled={workspaceAction !== "idle"}>Create New Workspace…</button>
-              <button type="button" className="secondary" onClick={openWorkspace} disabled={!canOpen} aria-busy={workspaceAction === "opening"}>Open Workspace Folder</button>
-              <button type="button" className="secondary" onClick={onRefresh} disabled={workspaceAction !== "idle"}>Refresh Status</button>
+              <button type="button" onClick={() => void changeWorkspace()} disabled={workspaceAction !== "idle"} aria-busy={workspaceAction === "changing"}><ActionIcon name="folder" />{workspaceAction === "changing" ? "Changing…" : "Change Workspace…"}</button>
+              <button type="button" className="secondary" onClick={onCreateWorkspace} disabled={workspaceAction !== "idle"}><ActionIcon name="add" />Create New Workspace…</button>
+              <button type="button" className="secondary" onClick={openWorkspace} disabled={!canOpen} aria-busy={workspaceAction === "opening"}><ActionIcon name="folder" />Open Workspace Folder</button>
+              <button type="button" className="secondary" onClick={onRefresh} disabled={workspaceAction !== "idle"}><ActionIcon name="refresh" />Refresh Status</button>
             </div>
           </div>
         </section>
