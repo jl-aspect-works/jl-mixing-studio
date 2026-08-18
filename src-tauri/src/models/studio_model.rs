@@ -89,7 +89,6 @@ pub enum StudioOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     Rejected,
     Uncertain,
