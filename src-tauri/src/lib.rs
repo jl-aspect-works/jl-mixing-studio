@@ -18,7 +18,6 @@ use commands::{
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
-    workspace_configuration,
 };
 #[cfg(test)]
 use commands::{
