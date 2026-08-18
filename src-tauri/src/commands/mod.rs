@@ -52,4 +52,4 @@ pub(super) use folders::intake_directory;
 pub(crate) use workspace_command_support::{
     find_project_summary, resolve_home, validated_project_directory,
 };
-pub(crate) use workspace_configuration::{resolve_workspace_root, workspace_configuration};
+pub(crate) use workspace_configuration::resolve_workspace_root;
