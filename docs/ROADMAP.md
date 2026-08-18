@@ -14,7 +14,7 @@ Studio versions independently from JL Mixing Automation. Each Studio release dec
 - required and optional Automation capabilities;
 - supported workspace metadata schemas.
 
-Studio v1.1 supports Automation API `1.0` and metadata schema `1.1.0`. Product-version equality between Studio and Automation is neither required nor sufficient for compatibility.
+Studio 2.0 supports Automation API `1.0` and metadata schema `1.1.0`. Product-version equality between Studio and Automation is neither required nor sufficient for compatibility.
 
 ## Completed foundation milestones
 
@@ -48,7 +48,7 @@ Studio creation remains a separately controlled human-CLI-backed operation in v1
 
 ## Current release priority
 
-Complete packaged coordinated acceptance of the refreshed Studio v1.1 line against JL Mixing Automation v1.5, fix only confirmed release defects, keep documentation current, and publish a refreshed Studio release only from a reviewed green merge commit.
+Studio 2.0 Daily Workflow implementation and coordinated release-candidate acceptance are complete. The current priority is stable 2.0 publication and maintenance from reviewed green commits; future feature work remains version-agnostic until explicitly approved and assigned.
 
 ## Future-feature policy
 

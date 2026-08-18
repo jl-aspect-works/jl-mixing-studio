@@ -1,68 +1,25 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 ## Current release
 
-- Latest stable Studio release: `v1.1.2`
-- Current stable Automation baseline: JL Mixing Automation `v1.5.1`
+- Stable release being promoted: JL Mixing Studio `v2.0.0`
+- Coordinated provider release: JL Mixing Automation `v2.0.0`
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
+- Release coordination tracker: Studio issue #201
+- Acceptance source of truth: `docs/v2.0-coordinated-acceptance.md`
+- Status: **Studio RC3 accepted on macOS and Windows; stable 2.0 release approved and in final tag/package promotion**
 
-Studio and Automation remain independently versioned products. Studio compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
+Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
-## Active development target
+No additional 2.0 feature expansion is permitted in the stable release-preparation commits.
 
-- Target Studio release: `v2.0.0`
-- Target Automation release: `v2.0.0`
-- Planned first coordinated candidate: `v2.0.0-rc.1`
-- Coordination tracker: Studio issue #201
-- Coordinated acceptance source of truth: `docs/v2.0-coordinated-acceptance.md`
-- Status: **implementation scope complete; pre-RC release acceptance/packaging preparation**
+## Studio 2.0 release scope
 
-No additional 2.0 feature expansion is permitted unless a release-blocking defect requires a narrowly scoped change.
-
-## Studio 2.0 implementation status
-
-Approved Daily Workflow screen work is complete:
-
-- #190 Project Overview
-- #191 Client Files
-- #192 Audio Prep
-- #193 References
-- #189 Revisions
-- #194 Delivery
-- #195 Project Files
-- #196 Workspace configuration and health
-
-Foundation work is complete:
-
-- #197 macOS embedded audio-preview spike — ship on macOS; Windows preview deferred
-- #198 common validated project file service/browser
-- #199 shared workspace refresh and resilience
-- #200 shared project navigation/shell
-
-Final 2.0 polish is complete:
-
-- #214 workspace storage usage in Dashboard/navigator
-- #215 primary/secondary button hierarchy
-- #220 non-disruptive success feedback
-
-## Automation 2.0 dependencies
-
-All linked Automation dependencies required by Studio 2.0 are complete:
-
-- Automation #114 incremental cached intake validation
-- Automation #115 revision-description API support
-- Automation #116 Audio Prep structured validation/provenance; repair/conversion deferred beyond 2.0
-- Automation #117 managed Delivery status/package reconciliation and failed-mutation safety
-
-Automation #117 was completed through PR #122 plus final failure-safety regression PR #123.
-
-## Daily Workflow product contract
-
-After initial workspace configuration, normal work should be possible with Studio plus the DAW without requiring Finder, Explorer, Terminal, or PowerShell.
+The Daily Workflow release is complete and accepted for stable promotion.
 
 Global navigation:
 
@@ -84,51 +41,69 @@ Project navigation:
 6. Delivery
 7. Files
 
+Completed release work includes:
+
+- Project Overview (#190)
+- Client Files (#191)
+- Audio Prep (#192)
+- References (#193)
+- Revisions (#189)
+- Delivery (#194)
+- Project Files (#195)
+- Workspace configuration/health (#196)
+- macOS embedded-audio-preview validation (#197)
+- common validated project file service/browser (#198)
+- shared workspace refresh/resilience (#199)
+- shared project navigation/shell (#200)
+- workspace storage summaries (#214)
+- primary/secondary action hierarchy (#215)
+- non-disruptive success feedback (#220)
+- packaged RC acceptance fixes and workspace-configuration simplification (#233, #234, #236, #237, #238)
+- Windows Revision History row-layout correction (#241)
+
+## Automation 2.0 dependencies
+
+All Automation capabilities required by Studio 2.0 are complete:
+
+- #114 incremental cached intake validation
+- #115 revision-description API support
+- #116 Audio Prep structured validation/provenance; repair/conversion remains deferred
+- #117 managed Delivery status/package reconciliation and failed-mutation safety
+
+Automation API identity remains `1.0`; workspace metadata schema remains `1.1.0`.
+
+## Daily Workflow product contract
+
+After initial workspace configuration, normal work should be possible with Studio plus the DAW without requiring routine Finder, Explorer, Terminal, or PowerShell use.
+
 Core ownership rules:
 
 - Original Delivery is read-only in Studio.
-- Audio Prep is the mutable working/fixup stage for supported 2.0 operations.
+- Audio Prep is the mutable working stage only for explicitly supported operations.
 - Files is a controlled project filesystem view, not an unrestricted file manager.
 - Revisions and Delivery remain purpose-built workflow surfaces.
 - Automation owns workflow/metadata semantics and managed semantic mutation.
-- Studio owns presentation, safe interaction, filesystem inspection and explicitly permitted filesystem operations.
+- Studio owns presentation, safe interaction, filesystem inspection, and explicitly permitted filesystem operations.
 - Workspace/Automation state remains authoritative; Studio does not create a competing project-state database.
 
 ## Shared-workspace contract
 
 Studio 2.0 treats local, NAS, and OS-mounted synchronized/cloud workspace paths as ordinary filesystems.
 
-Implemented behavior includes:
-
-- targeted refresh on useful boundaries rather than an always-on watcher;
-- refresh on window focus and project/workflow entry;
-- one shared workspace-refresh invalidation boundary for screen-local authoritative data;
-- configured-path preservation during temporary workspace unavailability;
-- no silent fallback to `~/Music/Mixes` after a configured workspace becomes unavailable;
-- explicit Retry/recovery behavior;
-- preservation of dirty local Revision Notes/Delivery Notes while clean documents refresh from authoritative state;
-- visible busy states and duplicate-action suppression for slow storage operations;
-- one background workspace storage index shared by Dashboard and navigator.
+Implemented behavior includes targeted refresh on useful boundaries, focus/project-entry refresh, configured-path preservation during temporary unavailability, explicit retry/recovery, dirty Revision/Delivery Notes protection, visible slow-operation state, and a shared workspace storage index.
 
 Real-time simultaneous collaborative conflict resolution remains out of scope.
 
 ## Audio preview contract
 
-Studio 2.0 ships embedded audio preview on macOS through the existing Tauri/WKWebView + HTML media path.
+Studio 2.0 ships embedded audio preview on macOS through Tauri/WKWebView + HTML media for supported project audio. Windows preview is omitted cleanly for 2.0.
 
-- shared preview component/capability across supported project-file screens;
-- one file playing at a time;
-- Play/Pause, seek/progress, elapsed and total duration;
-- no waveform UI;
-- no proxy/transcode playback;
-- Windows preview omitted cleanly for 2.0.
-
-CI exercises the required WKWebView format matrix on Intel and Apple Silicon macOS runners. Packaged acceptance must still confirm actual audible playback with representative real project/bounce files.
+CI validates the required format matrix on Intel and Apple Silicon macOS runners. Packaged audible preview was included in the coordinated macOS acceptance pass.
 
 ## Architecture and safety invariants
 
-- Automation API contract remains `1.0` for this release line unless explicitly changed.
-- Workspace metadata schema remains `1.1.0` unless explicitly changed.
+- Automation API contract remains `1.0`.
+- Workspace metadata schema remains `1.1.0`.
 - Human CLI output is not parsed as the Automation API contract.
 - No automatic retry occurs after uncertain non-idempotent mutation outcomes.
 - Canonical containment/path traversal/symlink protections remain mandatory for project file access.
@@ -150,20 +125,21 @@ CI exercises the required WKWebView format matrix on Intel and Apple Silicon mac
 - waveform editing, playlists, A/B comparison, DAW-like transport
 - reference linking/sharing to external files instead of project-owned copies
 
-## Release gate
+## Stable release gate
 
-The next development step is coordinated `v2.0.0-rc.1` preparation, not additional feature implementation.
+The accepted release basis is Studio `v2.0.0-rc.3` paired with Automation `v2.0.0-rc.1` through the capability-driven API contract.
 
-Before an RC is accepted:
+Completed before stable promotion:
 
-1. align Studio and Automation application versions to their respective `2.0.0-rc.1` release metadata;
-2. require all existing CI/test gates to pass on the exact RC-prep commits;
-3. publish new immutable RC tags rather than moving/reusing a candidate tag;
-4. verify expected release packages/checksums;
-5. execute `docs/v2.0-coordinated-acceptance.md` against packaged candidates;
-6. track every failed or unexpectedly blocked result with a GitHub issue;
-7. fix only release blockers/regressions during RC acceptance;
-8. create final `v2.0.0` tags only after explicit coordinated release approval.
+1. full Studio CI matrix passed on the RC3 preparation branch;
+2. Automation 2.0 RC release gates passed;
+3. packaged Studio RC3 was verified on macOS and Windows;
+4. the approved Daily Workflow and practically testable coordinated acceptance matrix passed;
+5. remaining fault-injection/slow-storage cases are explicitly recorded as deferred rather than implied passes;
+6. no release-blocking defect remains open from final RC validation;
+7. stable release notes document unsigned-install workarounds for both Studio and Automation.
+
+Final promotion steps are limited to green stable-version/documentation preparation commits, immutable `v2.0.0` tags, successful release workflows, and release-asset/checksum verification.
 
 ## Historical acceptance
 

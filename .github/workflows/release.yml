@@ -108,16 +108,12 @@ jobs:
             sha256sum "${expected[@]}" > SHA256SUMS.txt
             sha256sum --check SHA256SUMS.txt
           )
-      - name: Write release notes
+      - name: Verify release notes
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          cat > release-notes.md <<EOF
-          ## JL Mixing Studio ${version}
-
-          This release provides separate installers for Intel Macs, Apple Silicon Macs, and Windows x64.
-
-          These installers are intentionally unsigned. macOS Gatekeeper and Windows SmartScreen will identify the publisher as unknown. Verify the downloaded file against \`SHA256SUMS.txt\`, then follow the unsigned-install instructions in the project documentation.
-          EOF
+          test -s docs/RELEASE_NOTES_V2.0.md
+          grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.0.md
+          grep -q 'More info' docs/RELEASE_NOTES_V2.0.md
+          grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.0.md
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -129,6 +125,6 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --verify-tag \
             --title "JL Mixing Studio $GITHUB_REF_NAME" \
-            --notes-file release-notes.md \
+            --notes-file docs/RELEASE_NOTES_V2.0.md \
             "${prerelease[@]}" \
             release-assets/*
