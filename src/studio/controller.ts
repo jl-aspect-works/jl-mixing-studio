@@ -72,25 +72,41 @@ export function useStudioWorkflow({
     setStudioWorkflow({ status: "preflighting" });
     await yieldToBrowserPaint();
 
+    let preflight: StudioOperationResult;
     try {
-      const preflight = await invoke<StudioOperationResult>("preflight_studio_creation", { request });
-      if (!preflight.ok || preflight.code !== "ready" || !preflight.studio) {
-        setStudioWorkflow({ status: "editing", error: preflight.message });
-        return;
-      }
+      preflight = await invoke<StudioOperationResult>("preflight_studio_creation", { request });
+    } catch (error: unknown) {
+      setStudioWorkflow({ status: "editing", error: safeError(error, "The workspace could not be checked before creation.") });
+      return;
+    }
+    if (!preflight.ok || preflight.code !== "ready" || !preflight.studio) {
+      setStudioWorkflow({ status: "editing", error: preflight.message });
+      return;
+    }
 
-      setStudioWorkflow({ status: "creating", request, preview: preflight.studio });
-      await yieldToBrowserPaint();
-      const result = await invoke<StudioOperationResult>("create_studio", { request });
-      if (!result.ok || result.code !== "created") {
-        if (result.code === "uncertain") {
-          setStudioWorkflow({ status: "uncertain", message: result.message });
-        } else {
-          setStudioWorkflow({ status: "editing", error: result.message });
-        }
-        return;
-      }
+    setStudioWorkflow({ status: "creating", request, preview: preflight.studio });
+    await yieldToBrowserPaint();
 
+    let result: StudioOperationResult;
+    try {
+      result = await invoke<StudioOperationResult>("create_studio", { request });
+    } catch (error: unknown) {
+      setStudioWorkflow({
+        status: "uncertain",
+        message: safeError(error, "The studio-creation result could not be confirmed. Do not retry automatically."),
+      });
+      return;
+    }
+    if (!result.ok || result.code !== "created") {
+      if (result.code === "uncertain") {
+        setStudioWorkflow({ status: "uncertain", message: result.message });
+      } else {
+        setStudioWorkflow({ status: "editing", error: result.message });
+      }
+      return;
+    }
+
+    try {
       const refreshed = await invoke<WorkspaceSnapshot>("set_workspace_root", { path: request.workspaceRoot });
       onWorkspaceRefreshed(refreshed);
       if (!refreshed.studio || refreshed.studio.studioName !== preflight.studio.studioName) {
@@ -105,7 +121,7 @@ export function useStudioWorkflow({
     } catch (error: unknown) {
       setStudioWorkflow({
         status: "uncertain",
-        message: safeError(error, "The workspace operation could not be confirmed. Do not retry automatically."),
+        message: safeError(error, "Creation succeeded, but Studio could not activate the new workspace. Do not retry automatically."),
       });
     }
   };
