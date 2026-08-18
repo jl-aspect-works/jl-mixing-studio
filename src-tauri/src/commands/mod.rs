@@ -37,7 +37,7 @@ pub(super) use revision_description::update_revision_description;
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
 pub(super) use workspace_configuration::{
-    get_workspace_configuration, set_workspace_root, validate_workspace_root,
+    choose_workspace_folder, get_workspace_configuration, set_workspace_root, validate_workspace_root,
 };
 pub(super) use workspace_storage_summary::summarize_workspace_storage;
 
