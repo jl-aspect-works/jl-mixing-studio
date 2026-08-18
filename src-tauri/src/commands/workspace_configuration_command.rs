@@ -138,9 +138,8 @@ pub(crate) fn set_workspace_root(
 
 #[tauri::command]
 pub(crate) fn choose_workspace_folder() -> Result<Option<String>, String> {
-    choose_workspace_folder_path().map(|selected| {
-        selected.map(|path| path.to_string_lossy().into_owned())
-    })
+    choose_workspace_folder_path()
+        .map(|selected| selected.map(|path| path.to_string_lossy().into_owned()))
 }
 
 #[cfg(target_os = "macos")]
