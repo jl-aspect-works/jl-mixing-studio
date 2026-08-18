@@ -1,7 +1,7 @@
 //! Studio creation workflow policy and authoritative post-create reconciliation.
 //!
 //! Studio creation is non-idempotent. A successful Automation response is reconciled against the
-//! discovered workspace before Studio reports completion; reconciliation failure is `Uncertain` so
+//! selected workspace before Studio reports completion; reconciliation failure is `Uncertain` so
 //! callers do not blindly retry an operation that may already have completed.
 
 use crate::cli;
@@ -10,7 +10,7 @@ use crate::models::{
 };
 use crate::workspace;
 
-use super::super::{resolve_home, workspace_configuration};
+use super::super::resolve_home;
 
 pub(crate) fn run_studio_operation(
     app: &tauri::AppHandle,
@@ -18,36 +18,24 @@ pub(crate) fn run_studio_operation(
     operation: fn(&std::path::Path, StudioCreationRequest) -> StudioOperationResult,
     verify_after_creation: bool,
 ) -> StudioOperationResult {
-    if cfg!(target_os = "windows") {
-        return cli::blocked_studio_operation(
-            StudioOperationCode::UnsupportedPlatform,
-            "Studio creation requires JL Mixing Automation on macOS or Linux",
-        );
-    }
     let home = match resolve_home(app) {
         Ok(home) => home,
         Err(message) => {
             return cli::blocked_studio_operation(StudioOperationCode::Failed, &message)
         }
     };
-    let configuration = match workspace_configuration(app) {
-        Ok(configuration) => configuration,
-        Err(message) => {
-            return cli::blocked_studio_operation(StudioOperationCode::Failed, &message)
-        }
-    };
-    if configuration.configured {
+    let workspace_path = std::path::PathBuf::from(request.workspace_root.trim());
+    if !workspace_path.is_absolute() {
         return cli::blocked_studio_operation(
-            StudioOperationCode::WorkspaceBlocked,
-            "Studio setup cannot replace an explicitly configured workspace; reconnect it or choose another workspace in Settings",
+            StudioOperationCode::InvalidInput,
+            "Workspace paths must be absolute",
         );
     }
-    let workspace_path = std::path::PathBuf::from(configuration.workspace_path);
     let before = workspace::discover_workspace_at(&workspace_path);
     if before.status != WorkspaceStatus::Unavailable {
         return cli::blocked_studio_operation(
             StudioOperationCode::WorkspaceBlocked,
-            "Studio setup is available only when the default workspace does not exist",
+            "Choose a location where the new workspace does not already exist",
         );
     }
     let expected = request.clone();
@@ -61,6 +49,7 @@ pub(crate) fn run_studio_operation(
     };
     let engineer = expected.mix_engineer.unwrap_or_default().trim().to_owned();
     if after.status != WorkspaceStatus::Empty
+        || studio.root_path != expected.workspace_root.trim()
         || studio.studio_name != expected.studio_name.trim()
         || studio.mix_engineer != engineer
         || studio.sample_rate != expected.sample_rate
