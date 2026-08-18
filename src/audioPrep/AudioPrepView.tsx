@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { IntakeReportState } from "../AppShellViews";
+import { ActionIcon } from "../components/ActionIcon";
 import type { ClientSummary, IntakeOperationResult, ProjectSummary } from "../types";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -67,7 +68,7 @@ export function AudioPrepView({
         <h2 id="audio-prep-actions-heading">Quick Actions</h2>
         <div className="action-stack">
           <button type="button" className="secondary" onClick={() => onSelectView("intake")}>Go to Client Files</button>
-          <button type="button" className="secondary" onClick={() => void openAudioPrepFolder()}>Open Audio Prep Folder</button>
+          <button type="button" className="secondary" onClick={() => void openAudioPrepFolder()}><ActionIcon name="folder" />Open Audio Prep Folder</button>
         </div>
       </section>
     </div>
