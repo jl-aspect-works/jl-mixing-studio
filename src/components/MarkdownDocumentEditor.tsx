@@ -1,3 +1,4 @@
+import { ActionIcon } from "./ActionIcon";
 import { MarkdownEditor } from "./MarkdownEditor";
 import "./MarkdownDocumentEditor.css";
 
@@ -54,7 +55,7 @@ export function MarkdownDocumentEditor({
           disabled={saveDisabled}
           aria-busy={saving}
           onClick={onSave}
-        >{saving ? "Saving…" : saveLabel}</button>
+        ><ActionIcon name="save" />{saving ? "Saving…" : saveLabel}</button>
       </div>
     </div>
     {error && <div className="inline-notice error" role="alert">{error}</div>}
