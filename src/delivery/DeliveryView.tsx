@@ -8,6 +8,7 @@ import type {
 } from "../types";
 import { safeError, type ResourceState } from "../AppShellViews";
 import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
+import { ActionIcon } from "../components/ActionIcon";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -217,7 +218,7 @@ export function DeliveryView({
         </div>
         {!delivery && <div className="delivery-heading-actions">
           <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
-            {loading ? "Checking…" : "Create Delivery"}
+            <ActionIcon name="add" />{loading ? "Checking…" : "Create Delivery"}
           </button>
         </div>}
       </div>
@@ -298,8 +299,8 @@ export function DeliveryView({
           <strong>No generated ZIP</strong>
           <span>Create or rebuild the delivery with ZIP enabled when the deliverables and notes are ready.</span>
           {delivery && <div className="delivery-package-actions">
-            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
-            <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}><ActionIcon name="folder" />Open Delivery Folder</button>
+            <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}><ActionIcon name="refresh" />Rebuild Package</button>
           </div>}
         </div> : <div className="delivery-package-content">
           <div className="delivery-package-row">
@@ -314,8 +315,8 @@ export function DeliveryView({
             <div><dt>Modified</dt><dd>{formatTimestamp(activePackage.modifiedAt)}</dd></div>
           </dl>
           <div className="delivery-package-actions">
-            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}>Open Delivery Folder</button>
-            <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>Rebuild Package</button>
+            <button type="button" className="secondary" onClick={() => void openDeliveryFolder()}><ActionIcon name="folder" />Open Delivery Folder</button>
+            <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}><ActionIcon name="refresh" />Rebuild Package</button>
           </div>
         </div>}
         {activePackage?.issues.length ? <ul className="delivery-package-issues">{activePackage.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul> : null}
