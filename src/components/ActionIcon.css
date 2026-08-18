@@ -25,8 +25,9 @@ button:disabled .action-icon {
   opacity: .82;
 }
 
-button[aria-busy="true"] .action-icon {
-  opacity: .72;
+/* The existing busy spinner replaces the action icon so pending states do not grow the button. */
+button[aria-busy="true"] > .action-icon {
+  display: none;
 }
 
 button.icon-only:has(> .action-icon) {
