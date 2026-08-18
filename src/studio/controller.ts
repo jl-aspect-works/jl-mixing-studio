@@ -8,6 +8,12 @@ function yieldToBrowserPaint(): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, 0));
 }
 
+function workspaceRootUnder(parent: string): string {
+  const trimmed = parent.trim().replace(/[\\/]+$/, "");
+  const separator = trimmed.includes("\\") && !trimmed.includes("/") ? "\\" : "/";
+  return `${trimmed}${separator}Mixes`;
+}
+
 export function useStudioWorkflow({
   studioCreationAvailable,
   onWorkspaceRefreshed,
@@ -19,10 +25,10 @@ export function useStudioWorkflow({
   const [studioForm, setStudioForm] = useState<StudioFormValues>(emptyStudioForm);
   const [studioNotice, setStudioNotice] = useState<string | null>(null);
 
-  const openStudioWorkflow = () => {
+  const openStudioWorkflow = (workspaceRoot = "") => {
     if (!studioCreationAvailable) return;
     setStudioNotice(null);
-    setStudioForm(emptyStudioForm);
+    setStudioForm({ ...emptyStudioForm, workspaceRoot });
     setStudioWorkflow({ status: "editing" });
   };
 
@@ -31,16 +37,33 @@ export function useStudioWorkflow({
     setStudioWorkflow({ status: "closed" });
   };
 
+  const chooseWorkspaceLocation = async () => {
+    if (studioWorkflow.status !== "editing") return;
+    try {
+      const selected = await invoke<string | null>("choose_workspace_folder");
+      if (!selected) return;
+      setStudioForm((current) => ({ ...current, workspaceRoot: workspaceRootUnder(selected) }));
+      setStudioWorkflow({ status: "editing" });
+    } catch (error: unknown) {
+      setStudioWorkflow({ status: "editing", error: safeError(error, "The workspace location could not be selected.") });
+    }
+  };
+
   const preflightStudio = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (studioWorkflow.status !== "editing") return;
     const request: StudioCreationRequest = {
+      workspaceRoot: studioForm.workspaceRoot.trim(),
       studioName: studioForm.studioName.trim(),
       mixEngineer: studioForm.mixEngineer.trim() || null,
       sampleRate: Number(studioForm.sampleRate),
       bitDepth: Number(studioForm.bitDepth),
       fileFormat: studioForm.fileFormat,
     };
+    if (!request.workspaceRoot) {
+      setStudioWorkflow({ status: "editing", error: "Choose where to create the workspace." });
+      return;
+    }
     if (!request.studioName) {
       setStudioWorkflow({ status: "editing", error: "Studio name is required." });
       return;
@@ -76,12 +99,12 @@ export function useStudioWorkflow({
           return;
         }
         try {
-          const refreshed = await invoke<WorkspaceSnapshot>("discover_default_workspace");
+          const refreshed = await invoke<WorkspaceSnapshot>("set_workspace_root", { path: request.workspaceRoot });
           onWorkspaceRefreshed(refreshed);
           if (!refreshed.studio || refreshed.studio.studioName !== preview.studioName) {
             setStudioWorkflow({
               status: "uncertain",
-              message: "Creation succeeded, but the refreshed studio did not match the confirmed preview. Do not retry automatically.",
+              message: "Creation succeeded, but the configured workspace did not match the confirmed studio. Do not retry automatically.",
             });
             return;
           }
@@ -90,7 +113,7 @@ export function useStudioWorkflow({
         } catch (error: unknown) {
           setStudioWorkflow({
             status: "uncertain",
-            message: safeError(error, "Creation succeeded, but the workspace could not be refreshed. Do not retry automatically."),
+            message: safeError(error, "Creation succeeded, but Studio could not configure the new workspace. Do not retry automatically."),
           });
         }
       })
@@ -110,6 +133,7 @@ export function useStudioWorkflow({
     studioNotice,
     openStudioWorkflow,
     closeStudioWorkflow,
+    chooseWorkspaceLocation,
     preflightStudio,
     confirmStudioCreation,
   };
