@@ -32,7 +32,7 @@ const iconPaths: Record<ActionIconName, ReactNode> = {
   import: <><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></>,
   pause: <><path d="M8 5v14"/><path d="M16 5v14"/></>,
   play: <path d="m8 5 11 7-11 7Z"/>,
-  refresh: <><path d="M21 8V3l-2.6 2.6A9 9 0 0 0 3 12"/><path d="M3 16v5l2.6-2.6A9 9 0 0 0 21 12"/><path d="M16 3h5v5"/><path d="M8 21H3v-5"/></>,
+  refresh: <><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 8.5A8 8 0 0 0 5 7"/><path d="M5.5 15.5A8 8 0 0 0 19 17"/></>,
   retry: <><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 0-2.3 5.7"/></>,
   save: <><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3"/><path d="M8 21v-7h8v7"/></>,
   search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>,
