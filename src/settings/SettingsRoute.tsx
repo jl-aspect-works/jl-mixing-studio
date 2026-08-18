@@ -18,7 +18,7 @@ interface SettingsRouteProps {
   onRefresh: () => void;
 }
 
-type WorkspaceAction = "idle" | "choosing" | "validating" | "saving" | "opening";
+type WorkspaceAction = "idle" | "changing" | "opening";
 
 function errorMessage(error: unknown, fallback: string): string {
   if (typeof error === "string" && error.trim()) return error;
@@ -48,20 +48,11 @@ export function SettingsRoute({
   onCreateWorkspace,
   onRefresh,
 }: SettingsRouteProps) {
-  const [editingWorkspace, setEditingWorkspace] = useState(false);
-  const [candidatePath, setCandidatePath] = useState("");
-  const [validatedCandidate, setValidatedCandidate] = useState<WorkspaceSnapshot | null>(null);
   const [workspaceAction, setWorkspaceAction] = useState<WorkspaceAction>("idle");
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [workspaceNotice, setWorkspaceNotice] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<string>("Not checked yet");
   const [studioVersion, setStudioVersion] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (workspaceConfiguration.status === "ready" && !editingWorkspace) {
-      setCandidatePath(workspaceConfiguration.value.workspacePath);
-    }
-  }, [workspaceConfiguration, editingWorkspace]);
 
   useEffect(() => {
     if (workspace.status === "ready" || workspace.status === "error") {
@@ -82,59 +73,19 @@ export function SettingsRoute({
     onChange(value);
   };
 
-  const beginWorkspaceChange = async () => {
-    setWorkspaceAction("choosing");
-    setValidatedCandidate(null);
+  const changeWorkspace = async () => {
+    setWorkspaceAction("changing");
     setWorkspaceError(null);
     setWorkspaceNotice(null);
     try {
       const selected = await invoke<string | null>("choose_workspace_folder");
       if (!selected) return;
-      setCandidatePath(selected);
-      setEditingWorkspace(true);
-    } catch (error: unknown) {
-      setWorkspaceError(errorMessage(error, "The workspace folder could not be selected."));
-    } finally {
-      setWorkspaceAction("idle");
-    }
-  };
-
-  const cancelWorkspaceChange = () => {
-    setEditingWorkspace(false);
-    setValidatedCandidate(null);
-    setWorkspaceError(null);
-  };
-
-  const validateCandidate = async () => {
-    setWorkspaceAction("validating");
-    setWorkspaceError(null);
-    setWorkspaceNotice(null);
-    setValidatedCandidate(null);
-    try {
-      const candidate = await invoke<WorkspaceSnapshot>("validate_workspace_root", { path: candidatePath });
-      setCandidatePath(candidate.workspacePath);
-      setValidatedCandidate(candidate);
-    } catch (error: unknown) {
-      setWorkspaceError(errorMessage(error, "The workspace could not be validated."));
-    } finally {
-      setWorkspaceAction("idle");
-    }
-  };
-
-  const useValidatedWorkspace = async () => {
-    if (!validatedCandidate) return;
-    setWorkspaceAction("saving");
-    setWorkspaceError(null);
-    try {
-      const snapshot = await invoke<WorkspaceSnapshot>("set_workspace_root", {
-        path: validatedCandidate.workspacePath,
-      });
+      const candidate = await invoke<WorkspaceSnapshot>("validate_workspace_root", { path: selected });
+      const snapshot = await invoke<WorkspaceSnapshot>("set_workspace_root", { path: candidate.workspacePath });
       onWorkspaceChanged(snapshot);
-      setWorkspaceNotice("Workspace changed. Studio will use this path for all project and Automation operations on this computer.");
-      setEditingWorkspace(false);
-      setValidatedCandidate(null);
+      setWorkspaceNotice(`Workspace changed to ${snapshot.workspacePath}.`);
     } catch (error: unknown) {
-      setWorkspaceError(errorMessage(error, "The workspace configuration could not be saved."));
+      setWorkspaceError(errorMessage(error, "The selected workspace could not be validated or activated."));
     } finally {
       setWorkspaceAction("idle");
     }
@@ -173,7 +124,7 @@ export function SettingsRoute({
         <div>
           <p className="kicker">Settings &gt; Workspace</p>
           <h2 id="settings-heading">Workspace</h2>
-          <p className="health-detail">Choose once where JL Mixing projects live on this computer. Local disks, NAS shares, and OS-mounted cloud folders are supported as ordinary filesystem paths.</p>
+          <p className="health-detail">Choose where JL Mixing projects live on this computer. Local disks, NAS shares, and OS-mounted cloud folders are supported as ordinary filesystem paths.</p>
         </div>
       </div>
 
@@ -192,35 +143,12 @@ export function SettingsRoute({
               ? "Saved locally for this Studio installation. Other computers may use a different path to the same shared workspace."
               : "No explicit workspace has been saved yet; Studio is using the default ~/Music/Mixes location."}</small>
             <div className="directory-actions">
-              <button type="button" onClick={() => void beginWorkspaceChange()} disabled={workspaceAction !== "idle"} aria-busy={workspaceAction === "choosing"}>Change…</button>
+              <button type="button" onClick={() => void changeWorkspace()} disabled={workspaceAction !== "idle"} aria-busy={workspaceAction === "changing"}>{workspaceAction === "changing" ? "Changing…" : "Change Workspace…"}</button>
               <button type="button" className="secondary" onClick={onCreateWorkspace} disabled={workspaceAction !== "idle"}>Create New Workspace…</button>
               <button type="button" className="secondary" onClick={openWorkspace} disabled={!canOpen} aria-busy={workspaceAction === "opening"}>Open Workspace Folder</button>
               <button type="button" className="secondary" onClick={onRefresh} disabled={workspaceAction !== "idle"}>Refresh Status</button>
             </div>
           </div>
-
-          {editingWorkspace && (
-            <div className="planned-message compact">
-              <strong>Change workspace</strong>
-              <p>Studio validates the selected folder before saving it and will not switch away from the current workspace when validation fails.</p>
-              <div className="folder-control"><code>{candidatePath}</code></div>
-              <div className="directory-actions">
-                <button type="button" onClick={validateCandidate} disabled={!candidatePath.trim() || workspaceAction !== "idle"} aria-busy={workspaceAction === "validating"}>Validate Workspace</button>
-                <button type="button" className="secondary" onClick={() => void beginWorkspaceChange()} disabled={workspaceAction !== "idle"}>Choose Another…</button>
-                <button type="button" className="secondary" onClick={cancelWorkspaceChange} disabled={workspaceAction !== "idle"}>Cancel</button>
-              </div>
-              {validatedCandidate && (
-                <div className="folder-control" role="status">
-                  <strong>Valid JL Mixing workspace</strong>
-                  <code>{validatedCandidate.workspacePath}</code>
-                  <small>{validatedCandidate.counts.clients} clients · {validatedCandidate.counts.projects} projects · status {validatedCandidate.status}</small>
-                  <div className="directory-actions">
-                    <button type="button" onClick={useValidatedWorkspace} disabled={workspaceAction !== "idle"} aria-busy={workspaceAction === "saving"}>Use This Workspace</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </section>
 
         <section className="panel">
@@ -256,7 +184,7 @@ export function SettingsRoute({
         <section className="panel">
           <h3>Configuration boundary</h3>
           <p className="health-detail">The workspace path is a machine-local Studio preference. It is not written into shared project metadata and changing it does not move, copy, or migrate projects.</p>
-          <p className="health-detail">Workspace validation checks JL Mixing structure and metadata discovery. Individual write operations continue to enforce their own canonical-path, containment, and safe-write rules.</p>
+          <p className="health-detail">Workspace validation happens automatically before Studio switches. Individual write operations continue to enforce their own canonical-path, containment, and safe-write rules.</p>
         </section>
       </div>
     </section>
