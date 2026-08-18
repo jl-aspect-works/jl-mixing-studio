@@ -141,6 +141,7 @@ fn client_api_error(code: &str, message: &str) -> io::Result<ProcessResult> {
 
 fn studio_request() -> StudioCreationRequest {
     StudioCreationRequest {
+        workspace_root: "/fixed/workspace".into(),
         studio_name: " New Studio ".into(),
         mix_engineer: Some(" Engineer ".into()),
         sample_rate: 48_000,
