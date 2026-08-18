@@ -94,7 +94,7 @@ export function ManagedFolderToolbar({
     <code>{path || "Project root"}</code>
     <div className="directory-actions">
       {onOpenFolder && <button type="button" className="secondary" onClick={onOpenFolder}><ActionIcon name="folder" />Open Folder</button>}
-      <button type="button" className="secondary" disabled={!canNavigateUp || loading} onClick={onUp}><ActionIcon name="back" />Up</button>
+      <button type="button" className="secondary" disabled={!canNavigateUp || loading} onClick={onUp}><ActionIcon name="up" />Up</button>
       <button type="button" className="secondary" disabled={loading} onClick={onRefresh}><ActionIcon name="refresh" />{loading ? "Refreshing…" : refreshLabel}</button>
     </div>
   </div>;
