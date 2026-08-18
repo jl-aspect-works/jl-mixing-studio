@@ -21,6 +21,7 @@ export interface DeliveryNotesUpdateRequest extends DeliveryNotesRequest { conte
 export interface DeliveryNotesDocument { content: string; maxBytes: number; }
 
 export interface StudioCreationRequest {
+  workspaceRoot: string;
   studioName: string;
   mixEngineer: string | null;
   sampleRate: number;
@@ -142,16 +143,13 @@ export interface RevisionOperationResult {
 export interface RevisionApprovalRequest {
   clientId: string;
   projectId: string;
-  revision: number;
-  approvedBy: string;
+  revisionNumber: number;
 }
 
 export interface RevisionApprovalSummary {
   clientId: string;
   projectId: string;
-  revision: number;
-  approvedBy: string;
-  approvedAt: string | null;
+  revisionNumber: number;
 }
 
 export type ApprovalOperationCode =
@@ -164,7 +162,6 @@ export type ApprovalOperationCode =
   | "workspaceBlocked"
   | "projectUnavailable"
   | "revisionUnavailable"
-  | "alreadyApproved"
   | "rejected"
   | "uncertain"
   | "failed";
@@ -176,57 +173,223 @@ export interface ApprovalOperationResult {
   approval: RevisionApprovalSummary | null;
 }
 
+export type DeliveryReplacementMode = "default" | "overwrite" | "clean";
+
 export interface IntakeRequest {
   clientId: string;
   projectId: string;
 }
 
-export interface IntakeInventoryItem {
-  file: string;
-  sizeBytes: number;
-  technicalDetails: string;
-}
-
-export interface IntakeReport {
-  clientId: string;
-  projectId: string;
-  source: string;
-  filesDiscovered: number;
-  blockingErrors: number;
-  warnings: number;
-  expectedSampleRate: number;
-  expectedBitDepth: number;
-  enhancedInspectionAvailable: boolean;
-  criticalErrors: string[];
-  duplicateFilenames: string[];
-  formatMismatches: string[];
-  unsupportedFiles: string[];
-  unavailableChecks: string[];
-  inventory: IntakeInventoryItem[];
-  recommendations: string[];
-}
-
 export type IntakeOperationCode =
-  | "notRun"
   | "ready"
   | "validated"
-  | "blockingFindings"
   | "invalidInput"
   | "automationUnavailable"
   | "unsupportedVersion"
   | "unsupportedPlatform"
   | "workspaceBlocked"
   | "projectUnavailable"
-  | "reportUnavailable"
   | "rejected"
-  | "uncertain"
   | "failed";
+
+export interface IntakeReportSummary {
+  clientId: string;
+  projectId: string;
+  path: string;
+  content: string;
+}
 
 export interface IntakeOperationResult {
   ok: boolean;
   code: IntakeOperationCode;
   message: string;
-  report: IntakeReport | null;
+  report: IntakeReportSummary | null;
+  validation?: IntakeValidationData | null;
+}
+
+export interface IntakeValidationFinding {
+  code: string;
+  severity: "info" | "warning" | "error";
+  message: string;
+  relativePath: string | null;
+}
+
+export interface IntakeValidationFile {
+  relativePath: string;
+  filename: string;
+  sizeBytes: number;
+  sha256: string;
+  sampleRate: number | null;
+  bitDepth: number | null;
+  fileFormat: string | null;
+  channels: number | null;
+  durationSeconds: number | null;
+  decodeOk: boolean | null;
+  exactDuplicateOf: string | null;
+  exactDualMono: boolean | null;
+  status: "ok" | "warning" | "error";
+  findings: IntakeValidationFinding[];
+}
+
+export interface AudioPrepValidationFile extends IntakeValidationFile {
+  originalDeliveryRelativePath?: string | null;
+  originalFilename?: string | null;
+  provenanceState?: "exact_content" | "ambiguous" | "unavailable" | null;
+}
+
+export interface IntakeValidationCounts {
+  files: number;
+  ok: number;
+  warnings: number;
+  errors: number;
+}
+
+export interface IntakeValidationTarget {
+  sampleRate: number | null;
+  bitDepth: number | null;
+  fileFormat: string | null;
+}
+
+export interface AudioPrepValidationData {
+  area: "audio_prep";
+  relativePath: string;
+  status: "ready" | "needs_attention" | "blocked";
+  target: IntakeValidationTarget;
+  counts: IntakeValidationCounts;
+  findings: IntakeValidationFinding[];
+  files: AudioPrepValidationFile[];
+}
+
+export interface IntakeValidationData {
+  area: "original_delivery";
+  relativePath: string;
+  mode: "cache" | "incremental" | "full";
+  cacheUsed: boolean;
+  status: "ready" | "needs_attention" | "blocked";
+  target: IntakeValidationTarget;
+  counts: IntakeValidationCounts;
+  findings: IntakeValidationFinding[];
+  files: IntakeValidationFile[];
+  audioPrep?: AudioPrepValidationData | null;
+}
+
+export interface DeliveryStatusRequest {
+  clientId: string;
+  projectId: string;
+}
+
+export interface DeliveryStatusFile {
+  path: string;
+  source: string | null;
+  deliverableType: string | null;
+  status: "current" | "missing" | "mismatch" | "untracked";
+  expectedSha256: string | null;
+  actualSha256: string | null;
+  sizeBytes: number | null;
+}
+
+export interface DeliveryStatusPackage {
+  name: string;
+  status: "current" | "stale" | "missing" | "untracked";
+  sizeBytes: number | null;
+}
+
+export interface DeliveryStatusData {
+  projectId: string;
+  deliveredRevision: number | null;
+  packageState: "current" | "stale" | "missing" | "untracked" | "not_created";
+  files: DeliveryStatusFile[];
+  packages: DeliveryStatusPackage[];
+  notesStatus: "current" | "stale" | "missing";
+  unexpectedEntries: string[];
+}
+
+export interface DeliveryStatusResult {
+  ok: boolean;
+  message: string;
+  delivery: DeliveryStatusData | null;
+}
+
+export interface DeliveryPackageDeleteRequest {
+  clientId: string;
+  projectId: string;
+  zipName: string;
+}
+
+export interface ProjectSummary {
+  clientId: string;
+  projectId: string;
+  projectName: string;
+  artist: string;
+  status: string;
+  sampleRate: number;
+  bitDepth: number;
+  fileFormat: string;
+  currentRevision: number;
+  approvedRevision: number | null;
+  deliveredRevision: number | null;
+  revisions: RevisionSummary[];
+  delivery: DeliverySummary | null;
+  path: string;
+}
+
+export interface RevisionSummary {
+  number: number;
+  status: string;
+  description: string;
+  createdAt: string;
+  approvedAt: string | null;
+  path: string;
+}
+
+export interface DeliverySummary {
+  revision: number;
+  createdAt: string;
+  path: string;
+}
+
+export interface ClientSummary {
+  clientId: string;
+  clientName: string;
+  defaultArtist: string | null;
+  projects: ProjectSummary[];
+  path: string;
+}
+
+export interface StudioSummary {
+  studioId: string;
+  studioName: string;
+  rootPath: string;
+  schemaVersion: string;
+  createdWith: string;
+  createdAt: string;
+  mixEngineer: string;
+  sampleRate: number;
+  bitDepth: number;
+  fileFormat: string;
+  deliveryMethod: string;
+  requestedDeliverables: string[];
+  changeDirectoryAfterCreate: boolean;
+}
+
+export type WorkspaceStatus = "healthy" | "empty" | "partial" | "unavailable" | "invalid";
+export interface WorkspaceCounts { clients: number; projects: number; }
+export interface WorkspaceIssue { code: string; message: string; path: string | null; }
+export interface WorkspaceSnapshot {
+  workspacePath: string;
+  status: WorkspaceStatus;
+  studio: StudioSummary | null;
+  clients: ClientSummary[];
+  counts: WorkspaceCounts;
+  issues: WorkspaceIssue[];
+}
+
+export interface SystemInfo {
+  product: string;
+  version: string;
+  apiVersion: string;
+  metadataSchemaVersions: string[];
+  capabilities: string[];
 }
 
 export interface ClientCreationRequest {
@@ -249,8 +412,8 @@ export type ClientOperationCode =
   | "unsupportedVersion"
   | "unsupportedPlatform"
   | "workspaceBlocked"
-  | "collision"
   | "rejected"
+  | "uncertain"
   | "failed";
 
 export interface ClientOperationResult {
@@ -282,7 +445,6 @@ export type ProjectOperationCode =
   | "unsupportedPlatform"
   | "workspaceBlocked"
   | "clientUnavailable"
-  | "collision"
   | "rejected"
   | "uncertain"
   | "failed";
@@ -292,127 +454,4 @@ export interface ProjectOperationResult {
   code: ProjectOperationCode;
   message: string;
   project: ProjectCreationSummary | null;
-}
-
-export type WorkspaceStatus =
-  | "healthy"
-  | "empty"
-  | "partial"
-  | "unavailable"
-  | "invalid";
-
-export interface WorkspaceSnapshot {
-  workspacePath: string;
-  status: WorkspaceStatus;
-  studio: StudioSummary | null;
-  counts: WorkspaceCounts;
-  clients: ClientSummary[];
-  issues: DiscoveryIssue[];
-  tasks: DerivedTask[];
-  activity: ActivityEvent[];
-}
-
-export interface StudioSummary {
-  studioId: string;
-  studioName: string;
-  rootPath: string;
-  schemaVersion: string;
-  createdWith: string;
-  createdAt: string;
-  mixEngineer: string;
-  sampleRate: number;
-  bitDepth: number;
-  fileFormat: string;
-  deliveryMethod: string;
-  requestedDeliverables: string[];
-  changeDirectoryAfterCreate: boolean;
-}
-
-export interface WorkspaceCounts {
-  clients: number;
-  projects: number;
-  issues: number;
-}
-
-export interface ClientSummary {
-  clientId: string;
-  clientName: string;
-  createdAt: string;
-  defaultArtist: string;
-  projects: ProjectSummary[];
-}
-
-export interface ProjectSummary {
-  projectId: string;
-  projectName: string;
-  artist: string;
-  schemaVersion: string;
-  createdWith: string;
-  createdAt: string;
-  deadline: string | null;
-  sampleRate: number;
-  bitDepth: number;
-  fileFormat: string;
-  deliveryMethod: string;
-  currentRevision: number;
-  approvedRevision: number | null;
-  deliveredRevision: number | null;
-  delivery: DeliverySummary | null;
-  revisions: RevisionSummary[];
-}
-
-export type TaskPriority = "recovery" | "overdue" | "delivery" | "upcoming" | "review";
-export interface DerivedTask {
-  id: string; priority: TaskPriority; title: string; reason: string; recommendedAction: string;
-  clientId: string | null; clientName: string | null; projectId: string | null;
-  projectName: string | null; deadline: string | null;
-}
-export type ActivityEventType = "clientCreated" | "projectCreated" | "revisionCreated" | "revisionApproved" | "deliveryCreated";
-export interface ActivityEvent {
-  id: string; eventType: ActivityEventType; timestamp: string; clientId: string; clientName: string;
-  projectId: string | null; projectName: string | null; revision: number | null; persistedSource: string;
-}
-
-export interface DeliveryFile {
-  path: string;
-  deliverableType: string;
-  sizeBytes: number;
-  sha256: string;
-}
-
-export interface DeliverySummary {
-  documentId: string;
-  createdWith: string;
-  createdAt: string;
-  method: string;
-  revision: number;
-  revisionId: string;
-  description: string;
-  approvedAt: string;
-  approvedBy: string;
-  files: DeliveryFile[];
-}
-
-export interface RevisionSummary {
-  number: number;
-  revisionId: string;
-  createdAt: string;
-  description: string;
-  approvedAt: string | null;
-  approvedBy: string | null;
-}
-
-export interface DiscoveryIssue {
-  scope: "workspace" | "studio" | "client" | "project";
-  code:
-    | "notFound"
-    | "unreadable"
-    | "invalidJson"
-    | "invalidSchema"
-    | "unsupportedSchema"
-    | "missingManifest";
-  displayName: string | null;
-  relativePath: string | null;
-  message: string;
-  recovery: string;
 }
