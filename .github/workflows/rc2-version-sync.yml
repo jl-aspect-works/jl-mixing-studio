@@ -1,0 +1,45 @@
+name: RC2 version synchronization
+
+on:
+  push:
+    branches:
+      - release/v2.0.0-rc.2
+
+permissions:
+  contents: write
+
+jobs:
+  sync-version:
+    if: github.event.head_commit.message != 'Prepare Studio v2.0.0-rc.2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.0.0-rc.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Synchronize release version
+        run: |
+          npm version 2.0.0-rc.2 --no-git-tag-version --allow-same-version
+          python3 - <<'PY'
+          from pathlib import Path
+          cargo = Path('src-tauri/Cargo.toml')
+          text = cargo.read_text()
+          text = text.replace('version = "2.0.0-rc.1"', 'version = "2.0.0-rc.2"', 1)
+          cargo.write_text(text)
+
+          tauri = Path('src-tauri/tauri.conf.json')
+          text = tauri.read_text()
+          text = text.replace('"version": "2.0.0-rc.1"', '"version": "2.0.0-rc.2"', 1)
+          tauri.write_text(text)
+          PY
+          node scripts/verify-release-version.mjs v2.0.0-rc.2
+      - name: Commit synchronized version
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/rc2-version-sync.yml
+          git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          git commit -m 'Prepare Studio v2.0.0-rc.2'
+          git push origin HEAD:release/v2.0.0-rc.2
