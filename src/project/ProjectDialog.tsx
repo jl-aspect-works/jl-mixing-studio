@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef } from "react";
 import type { ClientSummary } from "../types";
 import type { ProjectFormValues, ProjectWorkflowState } from "../AppWorkflowModels";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
 export interface ProjectDialogProps {
@@ -113,8 +114,8 @@ export function ProjectDialog({
               />
             </label>
             <div className="dialog-actions">
-              <button type="button" className="secondary" onClick={onClose} disabled={pending}>{productCopy.common.cancel}</button>
-              <button type="submit" disabled={pending}>{pending ? productCopy.common.checking : productCopy.projects.reviewProject}</button>
+              <button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button>
+              <button type="submit" disabled={pending}><ActionIcon name="check" />{pending ? productCopy.common.checking : productCopy.projects.reviewProject}</button>
             </div>
           </form>
         )}
@@ -130,10 +131,10 @@ export function ProjectDialog({
               <div><dt>{productCopy.projects.initialRevision}</dt><dd>Revision 1</dd></div>
             </dl>
             <div className="dialog-actions">
-              <button type="button" className="secondary" onClick={onClose} disabled={pending}>{productCopy.common.cancel}</button>
-              <button type="button" className="secondary" onClick={onBack} disabled={pending}>{productCopy.common.back}</button>
+              <button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button>
+              <button type="button" className="secondary" onClick={onBack} disabled={pending}><ActionIcon name="back" />{productCopy.common.back}</button>
               <button ref={confirmButton} type="button" onClick={onConfirm} disabled={pending}>
-                {pending ? productCopy.projects.creating : productCopy.projects.createProject}
+                <ActionIcon name="add" />{pending ? productCopy.projects.creating : productCopy.projects.createProject}
               </button>
             </div>
           </div>
@@ -143,7 +144,7 @@ export function ProjectDialog({
           <div>
             <div className="form-error" role="alert">{state.message}</div>
             <p className="dialog-intro">{productCopy.projects.uncertainHelp}</p>
-            <div className="dialog-actions"><button type="button" onClick={onClose}>{productCopy.common.close}</button></div>
+            <div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div>
           </div>
         )}
       </section>
