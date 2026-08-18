@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ClientSummary, ProjectSummary } from "../types";
+import { ActionIcon } from "../components/ActionIcon";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
@@ -112,9 +113,9 @@ export function ReferencesView({
         <h2 id="references-actions-heading">Quick Actions</h2>
         <div className="action-stack">
           <button type="button" disabled={busy} onClick={() => void addReference()}>
-            {busy ? "Working…" : "Add Reference"}
+            <ActionIcon name="add" />{busy ? "Working…" : "Add Reference"}
           </button>
-          <button type="button" className="secondary" onClick={() => void openReferencesFolder()}>Open References Folder</button>
+          <button type="button" className="secondary" onClick={() => void openReferencesFolder()}><ActionIcon name="folder" />Open References Folder</button>
         </div>
       </section>
     </div>
@@ -128,7 +129,7 @@ export function ReferencesView({
           <strong>{entries.length} {entries.length === 1 ? "reference" : "references"}</strong>
           <span>Copied into {projectFilePaths.references}</span>
         </div>
-        <button type="button" className="secondary" disabled={busy || state.status === "loading"} onClick={() => void refresh()}>Refresh</button>
+        <button type="button" className="secondary" disabled={busy || state.status === "loading"} onClick={() => void refresh()}><ActionIcon name="refresh" />Refresh</button>
       </div>
 
       <div className="references-table-wrap">

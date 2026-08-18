@@ -13,6 +13,7 @@ import type {
   WorkspaceSnapshot,
 } from "./types";
 import type { WorkspaceStorageState, WorkspaceStorageSummary } from "./app/useWorkspaceStorageSummary";
+import { ActionIcon } from "./components/ActionIcon";
 import appIcon from "../src-tauri/icons/128x128.png";
 import { routes, type PrimaryRoute, type RouteDefinition } from "./ui/routes";
 import { copy as productCopy } from "./resources/copy";
@@ -46,7 +47,7 @@ export function FolderControl({ location, clientId = null, projectId = null, lab
   }, [location, clientId, projectId]);
   const copy = () => resolve().then((result) => writeText(result.path)).then(() => setMessage(productCopy.common.pathCopied)).catch((error: unknown) => setMessage(safeError(error, productCopy.common.pathCopyFailed)));
   const open = () => invoke<FolderResult>("open_folder", { request }).then((result) => { setPath(result.path); setMessage(productCopy.common.folderOpened); }).catch((error: unknown) => setMessage(safeError(error, productCopy.common.folderOpenFailed)));
-  return <div className="folder-control"><code>{path ?? productCopy.common.resolvingFolder}</code><div className="directory-actions"><button type="button" className="secondary" onClick={copy} disabled={!path}>{productCopy.common.copyPath}</button><button type="button" onClick={open}>{label}</button></div>{message && <small role="status">{message}</small>}</div>;
+  return <div className="folder-control"><code>{path ?? productCopy.common.resolvingFolder}</code><div className="directory-actions"><button type="button" className="secondary" onClick={copy} disabled={!path}><ActionIcon name="copy" />{productCopy.common.copyPath}</button><button type="button" onClick={open}><ActionIcon name="folder" />{label}</button></div>{message && <small role="status">{message}</small>}</div>;
 }
 
 const displayWorkspacePath = (path: string) =>
@@ -236,7 +237,7 @@ export function Sidebar({
           )}
           <small>{compactStorage}</small>
           <button type="button" className="secondary" onClick={openWorkspaceFolder} disabled={!workspaceFolderAvailable}>
-            {productCopy.studio.openWorkspace} folder
+            <ActionIcon name="folder" />{productCopy.studio.openWorkspace} folder
           </button>
           {workspaceFolderMessage && <small role="status">{workspaceFolderMessage}</small>}
         </span>
@@ -357,7 +358,7 @@ export function Dashboard({
         <section className="notice error" role="alert">
           <strong>We couldn’t open your studio workspace</strong>
           <span>{workspace.message}</span>
-          <button type="button" onClick={onRefresh}>Try again</button>
+          <button type="button" onClick={onRefresh}><ActionIcon name="retry" />Try again</button>
         </section>
       )}
 
@@ -388,9 +389,9 @@ export function Dashboard({
         <section className="panel quick-actions" aria-labelledby="actions-heading">
           <div className="panel-heading"><div><p className="kicker">Quick actions</p><h2 id="actions-heading">Start something new</h2></div></div>
           <div className="action-grid">
-            <button type="button" onClick={onNewClient} disabled={!clientCreationAvailable} aria-describedby="new-client-help">New client</button>
-            <button type="button" onClick={onNewProject} disabled={!projectCreationAvailable} title={projectCreationHelp}>New project</button>
-            <button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Refreshing…" : "Refresh workspace"}</button>
+            <button type="button" onClick={onNewClient} disabled={!clientCreationAvailable} aria-describedby="new-client-help"><ActionIcon name="add" />New client</button>
+            <button type="button" onClick={onNewProject} disabled={!projectCreationAvailable} title={projectCreationHelp}><ActionIcon name="add" />New project</button>
+            <button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? "Refreshing…" : "Refresh workspace"}</button>
           </div>
           <p id="new-client-help" className="action-help">{clientCreationHelp}</p>
         </section>
@@ -436,12 +437,12 @@ export function TasksRoute({ workspace, loading, onRefresh, onOpenProject }: { w
   if (workspace.status === "loading") return <section className="notice">Checking what needs attention…</section>;
   if (workspace.status === "error") return <section className="notice error"><strong>We couldn’t load your tasks</strong><span>{workspace.message}</span></section>;
   const snapshot = workspace.value;
-  return <><section className="directory-toolbar"><div><p className="kicker">Studio work</p><h2>{snapshot.tasks.length} {snapshot.tasks.length === 1 ? "task" : "tasks"}</h2></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Refreshing…" : "Refresh"}</button></section><ContextSearch label="Tasks" />{snapshot.tasks.length === 0 ? <section className="empty-state"><h2>Nothing needs your attention</h2><p>You’re all caught up for now.</p></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Priority</th><th>Task</th><th>Project</th><th>Reason</th><th>Recommended action</th></tr></thead><tbody>{snapshot.tasks.map((task) => <tr key={task.id}><td><span className={`priority-pill ${task.priority}`}>{taskPriorityLabel[task.priority]}</span></td><td><strong>{task.title}</strong>{task.deadline && <small className="table-detail">Deadline {task.deadline}</small>}</td><td>{task.clientId && task.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(task.clientId!, task.projectId!)}>{task.projectName}</button> : task.projectName ?? "Workspace"}</td><td>{task.reason}</td><td>{task.recommendedAction}</td></tr>)}</tbody></table></div></section>}<aside className="route-note"><strong>Updated when you refresh</strong><span>Tasks are based on the current state of your studio and projects.</span></aside></>;
+  return <><section className="directory-toolbar"><div><p className="kicker">Studio work</p><h2>{snapshot.tasks.length} {snapshot.tasks.length === 1 ? "task" : "tasks"}</h2></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? "Refreshing…" : "Refresh"}</button></section><ContextSearch label="Tasks" />{snapshot.tasks.length === 0 ? <section className="empty-state"><h2>Nothing needs your attention</h2><p>You’re all caught up for now.</p></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Priority</th><th>Task</th><th>Project</th><th>Reason</th><th>Recommended action</th></tr></thead><tbody>{snapshot.tasks.map((task) => <tr key={task.id}><td><span className={`priority-pill ${task.priority}`}>{taskPriorityLabel[task.priority]}</span></td><td><strong>{task.title}</strong>{task.deadline && <small className="table-detail">Deadline {task.deadline}</small>}</td><td>{task.clientId && task.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(task.clientId!, task.projectId!)}>{task.projectName}</button> : task.projectName ?? "Workspace"}</td><td>{task.reason}</td><td>{task.recommendedAction}</td></tr>)}</tbody></table></div></section>}<aside className="route-note"><strong>Updated when you refresh</strong><span>Tasks are based on the current state of your studio and projects.</span></aside></>;
 }
 
 export function ActivityRoute({ workspace, loading, onRefresh, onOpenProject }: { workspace: ResourceState<WorkspaceSnapshot>; loading: boolean; onRefresh: () => void; onOpenProject: (clientId: string, projectId: string) => void }) {
   if (workspace.status === "loading") return <section className="notice">Loading recent activity…</section>;
   if (workspace.status === "error") return <section className="notice error"><strong>We couldn’t load recent activity</strong><span>{workspace.message}</span></section>;
   const snapshot = workspace.value;
-  return <><section className="directory-toolbar"><div><p className="kicker">Recent studio activity</p><h2>{snapshot.activity.length} {snapshot.activity.length === 1 ? "event" : "events"}</h2></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? "Refreshing…" : "Refresh"}</button></section><ContextSearch label="Activity" />{snapshot.activity.length === 0 ? <section className="empty-state"><h2>No recent activity yet</h2><p>Project activity will appear here as work moves forward.</p></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Timestamp</th><th>Event</th><th>Project or client</th><th>Source</th></tr></thead><tbody>{snapshot.activity.map((event) => <tr key={event.id}><td><time dateTime={event.timestamp}>{formatEventTimestamp(event.timestamp)}</time></td><td>{activityEventLabel[event.eventType]}{event.revision !== null && <small className="table-detail">Revision {event.revision}</small>}</td><td>{event.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(event.clientId, event.projectId!)}>{event.projectName}</button> : event.clientName}</td><td><code>{event.persistedSource}</code></td></tr>)}</tbody></table></div></section>}<aside className="route-note"><strong>Activity history</strong><span>This view shows supported project milestones recorded by JL Mixing Automation.</span></aside></>;
+  return <><section className="directory-toolbar"><div><p className="kicker">Recent studio activity</p><h2>{snapshot.activity.length} {snapshot.activity.length === 1 ? "event" : "events"}</h2></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? "Refreshing…" : "Refresh"}</button></section><ContextSearch label="Activity" />{snapshot.activity.length === 0 ? <section className="empty-state"><h2>No recent activity yet</h2><p>Project activity will appear here as work moves forward.</p></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Timestamp</th><th>Event</th><th>Project or client</th><th>Source</th></tr></thead><tbody>{snapshot.activity.map((event) => <tr key={event.id}><td><time dateTime={event.timestamp}>{formatEventTimestamp(event.timestamp)}</time></td><td>{activityEventLabel[event.eventType]}{event.revision !== null && <small className="table-detail">Revision {event.revision}</small>}</td><td>{event.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(event.clientId, event.projectId!)}>{event.projectName}</button> : event.clientName}</td><td><code>{event.persistedSource}</code></td></tr>)}</tbody></table></div></section>}<aside className="route-note"><strong>Activity history</strong><span>This view shows supported project milestones recorded by JL Mixing Automation.</span></aside></>;
 }

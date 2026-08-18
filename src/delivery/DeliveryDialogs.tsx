@@ -1,3 +1,4 @@
+import { ActionIcon } from "../components/ActionIcon";
 import type { DeliveryWorkflowState } from "./models";
 import "./DeliveryDialogs.css";
 
@@ -34,8 +35,8 @@ export function DeliveryOptionsDialog({
         </span>
       </label>}
       <div className="dialog-actions">
-        <button type="button" className="secondary" onClick={onClose}>Cancel</button>
-        <button type="button" onClick={onBuild}>Build Package</button>
+        <button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />Cancel</button>
+        <button type="button" onClick={onBuild}><ActionIcon name="download" />Build Package</button>
       </div>
     </section>
   </div>;
@@ -65,7 +66,7 @@ export function DeliveryDialog({
         <h2 id="delivery-dialog-title">Package Needs Verification</h2>
         <div className="form-error" role="alert">{state.message}</div>
         <p className="dialog-intro">Refresh Delivery and verify the package state before trying again.</p>
-        <div className="dialog-actions"><button type="button" onClick={onClose}>Close</button></div>
+        <div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />Close</button></div>
       </> : <>
         <h2 id="delivery-dialog-title">Building Package…</h2>
         <p className="dialog-intro">Building package from <strong>Approved Revision {String(revision).padStart(2, "0")}</strong>…</p>
@@ -74,7 +75,7 @@ export function DeliveryDialog({
           <span className="delivery-build-progress-text">{progressText}</span>
         </div>
         <p className="dialog-intro">Delivery Notes are included automatically.</p>
-        {pending && <div className="dialog-actions"><button type="button" className="secondary" disabled>Building…</button></div>}
+        {pending && <div className="dialog-actions"><button type="button" className="secondary" disabled><ActionIcon name="download" />Building…</button></div>}
       </>}
     </section>
   </div>;

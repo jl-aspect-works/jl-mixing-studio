@@ -2,6 +2,7 @@ import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, FolderResult, ProjectSummary, RevisionSummary } from "../types";
 import { safeError } from "../AppShellViews";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
 export function ProjectOverviewQuickActions({ client, project, loading, revisionCreationAvailable, revisionApprovalAvailable, onNewRevision, onApproveRevision, onRevisions }: { client: ClientSummary; project: ProjectSummary; loading: boolean; revisionCreationAvailable: boolean; revisionApprovalAvailable: boolean; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onRevisions: () => void }) {
@@ -19,10 +20,10 @@ export function ProjectOverviewQuickActions({ client, project, loading, revision
     <section className="overview-card overview-actions-card" aria-labelledby="overview-actions-heading">
       <h2 id="overview-actions-heading">Quick Actions</h2>
       <div className="overview-action-stack">
-        <button type="button" aria-label="New revision" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}>Create New Revision</button>
-        <button type="button" className="secondary" onClick={() => currentRevision && onApproveRevision(currentRevision)} disabled={!canApproveCurrent}>Approve Current Revision</button>
+        <button type="button" aria-label="New revision" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}><ActionIcon name="add" />Create New Revision</button>
+        <button type="button" className="secondary" onClick={() => currentRevision && onApproveRevision(currentRevision)} disabled={!canApproveCurrent}><ActionIcon name="check" />Approve Current Revision</button>
         <button type="button" className="secondary" onClick={onRevisions}>View Revisions</button>
-        <button type="button" className="secondary" onClick={openProjectFolder}>Open Project Folder</button>
+        <button type="button" className="secondary" onClick={openProjectFolder}><ActionIcon name="folder" />Open Project Folder</button>
         {folderMessage && <small role="status" className="overview-folder-message">{folderMessage}</small>}
       </div>
     </section>

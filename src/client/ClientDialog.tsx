@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef } from "react";
 import type { ClientFormValues, ClientWorkflowState } from "../AppWorkflowModels";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
 export interface ClientDialogProps {
@@ -100,10 +101,10 @@ export function ClientDialog({
             </label>
             <div className="dialog-actions">
               <button type="button" className="secondary" onClick={onClose} disabled={pending}>
-                {productCopy.common.cancel}
+                <ActionIcon name="close" />{productCopy.common.cancel}
               </button>
               <button type="submit" disabled={pending}>
-                {pending ? productCopy.common.checking : productCopy.clients.reviewClient}
+                <ActionIcon name="check" />{pending ? productCopy.common.checking : productCopy.clients.reviewClient}
               </button>
             </div>
           </form>
@@ -119,10 +120,10 @@ export function ClientDialog({
             </dl>
             <div className="dialog-actions">
               <button type="button" className="secondary" onClick={onClose} disabled={pending}>
-                {productCopy.common.cancel}
+                <ActionIcon name="close" />{productCopy.common.cancel}
               </button>
               <button type="button" className="secondary" onClick={onBack} disabled={pending}>
-                {productCopy.common.back}
+                <ActionIcon name="back" />{productCopy.common.back}
               </button>
               <button
                 ref={confirmButton}
@@ -130,7 +131,7 @@ export function ClientDialog({
                 onClick={onConfirm}
                 disabled={pending}
               >
-                {pending ? productCopy.clients.creating : productCopy.clients.createClient}
+                <ActionIcon name="add" />{pending ? productCopy.clients.creating : productCopy.clients.createClient}
               </button>
             </div>
           </div>
@@ -141,7 +142,7 @@ export function ClientDialog({
             <div className="form-error" role="alert">{state.message}</div>
             <p className="dialog-intro">{productCopy.clients.uncertainHelp}</p>
             <div className="dialog-actions">
-              <button type="button" onClick={onClose}>{productCopy.common.close}</button>
+              <button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button>
             </div>
           </div>
         )}

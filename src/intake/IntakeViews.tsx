@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ClientSummary, IntakeReport, ProjectSummary } from "../types";
 import type { IntakeReportState } from "../AppShellViews";
+import { ActionIcon } from "../components/ActionIcon";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { openProjectFile, projectFilePaths } from "../project/files/projectFileService";
@@ -75,9 +76,9 @@ export function IntakeView({ client, project, reportState, actionError, validati
       <section className="panel client-files-quick-actions" aria-labelledby="client-files-actions-heading">
         <h2 id="client-files-actions-heading">Quick Actions</h2>
         <div className="action-stack">
-          <button type="button" className="secondary" onClick={onRecheck} disabled={!validationAvailable || loading}>{loading ? "Rechecking…" : "Recheck"}</button>
+          <button type="button" className="secondary" onClick={onRecheck} disabled={!validationAvailable || loading}><ActionIcon name="refresh" />{loading ? "Rechecking…" : "Recheck"}</button>
           <button type="button" onClick={() => onSelectView("audioPrep")}>Go to Audio Prep</button>
-          <button type="button" className="secondary" onClick={() => void openOriginalDeliveryFolder()}>Open Original Delivery Folder</button>
+          <button type="button" className="secondary" onClick={() => void openOriginalDeliveryFolder()}><ActionIcon name="folder" />Open Original Delivery Folder</button>
         </div>
         {!validationAvailable && <p className="action-help">{validationHelp}</p>}
       </section>

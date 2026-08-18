@@ -7,6 +7,7 @@ import {
   type ProjectView,
   type ResourceState,
 } from "../AppShellViews";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
 const revisionLabel = (revision: number | null) =>
@@ -43,7 +44,7 @@ export function ProjectsRoute({
     <>
       <section className="directory-toolbar" aria-labelledby="project-directory-heading">
         <div><p className="kicker">{productCopy.clients.studioKicker}</p><h2 id="project-directory-heading">{entries.length} {entries.length === 1 ? productCopy.projects.singular : productCopy.projects.plural}</h2></div>
-        <div className="directory-actions"><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button><button type="button" onClick={onNewProject} disabled={!projectCreationAvailable} aria-describedby="projects-new-project-help">{productCopy.clients.newProject}</button></div>
+        <div className="directory-actions"><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button><button type="button" onClick={onNewProject} disabled={!projectCreationAvailable} aria-describedby="projects-new-project-help"><ActionIcon name="add" />{productCopy.clients.newProject}</button></div>
       </section>
       <p id="projects-new-project-help" className="action-help directory-help">{projectCreationHelp}</p>
       <ContextSearch label={productCopy.projects.searchLabel} />
@@ -113,10 +114,10 @@ export function ProjectOverview({
   return (
     <>
       <div className="detail-navigation-row"><nav className="breadcrumbs" aria-label={productCopy.common.breadcrumbLabel}>
-        <button type="button" onClick={onProjects}>Projects</button><span aria-hidden="true">/</span>
+        <button type="button" onClick={onProjects}><ActionIcon name="back" />Projects</button><span aria-hidden="true">/</span>
         {fromClient && <><button type="button" onClick={onClient}>{client.clientName}</button><span aria-hidden="true">/</span></>}
         <span aria-current="page">{project.projectName}</span>
-      </nav><button type="button" className="secondary" onClick={onRefresh} disabled={loading}>{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button></div>
+      </nav><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button></div>
       <ProjectWorkflowTabs active="overview" onSelect={onSelectView} />
       <section className="detail-summary project-revisions" aria-label={productCopy.projects.revisionStateLabel}>
         <article><span>{productCopy.projects.current}</span><strong>{revisionLabel(project.currentRevision)}</strong></article>
@@ -132,7 +133,7 @@ export function ProjectOverview({
         </section>
         <section className="panel" aria-labelledby="project-actions-heading">
           <div className="panel-heading"><div><p className="kicker">{productCopy.projects.actionsKicker}</p><h2 id="project-actions-heading">{productCopy.projects.actionsTitle}</h2></div></div>
-          <div className="action-stack"><button type="button" disabled>{productCopy.projects.openDawPlanned}</button><button type="button" onClick={onIntake}>{productCopy.projects.validateIntake}</button><button type="button" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}>{productCopy.projects.newRevision}</button><button type="button" onClick={onRevisions}>{productCopy.projects.viewRevisions}</button></div>
+          <div className="action-stack"><button type="button" disabled>{productCopy.projects.openDawPlanned}</button><button type="button" onClick={onIntake}><ActionIcon name="check" />{productCopy.projects.validateIntake}</button><button type="button" onClick={onNewRevision} disabled={!revisionCreationAvailable || loading}><ActionIcon name="add" />{productCopy.projects.newRevision}</button><button type="button" onClick={onRevisions}>{productCopy.projects.viewRevisions}</button></div>
           <FolderControl location="project" clientId={client.clientId} projectId={project.projectId} />
           <p className="action-help">{revisionCreationHelp}</p>
         </section>

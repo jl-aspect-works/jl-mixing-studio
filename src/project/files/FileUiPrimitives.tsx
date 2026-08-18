@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ActionIcon, type ActionIconName } from "../../components/ActionIcon";
 import "./FileUiPrimitives.css";
 
 export type RowAction = {
@@ -6,6 +7,22 @@ export type RowAction = {
   onSelect: () => void;
   disabled?: boolean;
   destructive?: boolean;
+  icon?: ActionIconName;
+};
+
+const inferRowActionIcon = (label: string): ActionIconName | null => {
+  const normalized = label.toLowerCase();
+  if (normalized.includes("delete") || normalized.includes("remove")) return "delete";
+  if (normalized.includes("cancel") || normalized === "close") return "close";
+  if (normalized.includes("reveal") || normalized.includes("folder")) return "folder";
+  if (normalized.includes("open")) return "folder";
+  if (normalized.includes("rename") || normalized.includes("edit")) return "edit";
+  if (normalized.includes("copy")) return "copy";
+  if (normalized.includes("refresh") || normalized.includes("recheck")) return "refresh";
+  if (normalized.includes("play")) return "play";
+  if (normalized.includes("download") || normalized.includes("export")) return "download";
+  if (normalized.includes("import") || normalized.includes("add")) return "add";
+  return null;
 };
 
 export function RowActionMenu({ label, actions, extraContent }: { label: string; actions: RowAction[]; extraContent?: ReactNode }) {
@@ -13,17 +30,20 @@ export function RowActionMenu({ label, actions, extraContent }: { label: string;
   return <details className="shared-row-action-menu">
     <summary aria-label={label} title="More actions">⋮</summary>
     <div className="shared-row-action-popover" role="menu">
-      {actions.map((action) => <button
-        key={action.label}
-        type="button"
-        role="menuitem"
-        className={action.destructive ? "destructive" : undefined}
-        disabled={action.disabled}
-        onClick={(event) => {
-          event.currentTarget.closest("details")?.removeAttribute("open");
-          action.onSelect();
-        }}
-      >{action.label}</button>)}
+      {actions.map((action) => {
+        const icon = action.icon ?? inferRowActionIcon(action.label);
+        return <button
+          key={action.label}
+          type="button"
+          role="menuitem"
+          className={action.destructive ? "destructive" : undefined}
+          disabled={action.disabled}
+          onClick={(event) => {
+            event.currentTarget.closest("details")?.removeAttribute("open");
+            action.onSelect();
+          }}
+        >{icon && <ActionIcon name={icon} />}{action.label}</button>;
+      })}
       {extraContent}
     </div>
   </details>;
@@ -73,9 +93,9 @@ export function ManagedFolderToolbar({
   return <div className="shared-managed-folder-toolbar">
     <code>{path || "Project root"}</code>
     <div className="directory-actions">
-      {onOpenFolder && <button type="button" className="secondary" onClick={onOpenFolder}>Open Folder</button>}
-      <button type="button" className="secondary" disabled={!canNavigateUp || loading} onClick={onUp}>Up</button>
-      <button type="button" className="secondary" disabled={loading} onClick={onRefresh}>{loading ? "Refreshing…" : refreshLabel}</button>
+      {onOpenFolder && <button type="button" className="secondary" onClick={onOpenFolder}><ActionIcon name="folder" />Open Folder</button>}
+      <button type="button" className="secondary" disabled={!canNavigateUp || loading} onClick={onUp}><ActionIcon name="up" />Up</button>
+      <button type="button" className="secondary" disabled={loading} onClick={onRefresh}><ActionIcon name="refresh" />{loading ? "Refreshing…" : refreshLabel}</button>
     </div>
   </div>;
 }

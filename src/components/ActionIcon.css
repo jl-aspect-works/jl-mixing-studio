@@ -1,0 +1,36 @@
+button:has(> .action-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 4px;
+}
+
+.action-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex: 0 0 16px;
+  margin: 0;
+  vertical-align: -3px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+button:disabled .action-icon {
+  opacity: .82;
+}
+
+/* The existing busy spinner replaces the action icon so pending states do not grow the button. */
+button[aria-busy="true"] > .action-icon {
+  display: none;
+}
+
+button.icon-only:has(> .action-icon) {
+  gap: 0;
+  padding-inline: 12px;
+}

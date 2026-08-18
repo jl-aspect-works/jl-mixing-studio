@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ActionIcon } from "../../components/ActionIcon";
 import { RowActionMenu } from "./FileUiPrimitives";
 import type { ProjectFileEntry, ProjectFileListing } from "./projectFileService";
 import { formatProjectFileModified, formatProjectFileSize } from "./projectFileService";
@@ -66,7 +67,7 @@ export function ProjectFileList({
                   {entry.playable && renderPreview
                     ? renderPreview(entry)
                     : entry.playable && onPreview
-                      ? <button type="button" className="secondary" disabled={actionsDisabled} onClick={() => onPreview(entry)}>Preview</button>
+                      ? <button type="button" className="secondary" disabled={actionsDisabled} onClick={() => onPreview(entry)}><ActionIcon name="play" />Preview</button>
                       : <span className="project-file-muted">—</span>}
                 </td>
                 <td>{entry.entryType === "file" ? entry.extension?.toUpperCase() || "File" : entry.entryType}</td>
