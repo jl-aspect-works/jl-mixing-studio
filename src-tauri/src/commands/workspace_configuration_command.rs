@@ -1,5 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
@@ -132,6 +134,56 @@ pub(crate) fn set_workspace_root(
     let (canonical, snapshot) = candidate_workspace(&path)?;
     write_configuration(&configuration_path(&app)?, &canonical)?;
     Ok(snapshot)
+}
+
+#[tauri::command]
+pub(crate) fn choose_workspace_folder() -> Result<Option<String>, String> {
+    choose_workspace_folder_path().map(|selected| {
+        selected.map(|path| path.to_string_lossy().into_owned())
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn choose_workspace_folder_path() -> Result<Option<PathBuf>, String> {
+    let output = Command::new("/usr/bin/osascript")
+        .args([
+            "-e",
+            "try",
+            "-e",
+            "POSIX path of (choose folder with prompt \"Choose a folder\")",
+            "-e",
+            "on error number -128",
+            "-e",
+            "return \"\"",
+            "-e",
+            "end try",
+        ])
+        .output()
+        .map_err(|error| format!("Unable to open the folder picker: {error}"))?;
+    if !output.status.success() {
+        return Err("Unable to open the folder picker".into());
+    }
+    let selected = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+    Ok((!selected.is_empty()).then(|| PathBuf::from(selected)))
+}
+
+#[cfg(target_os = "windows")]
+fn choose_workspace_folder_path() -> Result<Option<PathBuf>, String> {
+    let script = r#"Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.FolderBrowserDialog; $d.Description = 'Choose a folder'; if ($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::Out.Write($d.SelectedPath) }"#;
+    let output = Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-Command", script])
+        .output()
+        .map_err(|error| format!("Unable to open the folder picker: {error}"))?;
+    if !output.status.success() {
+        return Err("Unable to open the folder picker".into());
+    }
+    let selected = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+    Ok((!selected.is_empty()).then(|| PathBuf::from(selected)))
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn choose_workspace_folder_path() -> Result<Option<PathBuf>, String> {
+    Err("Folder selection is currently supported on macOS and Windows".into())
 }
 
 #[cfg(test)]
