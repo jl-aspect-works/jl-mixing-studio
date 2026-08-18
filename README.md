@@ -1,77 +1,85 @@
 # JL Mixing Studio
 
-JL Mixing Studio is an open-source desktop application for small-studio and home-studio mix engineers. It provides a visual, studio-aware workflow over the project structure and automation capabilities established by [JL Mixing Automation](https://github.com/jl-aspect-works/jl-mixing-automation).
+JL Mixing Studio is an open-source desktop application for small-studio and home-studio mix engineers. It provides a visual Daily Workflow over the project structure and authoritative workflow capabilities supplied by [JL Mixing Automation](https://github.com/jl-aspect-works/jl-mixing-automation).
 
 ## Current release line
 
-JL Mixing Studio v1.1 uses JL Mixing Automation API `1.0` as its provider contract. Studio and Automation are independently versioned; Studio does not require a matching Automation product version.
+JL Mixing Studio 2.0 supports JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated stable provider release is JL Mixing Automation 2.0.
 
-The current coordinated provider target is JL Mixing Automation v1.5, including native Windows support. Valid workspace metadata remains schema `1.1.0`.
+Studio and Automation remain independently versioned products. Compatibility is determined from Automation API version, advertised capabilities, and supported metadata schemas rather than requiring matching application version numbers.
 
-## Product direction
+## Daily Workflow
 
-JL Mixing Studio helps engineers:
+After one-time workspace configuration, normal project work is designed to be completed in Studio alongside the DAW without routine use of Finder, Explorer, Terminal, or PowerShell.
 
-- Create and manage clients and mix projects.
-- Understand project state, revisions, approvals, and delivery status at a glance.
-- Run supported JL Mixing Automation workflows through a guided interface.
-- Review intake-validation results and actionable warnings.
-- Configure studio-specific defaults without hiding the underlying project data.
-- Keep projects portable and understandable outside the application.
+Global navigation:
+
+1. Dashboard
+2. Studio
+3. Clients
+4. Projects
+5. Tasks
+6. Activities
+7. Settings
+
+Project navigation:
+
+1. Overview
+2. Client Files
+3. Audio Prep
+4. References
+5. Revisions
+6. Delivery
+7. Files
+
+Studio 2.0 includes structured Client Files validation, Audio Prep validation/provenance and safe working-file mutations, reference management, revision history/notes/approval, authoritative Delivery status/package workflows, controlled project Files navigation, configurable/shared workspaces, storage visibility, and refresh/reconnect behavior.
+
+Embedded audio preview is available on macOS for supported project audio. Windows embedded preview is intentionally deferred beyond 2.0.
 
 ## Architecture
-
-The accepted architecture is:
 
 - **Desktop framework:** Tauri 2
 - **Frontend:** React and TypeScript
 - **Desktop integration:** Rust
-- **License:** Apache-2.0
+- **Automation provider contract:** API `1.0`
+- **Workspace metadata schema:** `1.1.0`
 - **Platforms:** macOS and Windows
+- **License:** Apache-2.0
 
-Studio discovers Automation through `jl-mixing system-info --json` and enables API-backed workflows according to the provider's API version and advertised capabilities. The authoritative workflow implementation remains in JL Mixing Automation.
+JL Mixing Automation remains authoritative for workflow semantics, metadata, validation, and managed semantic mutation. Studio owns presentation, safe interaction, local configuration/preferences, and explicitly permitted filesystem operations. Workspace data remains authoritative; Studio does not create a competing project-state database.
 
-## Supported Automation workflows
+## Installation
 
-Studio v1.1 consumes Automation API `1.0` capabilities for:
+Official Studio packages are currently unsigned. macOS Gatekeeper and Windows SmartScreen may therefore display unknown-developer/publisher warnings.
 
-- client creation;
-- project creation;
-- intake validation;
-- revision creation;
-- revision approval; and
-- delivery creation/replacement.
+Before bypassing an operating-system warning, verify the installer against the published `SHA256SUMS.txt`. See the [Studio 2.0 release notes](docs/RELEASE_NOTES_V2.0.md) for exact Intel/Apple Silicon/Windows installer selection and the required Gatekeeper/SmartScreen steps.
 
-Windows and macOS use the same Automation API contract. Studio creation remains a separate human-CLI-backed path in Studio v1.1 and is not part of the Automation API workflow capability set.
+JL Mixing Automation is installed separately. See the Automation repository and its 2.0 release notes for its platform-specific installation steps, including the recursive macOS quarantine workaround required by its bundled Python runtime.
 
 ## Workspace compatibility
 
-Studio validates released JL Mixing workspace metadata against schema `1.1.0`, including valid Windows drive-letter and UNC paths introduced for cross-platform Automation operation. Application release versions, Automation API versions, and workspace metadata schema versions are separate compatibility dimensions.
+Studio supports local paths, NAS paths, and OS-mounted synchronized/cloud paths as ordinary filesystems. An explicitly configured workspace remains authoritative if temporarily unavailable; Studio does not silently reinterpret it as the default workspace.
 
-## Development status
+Existing valid v1.1-schema workspaces remain compatible with Studio 2.0. No workspace migration is introduced by this release.
 
-The v1.1 implementation is feature-frozen and in coordinated release acceptance with Automation v1.5. Completed work includes:
+## Safety boundaries
 
-1. Automation API `1.0` discovery and capability-based workflow availability.
-2. Structured client, project, intake, revision, approval, and delivery workflows.
-3. Native Windows Automation discovery and API workflow enablement.
-4. Windows-compatible workspace schema validation.
-5. macOS and Windows packaged application support.
-6. Safe delivery replacement with exact preview/revalidation for destructive clean operations.
-7. Authoritative post-operation workspace reconciliation.
-8. Domain-oriented Rust/frontend refactoring without changing supported workflow behavior.
-9. Copy/Open Folder integration and validated project/report/file/metadata views.
-10. Local presentation preferences without introducing hidden project state.
-
-See [development status](docs/development-status.md) for the active release state and [Automation API compatibility](docs/automation-api-compatibility.md) for the provider contract.
+- Original Delivery is read-only in Studio.
+- Files is a controlled project view rather than an unrestricted file manager.
+- Manifest-managed Delivery files remain Automation-owned.
+- Non-idempotent operations are not automatically retried after uncertain outcomes.
+- Project file operations preserve path-containment and symlink protections.
+- Audio Prep Fix/Convert, repair, normalization, and format conversion remain deferred beyond 2.0.
 
 ## Project documents
 
+- [Studio 2.0 release notes and installation](docs/RELEASE_NOTES_V2.0.md)
 - [Development status](docs/development-status.md)
+- [Studio 2.0 / Automation 2.0 coordinated acceptance](docs/v2.0-coordinated-acceptance.md)
 - [Automation API compatibility](docs/automation-api-compatibility.md)
 - [Developer setup and validation](docs/DEVELOPMENT.md)
-- [Product Requirements Document](docs/PRD.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Product Requirements Document](docs/PRD.md)
 - [Architecture decision: Tauri 2](docs/adr/0001-tauri-2.md)
 - [Definition of Done](docs/DEFINITION_OF_DONE.md)
 - [Contributing](CONTRIBUTING.md)
