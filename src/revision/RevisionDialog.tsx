@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef } from "react";
 import type { ProjectSummary } from "../types";
 import type { RevisionFormValues, RevisionWorkflowState } from "../AppWorkflowModels";
+import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
 export function RevisionDialog({
@@ -50,7 +51,7 @@ export function RevisionDialog({
               <input ref={descriptionInput} name="revisionDescription" value={values.description} onChange={(event) => onChange({ description: event.target.value })} placeholder={`Revision ${project.currentRevision + 1}`} autoComplete="off" disabled={pending} />
               <small>{productCopy.revision.descriptionHelp}</small>
             </label>
-            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}>{productCopy.common.cancel}</button><button type="submit" disabled={pending} aria-busy={pending}>{pending ? productCopy.common.checking : productCopy.revision.review}</button></div>
+            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button><button type="submit" disabled={pending} aria-busy={pending}><ActionIcon name="check" />{pending ? productCopy.common.checking : productCopy.revision.review}</button></div>
           </form>
         )}
         {(state.status === "confirming" || state.status === "creating") && (
@@ -62,11 +63,11 @@ export function RevisionDialog({
               <div><dt>{productCopy.revision.newRevision}</dt><dd>Revision {state.preview.number}</dd></div>
               <div><dt>{productCopy.revision.descriptionLabel}</dt><dd>{state.preview.description}</dd></div>
             </dl>
-            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}>{productCopy.common.cancel}</button><button type="button" className="secondary" onClick={onBack} disabled={pending}>{productCopy.common.back}</button><button ref={confirmButton} type="button" onClick={onConfirm} disabled={pending} aria-busy={pending}>{pending ? productCopy.revision.creating : productCopy.revision.create}</button></div>
+            <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button><button type="button" className="secondary" onClick={onBack} disabled={pending}><ActionIcon name="back" />{productCopy.common.back}</button><button ref={confirmButton} type="button" onClick={onConfirm} disabled={pending} aria-busy={pending}><ActionIcon name="add" />{pending ? productCopy.revision.creating : productCopy.revision.create}</button></div>
           </div>
         )}
         {state.status === "uncertain" && (
-          <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.revision.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}>{productCopy.common.close}</button></div></div>
+          <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.revision.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></div>
         )}
       </section>
     </div>
