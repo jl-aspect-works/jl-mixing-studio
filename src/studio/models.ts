@@ -9,6 +9,7 @@ export type StudioWorkflowState =
   | { status: "uncertain"; message: string };
 
 export interface StudioFormValues {
+  workspaceRoot: string;
   studioName: string;
   mixEngineer: string;
   sampleRate: string;
@@ -17,6 +18,7 @@ export interface StudioFormValues {
 }
 
 export const emptyStudioForm: StudioFormValues = {
+  workspaceRoot: "",
   studioName: "",
   mixEngineer: "",
   sampleRate: "48000",
