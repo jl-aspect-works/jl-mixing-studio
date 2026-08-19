@@ -78,7 +78,7 @@ const DELIVERABLES = [
 
 const compactRevision = (revision: number | null) => revision === null ? "—" : String(revision);
 const revisionTooltipValue = (revision: number | null) => revision === null ? "none" : String(revision);
-const revisionTooltip = (project: ProjectSummary) => `Revisions: current-${revisionTooltipValue(project.currentRevision)}, approved-${revisionTooltipValue(project.approvedRevision)}, delivered-${revisionTooltipValue(project.deliveredRevision)}`;
+const revisionTooltip = (project: ProjectSummary) => `Revisions: current=${revisionTooltipValue(project.currentRevision)}, approved=${revisionTooltipValue(project.approvedRevision)}, delivered=${revisionTooltipValue(project.deliveredRevision)}`;
 
 const projectStatus = (project: ProjectSummary, hasAttention: boolean) => {
   if (hasAttention) return "Needs Attention";
