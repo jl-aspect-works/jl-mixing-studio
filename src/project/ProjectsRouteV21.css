@@ -89,8 +89,9 @@
 
 .projects-v21-list-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 170px;
+  grid-template-columns: minmax(0, 1fr) 190px 120px;
   gap: 18px;
+  align-items: center;
   padding: 11px 16px;
   border-bottom: 1px solid #e8edf3;
   background: #f8fafc;
@@ -104,17 +105,18 @@
 .projects-v21-row {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 170px;
+  grid-template-columns: minmax(0, 1fr) 190px 120px;
   gap: 18px;
   align-items: center;
-  min-height: 82px;
+  min-height: 72px;
   border: 0;
   border-bottom: 1px solid #edf0f4;
   border-radius: 0;
   background: #fff;
   color: #26344c;
-  padding: 13px 16px;
+  padding: 11px 16px;
   text-align: left;
+  cursor: default;
 }
 
 .projects-v21-row:last-child {
@@ -130,19 +132,31 @@
   box-shadow: inset 3px 0 0 var(--blue);
 }
 
-.projects-v21-row-main,
-.projects-v21-row-state {
+.projects-v21-row-main {
   min-width: 0;
   display: grid;
   gap: 4px;
 }
 
-.projects-v21-row-main strong {
+.projects-v21-project-link {
+  width: fit-content;
+  max-width: 100%;
+  color: var(--blue);
   font-size: .9rem;
+  font-weight: 800;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.projects-v21-row-main small,
-.projects-v21-row-state small {
+.projects-v21-project-link:hover,
+.projects-v21-project-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.projects-v21-row-main small {
   color: #6d7990;
   font-size: .72rem;
 }
@@ -154,23 +168,42 @@
   font-size: .66rem;
 }
 
-.projects-v21-row-state {
-  justify-items: start;
+.projects-v21-cad {
+  color: #46556d;
+  font-size: .78rem;
+  font-weight: 750;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .projects-v21-status {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
+  justify-content: center;
+  width: fit-content;
+  min-height: 24px;
   border-radius: 999px;
-  padding: 2px 8px;
-  font-size: .64rem;
+  padding: 3px 9px;
+  background: #eef2f7;
+  color: #536077;
+  font-size: .66rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
-.projects-v21-status.attention {
+.projects-v21-status-needs-attention {
   background: #fff4df;
   color: #8a5b00;
+}
+
+.projects-v21-status-approved {
+  background: #edf7ef;
+  color: #2f6a3d;
+}
+
+.projects-v21-status-delivered {
+  background: #eef3ff;
+  color: #315ea8;
 }
 
 .projects-v21-inspector {
@@ -381,6 +414,12 @@
     grid-template-columns: minmax(0, 65fr) minmax(280px, 35fr);
   }
 
+  .projects-v21-list-head,
+  .projects-v21-row {
+    grid-template-columns: minmax(0, 1fr) 150px 108px;
+    gap: 12px;
+  }
+
   .projects-v21-fields,
   .projects-v21-fields.compact,
   .projects-v21-deliverable-options {
@@ -403,18 +442,22 @@
 @media (max-width: 620px) {
   .projects-v21-list-head,
   .projects-v21-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .projects-v21-list-head span:last-child {
+  .projects-v21-list-head span:nth-child(2) {
     display: none;
   }
 
-  .projects-v21-row-state {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
+  .projects-v21-cad {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: .7rem;
+  }
+
+  .projects-v21-status {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .projects-v21-inspector-heading {
