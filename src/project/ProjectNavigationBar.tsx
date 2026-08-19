@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { projectNavigationItems } from "./ProjectNavigation";
 import type { ProjectShellView } from "./ProjectView";
 import "./ProjectUiPolish.css";
@@ -26,12 +26,30 @@ export function ProjectNavigationBar({
   onSelect: (view: ProjectShellView) => void;
   actions?: ReactNode;
 }) {
+  const [pending, setPending] = useState<ProjectShellView | null>(null);
+
+  useEffect(() => {
+    if (pending === active) setPending(null);
+  }, [active, pending]);
+
+  const select = (view: ProjectShellView) => {
+    if (pending || view === active) return;
+    setPending(view);
+    onSelect(view);
+  };
+
   return (
     <div className="workflow-tabs-row">
-      <nav className="workflow-tabs" aria-label="Project navigation">
-        {projectNavigationItems.map(([view, label]) => active === view
-          ? <span key={view} aria-current="page"><ProjectNavigationIcon view={view} />{label}</span>
-          : <button key={view} type="button" onClick={() => onSelect(view)}><ProjectNavigationIcon view={view} />{label}</button>)}
+      <nav className="workflow-tabs" aria-label="Project navigation" aria-busy={pending ? "true" : undefined}>
+        {projectNavigationItems.map(([view, label]) => {
+          if (pending === view) {
+            return <span key={view} className="project-navigation-pending" aria-label={`${label} loading`}><span className="project-navigation-spinner" aria-hidden="true" />{label}</span>;
+          }
+          if (active === view && !pending) {
+            return <span key={view} aria-current="page"><ProjectNavigationIcon view={view} />{label}</span>;
+          }
+          return <button key={view} type="button" disabled={Boolean(pending)} onClick={() => select(view)}><ProjectNavigationIcon view={view} />{label}</button>;
+        })}
       </nav>
       {actions && <div className="workflow-tabs-actions">{actions}</div>}
     </div>
