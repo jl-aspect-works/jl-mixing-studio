@@ -128,3 +128,12 @@ pub enum StudioUpdateCode {
     Uncertain,
     Failed,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StudioEditInfo {
+    pub update_supported: bool,
+    pub document_id: String,
+    pub last_modified_at: String,
+    pub message: String,
+}
