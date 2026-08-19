@@ -3,7 +3,7 @@ import { projectNavigationItems } from "./ProjectNavigation";
 import type { ProjectShellView } from "./ProjectView";
 import "./ProjectUiPolish.css";
 
-const projectNavigationIconPaths: Record<ProjectShellView, ReactNode> = {
+const projectNavigationIconPaths: Partial<Record<ProjectShellView, ReactNode>> = {
   overview: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
   intake: <><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v4h4"/><path d="m9 13 2 2 4-4"/></>,
   audioPrep: <><path d="M4 8h16"/><path d="M4 16h16"/><circle cx="9" cy="8" r="2"/><circle cx="15" cy="16" r="2"/></>,
