@@ -2,8 +2,9 @@ import type { Dispatch, SetStateAction } from "react";
 import type { WorkspaceConfiguration } from "../settings/models";
 import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { ResourceState } from "../AppViews";
-import { ActivityRoute, ClientDetails, ClientsRoute, Dashboard, TasksRoute } from "../AppViews";
+import { ActivityRoute, ClientDetails, ClientsRoute, TasksRoute } from "../AppViews";
 import { SettingsRoute, StudioRoute } from "../AppWorkflows";
+import { DashboardV21 } from "../dashboard/DashboardV21";
 import { AppProjectSection } from "../project/AppProjectSection";
 import type { ProjectShellView } from "../project/ProjectView";
 import type { AppPreferences } from "../AppWorkflowModels";
@@ -53,7 +54,7 @@ export interface AppRoutesProps {
 }
 
 export function AppRoutes(p: AppRoutesProps) {
-  if (p.activeRoute === "dashboard") return <Dashboard workspace={p.workspace} storage={p.workspaceStorage} version={p.version} automationReady={p.availability.automationReady} loading={p.loading} clientCreationAvailable={p.availability.clientCreationAvailable} clientCreationHelp={p.availability.clientCreationHelp} projectCreationAvailable={p.availability.projectCreationAvailable} projectCreationHelp={p.availability.projectCreationHelp} onRefresh={p.onRefresh} onNewClient={p.onNewClient} onNewProject={() => p.projects.open(null, false)} onTasks={() => p.onNavigate("tasks")} onActivity={() => p.onNavigate("activity")} onOpenProject={p.onOpenDerivedProject} />;
+  if (p.activeRoute === "dashboard") return <DashboardV21 workspace={p.workspace} storage={p.workspaceStorage} version={p.version} automationReady={p.availability.automationReady} loading={p.loading} clientCreationAvailable={p.availability.clientCreationAvailable} clientCreationHelp={p.availability.clientCreationHelp} projectCreationAvailable={p.availability.projectCreationAvailable} projectCreationHelp={p.availability.projectCreationHelp} onRefresh={p.onRefresh} onNewClient={p.onNewClient} onNewProject={() => p.projects.open(null, false)} onProjects={() => p.onNavigate("projects")} onTasks={() => p.onNavigate("tasks")} onActivity={() => p.onNavigate("activity")} onOpenProject={p.onOpenDerivedProject} />;
   if (p.activeRoute === "studio") return <StudioRoute workspace={p.workspace} version={p.version} loading={p.loading} setupAvailable={p.studioCreationAvailable} setupHelp={p.studioCreationHelp} onSetup={() => p.studio.openStudioWorkflow()} onRefresh={p.onRefresh} onSaveSuccess={p.studio.setStudioNotice} />;
   if (p.activeRoute === "tasks") return <TasksRoute workspace={p.workspace} loading={p.loading} onRefresh={p.onRefresh} onOpenProject={p.onOpenDerivedProject} />;
   if (p.activeRoute === "activity") return <ActivityRoute workspace={p.workspace} loading={p.loading} onRefresh={p.onRefresh} onOpenProject={p.onOpenDerivedProject} />;
