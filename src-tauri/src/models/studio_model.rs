@@ -1,4 +1,4 @@
-//! Studio domain contracts: persisted metadata, workspace projection, and creation workflow.
+//! Studio domain contracts: persisted metadata, workspace projection, and creation/update workflows.
 
 use serde::{Deserialize, Serialize};
 
@@ -32,15 +32,17 @@ pub struct StudioCliDefaults {
     pub change_directory_after_create: bool,
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct StudioSummary {
     pub studio_id: String,
     pub studio_name: String,
     pub root_path: String,
     pub schema_version: String,
+    pub document_id: String,
     pub created_with: String,
     pub created_at: String,
+    pub last_modified_at: String,
     pub mix_engineer: String,
     pub sample_rate: u32,
     pub bit_depth: u16,
@@ -90,6 +92,41 @@ pub enum StudioOperationCode {
     AutomationUnavailable,
     UnsupportedVersion,
     WorkspaceBlocked,
+    Rejected,
+    Uncertain,
+    Failed,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct StudioUpdateRequest {
+    pub expected_last_modified_at: String,
+    pub studio_name: String,
+    pub mix_engineer: String,
+    pub sample_rate: u32,
+    pub bit_depth: u16,
+    pub file_format: String,
+    pub delivery_method: String,
+    pub requested_deliverables: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StudioUpdateResult {
+    pub ok: bool,
+    pub code: StudioUpdateCode,
+    pub message: String,
+    pub studio: Option<StudioSummary>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum StudioUpdateCode {
+    Updated,
+    Conflict,
+    InvalidInput,
+    AutomationUnavailable,
+    UnsupportedCapability,
     Rejected,
     Uncertain,
     Failed,
