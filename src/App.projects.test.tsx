@@ -31,7 +31,7 @@ describe("JL Mixing Studio — project workflow", () => {
       await screen.findByText("JL Mix Studio");
 
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Second Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Second Blue Sky" }));
 
       expect(screen.getByRole("heading", { name: "Second Blue Sky", level: 1 })).toBeInTheDocument();
       expect(screen.getByText("Second Client")).toBeInTheDocument();
@@ -56,7 +56,7 @@ describe("JL Mixing Studio — project workflow", () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
 
       await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
       fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
@@ -89,7 +89,7 @@ describe("JL Mixing Studio — project workflow", () => {
       expect(screen.getByRole("button", { name: "New client" })).toBeDisabled();
 
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      expect(screen.getByRole("button", { name: "Blue Sky" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Blue Sky" })).toBeInTheDocument();
       expect(screen.getByText("Broken Project")).toBeInTheDocument();
       expect(screen.getByText(/clients and projects we can read are still available/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "New project" })).toBeDisabled();
