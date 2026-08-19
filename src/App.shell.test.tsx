@@ -133,7 +133,9 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(screen.getByText("The Artist")).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Acme Records" }));
       expect(screen.getByRole("heading", { name: "Acme Records", level: 1 })).toBeInTheDocument();
-      expect(screen.getByText(/client editing.*available yet/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Edit Client" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Project Defaults" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Delivery Defaults" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Blue Sky" })).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");

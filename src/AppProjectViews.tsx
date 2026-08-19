@@ -1,4 +1,5 @@
-export { ClientDetails, ClientsRoute } from "./client/ClientViews";
+export { ClientsRoute } from "./client/ClientViews";
+export { ClientDetails } from "./client/ClientDetailsV21";
 export { IntakeReportContent, IntakeView } from "./intake/IntakeViews";
 export { DeliveryView } from "./delivery/DeliveryView";
 export { RevisionBadges, RevisionsView } from "./revision/RevisionViews";
