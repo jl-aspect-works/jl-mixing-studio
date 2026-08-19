@@ -27,7 +27,7 @@ const secondClient: ClientSummary = {
 
 const workspace: WorkspaceSnapshot = {
   workspacePath: "/Users/engineer/Music/Mixes",
-  status: "ready",
+  status: "healthy",
   studio: null,
   counts: { clients: 2, projects: 0, issues: 0 },
   clients: [client, secondClient],
