@@ -10,6 +10,7 @@ pub struct Metadata {
     pub document_id: String,
     pub created_with: String,
     pub created_at: String,
+    pub last_modified_at: String,
 }
 
 #[derive(Debug, Deserialize)]
