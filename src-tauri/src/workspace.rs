@@ -434,18 +434,16 @@ fn read_delivery_summary(
         .iter()
         .find(|revision| revision.number == delivered)
         .ok_or(DocumentFailure::InvalidSchema)?;
-    // Delivery metadata is an immutable historical snapshot. The revision description is now
-    // editable in the authoritative project manifest, so a later description edit must not make
-    // an otherwise valid delivery snapshot look corrupt. Stable project/revision identities remain
-    // the cross-document integrity boundary.
+    // Delivery metadata is an immutable historical snapshot. Mutable project display/requirement
+    // fields such as project name, delivery method, and revision description may legitimately
+    // differ after project.update. Stable project/client document identities and revision identity
+    // remain the cross-document integrity boundary.
     if delivery.project.project_document_id != project.metadata.document_id
         || delivery.project.project_id != project.project_id
-        || delivery.project.project_name != project.project_name
         || delivery.client.client_document_id != client._metadata.document_id
         || delivery.client.client_id != client.client_id
         || delivery.revision.number != delivered
         || delivery.revision.revision_id != revision.revision_id
-        || delivery.delivery.method != project.delivery.method
     {
         return Err(DocumentFailure::InvalidSchema);
     }
