@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, WorkspaceSnapshot } from "../types";
 import {
@@ -118,12 +118,9 @@ export function ClientsRoute({
   if (workspace.status === "error") return <section className="notice error" role="alert"><strong>{productCopy.clients.loadFailed}</strong><span>{workspace.message}</span></section>;
   const snapshot = workspace.value;
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const filteredClients = useMemo(
-    () => normalizedQuery
-      ? snapshot.clients.filter((client) => client.clientName.toLocaleLowerCase().includes(normalizedQuery) || client.clientId.toLocaleLowerCase().includes(normalizedQuery))
-      : snapshot.clients,
-    [snapshot.clients, normalizedQuery],
-  );
+  const filteredClients = normalizedQuery
+    ? snapshot.clients.filter((client) => client.clientName.toLocaleLowerCase().includes(normalizedQuery) || client.clientId.toLocaleLowerCase().includes(normalizedQuery))
+    : snapshot.clients;
 
   return (
     <>
@@ -194,6 +191,7 @@ export function ClientDetails({
   const [editInfoError, setEditInfoError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<ClientEditForm | null>(null);
+  const [editExpectedLastModifiedAt, setEditExpectedLastModifiedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -230,6 +228,7 @@ export function ClientDetails({
   const beginEdit = () => {
     if (!editInfo?.updateSupported) return;
     setForm(formFromInfo(editInfo));
+    setEditExpectedLastModifiedAt(editInfo.lastModifiedAt);
     setSaveError(null);
     onSaveSuccess(null);
     setEditing(true);
@@ -238,6 +237,7 @@ export function ClientDetails({
     if (saving) return;
     setEditing(false);
     setForm(null);
+    setEditExpectedLastModifiedAt(null);
     setSaveError(null);
   };
   const toggleDeliverable = (value: string) => {
@@ -248,7 +248,7 @@ export function ClientDetails({
     setForm({ ...form, requestedDeliverables });
   };
   const save = async () => {
-    if (!form || !editInfo) return;
+    if (!form || !editInfo || !editExpectedLastModifiedAt) return;
     if (!form.clientName.trim()) { setSaveError("Client Name is required."); return; }
     if (!form.deliveryMethod.trim()) { setSaveError("Default Delivery Method is required."); return; }
     if (form.requestedDeliverables.length === 0) { setSaveError("Select at least one requested deliverable."); return; }
@@ -257,7 +257,7 @@ export function ClientDetails({
     try {
       const result = await invoke<ClientUpdateResult>("update_client", { request: {
         clientId: client.clientId,
-        expectedLastModifiedAt: editInfo.lastModifiedAt,
+        expectedLastModifiedAt: editExpectedLastModifiedAt,
         clientName: form.clientName.trim(),
         artist: form.artist.trim(),
         sampleRate: form.sampleRate,
@@ -269,6 +269,7 @@ export function ClientDetails({
       if (!result.ok) { setSaveError(result.message); return; }
       setEditing(false);
       setForm(null);
+      setEditExpectedLastModifiedAt(null);
       onSaveSuccess("Client settings were updated and verified.");
       onRefresh();
       setEditInfo(await invoke<ClientEditInfo>("get_client_edit_info", { clientId: client.clientId }));
