@@ -39,10 +39,8 @@ pub struct StudioSummary {
     pub studio_name: String,
     pub root_path: String,
     pub schema_version: String,
-    pub document_id: String,
     pub created_with: String,
     pub created_at: String,
-    pub last_modified_at: String,
     pub mix_engineer: String,
     pub sample_rate: u32,
     pub bit_depth: u16,
@@ -116,7 +114,6 @@ pub struct StudioUpdateResult {
     pub ok: bool,
     pub code: StudioUpdateCode,
     pub message: String,
-    pub studio: Option<StudioSummary>,
 }
 
 #[derive(Debug, Serialize)]
