@@ -29,9 +29,8 @@ const validatedIntakeReport = () => ({ ...intakePreview, code: "validated" } sat
 const openClientFiles = async () => {
   await screen.findByText("JL Mix Studio");
   fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-  const projectButton = await screen.findByRole("button", { name: "Blue Sky" });
-  await waitFor(() => expect(projectButton).toBeEnabled());
-  fireEvent.click(projectButton);
+  const projectLink = await screen.findByRole("link", { name: "Blue Sky" });
+  fireEvent.click(projectLink);
   const projectNavigation = await screen.findByRole("navigation", { name: "Project navigation" });
   const clientFilesButton = within(projectNavigation).getByRole("button", { name: "Client Files" });
   await waitFor(() => expect(clientFilesButton).toBeEnabled());
