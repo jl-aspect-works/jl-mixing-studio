@@ -75,8 +75,7 @@ const DELIVERABLES = [
   ["master", "Master"],
 ] as const;
 
-const revisionLabel = (revision: number | null) =>
-  revision === null ? productCopy.common.notSet : `${productCopy.projects.revisionPrefix} ${revision}`;
+const compactRevision = (revision: number | null) => revision === null ? "—" : `R${revision}`;
 
 const friendlyDeliverable = (value: string) =>
   DELIVERABLES.find(([key]) => key === value)?.[1] ?? value.replace(/_/g, " ");
@@ -309,10 +308,11 @@ export function ProjectsRouteV21({
         {filteredEntries.map((entry) => {
           const active = entryKey(entry) === selectedKey;
           const hasAttention = currentSnapshot.tasks.some((task) => task.clientId === entry.client.clientId && task.projectId === entry.project.projectId);
-          return <button type="button" key={entryKey(entry)} className={`projects-v21-row${active ? " selected" : ""}`} aria-pressed={active} onClick={() => setSelectedKey(entryKey(entry))}>
-            <span className="projects-v21-row-main"><strong>{entry.project.projectName}</strong><small>{entry.client.clientName} · {entry.project.artist || productCopy.common.notSet}</small><code>{entry.project.projectId}</code></span>
-            <span className="projects-v21-row-state">{hasAttention && <span className="projects-v21-status attention">Attention</span>}<small>Current {revisionLabel(entry.project.currentRevision)}</small><small>Approved {revisionLabel(entry.project.approvedRevision)}</small><small>Delivered {revisionLabel(entry.project.deliveredRevision)}</small></span>
-          </button>;
+          const selectEntry = () => setSelectedKey(entryKey(entry));
+          return <div key={entryKey(entry)} className={`projects-v21-row${active ? " selected" : ""}`} data-selected={active ? "true" : "false"} onClick={selectEntry} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectEntry(); } }} tabIndex={0}>
+            <span className="projects-v21-row-main"><button type="button" className="projects-v21-project-link" onClick={(event) => { event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</button><small>{entry.client.clientName} · {entry.project.artist || productCopy.common.notSet}</small><code>{entry.project.projectId}</code></span>
+            <span className="projects-v21-row-state">{hasAttention && <span className="projects-v21-status attention">Attention</span>}<span className="projects-v21-workflow-strip"><span><b>CURRENT</b>{compactRevision(entry.project.currentRevision)}</span><span><b>APPROVED</b>{compactRevision(entry.project.approvedRevision)}</span><span><b>DELIVERED</b>{compactRevision(entry.project.deliveredRevision)}</span></span></span>
+          </div>;
         })}
       </section>
 
