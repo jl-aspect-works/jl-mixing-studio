@@ -5,6 +5,7 @@ import { ActionIcon } from "../components/ActionIcon";
 import { RouteIssues, WorkspaceContent, type ResourceState } from "../AppShellViews";
 import { copy as productCopy } from "../resources/copy";
 import "./ProjectsRouteV21.css";
+import "./ProjectUiPolish.css";
 
 interface ProjectEditInfo {
   updateSupported: boolean;
@@ -76,6 +77,8 @@ const DELIVERABLES = [
 ] as const;
 
 const compactRevision = (revision: number | null) => revision === null ? "—" : String(revision);
+const revisionTooltipValue = (revision: number | null) => revision === null ? "none" : String(revision);
+const revisionTooltip = (project: ProjectSummary) => `Revisions: current-${revisionTooltipValue(project.currentRevision)}, approved-${revisionTooltipValue(project.approvedRevision)}, delivered-${revisionTooltipValue(project.deliveredRevision)}`;
 
 const projectStatus = (project: ProjectSummary, hasAttention: boolean) => {
   if (hasAttention) return "Needs Attention";
@@ -319,7 +322,7 @@ export function ProjectsRouteV21({
           const selectEntry = () => setSelectedKey(entryKey(entry));
           return <div key={entryKey(entry)} className={`projects-v21-row${active ? " selected" : ""}`} data-selected={active ? "true" : "false"} onClick={selectEntry} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectEntry(); } }} tabIndex={0}>
             <span className="projects-v21-row-main"><a href="#project-overview" className="projects-v21-project-link" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</a><span className="projects-v21-row-client">{entry.client.clientName}</span></span>
-            <span className="projects-v21-cad" aria-label={`Current ${compactRevision(entry.project.currentRevision)}, Approved ${compactRevision(entry.project.approvedRevision)}, Delivered ${compactRevision(entry.project.deliveredRevision)}`}>{compactRevision(entry.project.currentRevision)} / {compactRevision(entry.project.approvedRevision)} / {compactRevision(entry.project.deliveredRevision)}</span>
+            <span className="projects-v21-cad" title={revisionTooltip(entry.project)} aria-label={revisionTooltip(entry.project)}>{compactRevision(entry.project.currentRevision)} / {compactRevision(entry.project.approvedRevision)} / {compactRevision(entry.project.deliveredRevision)}</span>
             <span className={`projects-v21-status projects-v21-status-${status.toLocaleLowerCase().replaceAll(" ", "-")}`}>{status}</span>
           </div>;
         })}
