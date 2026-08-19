@@ -59,7 +59,8 @@ describe("JL Mixing Studio — workspace and studio states", () => {
       expect(screen.getByRole("heading", { name: "JL Mix Studio" })).toBeInTheDocument();
       expect(screen.getByText("JL Engineer")).toBeInTheDocument();
       expect(screen.getByText("48,000 Hz")).toBeInTheDocument();
-      expect(screen.getAllByText("/Users/engineer/Music/Mixes")).toHaveLength(2);
+      expect(screen.getByText("/Users/engineer/Music/Mixes")).toBeInTheDocument();
+      expect(screen.queryByText("Configured Root")).not.toBeInTheDocument();
       expect(screen.queryByText(/studio details are planned/i)).not.toBeInTheDocument();
     });
 
