@@ -1,5 +1,4 @@
 .projects-v21-filters button:hover:not(:disabled),
-.projects-v21-filters button:focus,
 .projects-v21-filters button:focus-visible {
   background: #eaf2ff;
   border-color: transparent;
@@ -7,16 +6,28 @@
 }
 
 .projects-v21-filters button.active:hover:not(:disabled),
-.projects-v21-filters button.active:focus,
 .projects-v21-filters button.active:focus-visible {
   background: #e2edff;
   color: #124dbd;
 }
 
-.workflow-tabs > button:hover:not(:disabled),
-.workflow-tabs > button:focus,
-.workflow-tabs > button:focus-visible {
+/* Keep pointer focus visually distinct from the active project tab. A clicked
+   destination can retain DOM focus while the current project view finishes
+   loading; it must not look like a second selected tab during that interval. */
+.workflow-tabs > button:hover:not(:disabled) {
   background: #eaf2ff;
+  border-color: transparent;
+  color: #1758d5;
+}
+
+.workflow-tabs > button:focus:not(:focus-visible) {
+  background: transparent;
+  border-color: transparent;
+  color: #718096;
+}
+
+.workflow-tabs > button:focus-visible {
+  background: #f7faff;
   border-color: transparent;
   color: #1758d5;
 }
