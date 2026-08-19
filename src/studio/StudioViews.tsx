@@ -48,11 +48,6 @@ function formatTimestamp(value: string) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
-function comparablePath(value: string) {
-  const normalized = value.trim().replaceAll("\\", "/").replace(/\/+$/, "");
-  return /^[A-Za-z]:\//.test(normalized) ? normalized.toLocaleLowerCase() : normalized;
-}
-
 function formFromStudio(studio: NonNullable<WorkspaceSnapshot["studio"]>): StudioEditForm {
   return {
     studioName: studio.studioName,
@@ -114,7 +109,6 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
   }
 
   const currentStudio = snapshot.studio;
-  const configuredRootMatches = comparablePath(snapshot.workspacePath) === comparablePath(currentStudio.rootPath);
   const beginEdit = () => {
     if (!editInfo?.updateSupported) return;
     setForm(formFromStudio(currentStudio));
@@ -223,12 +217,10 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
       </article>
 
       <article className="studio-section studio-section-wide studio-information">
-        <div className="studio-section-heading"><div><h3>Studio Information</h3><p>Authoritative identity, workspace, and metadata. These values are read-only.</p></div></div>
-        {!configuredRootMatches && <div className="studio-capability-note" role="status"><strong>Workspace path differs from configured root.</strong> The active workspace is being accessed from a different path than the root stored in <code>studio.json</code>. This can happen after moving or copying a workspace, or when using another mounted path.</div>}
+        <div className="studio-section-heading"><div><h3>Studio Information</h3><p>Workspace location and immutable Studio metadata. These values are read-only.</p></div></div>
         <dl className="studio-info-grid">
           <div><dt>Studio ID</dt><dd><code>{currentStudio.studioId}</code></dd></div>
-          <div><dt>Active Workspace</dt><dd><code>{snapshot.workspacePath}</code></dd></div>
-          <div><dt>Configured Root</dt><dd><code>{currentStudio.rootPath}</code></dd></div>
+          <div><dt>Workspace</dt><dd><code>{snapshot.workspacePath}</code></dd></div>
           <div><dt>Created</dt><dd>{formatTimestamp(currentStudio.createdAt)}</dd></div>
           <div><dt>Last Modified</dt><dd>{editInfo ? formatTimestamp(editInfo.lastModifiedAt) : "Checking…"}</dd></div>
           <div><dt>Schema</dt><dd>{currentStudio.schemaVersion}</dd></div>
