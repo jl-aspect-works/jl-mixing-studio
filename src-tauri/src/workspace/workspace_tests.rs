@@ -111,7 +111,10 @@ fn preserves_historical_delivery_snapshot_after_editing_project_name_and_method(
     let project = &snapshot.clients[0].projects[0];
     assert_eq!(project.project_name, "Renamed Project");
     assert_eq!(project.delivery_method, "Cloud Upload");
-    let delivery = project.delivery.as_ref().expect("historical delivery snapshot");
+    let delivery = project
+        .delivery
+        .as_ref()
+        .expect("historical delivery snapshot");
     assert_eq!(delivery.method, "Download");
 }
 
