@@ -132,6 +132,7 @@ export function useStudioWorkflow({
     studioForm,
     setStudioForm,
     studioNotice,
+    setStudioNotice,
     openStudioWorkflow,
     closeStudioWorkflow,
     chooseWorkspaceLocation,

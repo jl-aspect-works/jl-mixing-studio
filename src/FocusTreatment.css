@@ -1,0 +1,38 @@
+/* Global focus treatment: no gold rectangular focus outlines anywhere in Studio.
+   Keep keyboard focus visible with a restrained blue treatment that follows the control itself. */
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  border-color: #6f96e8 !important;
+  box-shadow: 0 0 0 2px rgb(36 107 253 / 14%) !important;
+}
+
+input[type="checkbox"]:focus,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus,
+input[type="radio"]:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgb(36 107 253 / 18%) !important;
+}
+
+button:focus,
+button:focus-visible,
+[role="button"]:focus,
+[role="button"]:focus-visible,
+summary:focus,
+summary:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgb(36 107 253 / 18%) !important;
+}
+
+a:focus,
+a:focus-visible {
+  outline: none !important;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
