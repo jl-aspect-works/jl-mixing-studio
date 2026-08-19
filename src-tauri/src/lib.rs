@@ -1,5 +1,6 @@
 mod automation_api;
 mod cli;
+mod client_edit;
 mod commands;
 mod derived;
 mod intake;
@@ -25,12 +26,12 @@ use commands::{
     intake_directory, read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
 };
 use models::{
-    ApprovalOperationResult, ClientCreationRequest, ClientOperationResult, DeliveryCreationRequest,
-    DeliveryOperationResult, DeliveryPackageDeleteRequest, DeliveryStatusRequest,
-    DeliveryStatusResult, IntakeOperationResult, IntakeRequest, ProjectCreationRequest,
-    ProjectOperationResult, RevisionApprovalRequest, RevisionCreationRequest,
-    RevisionOperationResult, StudioCreationRequest, StudioEditInfo, StudioOperationResult,
-    StudioUpdateRequest, StudioUpdateResult,
+    ApprovalOperationResult, ClientCreationRequest, ClientEditInfo, ClientOperationResult,
+    ClientUpdateRequest, ClientUpdateResult, DeliveryCreationRequest, DeliveryOperationResult,
+    DeliveryPackageDeleteRequest, DeliveryStatusRequest, DeliveryStatusResult, IntakeOperationResult,
+    IntakeRequest, ProjectCreationRequest, ProjectOperationResult, RevisionApprovalRequest,
+    RevisionCreationRequest, RevisionOperationResult, StudioCreationRequest, StudioEditInfo,
+    StudioOperationResult, StudioUpdateRequest, StudioUpdateResult,
 };
 #[cfg(test)]
 use models::{
@@ -86,6 +87,19 @@ fn preflight_client_creation(
 #[tauri::command]
 fn create_client(app: tauri::AppHandle, request: ClientCreationRequest) -> ClientOperationResult {
     run_client_operation(&app, request, cli::create_client)
+}
+
+#[tauri::command]
+fn get_client_edit_info(
+    app: tauri::AppHandle,
+    client_id: String,
+) -> Result<ClientEditInfo, String> {
+    client_edit::get_client_edit_info(&app, &client_id)
+}
+
+#[tauri::command]
+fn update_client(app: tauri::AppHandle, request: ClientUpdateRequest) -> ClientUpdateResult {
+    client_edit::update_client(&app, request)
 }
 
 #[tauri::command]
@@ -265,6 +279,8 @@ pub fn run() {
             update_studio,
             preflight_client_creation,
             create_client,
+            get_client_edit_info,
+            update_client,
             preflight_project_creation,
             create_project,
             get_intake_report,
