@@ -2,7 +2,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary, WorkspaceSnapshot } from "../types";
-import { ClientDetails, ClientsRoute } from "./ClientViews";
+import { ClientsRoute } from "./ClientViews";
+import { ClientDetails } from "./ClientDetailsV21";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@tauri-apps/plugin-clipboard-manager", () => ({ writeText: vi.fn() }));
@@ -93,6 +94,66 @@ describe("Client v2.1 directory and editing", () => {
     fireEvent.click(screen.getByRole("button", { name: "Clear Search" }));
     expect(screen.getByText("Acme Records")).toBeInTheDocument();
     expect(screen.getByText("North Star Music")).toBeInTheDocument();
+  });
+
+  it("puts Projects first and filters projects by name, ID, or artist", async () => {
+    mockedInvoke.mockResolvedValue(editInfo);
+    const clientWithProjects: ClientSummary = {
+      ...client,
+      projects: [
+        {
+          projectId: "blue-sky",
+          projectName: "Blue Sky",
+          artist: "The Artist",
+          schemaVersion: "1.1.0",
+          createdWith: "jl-mixing 2.1.0",
+          createdAt: "2026-08-01T12:00:00Z",
+          deadline: null,
+          sampleRate: 48000,
+          bitDepth: 24,
+          fileFormat: "WAV",
+          deliveryMethod: "Cloud",
+          currentRevision: 2,
+          approvedRevision: 1,
+          deliveredRevision: null,
+          delivery: null,
+          revisions: [],
+        },
+        {
+          projectId: "night-drive",
+          projectName: "Night Drive",
+          artist: "Guest Artist",
+          schemaVersion: "1.1.0",
+          createdWith: "jl-mixing 2.1.0",
+          createdAt: "2026-08-02T12:00:00Z",
+          deadline: null,
+          sampleRate: 48000,
+          bitDepth: 24,
+          fileFormat: "WAV",
+          deliveryMethod: "Cloud",
+          currentRevision: 1,
+          approvedRevision: null,
+          deliveredRevision: null,
+          delivery: null,
+          revisions: [],
+        },
+      ],
+    };
+
+    render(<ClientDetails {...detailsProps} client={clientWithProjects} />);
+    await screen.findByRole("button", { name: "Edit Client" });
+    const projectsHeading = screen.getByRole("heading", { name: "Projects" });
+    const identityHeading = screen.getByRole("heading", { name: "Client Identity" });
+    expect(projectsHeading.compareDocumentPosition(identityHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    const search = screen.getByRole("searchbox", { name: "Search projects" });
+    fireEvent.change(search, { target: { value: "guest" } });
+    expect(screen.getByText("Night Drive")).toBeInTheDocument();
+    expect(screen.queryByText("Blue Sky")).not.toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "blue-sky" } });
+    expect(screen.getByText("Blue Sky")).toBeInTheDocument();
+    expect(screen.queryByText("Night Drive")).not.toBeInTheDocument();
   });
 
   it("saves editable defaults through Automation with the edit-session conflict token", async () => {
