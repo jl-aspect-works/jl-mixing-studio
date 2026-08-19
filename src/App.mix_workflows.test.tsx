@@ -15,7 +15,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
 
       expect(screen.getByRole("heading", { name: "Revision History" })).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
 
       expect(screen.getByRole("heading", { name: "Revision History" })).toBeInTheDocument();
@@ -55,7 +55,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
 
       expect(screen.getByRole("heading", { name: "Delivery", level: 2 })).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
       fireEvent.click(screen.getByRole("button", { name: "Create Delivery" }));
 
@@ -110,7 +110,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
 
       expect(await screen.findByText("Delivery files are verified")).toBeInTheDocument();
@@ -154,7 +154,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
 
       fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
@@ -200,7 +200,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
       fireEvent.click(screen.getByRole("button", { name: "Rebuild Package" }));
 
@@ -256,7 +256,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
       fireEvent.click(screen.getByRole("button", { name: "Rebuild Package" }));
 
@@ -310,7 +310,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
       fireEvent.click(screen.getByRole("button", { name: "Create Delivery" }));
       const dialog = await screen.findByRole("dialog", { name: "Build Package" });
@@ -340,7 +340,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
       fireEvent.click(screen.getByRole("button", { name: "Create Delivery" }));
       const dialog = await screen.findByRole("dialog", { name: "Build Package" });
@@ -366,7 +366,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
       expect(await screen.findByText("Delivery needs attention")).toBeInTheDocument();
       expect(screen.getByText(/built from Revision 01.*Revision 02 is approved/i)).toBeInTheDocument();
@@ -382,7 +382,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
 
@@ -429,7 +429,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
       fireEvent.change(screen.getByRole("textbox", { name: /^Revision description/ }), { target: { value: "Vocal lift" } });
@@ -461,7 +461,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "New Revision" }));
       fireEvent.change(screen.getByRole("textbox", { name: /^Revision description/ }), { target: { value: "Vocal lift" } });
@@ -484,7 +484,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
 
@@ -523,7 +523,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Review approval" }));
@@ -555,7 +555,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(within(screen.getByRole("navigation", { name: "Revision history" })).getByRole("button", { name: /Revision 01/ }));
       fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
@@ -581,7 +581,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
       fireEvent.click(screen.getByRole("button", { name: "Approve Revision" }));
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Review approval" }));

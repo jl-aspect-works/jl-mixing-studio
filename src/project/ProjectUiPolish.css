@@ -1,0 +1,76 @@
+.projects-v21-filters button:hover:not(:disabled),
+.projects-v21-filters button:focus-visible {
+  background: #eaf2ff;
+  border-color: transparent;
+  color: #1758d5;
+}
+
+.projects-v21-filters button.active:hover:not(:disabled),
+.projects-v21-filters button.active:focus-visible {
+  background: #e2edff;
+  color: #124dbd;
+}
+
+.workflow-tabs > button:hover:not(:disabled) {
+  background: #eaf2ff;
+  border-color: transparent;
+  color: #1758d5;
+}
+
+.workflow-tabs > button:focus:not(:focus-visible) {
+  background: transparent;
+  border-color: transparent;
+  color: #718096;
+}
+
+.workflow-tabs > button:focus-visible {
+  background: #f7faff;
+  border-color: transparent;
+  color: #1758d5;
+}
+
+.workflow-tabs > button:disabled {
+  opacity: .52;
+  cursor: default;
+}
+
+.workflow-tabs > .project-navigation-pending {
+  background: #eaf2ff;
+  color: #1758d5;
+  font-weight: 850;
+}
+
+.project-navigation-spinner {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  border: 1.7px solid #9ebbf4;
+  border-right-color: #246bfd;
+  border-radius: 999px;
+  animation: project-navigation-spin .65s linear infinite;
+}
+
+@keyframes project-navigation-spin {
+  to { transform: rotate(360deg); }
+}
+
+.project-navigation-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.projects-v21-cad[title] {
+  cursor: help;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-navigation-spinner {
+    animation: none;
+  }
+}

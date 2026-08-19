@@ -11,6 +11,7 @@ export type ActionIconName =
   | "edit"
   | "folder"
   | "import"
+  | "open"
   | "pause"
   | "play"
   | "refresh"
@@ -31,6 +32,7 @@ const iconPaths: Record<ActionIconName, ReactNode> = {
   edit: <><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></>,
   folder: <><path d="M3 6h7l2 2h9v11H3z"/><path d="M3 6V4h7l2 2"/></>,
   import: <><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></>,
+  open: <><path d="M5 19 19 5"/><path d="M10 5h9v9"/></>,
   pause: <><path d="M8 5v14"/><path d="M16 5v14"/></>,
   play: <path d="m8 5 11 7-11 7Z"/>,
   refresh: <><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 8.5A8 8 0 0 0 5 7"/><path d="M5.5 15.5A8 8 0 0 0 19 17"/></>,

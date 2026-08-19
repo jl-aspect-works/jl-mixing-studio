@@ -109,8 +109,8 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(screen.getByRole("button", { name: "Dashboard" })).not.toHaveAttribute("aria-current");
       expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("heading", { name: "Projects", level: 1 })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Blue Sky" })).toBeInTheDocument();
-      expect(screen.getByLabelText("Projects search")).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("link", { name: "Blue Sky" })).toBeInTheDocument();
+      expect(screen.getByLabelText("Search projects")).toBeEnabled();
       expect(screen.getByLabelText("Global search")).toHaveAttribute("aria-disabled", "true");
     });
 
@@ -159,7 +159,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       expect(screen.queryByText(path)).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Copy path" })).not.toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Open Project Folder" }));
@@ -171,7 +171,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       render(<App />);
       await screen.findByText("JL Mix Studio");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
       expect(within(projectNavigation).queryByRole("button", { name: "Reports" })).not.toBeInTheDocument();
       expect(within(projectNavigation).queryByRole("button", { name: "Metadata" })).not.toBeInTheDocument();

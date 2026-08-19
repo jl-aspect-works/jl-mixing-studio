@@ -60,9 +60,8 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     render(<App />);
     await screen.findByText("JL Mix Studio");
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-    const projectButton = await screen.findByRole("button", { name: "Blue Sky" });
-    await waitFor(() => expect(projectButton).toBeEnabled());
-    fireEvent.click(projectButton);
+    const projectLink = await screen.findByRole("link", { name: "Blue Sky" });
+    fireEvent.click(projectLink);
 
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
 
@@ -91,9 +90,8 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     render(<App />);
     await screen.findByText("JL Mix Studio");
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-    const projectButton = await screen.findByRole("button", { name: "Blue Sky" });
-    await waitFor(() => expect(projectButton).toBeEnabled());
-    fireEvent.click(projectButton);
+    const projectLink = await screen.findByRole("link", { name: "Blue Sky" });
+    fireEvent.click(projectLink);
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
     expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
 
