@@ -1,6 +1,6 @@
 import type { WorkspaceSnapshot } from "../types";
 import type { IntakeReportState, ResourceState } from "../AppShellViews";
-import { ProjectsRoute } from "./ProjectViews";
+import { ProjectsRouteV21 } from "./ProjectsRouteV21";
 import { ProjectRouteContent, type ProjectRouteContentProps } from "./ProjectRouteContent";
 
 export interface AppProjectSectionProps extends Omit<ProjectRouteContentProps, "client" | "project" | "workspacePath" | "projectTasks"> {
@@ -12,14 +12,15 @@ export interface AppProjectSectionProps extends Omit<ProjectRouteContentProps, "
   projectCreationHelp: string;
   onNewProject: () => void;
   onSelectProject: (clientId: string, projectId: string) => void;
+  onProjectSaveSuccess: (message: string | null) => void;
   intakeReport: IntakeReportState;
 }
 
-export function AppProjectSection({ workspace, selected, client, project, projectCreationAvailable, projectCreationHelp, onNewProject, onSelectProject, ...projectProps }: AppProjectSectionProps) {
+export function AppProjectSection({ workspace, selected, client, project, projectCreationAvailable, projectCreationHelp, onNewProject, onSelectProject, onProjectSaveSuccess, ...projectProps }: AppProjectSectionProps) {
   if (selected && client && project) {
     const snapshot = workspace.status === "ready" ? workspace.value : null;
     const projectTasks = snapshot?.tasks.filter((task) => task.clientId === client.clientId && task.projectId === project.projectId) ?? [];
     return <ProjectRouteContent client={client} project={project} workspacePath={snapshot?.workspacePath ?? ""} projectTasks={projectTasks} {...projectProps} />;
   }
-  return <ProjectsRoute workspace={workspace} onRefresh={projectProps.onRefresh} loading={projectProps.loading} onNewProject={onNewProject} projectCreationAvailable={projectCreationAvailable} projectCreationHelp={projectCreationHelp} onSelectProject={onSelectProject} />;
+  return <ProjectsRouteV21 workspace={workspace} onRefresh={projectProps.onRefresh} onSaveSuccess={onProjectSaveSuccess} loading={projectProps.loading} onNewProject={onNewProject} projectCreationAvailable={projectCreationAvailable} projectCreationHelp={projectCreationHelp} onSelectProject={onSelectProject} />;
 }
