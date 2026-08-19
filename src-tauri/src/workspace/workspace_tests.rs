@@ -86,6 +86,36 @@ fn preserves_an_immutable_delivery_approval_snapshot_after_reapproval() {
 }
 
 #[test]
+fn preserves_historical_delivery_snapshot_after_editing_project_name_and_method() {
+    let temp = tempfile::tempdir().expect("temporary directory");
+    let root = temp.path().join("Mixes");
+    write_workspace(&root);
+    write_client(&root, "client", "Client", "Artist");
+    write_project(&root, "client", "project", "Project", "project");
+    write_delivery(&root, "client", "project", false);
+
+    let manifest_path = root.join("Clients/client/Projects/project/00_Admin/project-manifest.json");
+    let mut manifest: Value =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    manifest["project_name"] = Value::from("Renamed Project");
+    manifest["delivery"]["method"] = Value::from("Cloud Upload");
+    fs::write(
+        &manifest_path,
+        serde_json::to_string_pretty(&manifest).unwrap(),
+    )
+    .unwrap();
+
+    let snapshot = discover_workspace_at(&root);
+    assert_eq!(snapshot.status, WorkspaceStatus::Healthy);
+    assert_eq!(snapshot.counts.projects, 1);
+    let project = &snapshot.clients[0].projects[0];
+    assert_eq!(project.project_name, "Renamed Project");
+    assert_eq!(project.delivery_method, "Cloud Upload");
+    let delivery = project.delivery.as_ref().expect("historical delivery snapshot");
+    assert_eq!(delivery.method, "Download");
+}
+
+#[test]
 fn rejects_missing_or_mismatched_delivery_manifests_without_hiding_siblings() {
     let temp = tempfile::tempdir().expect("temporary directory");
     let root = temp.path().join("Mixes");
