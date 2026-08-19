@@ -8,6 +8,7 @@ import { useWorkspaceStorageSummary } from "./app/useWorkspaceStorageSummary";
 import { AppNotices } from "./app/AppNotices";
 import { AppRoutes } from "./app/AppRoutes";
 import { AppDialogs } from "./app/AppDialogs";
+import { rememberRecentProject } from "./dashboard/recentProject";
 import { ProjectBreadcrumbs } from "./project/ProjectBreadcrumbs";
 import { ProjectOverviewHeader } from "./project/ProjectOverviewHeader";
 import type { PrimaryRoute } from "./ui/routes";
@@ -57,7 +58,7 @@ export default function StudioApp() {
 
   const studio = useStudioWorkflow({ studioCreationAvailable: studioCreationSupported, onWorkspaceRefreshed: (value) => { resources.setWorkspace({ status: "ready", value }); void resources.reloadWorkspaceConfiguration(); } });
   const clients = useClientWorkflow({ creationAvailable: availability.clientCreationAvailable, setWorkspace: resources.setWorkspace, setNotice: setClientNotice });
-  const projects = useProjectWorkflow({ creationAvailable: availability.projectCreationAvailable, workspace: resources.workspace, setWorkspace: resources.setWorkspace, setNotice: setProjectNotice, onOpen: () => clients.setState({ status: "closed" }), onCreated: (clientId, projectId, fromClient) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); } });
+  const projects = useProjectWorkflow({ creationAvailable: availability.projectCreationAvailable, workspace: resources.workspace, setWorkspace: resources.setWorkspace, setNotice: setProjectNotice, onOpen: () => clients.setState({ status: "closed" }), onCreated: (clientId, projectId, fromClient) => { rememberRecentProject(clientId, projectId); setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); } });
   const route = getAppRouteContext(resources.workspace, resources.version, selectedClientId, selectedProject, activeRoute, projectView, availability.deliveryCreationSupported);
   const intake = useIntakeWorkflow({ validationAvailable: availability.intakeValidationAvailable, clientId: route.resolvedProjectClient?.clientId ?? null, projectId: route.resolvedProject?.projectId ?? null, onOpen: () => { setProjectView("intake"); revision.reset(); approval.reset(); } });
   const revision = useRevisionWorkflow({ creationAvailable: availability.revisionCreationAvailable, clientId: route.resolvedProjectClient?.clientId ?? null, project: route.resolvedProject, setWorkspace: resources.setWorkspace, onOpen: () => { intake.reset(); approval.reset(); }, onCreated: () => setProjectView("revisions") });
@@ -85,8 +86,8 @@ export default function StudioApp() {
   const openRevisions = () => { if (!route.resolvedProjectClient || !route.resolvedProject) return; setProjectView("revisions"); intake.reset(); };
   const selectProjectView = (view: ProjectShellView) => { if (view === "intake") { intake.open(); return; } if (view === "revisions") { openRevisions(); return; } setProjectView(view); if (view === "audioPrep") intake.refreshStructured(); else intake.reset(); revision.reset(); approval.reset(); };
   const navigate = (next: PrimaryRoute) => { setActiveRoute(next); setSelectedClientId(null); setSelectedProject(null); setProjectView("overview"); setRouteNotice(null); intake.clear(); revision.reset(); approval.reset(); };
-  const openProject = (clientId: string, projectId: string) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: false }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
-  const openClientProject = (clientId: string, projectId: string) => { setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: true }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
+  const openProject = (clientId: string, projectId: string) => { rememberRecentProject(clientId, projectId); setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: false }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
+  const openClientProject = (clientId: string, projectId: string) => { rememberRecentProject(clientId, projectId); setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: true }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
   const leaveProject = () => { setSelectedProject(null); setSelectedClientId(null); setProjectView("overview"); setRouteNotice(null); };
   const projectHeaderClient = activeRoute === "projects" && selectedProject !== null ? route.resolvedProjectClient : null;
   const projectHeaderProject = activeRoute === "projects" && selectedProject !== null ? route.resolvedProject : null;
