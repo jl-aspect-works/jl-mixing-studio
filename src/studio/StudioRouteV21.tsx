@@ -59,7 +59,7 @@ function formFromStudio(studio: NonNullable<WorkspaceSnapshot["studio"]>): Studi
   };
 }
 
-export function StudioRoute({ workspace, version, loading, setupAvailable, setupHelp, onSetup, onRefresh }: {
+export function StudioRoute({ workspace, version, loading, setupAvailable, setupHelp, onSetup, onRefresh, onSaveSuccess }: {
   workspace: ResourceState<WorkspaceSnapshot>;
   version: ResourceState<VersionCheck>;
   loading: boolean;
@@ -67,6 +67,7 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
   setupHelp: string;
   onSetup: () => void;
   onRefresh: () => void;
+  onSaveSuccess: (message: string) => void;
 }) {
   const snapshot = workspace.status === "ready" ? workspace.value : null;
   const studio = snapshot?.studio ?? null;
@@ -77,7 +78,6 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<StudioEditForm | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -114,7 +114,6 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
     if (!editInfo?.updateSupported) return;
     setForm(formFromStudio(currentStudio));
     setSaveError(null);
-    setNotice(null);
     setEditing(true);
   };
   const cancelEdit = () => {
@@ -136,7 +135,6 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
     if (form.requestedDeliverables.length === 0) { setSaveError("Select at least one requested deliverable."); return; }
     setSaving(true);
     setSaveError(null);
-    setNotice(null);
     try {
       const result = await invoke<StudioUpdateResult>("update_studio", { request: {
         expectedLastModifiedAt: editInfo.lastModifiedAt,
@@ -151,7 +149,7 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
       if (!result.ok) { setSaveError(result.message); return; }
       setEditing(false);
       setForm(null);
-      setNotice(result.message);
+      onSaveSuccess(result.message);
       onRefresh();
       setEditInfo(await invoke<StudioEditInfo>("get_studio_edit_info"));
     } catch (error: unknown) {
@@ -172,7 +170,6 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
     </div>
 
     {!editingAvailable && !editing && <div className="studio-capability-note" role="status"><strong>Editing unavailable.</strong> {editUnavailableHelp}</div>}
-    {notice && <div className="studio-save-notice" role="status">{notice}</div>}
     {saveError && <div className="form-error studio-save-error" role="alert">{saveError}</div>}
 
     <div className="studio-section-grid">
@@ -192,11 +189,10 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
         <div className="studio-field studio-deliverables-field"><span>Requested Deliverables</span>{editing ? <div className="studio-deliverable-options">{DELIVERABLES.map(([value,label])=><label key={value}><input type="checkbox" checked={values.requestedDeliverables.includes(value)} onChange={() => toggleDeliverable(value)} disabled={saving}/><span>{label}</span></label>)}</div> : <div className="studio-chip-list">{currentStudio.requestedDeliverables.map((value)=><span key={value} className="studio-chip">{friendlyDeliverable(value)}</span>)}</div>}</div>
       </div></article>
 
-      <article className="studio-section studio-section-wide studio-information"><div className="studio-section-heading"><div><h3>Studio Information</h3><p>Authoritative identity, workspace, and metadata. These values are read-only.</p></div></div>
+      <article className="studio-section studio-section-wide studio-information"><div className="studio-section-heading"><div><h3>Studio Information</h3><p>Workspace location and immutable Studio metadata. These values are read-only.</p></div></div>
         <dl className="studio-info-grid">
           <div><dt>Studio ID</dt><dd><code>{currentStudio.studioId}</code></dd></div>
           <div><dt>Workspace</dt><dd><code>{snapshot.workspacePath}</code></dd></div>
-          <div><dt>Configured Root</dt><dd><code>{currentStudio.rootPath}</code></dd></div>
           <div><dt>Created</dt><dd>{formatTimestamp(currentStudio.createdAt)}</dd></div>
           <div><dt>Last Modified</dt><dd>{editInfo ? formatTimestamp(editInfo.lastModifiedAt) : "Checking…"}</dd></div>
           <div><dt>Schema</dt><dd>{currentStudio.schemaVersion}</dd></div>
