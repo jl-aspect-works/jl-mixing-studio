@@ -101,8 +101,8 @@ describe("ProjectsRouteV21", () => {
     await screen.findByRole("heading", { name: "Blue Sky" });
     const search = screen.getByRole("searchbox", { name: "Search projects" });
     fireEvent.change(search, { target: { value: "guest artist" } });
-    expect(screen.getByRole("button", { name: /Night Drive/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Blue Sky/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Night Drive/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Blue Sky/ })).not.toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Night Drive" })).toBeInTheDocument();
   });
 
