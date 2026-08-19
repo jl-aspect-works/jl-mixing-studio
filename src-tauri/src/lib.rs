@@ -4,6 +4,7 @@ mod commands;
 mod derived;
 mod intake;
 mod models;
+mod studio_edit;
 mod workflows;
 mod workspace;
 
@@ -28,7 +29,8 @@ use models::{
     DeliveryOperationResult, DeliveryPackageDeleteRequest, DeliveryStatusRequest,
     DeliveryStatusResult, IntakeOperationResult, IntakeRequest, ProjectCreationRequest,
     ProjectOperationResult, RevisionApprovalRequest, RevisionCreationRequest,
-    RevisionOperationResult, StudioCreationRequest, StudioOperationResult,
+    RevisionOperationResult, StudioCreationRequest, StudioEditInfo, StudioOperationResult,
+    StudioUpdateRequest, StudioUpdateResult,
 };
 #[cfg(test)]
 use models::{
@@ -61,6 +63,16 @@ fn preflight_studio_creation(
 #[tauri::command]
 fn create_studio(app: tauri::AppHandle, request: StudioCreationRequest) -> StudioOperationResult {
     run_studio_operation(&app, request, cli::create_studio, true)
+}
+
+#[tauri::command]
+fn get_studio_edit_info(app: tauri::AppHandle) -> Result<StudioEditInfo, String> {
+    studio_edit::get_studio_edit_info(&app)
+}
+
+#[tauri::command]
+fn update_studio(app: tauri::AppHandle, request: StudioUpdateRequest) -> StudioUpdateResult {
+    studio_edit::update_studio(&app, request)
 }
 
 #[tauri::command]
@@ -249,6 +261,8 @@ pub fn run() {
             update_delivery_notes,
             preflight_studio_creation,
             create_studio,
+            get_studio_edit_info,
+            update_studio,
             preflight_client_creation,
             create_client,
             preflight_project_creation,
