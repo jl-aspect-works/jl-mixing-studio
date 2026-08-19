@@ -1,4 +1,4 @@
-//! Project domain contracts: persisted project state, workspace projection, and creation workflow.
+//! Project domain contracts: persisted project state, workspace projection, and creation/update workflow.
 
 use serde::{Deserialize, Serialize};
 
@@ -92,4 +92,79 @@ pub enum ProjectOperationCode {
     Rejected,
     Uncertain,
     Failed,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectUpdateRequest {
+    pub client_id: String,
+    pub project_id: String,
+    pub expected_last_modified_at: String,
+    pub project_name: String,
+    pub artist: String,
+    pub album: String,
+    pub producer: String,
+    pub mix_engineer: String,
+    pub bpm: Option<f64>,
+    pub musical_key: String,
+    pub time_signature: String,
+    pub sample_rate: u32,
+    pub bit_depth: u16,
+    pub file_format: String,
+    pub delivery_method: String,
+    pub requested_deliverables: Vec<String>,
+    pub deadline: Option<String>,
+    pub creative_direction: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectUpdateResult {
+    pub ok: bool,
+    pub code: ProjectUpdateCode,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ProjectUpdateCode {
+    Updated,
+    Conflict,
+    InvalidInput,
+    ProjectUnavailable,
+    AutomationUnavailable,
+    UnsupportedCapability,
+    Rejected,
+    Uncertain,
+    Failed,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectEditInfo {
+    pub update_supported: bool,
+    pub client_id: String,
+    pub project_id: String,
+    pub project_path: String,
+    pub document_id: String,
+    pub schema_version: String,
+    pub created_with: String,
+    pub created_at: String,
+    pub last_modified_at: String,
+    pub project_name: String,
+    pub artist: String,
+    pub album: String,
+    pub producer: String,
+    pub mix_engineer: String,
+    pub bpm: Option<f64>,
+    pub musical_key: String,
+    pub time_signature: String,
+    pub sample_rate: u32,
+    pub bit_depth: u16,
+    pub file_format: String,
+    pub delivery_method: String,
+    pub requested_deliverables: Vec<String>,
+    pub deadline: Option<String>,
+    pub creative_direction: String,
+    pub message: String,
 }
