@@ -8,7 +8,9 @@ use crate::automation_api::{
     invoke_api, resolve_command, ApiCallError, ApiStatus, ProcessRunner, SystemProcessRunner,
     AUTOMATION_EXECUTABLE,
 };
-use crate::models::{ProjectEditInfo, ProjectUpdateCode, ProjectUpdateRequest, ProjectUpdateResult};
+use crate::models::{
+    ProjectEditInfo, ProjectUpdateCode, ProjectUpdateRequest, ProjectUpdateResult,
+};
 use crate::workspace::find_validated_project_path;
 use crate::{resolve_home, resolve_workspace_root};
 
@@ -72,11 +74,7 @@ fn read_edit_info(
     Ok(ProjectEditInfo {
         update_supported: false,
         client_id: manifest_client_id,
-        project_id: required_string(
-            &document,
-            "/project_id",
-            "Project identity is incomplete.",
-        )?,
+        project_id: required_string(&document, "/project_id", "Project identity is incomplete.")?,
         project_path: project_path.to_string_lossy().into_owned(),
         document_id: required_string(
             &document,
@@ -103,13 +101,13 @@ fn read_edit_info(
             "/metadata/last_modified_at",
             "Project conflict metadata is incomplete.",
         )?,
-        project_name: required_string(
-            &document,
-            "/project_name",
-            "Project name is unavailable.",
-        )?,
+        project_name: required_string(&document, "/project_name", "Project name is unavailable.")?,
         artist: required_string(&document, "/artist", "Project artist is unavailable.")?,
-        album: required_string(&document, "/album", "Project album metadata is unavailable.")?,
+        album: required_string(
+            &document,
+            "/album",
+            "Project album metadata is unavailable.",
+        )?,
         producer: required_string(
             &document,
             "/producer",
@@ -331,10 +329,7 @@ pub fn update_project(app: &AppHandle, request: ProjectUpdateRequest) -> Project
         "--deliverables".into(),
         request.requested_deliverables.join(","),
         "--deadline".into(),
-        request
-            .deadline
-            .clone()
-            .unwrap_or_else(|| "null".into()),
+        request.deadline.clone().unwrap_or_else(|| "null".into()),
         "--creative-direction".into(),
         request.creative_direction.trim().into(),
     ];
