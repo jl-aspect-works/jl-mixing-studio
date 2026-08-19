@@ -29,11 +29,14 @@ export function AppNotices(props: AppNoticesProps) {
   const studioNoticeTitle = props.studioNotice?.toLocaleLowerCase().includes("created and verified")
     ? "Studio created"
     : "Studio updated";
+  const clientNoticeTitle = props.clientNotice?.toLocaleLowerCase().includes("created and verified")
+    ? "Client created"
+    : "Client updated";
 
   return <>
     <Notice title="Selection changed" message={props.routeNotice} warning />
     <Notice title={studioNoticeTitle} message={props.studioNotice} />
-    <Notice title="Client created" message={props.clientNotice} />
+    <Notice title={clientNoticeTitle} message={props.clientNotice} />
     <Notice title="Project created" message={props.projectNotice} />
     <Notice title="Intake report updated" message={props.intakeNotice} />
     <Notice title="Revision created" message={props.revisionNotice} />
