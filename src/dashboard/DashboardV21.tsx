@@ -253,11 +253,10 @@ export function DashboardV21(props: DashboardV21Props) {
             <div className="dashboard-v21-card-heading"><div><h2 id="dashboard-workspace-heading">Workspace Summary</h2><p>Storage and scope</p></div></div>
             <div className="dashboard-v21-workspace-stats">
               <span><DashboardIcon name="wave" /><small>Studio</small><strong>{snapshot?.studio?.studioName ?? "—"}</strong></span>
-              <span className="workspace-wide"><DashboardIcon name="storage" /><small>Storage</small><strong>{storageSummary(props.storage.value)}</strong></span>
               <span><DashboardIcon name="person" /><small>Clients</small><strong>{snapshot?.counts.clients ?? "—"}</strong></span>
               <span><DashboardIcon name="folder" /><small>Files</small><strong>{props.storage.value?.fileCount.toLocaleString() ?? "—"}</strong></span>
               <span><DashboardIcon name="folder" /><small>Projects</small><strong>{snapshot?.counts.projects ?? "—"}</strong></span>
-              <span className="workspace-wide workspace-path"><DashboardIcon name="folder" /><small>Path</small><strong className="path-value">{snapshot?.workspacePath ?? "Unavailable"}</strong></span>
+              <span className="workspace-wide"><DashboardIcon name="storage" /><small>Storage</small><strong>{storageSummary(props.storage.value)}</strong></span>
             </div>
           </section>
         </aside>
