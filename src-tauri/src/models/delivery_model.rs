@@ -25,6 +25,8 @@ pub struct DeliveryMetadata {
 pub struct DeliveryProject {
     pub project_document_id: String,
     pub project_id: String,
+    // Historical snapshot field validated by the delivery schema; current project names may change.
+    #[allow(dead_code)]
     pub project_name: String,
 }
 
