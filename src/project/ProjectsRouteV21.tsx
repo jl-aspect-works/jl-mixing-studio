@@ -304,21 +304,21 @@ export function ProjectsRouteV21({
     {entries.length > 0 && <div className="projects-v21-toolbar">
       <label className="projects-v21-search"><ActionIcon name="search" /><input type="search" aria-label="Search projects" placeholder="Search project, ID, client, or artist" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
       {query && <button type="button" className="secondary projects-v21-clear" onClick={() => setQuery("")}><ActionIcon name="close" />Clear</button>}
-      <div className="projects-v21-filters" aria-label="Project status filter">{filterOptions.map(([value, label]) => <button key={value} type="button" className={filter === value ? "active" : "secondary"} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
+      <div className="projects-v21-filters" aria-label="Project status filter">{filterOptions.map(([value, label]) => <button key={value} type="button" className={filter === value ? "active" : ""} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</button>)}</div>
     </div>}
 
     {entries.length > 0 && filteredEntries.length === 0 && <div className="planned-message projects-v21-no-results" role="status"><strong>No projects match the current search and filter.</strong><p>Clear the search or choose a different status filter.</p><button type="button" className="secondary" onClick={() => { setQuery(""); setFilter("all"); }}><ActionIcon name="close" />Clear Search and Filter</button></div>}
 
     {filteredEntries.length > 0 && <div className="projects-v21-grid">
       <section className="projects-v21-list" aria-label="Project directory">
-        <div className="projects-v21-list-head"><span>Name / info</span><span>Current / Approved / Delivered</span><span>Status</span></div>
+        <div className="projects-v21-list-head"><span>Name / Client</span><span>Revisions</span><span>Status</span></div>
         {filteredEntries.map((entry) => {
           const active = entryKey(entry) === selectedKey;
           const hasAttention = currentSnapshot.tasks.some((task) => task.clientId === entry.client.clientId && task.projectId === entry.project.projectId);
           const status = projectStatus(entry.project, hasAttention);
           const selectEntry = () => setSelectedKey(entryKey(entry));
           return <div key={entryKey(entry)} className={`projects-v21-row${active ? " selected" : ""}`} data-selected={active ? "true" : "false"} onClick={selectEntry} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectEntry(); } }} tabIndex={0}>
-            <span className="projects-v21-row-main"><a href="#project-overview" className="projects-v21-project-link" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</a><small>{entry.client.clientName} · {entry.project.artist || productCopy.common.notSet}</small><code>{entry.project.projectId}</code></span>
+            <span className="projects-v21-row-main"><a href="#project-overview" className="projects-v21-project-link" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</a><span className="projects-v21-row-client">{entry.client.clientName}</span></span>
             <span className="projects-v21-cad" aria-label={`Current ${compactRevision(entry.project.currentRevision)}, Approved ${compactRevision(entry.project.approvedRevision)}, Delivered ${compactRevision(entry.project.deliveredRevision)}`}>{compactRevision(entry.project.currentRevision)} / {compactRevision(entry.project.approvedRevision)} / {compactRevision(entry.project.deliveredRevision)}</span>
             <span className={`projects-v21-status projects-v21-status-${status.toLocaleLowerCase().replaceAll(" ", "-")}`}>{status}</span>
           </div>;
