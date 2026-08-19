@@ -5,6 +5,7 @@ mod commands;
 mod derived;
 mod intake;
 mod models;
+mod project_edit;
 mod studio_edit;
 mod workflows;
 mod workspace;
@@ -29,10 +30,10 @@ use models::{
     ApprovalOperationResult, ClientCreationRequest, ClientEditInfo, ClientOperationResult,
     ClientUpdateRequest, ClientUpdateResult, DeliveryCreationRequest, DeliveryOperationResult,
     DeliveryPackageDeleteRequest, DeliveryStatusRequest, DeliveryStatusResult,
-    IntakeOperationResult, IntakeRequest, ProjectCreationRequest, ProjectOperationResult,
-    RevisionApprovalRequest, RevisionCreationRequest, RevisionOperationResult,
-    StudioCreationRequest, StudioEditInfo, StudioOperationResult, StudioUpdateRequest,
-    StudioUpdateResult,
+    IntakeOperationResult, IntakeRequest, ProjectCreationRequest, ProjectEditInfo,
+    ProjectOperationResult, ProjectUpdateRequest, ProjectUpdateResult, RevisionApprovalRequest,
+    RevisionCreationRequest, RevisionOperationResult, StudioCreationRequest, StudioEditInfo,
+    StudioOperationResult, StudioUpdateRequest, StudioUpdateResult,
 };
 #[cfg(test)]
 use models::{
@@ -117,6 +118,20 @@ fn create_project(
     request: ProjectCreationRequest,
 ) -> ProjectOperationResult {
     run_project_operation(&app, request, cli::create_project)
+}
+
+#[tauri::command]
+fn get_project_edit_info(
+    app: tauri::AppHandle,
+    client_id: String,
+    project_id: String,
+) -> Result<ProjectEditInfo, String> {
+    project_edit::get_project_edit_info(&app, &client_id, &project_id)
+}
+
+#[tauri::command]
+fn update_project(app: tauri::AppHandle, request: ProjectUpdateRequest) -> ProjectUpdateResult {
+    project_edit::update_project(&app, request)
 }
 
 #[tauri::command]
@@ -284,6 +299,8 @@ pub fn run() {
             update_client,
             preflight_project_creation,
             create_project,
+            get_project_edit_info,
+            update_project,
             get_intake_report,
             preflight_intake_validation,
             run_intake_validation,
