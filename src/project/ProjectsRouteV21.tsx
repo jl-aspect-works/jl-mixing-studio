@@ -75,7 +75,14 @@ const DELIVERABLES = [
   ["master", "Master"],
 ] as const;
 
-const compactRevision = (revision: number | null) => revision === null ? "—" : `R${revision}`;
+const compactRevision = (revision: number | null) => revision === null ? "—" : String(revision);
+
+const projectStatus = (project: ProjectSummary, hasAttention: boolean) => {
+  if (hasAttention) return "Needs Attention";
+  if (project.deliveredRevision !== null) return "Delivered";
+  if (project.approvedRevision !== null && project.currentRevision === project.approvedRevision) return "Approved";
+  return "In Progress";
+};
 
 const friendlyDeliverable = (value: string) =>
   DELIVERABLES.find(([key]) => key === value)?.[1] ?? value.replace(/_/g, " ");
@@ -304,14 +311,16 @@ export function ProjectsRouteV21({
 
     {filteredEntries.length > 0 && <div className="projects-v21-grid">
       <section className="projects-v21-list" aria-label="Project directory">
-        <div className="projects-v21-list-head"><span>Project</span><span>Workflow</span></div>
+        <div className="projects-v21-list-head"><span>Name / info</span><span>Current / Approved / Delivered</span><span>Status</span></div>
         {filteredEntries.map((entry) => {
           const active = entryKey(entry) === selectedKey;
           const hasAttention = currentSnapshot.tasks.some((task) => task.clientId === entry.client.clientId && task.projectId === entry.project.projectId);
+          const status = projectStatus(entry.project, hasAttention);
           const selectEntry = () => setSelectedKey(entryKey(entry));
           return <div key={entryKey(entry)} className={`projects-v21-row${active ? " selected" : ""}`} data-selected={active ? "true" : "false"} onClick={selectEntry} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectEntry(); } }} tabIndex={0}>
-            <span className="projects-v21-row-main"><button type="button" className="projects-v21-project-link" onClick={(event) => { event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</button><small>{entry.client.clientName} · {entry.project.artist || productCopy.common.notSet}</small><code>{entry.project.projectId}</code></span>
-            <span className="projects-v21-row-state">{hasAttention && <span className="projects-v21-status attention">Attention</span>}<span className="projects-v21-workflow-strip"><span><b>CURRENT</b>{compactRevision(entry.project.currentRevision)}</span><span><b>APPROVED</b>{compactRevision(entry.project.approvedRevision)}</span><span><b>DELIVERED</b>{compactRevision(entry.project.deliveredRevision)}</span></span></span>
+            <span className="projects-v21-row-main"><a href="#project-overview" className="projects-v21-project-link" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</a><small>{entry.client.clientName} · {entry.project.artist || productCopy.common.notSet}</small><code>{entry.project.projectId}</code></span>
+            <span className="projects-v21-cad" aria-label={`Current ${compactRevision(entry.project.currentRevision)}, Approved ${compactRevision(entry.project.approvedRevision)}, Delivered ${compactRevision(entry.project.deliveredRevision)}`}>{compactRevision(entry.project.currentRevision)} / {compactRevision(entry.project.approvedRevision)} / {compactRevision(entry.project.deliveredRevision)}</span>
+            <span className={`projects-v21-status projects-v21-status-${status.toLocaleLowerCase().replaceAll(" ", "-")}`}>{status}</span>
           </div>;
         })}
       </section>
