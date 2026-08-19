@@ -173,6 +173,7 @@ export function useProjectWorkflow({
     setState,
     form,
     setForm,
+    setNotice,
     open,
     close,
     back,
