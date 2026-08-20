@@ -40,6 +40,27 @@
   text-align: right;
 }
 
+/* The lifecycle view owns its confirmation locally rather than through the shared
+   dialog components, so give its existing class names the same modal behavior. */
+.client-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: rgba(19, 29, 48, .56);
+  backdrop-filter: blur(4px);
+}
+
+.client-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
 .revision-lifecycle-dialog {
   width: min(520px, calc(100vw - 32px));
 }
