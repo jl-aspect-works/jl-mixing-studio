@@ -116,6 +116,13 @@ const displayValue = (value: unknown) => {
   return JSON.stringify(value);
 };
 
+export const validationFindingsTooltip = (findings: IntakeValidationFinding[]) => findings.map((finding) => {
+  const expected = displayValue(finding.expected);
+  const actual = displayValue(finding.actual);
+  const comparison = [expected ? `Expected: ${expected}` : null, actual ? `Actual: ${actual}` : null].filter(Boolean).join(" · ");
+  return comparison ? `${finding.message} — ${comparison}` : finding.message;
+}).join("\n");
+
 const actionErrorMessage = (error: unknown) => error instanceof Error && error.message
   ? error.message
   : typeof error === "string" && error ? error : "The project file action could not be completed.";
@@ -222,7 +229,10 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
         const fileType = entry.entryType === "file" ? entry.extension?.replace(/^\./, "").toUpperCase() || "File" : "Folder";
         const audioDetails = entry.isAudio ? [fileType, formatIntakeDuration(duration), sampleRate ? `${(sampleRate / 1000).toLocaleString()}kHz` : null, bitDepth ? `${bitDepth}-bit` : null, channels ? `${channels}ch` : null].filter(Boolean) : [fileType];
         const status = statusIconPresentation(record, entry);
-        const statusLabel = findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
+        const findingTooltip = validationFindingsTooltip(findings);
+        const statusLabel = record?.status === "needs_attention" && findingTooltip
+          ? `Needs attention — ${findingTooltip}`
+          : findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
         const actions = [
           entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runAction(openProjectFile, entry) } : null,
           entry.permissions.canReveal ? { label: "Reveal", onSelect: () => void runAction(revealProjectFile, entry) } : null,
