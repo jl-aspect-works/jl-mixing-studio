@@ -1,3 +1,61 @@
+.project-file-navigation-shell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  margin-bottom: 6px;
+}
+
+.project-file-breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  color: #344054;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+.project-file-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.project-file-breadcrumb-item button {
+  border: 0;
+  padding: 3px 4px;
+  border-radius: 5px;
+  background: transparent;
+  color: #526173;
+  font: inherit;
+  cursor: pointer;
+}
+
+.project-file-breadcrumb-item button:hover:not(:disabled) {
+  background: #f4f6f8;
+  color: #182230;
+}
+
+.project-file-breadcrumb-item [aria-current="page"] {
+  color: #182230;
+}
+
+.project-file-breadcrumb-separator {
+  color: #98a2b3;
+  font-weight: 500;
+}
+
+.project-file-path-description {
+  margin: 0 0 9px;
+  color: #68758a;
+  font-size: .68rem;
+  line-height: 1.4;
+}
+
 .project-file-preview-cell {
   min-width: 310px;
 }
@@ -8,4 +66,15 @@
   padding-left: 3px;
   padding-right: 3px;
   text-align: right;
+}
+
+@media (max-width: 800px) {
+  .project-file-navigation-shell {
+    display: grid;
+    align-items: start;
+  }
+
+  .project-file-navigation-shell .directory-actions {
+    justify-content: flex-start;
+  }
 }

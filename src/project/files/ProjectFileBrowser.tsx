@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ActionIcon } from "../../components/ActionIcon";
 import { AudioPreviewPlayer } from "./AudioPreviewPlayer";
 import { FileViewControls, ManagedFolderToolbar } from "./FileUiPrimitives";
 import { ProjectFileList } from "./ProjectFileList";
@@ -29,6 +30,9 @@ export function ProjectFileBrowser({
   initialPath,
   rootPath = initialPath,
   emptyMessage,
+  enhancedNavigation = false,
+  breadcrumbRootLabel = "Project root",
+  pathDescription,
   onOpenFolder,
   onPreview,
   onOpen,
@@ -41,6 +45,9 @@ export function ProjectFileBrowser({
   initialPath: string;
   rootPath?: string;
   emptyMessage?: string;
+  enhancedNavigation?: boolean;
+  breadcrumbRootLabel?: string;
+  pathDescription?: (relativePath: string) => string;
   onOpenFolder?: (relativePath: string) => void | Promise<void>;
   onPreview?: (entry: ProjectFileEntry) => void;
   onOpen?: (entry: ProjectFileEntry) => void;
@@ -49,6 +56,8 @@ export function ProjectFileBrowser({
   onDelete?: (entry: ProjectFileEntry) => void | Promise<void>;
 }) {
   const [relativePath, setRelativePath] = useState(initialPath);
+  const [history, setHistory] = useState<string[]>([initialPath]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -58,6 +67,8 @@ export function ProjectFileBrowser({
 
   useEffect(() => {
     setRelativePath(initialPath);
+    setHistory([initialPath]);
+    setHistoryIndex(0);
     setActionError(null);
     setActionBusy(null);
     setQuery("");
@@ -73,14 +84,40 @@ export function ProjectFileBrowser({
     () => state.listing ? presentProjectFileListing(state.listing, { query, kind, sort }) : null,
     [state.listing, query, kind, sort],
   );
+  const breadcrumbItems = useMemo(() => {
+    const rootSegments = rootPath.split("/").filter(Boolean);
+    const relativeSegments = relativePath.split("/").filter(Boolean);
+    const visibleSegments = relativeSegments.slice(rootSegments.length);
+    const items = [{ label: breadcrumbRootLabel, path: rootPath }];
+    let path = rootPath;
+
+    for (const segment of visibleSegments) {
+      path = path ? `${path}/${segment}` : segment;
+      items.push({ label: segment, path });
+    }
+    return items;
+  }, [breadcrumbRootLabel, relativePath, rootPath]);
   const filtersActive = query.trim() !== "" || kind !== "all";
   const actionsDisabled = actionBusy !== null;
+  const navigationLoading = state.status === "loading" || actionsDisabled;
+  const canNavigateBack = historyIndex > 0 && !actionsDisabled;
 
   const navigateTo = (nextPath: string) => {
-    if (actionsDisabled) return;
+    if (actionsDisabled || nextPath === relativePath) return;
     setActionError(null);
     setQuery("");
     setRelativePath(nextPath);
+    setHistory((current) => [...current.slice(0, historyIndex + 1), nextPath]);
+    setHistoryIndex((current) => current + 1);
+  };
+
+  const navigateBack = () => {
+    if (!canNavigateBack) return;
+    const nextIndex = historyIndex - 1;
+    setActionError(null);
+    setQuery("");
+    setHistoryIndex(nextIndex);
+    setRelativePath(history[nextIndex]);
   };
 
   const navigateUp = () => {
@@ -158,14 +195,42 @@ export function ProjectFileBrowser({
 
   return (
     <section className="project-file-browser" aria-label="Project files">
-      <ManagedFolderToolbar
-        path={relativePath}
-        canNavigateUp={canNavigateUp && !actionsDisabled}
-        loading={state.status === "loading" || actionsDisabled}
-        onUp={navigateUp}
-        onRefresh={() => void refresh()}
-        onOpenFolder={onOpenFolder ? () => void openFolder() : undefined}
-      />
+      {enhancedNavigation ? (
+        <div className="project-file-navigation-shell">
+          <nav className="project-file-breadcrumbs" aria-label="Project folder breadcrumbs">
+            {breadcrumbItems.map((item, index) => {
+              const current = item.path === relativePath;
+              return <span key={item.path || "project-root"} className="project-file-breadcrumb-item">
+                {index > 0 && <span className="project-file-breadcrumb-separator" aria-hidden="true">›</span>}
+                {current ? (
+                  <span aria-current="page">{item.label}</span>
+                ) : (
+                  <button type="button" disabled={actionsDisabled} onClick={() => navigateTo(item.path)}>{item.label}</button>
+                )}
+              </span>;
+            })}
+          </nav>
+          <div className="directory-actions">
+            <button type="button" className="secondary" disabled={!canNavigateBack || navigationLoading} onClick={navigateBack}><ActionIcon name="back" />Back</button>
+            {onOpenFolder && <button type="button" className="secondary" disabled={actionsDisabled} onClick={() => void openFolder()}><ActionIcon name="folder" />Open Folder</button>}
+            <button type="button" className="secondary" disabled={!canNavigateUp || navigationLoading} onClick={navigateUp}><ActionIcon name="up" />Up</button>
+            <button type="button" className="secondary" disabled={navigationLoading} onClick={() => void refresh()}><ActionIcon name="refresh" />{navigationLoading ? "Refreshing…" : "Refresh"}</button>
+          </div>
+        </div>
+      ) : (
+        <ManagedFolderToolbar
+          path={relativePath}
+          canNavigateUp={canNavigateUp && !actionsDisabled}
+          loading={navigationLoading}
+          onUp={navigateUp}
+          onRefresh={() => void refresh()}
+          onOpenFolder={onOpenFolder ? () => void openFolder() : undefined}
+        />
+      )}
+
+      {enhancedNavigation && pathDescription && (
+        <p className="project-file-path-description">{pathDescription(relativePath)}</p>
+      )}
 
       {state.listing && <FileViewControls
         label="File view controls"

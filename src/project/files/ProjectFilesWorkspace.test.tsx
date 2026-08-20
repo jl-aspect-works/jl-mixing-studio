@@ -1,11 +1,19 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectFilesWorkspace } from "./ProjectFilesWorkspace";
 
 const { browserProps } = vi.hoisted(() => ({ browserProps: vi.fn() }));
 
+type BrowserProps = {
+  initialPath: string;
+  rootPath?: string;
+  enhancedNavigation?: boolean;
+  breadcrumbRootLabel?: string;
+  pathDescription?: (relativePath: string) => string;
+};
+
 vi.mock("./ProjectFileBrowser", () => ({
-  ProjectFileBrowser: (props: { initialPath: string }) => {
+  ProjectFileBrowser: (props: BrowserProps) => {
     browserProps(props);
     return <div data-testid="project-file-browser">{props.initialPath || "Project root"}</div>;
   },
@@ -18,35 +26,27 @@ describe("ProjectFilesWorkspace", () => {
     browserProps.mockClear();
   });
 
-  it("starts at the project root and exposes the managed project structure", () => {
+  it("opens as a full-width project-root browser without the legacy project tree", () => {
     render(<ProjectFilesWorkspace clientId="client-1" projectId="project-1" />);
 
-    expect(screen.getByRole("button", { name: "Project root" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("button", { name: "01_Client_Files" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Original_Delivery" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "02_Audio_Preparation" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "04_Revisions" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "05_Final_Delivery" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Project files" })).toBeInTheDocument();
+    expect(screen.queryByText("Project structure", { exact: false })).not.toBeInTheDocument();
     expect(screen.getByTestId("project-file-browser")).toHaveTextContent("Project root");
+
+    const props = browserProps.mock.calls[browserProps.mock.calls.length - 1]?.[0] as BrowserProps;
+    expect(props.initialPath).toBe("");
+    expect(props.rootPath).toBe("");
+    expect(props.enhancedNavigation).toBe(true);
+    expect(props.breadcrumbRootLabel).toBe("Project root");
   });
 
-  it("selects a managed folder and updates the browser path and policy", () => {
+  it("preserves contextual managed-area policy messaging for the browser path", () => {
     render(<ProjectFilesWorkspace clientId="client-1" projectId="project-1" />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Original_Delivery" }));
-
-    expect(screen.getByRole("button", { name: "Original_Delivery" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("heading", { name: "01_Client_Files/Original_Delivery" })).toBeInTheDocument();
-    expect(screen.getByText(/Original Delivery is read-only/)).toBeInTheDocument();
-    expect(screen.getByTestId("project-file-browser")).toHaveTextContent("01_Client_Files/Original_Delivery");
-  });
-
-  it("supports collapsing managed tree groups", () => {
-    render(<ProjectFilesWorkspace clientId="client-1" projectId="project-1" />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Collapse 01_Client_Files" }));
-
-    expect(screen.queryByRole("button", { name: "Original_Delivery" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Expand 01_Client_Files" })).toBeInTheDocument();
+    const props = browserProps.mock.calls[browserProps.mock.calls.length - 1]?.[0] as BrowserProps;
+    expect(props.pathDescription?.("01_Client_Files/Original_Delivery")).toMatch(/Original Delivery is read-only/);
+    expect(props.pathDescription?.("02_Audio_Preparation/Working_Audio")).toMatch(/Audio Preparation is a working area/);
+    expect(props.pathDescription?.("04_Revisions/Rev_02")).toMatch(/Revision files are managed project assets/);
+    expect(props.pathDescription?.("05_Final_Delivery")).toMatch(/Final Delivery is managed by the Delivery workflow/);
   });
 });
