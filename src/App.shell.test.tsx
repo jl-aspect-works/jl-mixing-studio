@@ -21,7 +21,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(compact);
       expect(compact).toBeChecked();
       expect(document.querySelector(".app-shell")).toHaveClass("compact-layout");
-      expect(localStorage.getItem("jl-mixing-studio.preferences")).toContain('\"compactLayout\":true');
+      expect(localStorage.getItem("jl-mixing-studio.preferences")).toContain('"compactLayout":true');
       expect(mockedInvoke.mock.calls.some(([command]) => /setting|update|write/.test(String(command)))).toBe(false);
       unmount();
       render(<App />);
