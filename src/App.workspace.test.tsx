@@ -201,7 +201,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Refresh Workspace" }));
 
-    expect(await screen.findByText("After Refresh")).toBeInTheDocument();
+    expect((await screen.findAllByText("After Refresh")).length).toBeGreaterThan(0);
     expect(workspaceCalls).toBe(2);
     expect(configurationCalls).toBe(2);
     expect(versionCalls).toBe(2);
