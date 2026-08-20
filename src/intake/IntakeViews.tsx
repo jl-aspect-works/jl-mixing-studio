@@ -42,6 +42,7 @@ export function IntakeView({ client, project, reportState, actionError, validati
   const [folderActionError, setFolderActionError] = useState<string | null>(null);
   const [managedMode, setManagedMode] = useState<ManagedFileOperationMode | null>(null);
   const [selectedFile, setSelectedFile] = useState<ClientFilesSelection | null>(null);
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [browserVersion, setBrowserVersion] = useState(0);
   const result = reportState.status === "ready" ? reportState.value : null;
   const report = result?.ok ? result.report : null;
@@ -59,9 +60,12 @@ export function IntakeView({ client, project, reportState, actionError, validati
   const managedCompleted = () => {
     setBrowserVersion((value) => value + 1);
     setSelectedFile(null);
+    setSelectedPaths([]);
     onRefresh();
     if (validationAvailable) onRecheck();
   };
+
+  const resetRelativePaths = selectedPaths.map(sourceRelativePathFromOriginalDelivery);
 
   return <>
     <ProjectNavigationBar active="intake" onSelect={onSelectView} />
@@ -97,8 +101,17 @@ export function IntakeView({ client, project, reportState, actionError, validati
     </div>
 
     <section className="panel client-files-browser-panel" aria-label="Original Delivery file browser">
-      {selectedFile && <div className="client-files-selection-actions" role="status"><span><strong>1 file selected</strong><small>{selectedFile.entry.displayName}</small></span><button type="button" onClick={() => setManagedMode("audioPrepReset")}><ActionIcon name="copy" />Copy to Audio Prep…</button></div>}
-      <ClientFilesBrowser key={browserVersion} clientId={client.clientId} projectId={project.projectId} validationFiles={validationFiles} selectedPath={selectedFile?.entry.relativePath ?? null} onSelectionChange={setSelectedFile} />
+      {selectedPaths.length > 0 && <div className="client-files-selection-actions" role="status"><span><strong>{selectedPaths.length} {selectedPaths.length === 1 ? "file" : "files"} selected</strong><small>Select Client Files to restore their Original Delivery versions into Audio Prep.</small></span><button type="button" onClick={() => setManagedMode("audioPrepReset")}><ActionIcon name="copy" />Copy to Audio Prep…</button></div>}
+      <ClientFilesBrowser
+        key={browserVersion}
+        clientId={client.clientId}
+        projectId={project.projectId}
+        validationFiles={validationFiles}
+        selectedPath={selectedFile?.entry.relativePath ?? null}
+        onSelectionChange={setSelectedFile}
+        selectedPaths={selectedPaths}
+        onSelectedPathsChange={setSelectedPaths}
+      />
     </section>
 
     {report && <details className="panel intake-report-details"><summary>View intake report details</summary><IntakeReportContent report={report} /></details>}
@@ -107,7 +120,7 @@ export function IntakeView({ client, project, reportState, actionError, validati
       clientId={client.clientId}
       projectId={project.projectId}
       mode={managedMode}
-      relativePaths={managedMode === "audioPrepReset" && selectedFile ? [sourceRelativePathFromOriginalDelivery(selectedFile.entry.relativePath)] : []}
+      relativePaths={managedMode === "audioPrepReset" ? resetRelativePaths : []}
       onClose={() => setManagedMode(null)}
       onCompleted={managedCompleted}
     />}
