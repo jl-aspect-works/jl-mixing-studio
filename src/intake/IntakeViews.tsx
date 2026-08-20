@@ -76,12 +76,12 @@ export function IntakeView({ client, project, reportState, actionError, validati
 
     <div className="client-files-summary-row">
       <section className="panel client-files-original-delivery" aria-labelledby="original-delivery-heading">
+        <div className="client-files-original-delivery-header">
+          <div className="client-files-original-delivery-label"><h2 id="original-delivery-heading">Original Delivery</h2><span className="client-files-read-only">Read only</span></div>
+          <button type="button" onClick={() => setManagedMode("import")}><ActionIcon name="add" />Import Client Files…</button>
+        </div>
         <div className="client-files-original-delivery-main">
           <div className="client-files-original-delivery-copy">
-            <div className="client-files-original-delivery-title client-files-original-delivery-actions">
-              <div className="client-files-original-delivery-label"><h2 id="original-delivery-heading">Original Delivery</h2><span className="client-files-read-only">Read only</span></div>
-              <button type="button" onClick={() => setManagedMode("import")}><ActionIcon name="add" />Import Client Files…</button>
-            </div>
             <p>The client’s supplied source material is preserved here unchanged. Managed Import is the controlled way to add or replace client-delivered files.</p>
           </div>
           {report && <ValidationSummary report={report} files={validationFiles} />}
