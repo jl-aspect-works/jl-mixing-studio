@@ -301,7 +301,6 @@ export function RevisionsView({
   const approvalTitle = (() => {
     if (!selected) return "Select a revision first.";
     if (selectedApproved) {
-      if (selectedDelivered) return "This revision has been delivered. Resolve delivery state before unapproving it.";
       if (!unapproveAvailable) return supportHelp;
       return "Review and confirm removing approval from this revision.";
     }
@@ -323,7 +322,7 @@ export function RevisionsView({
       onSelect={onSelectView}
       actions={<>
         <button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button>
-        <button
+        {(!selectedApproved || !selectedDelivered) && <button
           type="button"
           className="secondary"
           onClick={() => {
@@ -332,19 +331,10 @@ export function RevisionsView({
             else onApprove(selected);
           }}
           disabled={!selected || loading || (selectedApproved
-            ? !unapproveAvailable || selectedDelivered
+            ? !unapproveAvailable
             : !approvalAvailable || selectedLifecycle === "closed")}
           title={approvalTitle}
-        ><ActionIcon name={selectedApproved ? "undo" : "check"} />{selectedApproved ? "Unapprove Revision" : "Approve Revision"}</button>
-        <button
-          type="button"
-          className="secondary"
-          onClick={() => {
-            if (selected) setPendingMutation({ action: selectedLifecycle === "closed" ? "reopen" : "close", revision: selected });
-          }}
-          disabled={!selected || !lifecycleAvailable || loading}
-          title={lifecycleTitle}
-        ><ActionIcon name={selectedLifecycle === "closed" ? "retry" : "archive"} />{selectedLifecycle === "closed" ? "Reopen Revision" : "Close Revision"}</button>
+        ><ActionIcon name={selectedApproved ? "undo" : "check"} />{selectedApproved ? "Unapprove Revision" : "Approve Revision"}</button>}
       </>}
     />
 
@@ -385,8 +375,19 @@ export function RevisionsView({
                 <h2 id="revision-detail-heading">Revision {String(selected.number).padStart(2, "0")}</h2>
                 <small>Created {formatRevisionTimestamp(selected.createdAt)}</small>
               </div>
-              <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} />
+              <div className="revision-detail-heading-actions">
+                <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} />
+                <button
+                  type="button"
+                  className="secondary revision-lifecycle-action"
+                  onClick={() => setPendingMutation({ action: selectedLifecycle === "closed" ? "reopen" : "close", revision: selected })}
+                  disabled={!lifecycleAvailable || loading}
+                  title={lifecycleTitle}
+                ><ActionIcon name={selectedLifecycle === "closed" ? "retry" : "archive"} />{selectedLifecycle === "closed" ? "Reopen Revision" : "Close Revision"}</button>
+              </div>
             </div>
+
+            {selectedApproved && selectedDelivered && <p className="revision-delivered-approval-note">Delivered revisions remain approved until delivery state is resolved.</p>}
 
             <div className="revision-description-click-edit">
               {descriptionEditing ? <input
