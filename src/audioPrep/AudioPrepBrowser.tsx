@@ -12,7 +12,7 @@ import {
 import { canNavigateProjectFilesUp, projectFilePathUp } from "../project/files/projectFileNavigation";
 import { presentProjectFileListing, type ProjectFileKindFilter, type ProjectFileSort } from "../project/files/projectFilePresentation";
 import { useProjectFiles } from "../project/files/useProjectFiles";
-import { type IntakeValidationFile } from "../intake/ClientFilesBrowser";
+import { validationFindingsTooltip, type IntakeValidationFile } from "../intake/ClientFilesBrowser";
 import "../intake/ClientFilesBrowser.css";
 import "../intake/ClientFilesLayout.css";
 import "./AudioPrepBrowser.css";
@@ -245,7 +245,10 @@ export function AudioPrepBrowser({
           const fileType = entry.entryType === "file" ? entry.extension?.replace(/^\./, "").toUpperCase() || "File" : "Folder";
           const status = statusPresentation(record, entry, validationAvailable);
           const findings = record?.findings ?? [];
-          const statusLabel = findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
+          const findingTooltip = validationFindingsTooltip(findings);
+          const statusLabel = record?.status === "needs_attention" && findingTooltip
+            ? `Needs attention — ${findingTooltip}`
+            : findings.length > 0 ? `${status.label} — ${findings.length} ${findings.length === 1 ? "finding" : "findings"}` : status.label;
           const sourceName = originalFilename(record);
           const provenance = provenanceState(record);
           const sourceLabel = provenanceLabel(record);
