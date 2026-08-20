@@ -13,7 +13,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
 
   it("opens authoritative revision history and selects an older approved revision", async () => {
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -40,7 +40,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       partial.issues = [{ scope: "project", code: "invalidJson", displayName: "Other Project", relativePath: "other.json", message: "Invalid JSON", recovery: "Repair it." }];
       respondWith(partial);
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -53,7 +53,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
 
   it("shows authoritative first-delivery readiness with guided creation available", async () => {
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -73,7 +73,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -108,7 +108,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       };
       respondWith(workspace);
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -152,7 +152,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -198,7 +198,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -254,7 +254,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -308,7 +308,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -338,7 +338,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -364,7 +364,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       };
       respondWith(workspace);
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Delivery" }));
@@ -380,7 +380,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -427,7 +427,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -459,7 +459,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -482,7 +482,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -521,7 +521,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -553,7 +553,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
@@ -579,7 +579,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await screen.findByText("JL Mixing Automation 1.3.1 detected");
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Revisions" }));
