@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ManagedFileOperationDialog } from "./ManagedFileOperationDialog";
 import {
   chooseManagedImportSources,
@@ -36,6 +36,8 @@ const importPlan = {
 const success = { ok: true, status: "success", message: "", data: { result: { items: [{ id: "original:0", result: "replaced" }, { id: "audio:0", result: "replaced" }], invalidations: [] } } };
 
 const mocked = <T,>(value: T) => vi.mocked(value);
+
+afterEach(cleanup);
 
 describe("ManagedFileOperationDialog", () => {
   beforeEach(() => {
