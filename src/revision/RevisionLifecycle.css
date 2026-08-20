@@ -17,6 +17,29 @@
   background: #fafbfc;
 }
 
+.revision-detail-heading-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.revision-lifecycle-action {
+  min-height: 28px !important;
+  padding: 4px 8px !important;
+  font-size: .68rem !important;
+  white-space: nowrap;
+}
+
+.revision-delivered-approval-note {
+  margin: 7px 0 0;
+  color: #667085;
+  font-size: .65rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
 .revision-lifecycle-dialog {
   width: min(520px, calc(100vw - 32px));
 }
@@ -24,4 +47,20 @@
 .revision-lifecycle-dialog > p {
   color: #59657a;
   line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .revision-detail-heading {
+    flex-wrap: wrap;
+  }
+
+  .revision-detail-heading-actions {
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .revision-delivered-approval-note {
+    text-align: left;
+  }
 }
