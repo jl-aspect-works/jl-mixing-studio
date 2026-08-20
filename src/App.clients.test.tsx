@@ -6,6 +6,8 @@ import type { ClientOperationResult } from "./types";
 
 afterEach(cleanup);
 
+const waitForDashboardReady = () => screen.findByText("JL Mixing Automation 1.3.1 detected");
+
 describe("JL Mixing Studio — client workflow", () => {
   beforeEach(() => {
     resetAppTestState();
@@ -13,7 +15,7 @@ describe("JL Mixing Studio — client workflow", () => {
 
   it("validates the client form before invoking preflight", async () => {
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
       const idInput = screen.getByLabelText(/client id/i);
@@ -42,7 +44,7 @@ describe("JL Mixing Studio — client workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
       fireEvent.change(screen.getByLabelText(/client id/i), {
@@ -97,7 +99,7 @@ describe("JL Mixing Studio — client workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
       fireEvent.change(screen.getByLabelText(/client id/i), {
@@ -138,7 +140,7 @@ describe("JL Mixing Studio — client workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
       fireEvent.change(screen.getByLabelText(/client id/i), {
@@ -165,7 +167,7 @@ describe("JL Mixing Studio — client workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
       fireEvent.change(screen.getByLabelText(/client id/i), {
@@ -195,7 +197,7 @@ describe("JL Mixing Studio — client workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByText("JL Mix Studio");
+      await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
       fireEvent.change(screen.getByLabelText(/client id/i), {
