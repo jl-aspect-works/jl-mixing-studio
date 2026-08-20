@@ -46,7 +46,11 @@ pub struct ManagedOperationResult {
     pub data: Value,
 }
 
-fn project_directory(app: &AppHandle, client_id: &str, project_id: &str) -> Result<PathBuf, String> {
+fn project_directory(
+    app: &AppHandle,
+    client_id: &str,
+    project_id: &str,
+) -> Result<PathBuf, String> {
     let workspace = resolve_workspace_root(app)?;
     find_validated_project_path(&workspace, client_id.trim(), project_id.trim())
         .ok_or_else(|| "The selected project is unavailable or ambiguous.".to_owned())
@@ -117,7 +121,12 @@ fn import_arguments(request: &ManagedImportRequest, execute: bool) -> Result<Vec
     }
     let mut arguments = vec![
         "client-files".into(),
-        if execute { "import-execute" } else { "import-plan" }.into(),
+        if execute {
+            "import-execute"
+        } else {
+            "import-plan"
+        }
+        .into(),
         "--json".into(),
         "--source-kind".into(),
         request.source_kind.clone(),
@@ -151,7 +160,12 @@ fn reset_arguments(request: &AudioPrepResetRequest, execute: bool) -> Result<Vec
     }
     let mut arguments = vec![
         "audio-prep".into(),
-        if execute { "reset-execute" } else { "reset-plan" }.into(),
+        if execute {
+            "reset-execute"
+        } else {
+            "reset-plan"
+        }
+        .into(),
         "--json".into(),
     ];
     for path in &request.relative_paths {
@@ -169,8 +183,9 @@ fn reset_arguments(request: &AudioPrepResetRequest, execute: bool) -> Result<Vec
         if !request.decisions.is_empty() {
             arguments.push("--decisions-json".into());
             arguments.push(
-                serde_json::to_string(&request.decisions)
-                    .map_err(|_| "Audio Prep conflict decisions could not be encoded.".to_owned())?,
+                serde_json::to_string(&request.decisions).map_err(|_| {
+                    "Audio Prep conflict decisions could not be encoded.".to_owned()
+                })?,
             );
         }
     }
