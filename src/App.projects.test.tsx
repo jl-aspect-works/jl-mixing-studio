@@ -28,7 +28,7 @@ describe("JL Mixing Studio — project workflow", () => {
       snapshot.counts = { clients: 2, projects: 2, issues: 0 };
       respondWith(snapshot);
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
 
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Second Blue Sky" }));
@@ -54,7 +54,7 @@ describe("JL Mixing Studio — project workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
 
@@ -97,7 +97,7 @@ describe("JL Mixing Studio — project workflow", () => {
 
   it("launches project creation from Client Details with the client locked", async () => {
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Clients" }));
       fireEvent.click(screen.getByRole("button", { name: "Acme Records" }));
 
@@ -111,7 +111,7 @@ describe("JL Mixing Studio — project workflow", () => {
 
   it("requires an explicit client when project creation starts from Projects", async () => {
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "New project" }));
 
@@ -131,7 +131,7 @@ describe("JL Mixing Studio — project workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "New project" }));
       fireEvent.change(screen.getByLabelText("Client"), { target: { value: "acme" } });
@@ -166,7 +166,7 @@ describe("JL Mixing Studio — project workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "New project" }));
       fireEvent.change(screen.getByLabelText("Client"), { target: { value: "acme" } });
@@ -204,7 +204,7 @@ describe("JL Mixing Studio — project workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "New project" }));
       fireEvent.change(screen.getByLabelText("Client"), { target: { value: "acme" } });
@@ -238,7 +238,7 @@ describe("JL Mixing Studio — project workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "New project" }));
       fireEvent.change(screen.getByLabelText("Client"), { target: { value: "acme" } });
@@ -267,7 +267,7 @@ describe("JL Mixing Studio — project workflow", () => {
         return Promise.reject(new Error("Unexpected command"));
       });
       render(<App />);
-      await screen.findByRole("heading", { name: "Dashboard", level: 1 });
+      await waitFor(() => expect(screen.getByRole("button", { name: "New project" })).toBeEnabled());
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("button", { name: "New project" }));
       fireEvent.change(screen.getByLabelText("Client"), { target: { value: "acme" } });
