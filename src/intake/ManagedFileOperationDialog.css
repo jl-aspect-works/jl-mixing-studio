@@ -1,3 +1,4 @@
+@import "./ManagedClientFilesEntry.css";
 .managed-file-dialog { width: min(820px, calc(100vw - 48px)); max-height: calc(100vh - 48px); overflow: auto; }
 .managed-source-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 8px; }
 .managed-source-options button { min-height: 112px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 7px; text-align: left; }
