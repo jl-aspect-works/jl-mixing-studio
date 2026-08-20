@@ -1,0 +1,45 @@
+@import "./ManagedClientFilesEntry.css";
+.client-dialog.managed-file-dialog { width: min(1100px, calc(100vw - 32px)); max-width: min(1100px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: auto; }
+.managed-source-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 8px; }
+.managed-source-options button { min-height: 112px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 7px; text-align: left; }
+.managed-source-options button span { font-size: .78rem; line-height: 1.35; font-weight: 500; opacity: .78; }
+.managed-operation-progress, .managed-executing { min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.managed-operation-progress p { margin: 0; color: var(--muted, #6b7280); }
+.managed-plan-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.managed-plan-summary article { border: 1px solid #dfe4ec; border-radius: 9px; padding: 12px 14px; background: #f8fafc; }
+.managed-plan-summary strong { display: block; font-size: 1.2rem; }
+.managed-plan-summary span { display: block; margin-top: 3px; color: #687386; font-size: .75rem; font-weight: 700; }
+.managed-no-conflicts { margin: 14px 0; padding: 11px 13px; border-radius: 8px; background: #f1f7f3; color: #365c43; font-weight: 650; }
+.managed-table-actions { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 14px 0 8px; color: #5f6b7d; font-size: .78rem; font-weight: 700; }
+.managed-apply-all { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.managed-apply-all span { color: #6e788a; font-size: .75rem; font-weight: 700; }
+.managed-review-table-wrap { overflow-x: hidden; border: 1px solid #dfe4ec; border-radius: 9px; }
+.managed-review-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; }
+.managed-review-table th, .managed-review-table td { padding: 9px 10px; border-bottom: 1px solid #e7ebf1; text-align: left; vertical-align: middle; }
+.managed-review-table th { background: #f6f8fb; color: #5f6b7d; font-size: .72rem; letter-spacing: .02em; }
+.managed-review-table th:first-child { width: 50%; }
+.managed-review-table th:nth-child(2), .managed-review-table th:nth-child(3) { width: 25%; }
+.managed-review-table tbody tr:last-child td { border-bottom: 0; }
+.managed-review-table td:first-child strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.managed-action-cell { display: grid; gap: 4px; min-width: 0; }
+.managed-action-cell select { width: 100%; min-width: 0; }
+.managed-action-cell small { color: #6b778a; font-size: .68rem; line-height: 1.25; overflow-wrap: anywhere; }
+.managed-action-cell .managed-audio-warning { color: #8a5a12; }
+.managed-action-static { display: inline-flex; align-items: center; min-height: 28px; padding: 4px 8px; border-radius: 6px; font-size: .74rem; font-weight: 750; }
+.managed-action-static.add { background: #eef7f1; color: #326044; }
+.managed-action-static.source { background: #eef3fa; color: #405b7b; }
+.managed-action-static.muted { background: #f4f5f7; color: #818a99; }
+.managed-executing { min-height: 48px; flex-direction: row; }
+.managed-operation-success { margin: 18px 0; padding: 16px; border-radius: 9px; background: #f1f7f3; }
+.managed-operation-success strong { color: #2f6542; }
+.managed-operation-success p { margin: 5px 0 0; }
+@media (max-width: 760px) {
+  .client-dialog.managed-file-dialog { width: calc(100vw - 16px); max-width: calc(100vw - 16px); padding-left: 20px; padding-right: 20px; }
+  .managed-source-options, .managed-plan-summary { grid-template-columns: 1fr; }
+  .managed-table-actions { align-items: flex-start; flex-direction: column; }
+  .managed-review-table th, .managed-review-table td { padding: 8px 7px; }
+  .managed-review-table th:first-child { width: 46%; }
+  .managed-review-table th:nth-child(2), .managed-review-table th:nth-child(3) { width: 27%; }
+  .managed-action-cell select { font-size: .78rem; }
+  .managed-action-cell small { font-size: .64rem; }
+}

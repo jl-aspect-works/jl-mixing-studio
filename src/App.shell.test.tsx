@@ -32,7 +32,7 @@ describe("JL Mixing Studio — shell and routes", () => {
   it("shows a healthy workspace without duplicating client and project details", async () => {
       render(<App />);
       await waitForDashboardReady();
-      expect(screen.getAllByText("JL Mix Studio").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByLabelText("JL Mixing Studio")).toBeInTheDocument();
       expect(screen.getByText("~/Music/Mixes")).toBeInTheDocument();
       expect(screen.queryByText("Blue Sky")).not.toBeInTheDocument();
       expect(screen.queryByText("Revision 2")).not.toBeInTheDocument();
@@ -46,7 +46,6 @@ describe("JL Mixing Studio — shell and routes", () => {
       render(<App />);
       await waitForDashboardReady();
       expect(screen.getByLabelText("JL Mixing Studio")).toBeInTheDocument();
-      expect(screen.getAllByText("JL Mix Studio").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("~/Music/Mixes")).toBeInTheDocument();
       const primaryNavigation = screen.getByRole("navigation", { name: "Primary navigation" });
       expect(within(primaryNavigation).getAllByRole("button").map((button) => button.textContent)).toEqual(["Dashboard", "Studio", "Clients", "Projects", "Tasks", "Activities", "Settings"]);

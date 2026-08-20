@@ -84,7 +84,7 @@ describe("AudioPrepBrowser", () => {
     expect(screen.getByTestId("audio-prep-preview")).toHaveTextContent("Previewing Vocal.wav");
   });
 
-  it("shows ambiguous provenance explicitly rather than guessing and supports validation filtering", () => {
+  it("shows attention findings in the status tooltip and supports validation filtering", () => {
     render(<AudioPrepBrowser
       clientId="client"
       projectId="project"
@@ -93,13 +93,15 @@ describe("AudioPrepBrowser", () => {
         relative_path: "Vocal.wav",
         is_audio: true,
         status: "needs_attention",
-        findings: [{ code: "SAMPLE_RATE_MISMATCH", severity: "warning", message: "Sample rate differs" }],
+        findings: [{ code: "SAMPLE_RATE_MISMATCH", severity: "warning", message: "Sample rate differs", expected: 44100, actual: 48000 }],
         original_filename: null,
         provenance_state: "ambiguous",
       }]}
     />);
 
-    expect(screen.getByLabelText("Needs attention — 1 finding")).toHaveTextContent("!");
+    const attention = screen.getByLabelText("Needs attention — Sample rate differs — Expected: 44100 · Actual: 48000");
+    expect(attention).toHaveTextContent("!");
+    expect(attention).toHaveAttribute("title", "Needs attention — Sample rate differs — Expected: 44100 · Actual: 48000");
     expect(screen.getByTitle("Multiple Original Delivery files have identical content; Automation will not guess the source.")).toHaveTextContent("Ambiguous");
 
     fireEvent.change(screen.getByLabelText("Validation status"), { target: { value: "valid" } });
@@ -151,8 +153,7 @@ describe("AudioPrepBrowser", () => {
     expect(onValidationRefresh).toHaveBeenCalled();
   });
 
-  it("cancels inline rename with Escape and confirms safe delete from overflow", async () => {
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+  it("cancels inline rename and deletes through the in-app confirmation", async () => {
     const onValidationRefresh = vi.fn();
     render(<AudioPrepBrowser clientId="client" projectId="project" onValidationRefresh={onValidationRefresh} />);
 
@@ -168,8 +169,13 @@ describe("AudioPrepBrowser", () => {
     const menu = within(summary.closest("details") as HTMLElement);
     fireEvent.click(menu.getByRole("menuitem", { name: "Delete" }));
 
+    expect(screen.getByRole("heading", { name: "Delete Vocal.wav?" })).toBeInTheDocument();
+    expect(mocks.deleteAudioPrepFile).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Delete File" }));
+
     await waitFor(() => expect(mocks.deleteAudioPrepFile).toHaveBeenCalledWith({ clientId: "client", projectId: "project", relativePath: "02_Audio_Preparation/Working_Audio/Vocal.wav" }));
-    expect(confirm).toHaveBeenCalledWith("Delete Vocal.wav from Audio Prep? This does not change Original Delivery.");
+    expect(mocks.refresh).toHaveBeenCalled();
     expect(onValidationRefresh).toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Delete Vocal.wav?" })).not.toBeInTheDocument();
   });
 });

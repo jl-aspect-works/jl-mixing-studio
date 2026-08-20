@@ -1,0 +1,10 @@
+.client-files-original-delivery-header { display: flex; width: 100%; justify-content: space-between; gap: 16px; align-items: center; }
+.client-files-original-delivery-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.client-files-original-delivery-header > button { flex: 0 0 auto; margin-left: auto; }
+.client-files-selection-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 10px; padding: 9px 11px; border: 1px solid #dce3ed; border-radius: 8px; background: #f7f9fc; }
+.client-files-selection-actions > span { display: grid; gap: 2px; min-width: 0; }
+.client-files-selection-actions small { color: #738096; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.client-file-select-heading, .client-file-checkbox-cell { width: 34px; min-width: 34px; padding-left: 8px !important; padding-right: 4px !important; text-align: center; }
+.client-file-checkbox-cell input { width: 15px; height: 15px; margin: 0; accent-color: var(--blue); cursor: pointer; }
+.client-files-table tr.client-file-bulk-selected td { background: #f4f8ff; }
+@media (max-width: 760px) { .client-files-original-delivery-header, .client-files-selection-actions { align-items: stretch; flex-direction: column; } .client-files-original-delivery-header > button { margin-left: 0; } }

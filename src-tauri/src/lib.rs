@@ -4,6 +4,7 @@ mod client_edit;
 mod commands;
 mod derived;
 mod intake;
+mod managed_client_files;
 mod models;
 mod project_edit;
 mod studio_edit;
@@ -26,6 +27,7 @@ pub(crate) use commands::{
 use commands::{
     intake_directory, read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
 };
+use managed_client_files::{AudioPrepResetRequest, ManagedImportRequest, ManagedOperationResult};
 use models::{
     ApprovalOperationResult, ClientCreationRequest, ClientEditInfo, ClientOperationResult,
     ClientUpdateRequest, ClientUpdateResult, DeliveryCreationRequest, DeliveryOperationResult,
@@ -132,6 +134,43 @@ fn get_project_edit_info(
 #[tauri::command]
 fn update_project(app: tauri::AppHandle, request: ProjectUpdateRequest) -> ProjectUpdateResult {
     project_edit::update_project(&app, request)
+}
+
+#[tauri::command]
+fn choose_managed_import_sources(source_kind: String) -> Result<Vec<String>, String> {
+    managed_client_files::choose_import_sources(&source_kind)
+}
+
+#[tauri::command]
+fn plan_managed_client_import(
+    app: tauri::AppHandle,
+    request: ManagedImportRequest,
+) -> ManagedOperationResult {
+    managed_client_files::plan_import(&app, request)
+}
+
+#[tauri::command]
+fn execute_managed_client_import(
+    app: tauri::AppHandle,
+    request: ManagedImportRequest,
+) -> ManagedOperationResult {
+    managed_client_files::execute_import(&app, request)
+}
+
+#[tauri::command]
+fn plan_audio_prep_reset(
+    app: tauri::AppHandle,
+    request: AudioPrepResetRequest,
+) -> ManagedOperationResult {
+    managed_client_files::plan_reset(&app, request)
+}
+
+#[tauri::command]
+fn execute_audio_prep_reset(
+    app: tauri::AppHandle,
+    request: AudioPrepResetRequest,
+) -> ManagedOperationResult {
+    managed_client_files::execute_reset(&app, request)
 }
 
 #[tauri::command]
@@ -301,6 +340,11 @@ pub fn run() {
             create_project,
             get_project_edit_info,
             update_project,
+            choose_managed_import_sources,
+            plan_managed_client_import,
+            execute_managed_client_import,
+            plan_audio_prep_reset,
+            execute_audio_prep_reset,
             get_intake_report,
             preflight_intake_validation,
             run_intake_validation,

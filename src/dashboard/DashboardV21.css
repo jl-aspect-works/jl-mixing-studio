@@ -35,6 +35,10 @@
 .dashboard-v21-card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:8px; }
 .dashboard-v21-card-heading h2 { margin:0; font-size:.97rem; }
 .dashboard-v21-card-heading p { margin:2px 0 0; color:#768197; font-size:.69rem; }
+.dashboard-v21-work { height:330px; min-height:330px; max-height:330px; display:flex; flex-direction:column; }
+.dashboard-v21-work .dashboard-v21-card-heading { flex:0 0 auto; }
+.dashboard-v21-work .dashboard-v21-task-list { min-height:0; flex:1; overflow-y:auto; align-content:start; padding-right:2px; }
+.dashboard-v21-work .dashboard-v21-empty { min-height:0; flex:1; }
 .dashboard-v21-task-list, .dashboard-v21-activity-list { display:grid; gap:6px; }
 .dashboard-v21-task { display:grid; grid-template-columns:58px minmax(0,1fr) auto; gap:10px; align-items:center; min-height:61px; border:1px solid #e2e7ee; border-radius:9px; background:#fff; padding:6px 8px; }
 .dashboard-v21-task-priority { min-height:49px; display:grid; place-items:center; align-content:center; gap:1px; border-radius:8px; font-size:.6rem; font-weight:900; text-transform:uppercase; }

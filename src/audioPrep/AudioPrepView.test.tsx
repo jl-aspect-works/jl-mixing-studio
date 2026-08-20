@@ -27,11 +27,18 @@ const project: ProjectSummary = {
 };
 
 describe("AudioPrepView", () => {
-  it("renders the working-stage summary and consumes Audio Prep validation availability", () => {
+  it("renders the working-stage summary, expected format, and Audio Prep validation availability", () => {
     render(<AudioPrepView
       client={{ clientId: "client", clientName: "Client", createdAt: "2026-08-14T00:00:00Z", defaultArtist: "Artist", projects: [project] }}
       project={project}
-      reportState={{ status: "ready", value: { ok: true, code: "validated", message: "ready", report: null, audioPrepAvailable: true, audioPrepFiles: [] } as never }}
+      reportState={{ status: "ready", value: {
+        ok: true,
+        code: "validated",
+        message: "ready",
+        report: { expectedSampleRate: 44100, expectedBitDepth: 24, enhancedInspectionAvailable: true } as never,
+        audioPrepAvailable: true,
+        audioPrepFiles: [],
+      } as never }}
       onValidationRefresh={vi.fn()}
       onProjects={vi.fn()}
       onOverview={vi.fn()}
@@ -40,7 +47,7 @@ describe("AudioPrepView", () => {
 
     expect(screen.getByRole("heading", { name: "Audio Prep" })).toBeInTheDocument();
     expect(screen.getByText(/Original Delivery remains unchanged/i)).toBeInTheDocument();
-    expect(screen.getByText(/Technical repair and conversion are deferred beyond Studio 2\.0/i)).toBeInTheDocument();
+    expect(screen.getByText("Expected format: 44.1 kHz / 24-bit · Enhanced inspection available")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Fix / Convert" })).not.toBeInTheDocument();
     expect(screen.getByTestId("audio-prep-browser")).toHaveTextContent("validated");
   });
