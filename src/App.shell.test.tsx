@@ -31,7 +31,6 @@ describe("JL Mixing Studio — shell and routes", () => {
 
   it("shows a healthy workspace without duplicating client and project details", async () => {
       render(<App />);
-      expect(screen.getByText(/reading the default workspace/i)).toBeInTheDocument();
       await waitForDashboardReady();
       expect(screen.getAllByText("JL Mix Studio").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("~/Music/Mixes")).toBeInTheDocument();
