@@ -27,7 +27,7 @@ describe("JL Mixing Studio — workspace sidebar", () => {
     });
 
     render(<App />);
-    await screen.findByText("JL Mix Studio");
+    await screen.findByText("JL Mixing Automation 1.3.1 detected");
 
     const openWorkspace = screen.getByRole("button", { name: "Open workspace folder" });
     expect(openWorkspace).toBeEnabled();
