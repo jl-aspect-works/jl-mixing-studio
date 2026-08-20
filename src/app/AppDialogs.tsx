@@ -5,6 +5,7 @@ import { useStudioWorkflow } from "../studio";
 import { useClientWorkflow } from "../client";
 import { useProjectWorkflow } from "../project";
 import { useIntakeWorkflow } from "../intake";
+import { ManagedFileOperationDialog } from "../intake/ManagedFileOperationDialog";
 import { useRevisionWorkflow } from "../revision";
 import { useApprovalWorkflow } from "../approval";
 import { useDeliveryWorkflow } from "../delivery";
@@ -30,21 +31,19 @@ export function AppDialogs({ workspace, project, studio, clients, projects, inta
       if (projects.state.status !== "confirming") return;
       projects.setState({ status: "editing", lockedClientId: projects.state.fromClient ? projects.state.request.clientId : null, fromClient: projects.state.fromClient });
     }} onClose={projects.close} />}
+    {projects.postCreateImport && <ManagedFileOperationDialog
+      clientId={projects.postCreateImport.clientId}
+      projectId={projects.postCreateImport.projectId}
+      mode="import"
+      title="Add Client Files"
+      sourceCancelLabel="Skip for now"
+      onCompleted={() => { onRefresh(); intake.refreshStructured(); }}
+      onClose={() => projects.setPostCreateImport(null)}
+    />}
     {intake.state.status !== "closed" && intake.state.status !== "preflighting" && <IntakeDialog state={intake.state} onConfirm={intake.confirm} onClose={intake.closeDialog} />}
     {revision.state.status !== "closed" && project && <RevisionDialog state={revision.state} values={revision.form} project={project} onChange={revision.setForm} onPreflight={revision.preflight} onConfirm={revision.confirm} onBack={revision.back} onClose={revision.close} />}
     {approval.state.status !== "closed" && project && <ApprovalDialog state={approval.state} values={approval.form} project={project} onChange={approval.setForm} onPreflight={approval.preflight} onConfirm={approval.confirm} onBack={approval.back} onClose={approval.close} />}
-    {delivery.state.status === "options" && project?.approvedRevision !== null && project?.approvedRevision !== undefined && <DeliveryOptionsDialog
-      approvedRevision={project.approvedRevision}
-      showCleanOption={project.delivery !== null}
-      cleanFirst={delivery.state.cleanFirst}
-      onCleanFirstChange={delivery.setCleanFirst}
-      onBuild={delivery.preflight}
-      onClose={delivery.close}
-    />}
-    {delivery.state.status !== "closed" && delivery.state.status !== "options" && project?.approvedRevision !== null && project?.approvedRevision !== undefined && <DeliveryDialog
-      state={delivery.state}
-      approvedRevision={project.approvedRevision}
-      onClose={() => { delivery.close(); if (delivery.state.status === "uncertain") onRefresh(); }}
-    />}
+    {delivery.state.status === "options" && project?.approvedRevision !== null && project?.approvedRevision !== undefined && <DeliveryOptionsDialog approvedRevision={project.approvedRevision} showCleanOption={project.delivery !== null} cleanFirst={delivery.state.cleanFirst} onCleanFirstChange={delivery.setCleanFirst} onBuild={delivery.preflight} onClose={delivery.close} />}
+    {delivery.state.status !== "closed" && delivery.state.status !== "options" && project?.approvedRevision !== null && project?.approvedRevision !== undefined && <DeliveryDialog state={delivery.state} approvedRevision={project.approvedRevision} onClose={() => { delivery.close(); if (delivery.state.status === "uncertain") onRefresh(); }} />}
   </>;
 }
