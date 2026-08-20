@@ -33,7 +33,7 @@ describe("ProjectFilesWorkspace", () => {
     expect(screen.queryByText("Project structure", { exact: false })).not.toBeInTheDocument();
     expect(screen.getByTestId("project-file-browser")).toHaveTextContent("Project root");
 
-    const props = browserProps.mock.calls.at(-1)?.[0] as BrowserProps;
+    const props = browserProps.mock.calls[browserProps.mock.calls.length - 1]?.[0] as BrowserProps;
     expect(props.initialPath).toBe("");
     expect(props.rootPath).toBe("");
     expect(props.enhancedNavigation).toBe(true);
@@ -43,7 +43,7 @@ describe("ProjectFilesWorkspace", () => {
   it("preserves contextual managed-area policy messaging for the browser path", () => {
     render(<ProjectFilesWorkspace clientId="client-1" projectId="project-1" />);
 
-    const props = browserProps.mock.calls.at(-1)?.[0] as BrowserProps;
+    const props = browserProps.mock.calls[browserProps.mock.calls.length - 1]?.[0] as BrowserProps;
     expect(props.pathDescription?.("01_Client_Files/Original_Delivery")).toMatch(/Original Delivery is read-only/);
     expect(props.pathDescription?.("02_Audio_Preparation/Working_Audio")).toMatch(/Audio Preparation is a working area/);
     expect(props.pathDescription?.("04_Revisions/Rev_02")).toMatch(/Revision files are managed project assets/);
