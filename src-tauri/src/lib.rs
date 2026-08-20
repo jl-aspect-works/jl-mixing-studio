@@ -7,6 +7,7 @@ mod intake;
 mod managed_client_files;
 mod models;
 mod project_edit;
+mod revision_lifecycle;
 mod studio_edit;
 mod workflows;
 mod workspace;
@@ -42,6 +43,7 @@ use models::{
     DeliveryCreationPreview, DeliveryReplacementMode, ProjectSummary, RevisionApprovalSummary,
     RevisionCreationSummary, WorkspaceStatus,
 };
+use revision_lifecycle::{RevisionLifecycleRequest, RevisionLifecycleResult, RevisionLifecycleSupport};
 #[cfg(test)]
 use std::{fs, path::Path};
 #[cfg(test)]
@@ -119,7 +121,7 @@ fn create_project(
     app: tauri::AppHandle,
     request: ProjectCreationRequest,
 ) -> ProjectOperationResult {
-    run_project_operation(&app, request, cli::create_project)
+    run_project_operation(&app, request, cli::create_project, true)
 }
 
 #[tauri::command]
@@ -229,6 +231,19 @@ fn approve_revision(
     request: RevisionApprovalRequest,
 ) -> ApprovalOperationResult {
     run_approval_operation(&app, request, cli::approve_revision, true)
+}
+
+#[tauri::command]
+fn get_revision_lifecycle_support(app: tauri::AppHandle) -> RevisionLifecycleSupport {
+    revision_lifecycle::support(&app)
+}
+
+#[tauri::command]
+fn mutate_revision_lifecycle(
+    app: tauri::AppHandle,
+    request: RevisionLifecycleRequest,
+) -> RevisionLifecycleResult {
+    revision_lifecycle::mutate(&app, request)
 }
 
 #[tauri::command]
@@ -353,6 +368,8 @@ pub fn run() {
             create_revision,
             preflight_revision_approval,
             approve_revision,
+            get_revision_lifecycle_support,
+            mutate_revision_lifecycle,
             preflight_delivery_creation,
             create_delivery,
             get_delivery_status,
