@@ -1,0 +1,27 @@
+.revision-badge.closed {
+  background: #eef0f3;
+  color: #596273;
+  border: 1px solid #d9dee6;
+}
+
+.revision-history-item.closed {
+  background: #fafbfc;
+}
+
+.revision-history-item.closed .revision-history-description,
+.revision-history-item.closed .revision-history-date {
+  color: #7c8798;
+}
+
+.revision-detail-header.closed {
+  background: #fafbfc;
+}
+
+.revision-lifecycle-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.revision-lifecycle-dialog > p {
+  color: #59657a;
+  line-height: 1.5;
+}
