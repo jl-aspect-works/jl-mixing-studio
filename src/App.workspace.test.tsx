@@ -165,7 +165,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
     render(<App />);
 
     expect((await screen.findAllByText(/not found in its default install location or on PATH/i)).length).toBeGreaterThan(0);
-    expect(screen.getByText("Needs attention")).toBeInTheDocument();
+    expect(screen.getAllByText("Needs attention").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Clients" }));
     expect(screen.getByRole("button", { name: "New client" })).toBeDisabled();
   });
@@ -199,7 +199,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
     render(<App />);
     await screen.findByText("JL Mixing Automation 1.3.1 detected");
 
-    fireEvent.click(screen.getByRole("button", { name: "Refresh workspace" }));
+    fireEvent.click(screen.getByRole("button", { name: "Refresh Workspace" }));
 
     expect(await screen.findByText("After Refresh")).toBeInTheDocument();
     expect(workspaceCalls).toBe(2);
