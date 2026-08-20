@@ -36,6 +36,10 @@
   min-width: 0;
 }
 
+.project-files-workspace .shared-file-view-controls {
+  margin-bottom: 8px;
+}
+
 @media (max-width: 900px) {
   .project-files-heading {
     display: grid;
