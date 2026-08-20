@@ -3,6 +3,7 @@ import "./ActionIcon.css";
 
 export type ActionIconName =
   | "add"
+  | "archive"
   | "back"
   | "check"
   | "close"
@@ -18,12 +19,14 @@ export type ActionIconName =
   | "retry"
   | "save"
   | "search"
+  | "undo"
   | "up"
   | "upload"
   | "download";
 
 const iconPaths: Record<ActionIconName, ReactNode> = {
   add: <><path d="M12 5v14"/><path d="M5 12h14"/></>,
+  archive: <><path d="M4 7h16v13H4z"/><path d="M3 4h18v3H3z"/><path d="M9 11h6"/></>,
   back: <><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></>,
   check: <path d="m5 12 4 4L19 6"/>,
   close: <><path d="m6 6 12 12"/><path d="m18 6-12 12"/></>,
@@ -39,6 +42,7 @@ const iconPaths: Record<ActionIconName, ReactNode> = {
   retry: <><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 0-2.3 5.7"/></>,
   save: <><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3"/><path d="M8 21v-7h8v7"/></>,
   search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>,
+  undo: <><path d="M9 8 5 12l4 4"/><path d="M5 12h8a6 6 0 0 1 6 6"/></>,
   up: <><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></>,
   upload: <><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M5 3h14"/></>,
   download: <><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></>,
