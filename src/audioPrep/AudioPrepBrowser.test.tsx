@@ -151,8 +151,7 @@ describe("AudioPrepBrowser", () => {
     expect(onValidationRefresh).toHaveBeenCalled();
   });
 
-  it("cancels inline rename with Escape and confirms safe delete from overflow", async () => {
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+  it("cancels inline rename and deletes through the in-app confirmation", async () => {
     const onValidationRefresh = vi.fn();
     render(<AudioPrepBrowser clientId="client" projectId="project" onValidationRefresh={onValidationRefresh} />);
 
@@ -168,8 +167,13 @@ describe("AudioPrepBrowser", () => {
     const menu = within(summary.closest("details") as HTMLElement);
     fireEvent.click(menu.getByRole("menuitem", { name: "Delete" }));
 
+    expect(screen.getByRole("heading", { name: "Delete Vocal.wav?" })).toBeInTheDocument();
+    expect(mocks.deleteAudioPrepFile).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Delete File" }));
+
     await waitFor(() => expect(mocks.deleteAudioPrepFile).toHaveBeenCalledWith({ clientId: "client", projectId: "project", relativePath: "02_Audio_Preparation/Working_Audio/Vocal.wav" }));
-    expect(confirm).toHaveBeenCalledWith("Delete Vocal.wav from Audio Prep? This does not change Original Delivery.");
+    expect(mocks.refresh).toHaveBeenCalled();
     expect(onValidationRefresh).toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Delete Vocal.wav?" })).not.toBeInTheDocument();
   });
 });
