@@ -23,7 +23,28 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run check
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Frontend tests
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          set -o pipefail
+          npm test 2>&1 | tee artifacts/vitest.log
+      - name: Upload frontend test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-log
+          path: artifacts/vitest.log
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Verify icons
+        run: npm run icons:verify
+      - name: Build
+        run: npm run build
 
   rust:
     name: Rust checks

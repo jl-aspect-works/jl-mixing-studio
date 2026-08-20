@@ -27,7 +27,7 @@ const emptyClientFilesListing = {
 const validatedIntakeReport = () => ({ ...intakePreview, code: "validated" } satisfies IntakeOperationResult);
 
 const openClientFiles = async () => {
-  await screen.findByText("JL Mix Studio");
+  await screen.findByText("JL Mixing Automation 1.3.1 detected");
   fireEvent.click(screen.getByRole("button", { name: "Projects" }));
   const projectLink = await screen.findByRole("link", { name: "Blue Sky" });
   fireEvent.click(projectLink);
