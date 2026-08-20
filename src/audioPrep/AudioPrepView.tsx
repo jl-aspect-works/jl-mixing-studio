@@ -37,6 +37,9 @@ export function AudioPrepView({
   const result = reportState.status === "ready" ? reportState.value as AudioPrepIntakeResult : null;
   const validationAvailable = result?.audioPrepAvailable === true;
   const validationFiles = Array.isArray(result?.audioPrepFiles) ? result.audioPrepFiles : [];
+  const expectedSampleRate = result?.report?.expectedSampleRate ?? project.sampleRate;
+  const expectedBitDepth = result?.report?.expectedBitDepth ?? project.bitDepth;
+  const enhancedInspectionAvailable = result?.report?.enhancedInspectionAvailable === true;
   const [folderError, setFolderError] = useState<string | null>(null);
 
   const openAudioPrepFolder = async () => {
@@ -61,7 +64,7 @@ export function AudioPrepView({
             <p>Prepare working copies for mixing while Original Delivery remains unchanged.</p>
           </div>
         </div>
-        <p className="intake-format client-files-format">Rename file stems inline and review validation/provenance here. Technical repair and conversion are deferred beyond Studio 2.0.</p>
+        <p className="intake-format client-files-format">Expected format: {expectedSampleRate / 1000} kHz / {expectedBitDepth}-bit · Enhanced inspection {enhancedInspectionAvailable ? "available" : "unavailable"}</p>
       </section>
 
       <section className="panel client-files-quick-actions" aria-labelledby="audio-prep-actions-heading">
