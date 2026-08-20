@@ -84,7 +84,7 @@ describe("AudioPrepBrowser", () => {
     expect(screen.getByTestId("audio-prep-preview")).toHaveTextContent("Previewing Vocal.wav");
   });
 
-  it("shows ambiguous provenance explicitly rather than guessing and supports validation filtering", () => {
+  it("shows attention findings in the status tooltip and supports validation filtering", () => {
     render(<AudioPrepBrowser
       clientId="client"
       projectId="project"
@@ -93,13 +93,15 @@ describe("AudioPrepBrowser", () => {
         relative_path: "Vocal.wav",
         is_audio: true,
         status: "needs_attention",
-        findings: [{ code: "SAMPLE_RATE_MISMATCH", severity: "warning", message: "Sample rate differs" }],
+        findings: [{ code: "SAMPLE_RATE_MISMATCH", severity: "warning", message: "Sample rate differs", expected: 44100, actual: 48000 }],
         original_filename: null,
         provenance_state: "ambiguous",
       }]}
     />);
 
-    expect(screen.getByLabelText("Needs attention — 1 finding")).toHaveTextContent("!");
+    const attention = screen.getByLabelText("Needs attention — Sample rate differs — Expected: 44100 · Actual: 48000");
+    expect(attention).toHaveTextContent("!");
+    expect(attention).toHaveAttribute("title", "Needs attention — Sample rate differs — Expected: 44100 · Actual: 48000");
     expect(screen.getByTitle("Multiple Original Delivery files have identical content; Automation will not guess the source.")).toHaveTextContent("Ambiguous");
 
     fireEvent.change(screen.getByLabelText("Validation status"), { target: { value: "valid" } });
