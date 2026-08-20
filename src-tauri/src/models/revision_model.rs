@@ -78,7 +78,7 @@ pub struct RevisionNotesUpdateRequest {
     pub content: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct RevisionNotesDocument {
     pub content: String,
@@ -119,7 +119,6 @@ pub enum RevisionOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     ProjectUnavailable,
     Rejected,
@@ -163,7 +162,6 @@ pub enum ApprovalOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
-    UnsupportedPlatform,
     WorkspaceBlocked,
     ProjectUnavailable,
     RevisionUnavailable,
