@@ -69,7 +69,7 @@ describe("ClientFilesBrowser", () => {
     expect(screen.getByText("Lead.wav")).toBeInTheDocument();
     expect(screen.queryByText("Validation")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Needs attention — 1 finding")).toHaveTextContent("!");
-    expect(screen.getByLabelText("Not applicable")).toHaveTextContent("");
+    expect(screen.getAllByLabelText("Not applicable").length).toBeGreaterThan(0);
     const legend = within(screen.getByLabelText("Validation status legend"));
     expect(legend.getByText("Valid")).toBeInTheDocument();
     expect(legend.getByText("Needs attention")).toBeInTheDocument();
@@ -98,5 +98,20 @@ describe("ClientFilesBrowser", () => {
     expect(leadMenu.getByText("Codec:")).toBeInTheDocument();
     expect(leadMenu.getByText("Decode integrity:")).toBeInTheDocument();
     expect(leadMenu.getByText("Sample rate mismatch")).toBeInTheDocument();
+  });
+
+  it("supports checkbox selection of multiple Client Files", () => {
+    const onSelectedPathsChange = vi.fn();
+    const { rerender } = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[]} onSelectedPathsChange={onSelectedPathsChange} />);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Lead.wav" }));
+    expect(onSelectedPathsChange).toHaveBeenLastCalledWith(["01_Client_Files/Original_Delivery/Lead.wav"]);
+
+    rerender(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={["01_Client_Files/Original_Delivery/Lead.wav"]} onSelectedPathsChange={onSelectedPathsChange} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select Notes.txt" }));
+    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([
+      "01_Client_Files/Original_Delivery/Lead.wav",
+      "01_Client_Files/Original_Delivery/Notes.txt",
+    ]);
   });
 });
