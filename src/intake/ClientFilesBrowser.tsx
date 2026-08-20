@@ -2,17 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
 import { FileStatusIcon, FileStatusLegend, FileViewControls, ManagedFolderToolbar, RowActionMenu, type FileStatusKind } from "../project/files/FileUiPrimitives";
 import type { ProjectFileEntry } from "../project/files/projectFileService";
-import {
-  openProjectFile,
-  projectFilePaths,
-  revealProjectFile,
-} from "../project/files/projectFileService";
+import { openProjectFile, projectFilePaths, revealProjectFile } from "../project/files/projectFileService";
 import { canNavigateProjectFilesUp, projectFilePathUp } from "../project/files/projectFileNavigation";
-import {
-  presentProjectFileListing,
-  type ProjectFileKindFilter,
-  type ProjectFileSort,
-} from "../project/files/projectFilePresentation";
+import { presentProjectFileListing, type ProjectFileKindFilter, type ProjectFileSort } from "../project/files/projectFilePresentation";
 import { useProjectFiles } from "../project/files/useProjectFiles";
 import "./ClientFilesBrowser.css";
 
@@ -70,9 +62,7 @@ const sourceRelativePath = (entry: ProjectFileEntry) => {
   const prefix = `${projectFilePaths.originalDelivery}/`;
   return entry.relativePath.startsWith(prefix)
     ? entry.relativePath.slice(prefix.length)
-    : entry.relativePath === projectFilePaths.originalDelivery
-      ? ""
-      : entry.relativePath;
+    : entry.relativePath === projectFilePaths.originalDelivery ? "" : entry.relativePath;
 };
 
 export const intakeMetadataValue = <T,>(metadata: IntakeValidationMetadata | null | undefined, camel: keyof IntakeValidationMetadata, snake: keyof IntakeValidationMetadata) =>
@@ -110,22 +100,14 @@ const matchesValidationFilter = (entry: ProjectFileEntry, record: IntakeValidati
 export const formatIntakeDuration = (seconds: number | null | undefined) => {
   if (seconds === null || seconds === undefined || !Number.isFinite(seconds)) return "—";
   const total = Math.max(0, Math.round(seconds));
-  const minutes = Math.floor(total / 60);
-  const remainder = total % 60;
-  return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+  return `${Math.floor(total / 60)}:${(total % 60).toString().padStart(2, "0")}`;
 };
 
 export const formatClientFileModified = (epochMs: number | null | undefined) => {
   if (epochMs === null || epochMs === undefined || !Number.isFinite(epochMs)) return "—";
   const date = new Date(epochMs);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const year = String(date.getFullYear()).slice(-2);
   const hour24 = date.getHours();
-  const hour12 = hour24 % 12 || 12;
-  const minute = String(date.getMinutes()).padStart(2, "0");
-  const meridiem = hour24 >= 12 ? "pm" : "am";
-  return `${month}/${day}/${year} ${String(hour12).padStart(2, "0")}:${minute}${meridiem}`;
+  return `${date.getMonth() + 1}/${date.getDate()}/${String(date.getFullYear()).slice(-2)} ${String(hour24 % 12 || 12).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}${hour24 >= 12 ? "pm" : "am"}`;
 };
 
 const displayValue = (value: unknown) => {
@@ -134,19 +116,18 @@ const displayValue = (value: unknown) => {
   return JSON.stringify(value);
 };
 
-const actionErrorMessage = (error: unknown) =>
-  error instanceof Error && error.message
-    ? error.message
-    : typeof error === "string" && error
-      ? error
-      : "The project file action could not be completed.";
+const actionErrorMessage = (error: unknown) => error instanceof Error && error.message
+  ? error.message
+  : typeof error === "string" && error ? error : "The project file action could not be completed.";
 
-export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], selectedPath = null, onSelectionChange }: {
+export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], selectedPath = null, onSelectionChange, selectedPaths = [], onSelectedPathsChange }: {
   clientId: string;
   projectId: string;
   validationFiles?: IntakeValidationFile[];
   selectedPath?: string | null;
   onSelectionChange?: (selection: ClientFilesSelection | null) => void;
+  selectedPaths?: string[];
+  onSelectedPathsChange?: (paths: string[]) => void;
 }) {
   const rootPath = projectFilePaths.originalDelivery;
   const [relativePath, setRelativePath] = useState<string>(rootPath);
@@ -156,6 +137,7 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
   const [validationFilter, setValidationFilter] = useState<ValidationFilter>("all");
   const [actionError, setActionError] = useState<string | null>(null);
   const { state, refresh } = useProjectFiles({ clientId, projectId, relativePath });
+  const bulkSelectionEnabled = Boolean(onSelectedPathsChange);
 
   useEffect(() => {
     setRelativePath(rootPath);
@@ -165,6 +147,7 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
     setValidationFilter("all");
     setActionError(null);
     onSelectionChange?.(null);
+    onSelectedPathsChange?.([]);
   }, [clientId, projectId, rootPath]);
 
   const validationByPath = useMemo(() => new Map(
@@ -182,11 +165,20 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
     setQuery("");
     setActionError(null);
     onSelectionChange?.(null);
+    onSelectedPathsChange?.([]);
   };
 
   const selectEntry = (entry: ProjectFileEntry) => {
     if (entry.entryType !== "file") return;
     onSelectionChange?.({ entry, validation: validationByPath.get(sourceRelativePath(entry)) ?? null });
+  };
+
+  const toggleSelectedPath = (entry: ProjectFileEntry) => {
+    if (entry.entryType !== "file" || !onSelectedPathsChange) return;
+    const next = selectedPaths.includes(entry.relativePath)
+      ? selectedPaths.filter((path) => path !== entry.relativePath)
+      : [...selectedPaths, entry.relativePath];
+    onSelectedPathsChange(next);
   };
 
   const canNavigateUp = canNavigateProjectFilesUp(relativePath, rootPath);
@@ -197,31 +189,24 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
   };
 
   return <section className="client-files-browser" aria-label="Original Delivery files">
-    <ManagedFolderToolbar
-      path={relativePath}
-      canNavigateUp={canNavigateUp}
-      loading={state.status === "loading"}
-      onUp={() => navigateTo(projectFilePathUp(relativePath, rootPath))}
-      onRefresh={() => void refresh()}
-      refreshLabel="Refresh files"
-    />
+    <ManagedFolderToolbar path={relativePath} canNavigateUp={canNavigateUp} loading={state.status === "loading"} onUp={() => navigateTo(projectFilePathUp(relativePath, rootPath))} onRefresh={() => void refresh()} refreshLabel="Refresh files" />
 
-    {state.listing && <FileViewControls
-      label="Client file view controls"
-      controls={[
-        { icon: "search", label: "Search", control: <input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /> },
-        { icon: "show", label: "Show file types", control: <select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select> },
-        { icon: "health", label: "Filter by validation", control: <select aria-label="Filter by validation" value={validationFilter} onChange={(event) => setValidationFilter(event.target.value as ValidationFilter)}><option value="all">All states</option><option value="attention">Needs attention</option><option value="info">Info</option><option value="valid">Valid</option></select> },
-        { icon: "sort", label: "Sort", control: <select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select> },
-      ]}
-    />}
+    {state.listing && <FileViewControls label="Client file view controls" controls={[
+      { icon: "search", label: "Search", control: <input aria-label="Search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this folder" /> },
+      { icon: "show", label: "Show file types", control: <select aria-label="Show file types" value={kind} onChange={(event) => setKind(event.target.value as ProjectFileKindFilter)}><option value="all">Everything</option><option value="audio">Audio</option><option value="files">Files</option><option value="folders">Folders</option></select> },
+      { icon: "health", label: "Filter by validation", control: <select aria-label="Filter by validation" value={validationFilter} onChange={(event) => setValidationFilter(event.target.value as ValidationFilter)}><option value="all">All states</option><option value="attention">Needs attention</option><option value="info">Info</option><option value="valid">Valid</option></select> },
+      { icon: "sort", label: "Sort", control: <select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value as ProjectFileSort)}><option value="name">Name</option><option value="modified">Modified</option><option value="size">Size</option></select> },
+    ]} />}
 
     {state.status === "error" && <section className="notice error" role="alert"><strong>We couldn’t read Original Delivery</strong><span>{state.message}</span><button type="button" onClick={() => void refresh()}>Try again</button></section>}
     {actionError && <section className="notice error" role="alert"><strong>We couldn’t complete that file action</strong><span>{actionError}</span></section>}
     {state.status === "loading" && !state.listing && <div className="client-files-loading-inline" role="status" aria-label="Reading Original Delivery"><span className="client-files-spinner" aria-hidden="true" /></div>}
 
     {listing && <>
-      <div className="table-scroll client-files-table"><table><thead><tr><th className="client-file-status-heading" aria-label="Status" /><th>Name</th><th>Preview</th><th>Audio Details</th><th>Modified</th></tr></thead><tbody>{listing.entries.map((entry) => {
+      <div className="table-scroll client-files-table"><table><thead><tr>
+        {bulkSelectionEnabled && <th className="client-file-select-heading" aria-label="Select files" />}
+        <th className="client-file-status-heading" aria-label="Status" /><th>Name</th><th>Preview</th><th>Audio Details</th><th>Modified</th>
+      </tr></thead><tbody>{listing.entries.map((entry) => {
         const record = validationByPath.get(sourceRelativePath(entry));
         const metadata = record?.metadata;
         const sampleRate = intakeMetadataValue<number>(metadata, "sampleRate", "sample_rate");
@@ -249,25 +234,24 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
           {record.sha256 && <p className="validation-hash">SHA-256: <code>{record.sha256}</code></p>}
           {findings.length > 0 ? <ul>{findings.map((finding, index) => { const related = finding.relatedPaths ?? finding.related_paths ?? []; const expected = displayValue(finding.expected); const actual = displayValue(finding.actual); return <li key={`${finding.code}-${index}`}><strong>{finding.message}</strong>{(expected || actual) && <span>{expected && <> Expected: {expected}.</>}{actual && <> Actual: {actual}.</>}</span>}{related.length > 0 && <span> Related: {related.join(", ")}.</span>}</li>; })}</ul> : <p>No findings.</p>}
         </div></details> : undefined;
-        return <tr key={entry.id} className={`${record?.status ? `validation-${record.status}` : ""}${selectedPath === entry.relativePath ? " client-file-selected" : ""}`}>
+        const checked = selectedPaths.includes(entry.relativePath);
+        return <tr key={entry.id} className={`${record?.status ? `validation-${record.status}` : ""}${selectedPath === entry.relativePath ? " client-file-selected" : ""}${checked ? " client-file-bulk-selected" : ""}`}>
+          {bulkSelectionEnabled && <td className="client-file-checkbox-cell">{entry.entryType === "file" ? <input type="checkbox" aria-label={`Select ${entry.displayName}`} checked={checked} onChange={() => toggleSelectedPath(entry)} /> : null}</td>}
           <td className="client-file-status-cell"><FileStatusIcon kind={status.kind} label={statusLabel} /></td>
-          <td className="client-file-name-cell">
-            {entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : <button type="button" className="client-file-select" aria-pressed={selectedPath === entry.relativePath} onClick={() => selectEntry(entry)}>{entry.displayName}</button>}
-          </td>
+          <td className="client-file-name-cell">{entry.entryType === "directory" ? <button type="button" className="table-link" onClick={() => navigateTo(entry.relativePath)}>{entry.displayName}</button> : <button type="button" className="client-file-select" aria-pressed={selectedPath === entry.relativePath} onClick={() => selectEntry(entry)}>{entry.displayName}</button>}</td>
           <td className="client-file-preview-cell">{entry.playable ? <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} durationSeconds={duration} /> : <span className="client-file-preview-empty">—</span>}</td>
           <td className="client-file-audio-details">{audioDetails.map((detail, index) => <span key={`${detail}-${index}`}>{detail}</span>)}</td>
           <td className="client-file-modified-cell"><span>{formatClientFileModified(entry.modifiedEpochMs)}</span><RowActionMenu label={`Actions for ${entry.displayName}`} actions={actions} extraContent={validationDetails} /></td>
         </tr>;
-      })}{listing.entries.length === 0 && <tr><td colSpan={5}>No files match the current search or filters.</td></tr>}</tbody></table></div>
-      <FileStatusLegend
-        label="Validation status legend"
-        items={[
-          { kind: "valid", label: "Valid" },
-          { kind: "attention", label: "Needs attention" },
-          { kind: "error", label: "Error" },
-          { kind: "info", label: "Info" },
-        ]}
-      />
+      })}{listing.entries.length === 0 && <tr><td colSpan={bulkSelectionEnabled ? 6 : 5}>No files match the current search or filters.</td></tr>}</tbody></table></div>
+      <FileStatusLegend label="Validation status legend" items={[
+        { kind: "valid", label: "Valid" },
+        { kind: "attention", label: "Needs attention" },
+        { kind: "error", label: "Error" },
+        { kind: "info", label: "Info" },
+        { kind: "pending", label: "Checking" },
+        { kind: "none", label: "Not applicable" },
+      ]} />
     </>}
   </section>;
 }
