@@ -263,6 +263,7 @@ fn discover_project(
             revision_id: revision.revision_id,
             created_at: revision.created_at,
             description: revision.description,
+            lifecycle: revision.lifecycle,
             approved_at: revision.approval.approved_at,
             approved_by: revision.approval.approved_by,
         })
@@ -470,29 +471,28 @@ fn read_delivery_summary(
 }
 
 fn validate_revision_history(manifest: &ProjectManifest) -> Result<(), DocumentFailure> {
-    let current = manifest.state.current_revision;
-    if current == 0 {
-        return if manifest.revisions.is_empty()
-            && manifest.state.approved_revision.is_none()
-            && manifest.state.delivered_revision.is_none()
-        {
-            Ok(())
-        } else {
-            Err(DocumentFailure::InvalidSchema)
-        };
-    }
-
-    if manifest.revisions.len() != current as usize {
-        return Err(DocumentFailure::InvalidSchema);
-    }
     let mut numbers = BTreeSet::new();
     let mut ids = BTreeSet::new();
     for revision in &manifest.revisions {
+        if revision.lifecycle != "open" && revision.lifecycle != "closed" {
+            return Err(DocumentFailure::InvalidSchema);
+        }
         if !numbers.insert(revision.number) || !ids.insert(revision.revision_id.as_str()) {
             return Err(DocumentFailure::InvalidSchema);
         }
     }
-    if !(1..=current).all(|number| numbers.contains(&number)) {
+    if !(1..=manifest.revisions.len() as u32).all(|number| numbers.contains(&number)) {
+        return Err(DocumentFailure::InvalidSchema);
+    }
+
+    let expected_current = manifest
+        .revisions
+        .iter()
+        .filter(|revision| revision.lifecycle == "open")
+        .map(|revision| revision.number)
+        .max()
+        .unwrap_or(0);
+    if manifest.state.current_revision != expected_current {
         return Err(DocumentFailure::InvalidSchema);
     }
 
