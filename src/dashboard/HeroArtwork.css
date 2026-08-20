@@ -17,6 +17,9 @@
 @media (min-width:1041px) and (max-height:900px) {
   .dashboard-v21-hero-art { min-height:158px; }
 }
+@media (max-width:1040px) {
+  .dashboard-v21-hero-art img { object-position:left center; }
+}
 @media (max-width:760px) {
   .dashboard-v21-hero-art { min-height:138px; }
 }
