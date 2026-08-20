@@ -90,7 +90,7 @@ export function useProjectWorkflow({ creationAvailable, workspace, setWorkspace,
           setState({ status: "closed" });
         } catch (error: unknown) {
           const detail = safeError(error, "");
-          setState({ status: "uncertain", message: `The client was created, but the studio could not be refreshed. The result is uncertain.${detail ? ` ${detail}` : ""}` });
+          setState({ status: "uncertain", message: `The project was created, but the studio could not be refreshed. The result is uncertain.${detail ? ` ${detail}` : ""}` });
         }
       })
       .catch((error: unknown) => {
