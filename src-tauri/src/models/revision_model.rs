@@ -2,12 +2,18 @@
 
 use serde::{Deserialize, Serialize};
 
+fn default_revision_lifecycle() -> String {
+    "open".to_owned()
+}
+
 #[derive(Debug, Deserialize)]
 pub struct RevisionDocument {
     pub number: u32,
     pub revision_id: String,
     pub created_at: String,
     pub description: String,
+    #[serde(default = "default_revision_lifecycle")]
+    pub lifecycle: String,
     pub approval: RevisionApproval,
 }
 
@@ -24,6 +30,7 @@ pub struct RevisionSummary {
     pub revision_id: String,
     pub created_at: String,
     pub description: String,
+    pub lifecycle: String,
     pub approved_at: Option<String>,
     pub approved_by: Option<String>,
 }
@@ -112,6 +119,7 @@ pub enum RevisionOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
+    UnsupportedPlatform,
     WorkspaceBlocked,
     ProjectUnavailable,
     Rejected,
@@ -155,6 +163,7 @@ pub enum ApprovalOperationCode {
     InvalidInput,
     AutomationUnavailable,
     UnsupportedVersion,
+    UnsupportedPlatform,
     WorkspaceBlocked,
     ProjectUnavailable,
     RevisionUnavailable,
