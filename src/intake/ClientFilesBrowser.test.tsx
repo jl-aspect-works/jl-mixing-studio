@@ -63,12 +63,14 @@ describe("ClientFilesBrowser", () => {
       status: "needs_attention",
       metadata: { sample_rate: 48000, bit_depth: 24, channels: 2, duration: 61, codec_name: "pcm_s24le" },
       decode_ok: true,
-      findings: [{ code: "SAMPLE_RATE_MISMATCH", severity: "warning", message: "Sample rate mismatch" }],
+      findings: [{ code: "SAMPLE_RATE_MISMATCH", severity: "warning", message: "Sample rate mismatch", expected: 44100, actual: 48000 }],
     }]} />);
 
     expect(screen.getByText("Lead.wav")).toBeInTheDocument();
     expect(screen.queryByText("Validation")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Needs attention — 1 finding")).toHaveTextContent("!");
+    const attention = screen.getByLabelText("Needs attention — Sample rate mismatch — Expected: 44100 · Actual: 48000");
+    expect(attention).toHaveTextContent("!");
+    expect(attention).toHaveAttribute("title", "Needs attention — Sample rate mismatch — Expected: 44100 · Actual: 48000");
     expect(screen.getAllByLabelText("Not applicable").length).toBeGreaterThan(0);
     const legend = within(screen.getByLabelText("Validation status legend"));
     expect(legend.getByText("Valid")).toBeInTheDocument();
