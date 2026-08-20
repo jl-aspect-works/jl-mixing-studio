@@ -5,7 +5,9 @@ import { ActionIcon } from "../components/ActionIcon";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { openProjectFile, projectFilePaths } from "../project/files/projectFileService";
-import { ClientFilesBrowser, type IntakeValidationFile } from "./ClientFilesBrowser";
+import { ClientFilesBrowser, type ClientFilesSelection, type IntakeValidationFile } from "./ClientFilesBrowser";
+import { ManagedFileOperationDialog, type ManagedFileOperationMode } from "./ManagedFileOperationDialog";
+import { sourceRelativePathFromOriginalDelivery } from "./managedClientFilesService";
 import "./ClientFilesLayout.css";
 
 export function IntakeReportContent({ report, compact = false }: { report: IntakeReport; compact?: boolean }) {
@@ -36,8 +38,11 @@ function ValidationSummary({ report, files }: { report: IntakeReport; files: Int
   </section>;
 }
 
-export function IntakeView({ client, project, reportState, actionError, validationAvailable, validationHelp, loading, onRecheck, onSelectView }: { client: ClientSummary; project: ProjectSummary; reportState: IntakeReportState; actionError: string | null; validationAvailable: boolean; validationHelp: string; loading: boolean; onProjects: () => void; onOverview: () => void; onRecheck: () => void; onRefresh: () => void; onSelectView: (view: ProjectShellView) => void; }) {
+export function IntakeView({ client, project, reportState, actionError, validationAvailable, validationHelp, loading, onRecheck, onRefresh, onSelectView }: { client: ClientSummary; project: ProjectSummary; reportState: IntakeReportState; actionError: string | null; validationAvailable: boolean; validationHelp: string; loading: boolean; onProjects: () => void; onOverview: () => void; onRecheck: () => void; onRefresh: () => void; onSelectView: (view: ProjectShellView) => void; }) {
   const [folderActionError, setFolderActionError] = useState<string | null>(null);
+  const [managedMode, setManagedMode] = useState<ManagedFileOperationMode | null>(null);
+  const [selectedFile, setSelectedFile] = useState<ClientFilesSelection | null>(null);
+  const [browserVersion, setBrowserVersion] = useState(0);
   const result = reportState.status === "ready" ? reportState.value : null;
   const report = result?.ok ? result.report : null;
   const validationFiles = result && "files" in result && Array.isArray(result.files) ? result.files as IntakeValidationFile[] : [];
@@ -51,6 +56,13 @@ export function IntakeView({ client, project, reportState, actionError, validati
     }
   };
 
+  const managedCompleted = () => {
+    setBrowserVersion((value) => value + 1);
+    setSelectedFile(null);
+    onRefresh();
+    if (validationAvailable) onRecheck();
+  };
+
   return <>
     <ProjectNavigationBar active="intake" onSelect={onSelectView} />
     {actionError && <div className="notice error" role="alert">{actionError}</div>}
@@ -62,11 +74,11 @@ export function IntakeView({ client, project, reportState, actionError, validati
       <section className="panel client-files-original-delivery" aria-labelledby="original-delivery-heading">
         <div className="client-files-original-delivery-main">
           <div className="client-files-original-delivery-copy">
-            <div className="client-files-original-delivery-title">
-              <h2 id="original-delivery-heading">Original Delivery</h2>
-              <span className="client-files-read-only">Read only</span>
+            <div className="client-files-original-delivery-title client-files-original-delivery-actions">
+              <div className="client-files-original-delivery-label"><h2 id="original-delivery-heading">Original Delivery</h2><span className="client-files-read-only">Read only</span></div>
+              <button type="button" onClick={() => setManagedMode("import")}><ActionIcon name="add" />Import Client Files…</button>
             </div>
-            <p>The client’s supplied source material is preserved here unchanged.</p>
+            <p>The client’s supplied source material is preserved here unchanged. Managed Import is the controlled way to add or replace client-delivered files.</p>
           </div>
           {report && <ValidationSummary report={report} files={validationFiles} />}
         </div>
@@ -85,9 +97,19 @@ export function IntakeView({ client, project, reportState, actionError, validati
     </div>
 
     <section className="panel client-files-browser-panel" aria-label="Original Delivery file browser">
-      <ClientFilesBrowser clientId={client.clientId} projectId={project.projectId} validationFiles={validationFiles} />
+      {selectedFile && <div className="client-files-selection-actions" role="status"><span><strong>1 file selected</strong><small>{selectedFile.entry.displayName}</small></span><button type="button" onClick={() => setManagedMode("audioPrepReset")}><ActionIcon name="copy" />Copy to Audio Prep…</button></div>}
+      <ClientFilesBrowser key={browserVersion} clientId={client.clientId} projectId={project.projectId} validationFiles={validationFiles} selectedPath={selectedFile?.entry.relativePath ?? null} onSelectionChange={setSelectedFile} />
     </section>
 
     {report && <details className="panel intake-report-details"><summary>View intake report details</summary><IntakeReportContent report={report} /></details>}
+
+    {managedMode && <ManagedFileOperationDialog
+      clientId={client.clientId}
+      projectId={project.projectId}
+      mode={managedMode}
+      relativePaths={managedMode === "audioPrepReset" && selectedFile ? [sourceRelativePathFromOriginalDelivery(selectedFile.entry.relativePath)] : []}
+      onClose={() => setManagedMode(null)}
+      onCompleted={managedCompleted}
+    />}
   </>;
 }
