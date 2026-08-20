@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { healthyWorkspace, version } from "../App.testSupport";
 import type { WorkspaceStorageState } from "../app/useWorkspaceStorageSummary";
@@ -56,8 +56,11 @@ describe("DashboardV21", () => {
     rememberRecentProject("acme", "missing-project", new Date("2026-08-19T13:42:00Z"));
     const props = baseProps();
     render(<DashboardV21 {...props} />);
-    expect(screen.getByRole("heading", { name: "Recent project unavailable" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Open Project" })).not.toBeInTheDocument();
+    const heading = screen.getByRole("heading", { name: "Recent project unavailable" });
+    expect(heading).toBeInTheDocument();
+    const hero = heading.closest("section");
+    expect(hero).not.toBeNull();
+    expect(within(hero!).queryByRole("button", { name: "Open Project" })).not.toBeInTheDocument();
   });
 
   it("shows the workspace-unavailable recent-project state safely", () => {
