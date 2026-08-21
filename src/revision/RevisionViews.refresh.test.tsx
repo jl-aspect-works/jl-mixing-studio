@@ -57,6 +57,7 @@ const project = {
 const renderView = (
   projectValue: ProjectSummary = project,
   onCreateDelivery = vi.fn(),
+  onApprove = vi.fn(),
 ) => render(<RevisionsView
   client={client}
   project={projectValue}
@@ -72,7 +73,7 @@ const renderView = (
   onOverview={vi.fn()}
   onRefresh={vi.fn()}
   onNewRevision={vi.fn()}
-  onApprove={vi.fn()}
+  onApprove={onApprove}
   onCreateDelivery={onCreateDelivery}
   onSelectView={vi.fn()}
 />);
@@ -118,7 +119,18 @@ describe("RevisionsView workspace refresh", () => {
   });
 });
 
-describe("RevisionsView delivery action", () => {
+describe("RevisionsView revision detail actions", () => {
+  it("places Approve Revision with the selected revision actions", async () => {
+    mocks.getRevisionNotes.mockResolvedValue({ content: "Notes", maxBytes: 65_536 });
+    const onApprove = vi.fn();
+    renderView(project, vi.fn(), onApprove);
+
+    const button = await screen.findByRole("button", { name: "Approve Revision" });
+    expect(button.closest(".revision-detail-heading-actions")).not.toBeNull();
+    fireEvent.click(button);
+    expect(onApprove).toHaveBeenCalledWith(project.revisions[0]);
+  });
+
   it("shows Create Delivery only for the approved revision and invokes the delivery handoff", async () => {
     mocks.getRevisionNotes.mockResolvedValue({ content: "Notes", maxBytes: 65_536 });
     const onCreateDelivery = vi.fn();
@@ -135,6 +147,7 @@ describe("RevisionsView delivery action", () => {
     renderView(approvedProject, onCreateDelivery);
 
     const button = await screen.findByRole("button", { name: "Create Delivery" });
+    expect(button.closest(".revision-detail-heading-actions")).not.toBeNull();
     fireEvent.click(button);
     expect(onCreateDelivery).toHaveBeenCalledTimes(1);
   });
