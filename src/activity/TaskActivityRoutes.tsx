@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { ResourceState } from "../AppViews";
 import { ActionIcon } from "../components/ActionIcon";
 import type { ActivityEvent, ActivityEventType, DerivedTask, TaskPriority, WorkspaceSnapshot } from "../types";
@@ -131,7 +131,7 @@ export function TasksRoute({
   if (workspace.status === "error") return <section className="notice error"><strong>We couldn’t load your tasks</strong><span>{workspace.message}</span></section>;
 
   const snapshot = workspace.value;
-  const filtered = useMemo(() => filterTasks(snapshot.tasks, query, priority), [snapshot.tasks, query, priority]);
+  const filtered = filterTasks(snapshot.tasks, query, priority);
   const filtersActive = query.trim() !== "" || priority !== "all";
   const clear = () => { setQuery(""); setPriority("all"); };
 
@@ -183,7 +183,7 @@ export function ActivityRoute({
   if (workspace.status === "error") return <section className="notice error"><strong>We couldn’t load recent activity</strong><span>{workspace.message}</span></section>;
 
   const snapshot = workspace.value;
-  const filtered = useMemo(() => filterActivity(snapshot.activity, query, eventType), [snapshot.activity, query, eventType]);
+  const filtered = filterActivity(snapshot.activity, query, eventType);
   const filtersActive = query.trim() !== "" || eventType !== "all";
   const clear = () => { setQuery(""); setEventType("all"); };
 
