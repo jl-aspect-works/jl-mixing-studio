@@ -51,8 +51,7 @@ export function useWorkspaceResources() {
 
     if (!workspaceInFlight.current) {
       const currentRequest = ++workspaceRequestId.current;
-      let request: Promise<void>;
-      request = (async () => {
+      const request = (async () => {
         await yieldToBrowserPaint();
         try {
           const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
@@ -67,7 +66,7 @@ export function useWorkspaceResources() {
             setWorkspace((current) => current.status === "ready" ? current : { status: "error", message });
           }
         } finally {
-          if (workspaceInFlight.current === request) {
+          if (workspaceRequestId.current === currentRequest) {
             workspaceInFlight.current = null;
             refreshStorageAfterCurrentWorkspaceRequest.current = false;
           }
