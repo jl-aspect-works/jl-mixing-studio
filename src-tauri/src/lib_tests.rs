@@ -27,6 +27,7 @@ fn project_with_two_revisions() -> ProjectSummary {
                 description: "Initial mix".into(),
                 approved_at: Some("2026-07-17T12:00:00Z".into()),
                 approved_by: Some("Client Reviewer".into()),
+                lifecycle: "open".into(),
             },
             RevisionSummary {
                 number: 2,
@@ -35,6 +36,7 @@ fn project_with_two_revisions() -> ProjectSummary {
                 description: "Balance update".into(),
                 approved_at: None,
                 approved_by: None,
+                lifecycle: "open".into(),
             },
         ],
     }
@@ -59,6 +61,7 @@ fn project_after_revision_creation() -> ProjectSummary {
         description: "Vocal lift".into(),
         approved_at: None,
         approved_by: None,
+        lifecycle: "open".into(),
     });
     project
 }
