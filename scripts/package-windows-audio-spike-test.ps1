@@ -126,16 +126,20 @@ SectionEnd
 $nsiPath = Join-Path $stage "audio-spike-test.nsi"
 Set-Content -Path $nsiPath -Value $nsi -Encoding UTF8
 
-$makensis = Get-Command makensis.exe -ErrorAction SilentlyContinue
-if (-not $makensis) {
+$makensisCommand = Get-Command makensis.exe -ErrorAction SilentlyContinue
+if ($makensisCommand) {
+  $makensisPath = $makensisCommand.Source
+} else {
   $candidate = "C:\Program Files (x86)\NSIS\makensis.exe"
-  if (Test-Path $candidate) { $makensis = Get-Item $candidate }
+  if (Test-Path $candidate) {
+    $makensisPath = $candidate
+  }
 }
-if (-not $makensis) {
+if (-not $makensisPath) {
   throw "makensis.exe was not found"
 }
 
-& $makensis.Source $nsiPath
+& $makensisPath $nsiPath
 if ($LASTEXITCODE -ne 0) { throw "NSIS packaging failed with exit code $LASTEXITCODE" }
 
 $installer = Join-Path $OutDir "JL-Mixing-Studio_Windows-Audio-Spike-Test_x64.exe"
