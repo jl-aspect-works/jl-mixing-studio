@@ -16,6 +16,16 @@ use super::super::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
 };
 
+fn next_historical_revision_number(project: &ProjectSummary) -> Option<u32> {
+    project
+        .revisions
+        .iter()
+        .map(|revision| revision.number)
+        .max()
+        .unwrap_or(0)
+        .checked_add(1)
+}
+
 pub(crate) fn run_revision_operation(
     app: &tauri::AppHandle,
     request: RevisionCreationRequest,
@@ -76,7 +86,7 @@ pub(crate) fn run_revision_operation(
         };
         if preview.client_id != client_id
             || preview.project_id != project_id
-            || before.current_revision.checked_add(1) != Some(preview.number)
+            || next_historical_revision_number(&before) != Some(preview.number)
         {
             return if verify_after_creation {
                 uncertain_revision_result()
@@ -112,7 +122,7 @@ pub(crate) fn verify_revision_creation(
     after: &ProjectSummary,
     expected: &RevisionCreationSummary,
 ) -> bool {
-    let Some(next_number) = before.current_revision.checked_add(1) else {
+    let Some(next_number) = next_historical_revision_number(before) else {
         return false;
     };
     if expected.number != next_number
