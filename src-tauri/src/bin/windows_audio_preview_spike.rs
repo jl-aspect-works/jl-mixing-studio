@@ -56,8 +56,9 @@ mod windows {
     }
 
     fn manual_playback(files: &[PathBuf]) -> Result<(), Box<dyn Error>> {
-        let device = DeviceSinkBuilder::open_default_sink()
-            .map_err(|error| format!("Unable to open the default Windows audio output device: {error}"))?;
+        let device = DeviceSinkBuilder::open_default_sink().map_err(|error| {
+            format!("Unable to open the default Windows audio output device: {error}")
+        })?;
         println!("JL Mixing Studio Windows native audio spike manual playback");
         println!("Using the default Windows audio output device.");
 
