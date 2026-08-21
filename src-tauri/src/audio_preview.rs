@@ -30,7 +30,7 @@ impl Default for NativeAudioPreviewState {
 #[cfg(target_os = "windows")]
 #[derive(Default)]
 struct WindowsPlayback {
-    stream: Option<rodio::OutputStream>,
+    stream: Option<rodio::MixerDeviceSink>,
     player: Option<rodio::Player>,
     relative_path: Option<String>,
     duration: Duration,
@@ -51,7 +51,10 @@ impl WindowsPlayback {
 
     fn status(&self) -> NativeAudioPreviewStatus {
         let (playing, current_seconds) = match &self.player {
-            Some(player) => (!player.is_paused() && !player.empty(), player.get_pos().as_secs_f64()),
+            Some(player) => (
+                !player.is_paused() && !player.empty(),
+                player.get_pos().as_secs_f64(),
+            ),
             None => (false, 0.0),
         };
         NativeAudioPreviewStatus {
@@ -85,14 +88,16 @@ pub(crate) fn load(
         use std::fs::File;
 
         let decoder = Decoder::try_from(
-            File::open(path).map_err(|error| format!("Unable to open audio preview file: {error}"))?,
+            File::open(path)
+                .map_err(|error| format!("Unable to open audio preview file: {error}"))?,
         )
         .map_err(|error| format!("Unable to decode audio preview file: {error}"))?;
         let duration = decoder
             .total_duration()
             .ok_or_else(|| "The audio preview duration could not be determined".to_owned())?;
-        let stream = DeviceSinkBuilder::open_default_sink()
-            .map_err(|error| format!("Unable to open the default Windows audio output device: {error}"))?;
+        let stream = DeviceSinkBuilder::open_default_sink().map_err(|error| {
+            format!("Unable to open the default Windows audio output device: {error}")
+        })?;
         let player = Player::connect_new(stream.mixer());
         player.pause();
         player.append(decoder);
@@ -102,7 +107,11 @@ pub(crate) fn load(
             .lock()
             .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
         playback.stop();
-        playback.volume = if playback.volume > 0.0 { playback.volume } else { 1.0 };
+        playback.volume = if playback.volume > 0.0 {
+            playback.volume
+        } else {
+            1.0
+        };
         player.set_volume(playback.volume);
         playback.stream = Some(stream);
         playback.player = Some(player);
@@ -176,7 +185,9 @@ pub(crate) fn seek(
             .as_ref()
             .ok_or_else(|| "No Windows audio preview is loaded".to_owned())?;
         player
-            .try_seek(Duration::from_secs_f64(seconds.min(playback.duration.as_secs_f64())))
+            .try_seek(Duration::from_secs_f64(
+                seconds.min(playback.duration.as_secs_f64()),
+            ))
             .map_err(|error| format!("Unable to seek audio preview: {error}"))?;
         return Ok(playback.status());
     }
