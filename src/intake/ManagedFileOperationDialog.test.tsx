@@ -74,11 +74,17 @@ describe("ManagedFileOperationDialog", () => {
     expect(within(table).getByRole("columnheader", { name: "Audio Prep" })).toBeInTheDocument();
     expect(within(table).getByText("vocal.wav")).toBeInTheDocument();
     expect(screen.getByLabelText("Import selection for vocal.wav")).toHaveValue("add");
+    expect(screen.getByText("1 file has 2 destination conflicts. 2 decisions remain.")).toBeInTheDocument();
+    expect(screen.getAllByText("Decision required")).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Import Files" })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText("Client Files action for vocal.wav"), { target: { value: "replace" } });
+    expect(screen.getByText("1 file has 2 destination conflicts. 1 decision remains.")).toBeInTheDocument();
+    expect(screen.getAllByText("Decision required")).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Import Files" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Audio Prep action for vocal.wav"), { target: { value: "skip" } });
+    expect(screen.getByText("1 file has 2 destination conflicts. 0 decisions remain.")).toBeInTheDocument();
+    expect(screen.queryByText("Decision required")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Import Files" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Import Files" }));
 
