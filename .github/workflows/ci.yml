@@ -117,6 +117,7 @@ jobs:
 
   windows-native-audio-preview-spike:
     name: Windows native audio preview spike
+    if: github.event_name == 'pull_request' && github.head_ref == 'spike/v2.1-windows-native-audio-preview'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -141,8 +142,6 @@ jobs:
             "$env:RUNNER_TEMP/jl-audio-preview-fixtures/wavf32-96000-stereo.wav" `
             "$env:RUNNER_TEMP/jl-audio-preview-fixtures/aiff24-48000-stereo.aiff" `
             "$env:RUNNER_TEMP/jl-audio-preview-fixtures/mp3-44100-stereo.mp3"
-      - name: Build release-mode Windows probe
-        run: cargo build --release --manifest-path src-tauri/Cargo.toml --bin windows_audio_preview_spike
       - name: Upload generated Cargo lockfile
         if: always()
         uses: actions/upload-artifact@v4
