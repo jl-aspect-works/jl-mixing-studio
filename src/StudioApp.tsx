@@ -85,7 +85,7 @@ export default function StudioApp() {
 
   const openClientWorkflow = () => { if (!availability.clientCreationAvailable) return; projects.setState({ status: "closed" }); clients.open(); };
   const openRevisions = () => { if (!route.resolvedProjectClient || !route.resolvedProject) return; setProjectView("revisions"); intake.reset(); };
-  const selectProjectView = (view: ProjectShellView) => { if (view === "intake") { intake.open(); return; } if (view === "revisions") { openRevisions(); return; } setProjectView(view); if (view === "audioPrep") intake.refreshStructured(); else intake.reset(); revision.reset(); approval.reset(); };
+  const selectProjectView = (view: ProjectShellView) => { if (view === "intake") { intake.open(); return; } if (view === "revisions") { openRevisions(); return; } setProjectView(view); intake.reset(); revision.reset(); approval.reset(); };
   const navigate = (next: PrimaryRoute) => { setActiveRoute(next); setSelectedClientId(null); setSelectedProject(null); setProjectView("overview"); setRouteNotice(null); intake.clear(); revision.reset(); approval.reset(); };
   const openProject = (clientId: string, projectId: string) => { rememberRecentProject(clientId, projectId); setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: false }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
   const openClientProject = (clientId: string, projectId: string) => { rememberRecentProject(clientId, projectId); setSelectedClientId(null); setSelectedProject({ clientId, projectId, fromClient: true }); setProjectView("overview"); setActiveRoute("projects"); setRouteNotice(null); };
