@@ -17,6 +17,9 @@ import {
 const yieldToBrowserPaint = (): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, 0));
 
+const nextHistoricalRevisionNumber = (project: ProjectSummary): number =>
+  Math.max(0, ...project.revisions.map((revision) => revision.number)) + 1;
+
 export interface UseRevisionWorkflowOptions {
   creationAvailable: boolean;
   clientId: string | null;
@@ -71,6 +74,7 @@ export function useRevisionWorkflow({
       projectId: project.projectId,
       description: form.description.trim() || null,
     };
+    const expectedNumber = nextHistoricalRevisionNumber(project);
     setState({ status: "preflighting" });
     await yieldToBrowserPaint();
     invoke<RevisionOperationResult>("preflight_revision_creation", { request })
@@ -81,7 +85,7 @@ export function useRevisionWorkflow({
           result.revision &&
           result.revision.clientId === request.clientId &&
           result.revision.projectId === request.projectId &&
-          result.revision.number === project.currentRevision + 1
+          result.revision.number === expectedNumber
         ) {
           setState({ status: "confirming", request, preview: result.revision });
         } else {
