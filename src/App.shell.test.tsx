@@ -50,7 +50,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       const primaryNavigation = screen.getByRole("navigation", { name: "Primary navigation" });
       expect(within(primaryNavigation).getAllByRole("button").map((button) => button.textContent)).toEqual(["Dashboard", "Studio", "Clients", "Projects", "Tasks", "Activities", "Settings"]);
       expect(screen.getByRole("button", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-      expect(screen.getByLabelText("Global search")).toHaveAttribute("aria-disabled", "true");
+      expect(screen.queryByLabelText("Global search")).not.toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Today’s Work" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Quick Actions" })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Workspace Summary" })).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(screen.getByRole("heading", { name: "Projects", level: 1 })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Blue Sky" })).toBeInTheDocument();
       expect(screen.getByLabelText("Search projects")).toBeEnabled();
-      expect(screen.getByLabelText("Global search")).toHaveAttribute("aria-disabled", "true");
+      expect(screen.queryByLabelText("Global search")).not.toBeInTheDocument();
     });
 
   it("keeps guided client creation available from the Clients directory", async () => {
