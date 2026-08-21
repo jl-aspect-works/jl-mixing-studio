@@ -3,7 +3,7 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin: 14px 0;
 }
 
 .task-activity-controls .visually-hidden {
