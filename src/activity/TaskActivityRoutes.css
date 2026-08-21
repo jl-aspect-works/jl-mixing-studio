@@ -54,14 +54,21 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
   width: 210px;
   height: 44px;
   border: 1px solid #dce3ec;
   border-radius: 8px;
   background: #fff;
-  padding: 0 34px 0 11px;
   box-sizing: border-box;
+}
+
+.task-activity-filter > svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .task-activity-filter::after {
@@ -74,24 +81,26 @@
   border-right: 1.5px solid #718096;
   border-bottom: 1.5px solid #718096;
   transform: translateY(-65%) rotate(45deg);
+  z-index: 1;
   pointer-events: none;
 }
 
 .task-activity-filter select {
-  flex: 1 1 auto;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  min-width: 0;
   height: 100%;
   border: 0;
-  border-radius: 0;
+  border-radius: 8px;
   outline: 0;
   appearance: none;
   -webkit-appearance: none;
   background: transparent;
-  padding: 0;
+  padding: 0 34px 0 36px;
   color: #2f3d55;
   font: inherit;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .task-activity-filter:focus-within {
