@@ -24,6 +24,8 @@ pub struct ManagedImportRequest {
     pub plan_id: Option<String>,
     #[serde(default)]
     pub decisions: HashMap<String, String>,
+    #[serde(default)]
+    pub selected_relative_paths: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -143,6 +145,15 @@ fn import_arguments(request: &ManagedImportRequest, execute: bool) -> Result<Vec
             .ok_or_else(|| "The import plan is missing its plan ID.".to_owned())?;
         arguments.push("--plan-id".into());
         arguments.push(plan_id.clone());
+        if let Some(selected_relative_paths) = &request.selected_relative_paths {
+            if selected_relative_paths.is_empty() {
+                return Err("Select at least one planned file to import.".into());
+            }
+            for relative_path in selected_relative_paths {
+                arguments.push("--include-relative-path".into());
+                arguments.push(relative_path.clone());
+            }
+        }
         if !request.decisions.is_empty() {
             arguments.push("--decisions-json".into());
             arguments.push(
