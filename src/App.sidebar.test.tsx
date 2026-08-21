@@ -30,7 +30,7 @@ describe("JL Mixing Studio — workspace sidebar", () => {
     await screen.findByText("JL Mixing Automation 1.3.1 detected");
 
     const openWorkspace = screen.getByRole("button", { name: "Open workspace folder" });
-    expect(openWorkspace).toBeEnabled();
+    await waitFor(() => expect(openWorkspace).toBeEnabled());
     fireEvent.click(openWorkspace);
 
     await waitFor(() =>
