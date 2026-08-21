@@ -4,6 +4,11 @@ import { RowActionMenu } from "./FileUiPrimitives";
 import type { ProjectFileEntry, ProjectFileListing } from "./projectFileService";
 import { formatProjectFileModified, formatProjectFileSize } from "./projectFileService";
 
+const nativePreviewExtensions = new Set(["wav", "wave", "aif", "aiff", "mp3"]);
+
+const canRenderAudioPreview = (entry: ProjectFileEntry) =>
+  entry.playable || (entry.isAudio && entry.extension !== null && nativePreviewExtensions.has(entry.extension));
+
 export function ProjectFileList({
   listing,
   emptyMessage = "No files in this folder.",
@@ -52,6 +57,7 @@ export function ProjectFileList({
               entry.permissions.canRename && onRename ? { label: "Rename", onSelect: () => onRename(entry), disabled: actionsDisabled } : null,
               entry.permissions.canDelete && onDelete ? { label: "Delete", onSelect: () => onDelete(entry), disabled: actionsDisabled, destructive: true } : null,
             ].filter((action): action is NonNullable<typeof action> => action !== null);
+            const previewable = canRenderAudioPreview(entry);
             return (
               <tr key={entry.id}>
                 <td>
@@ -64,9 +70,9 @@ export function ProjectFileList({
                   )}
                 </td>
                 <td className="project-file-preview-cell">
-                  {entry.playable && renderPreview
+                  {previewable && renderPreview
                     ? renderPreview(entry)
-                    : entry.playable && onPreview
+                    : previewable && onPreview
                       ? <button type="button" className="secondary" disabled={actionsDisabled} onClick={() => onPreview(entry)}><ActionIcon name="play" />Preview</button>
                       : <span className="project-file-muted">—</span>}
                 </td>
