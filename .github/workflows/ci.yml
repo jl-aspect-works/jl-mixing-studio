@@ -150,3 +150,36 @@ jobs:
           path: src-tauri/Cargo.lock
           if-no-files-found: warn
           retention-days: 14
+
+  windows-audio-spike-test-installer:
+    name: Windows audio spike test installer
+    if: github.event_name == 'pull_request' && github.head_ref == 'spike/v2.1-windows-native-audio-preview'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Ensure ffmpeg and NSIS are available
+        shell: powershell
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg -y --no-progress
+          }
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+          }
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+      - name: Generate required Windows audio fixtures
+        shell: powershell
+        run: ./scripts/windows-audio-preview-fixtures.ps1 -OutDir "$env:RUNNER_TEMP/jl-audio-preview-fixtures"
+      - name: Build release-mode native probe
+        run: cargo build --release --manifest-path src-tauri/Cargo.toml --bin windows_audio_preview_spike
+      - name: Package per-user NSIS test installer
+        shell: powershell
+        run: ./scripts/package-windows-audio-spike-test.ps1 -FixtureDir "$env:RUNNER_TEMP/jl-audio-preview-fixtures" -OutDir "$env:RUNNER_TEMP/jl-audio-spike-installer"
+      - name: Upload Windows spike test installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-audio-spike-test-installer
+          path: ${{ runner.temp }}/jl-audio-spike-installer/JL-Mixing-Studio_Windows-Audio-Spike-Test_x64.exe
+          if-no-files-found: error
+          retention-days: 14
