@@ -3,6 +3,24 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import App from "./App";
 import { healthyWorkspace, mockedInvoke, resetAppTestState, version } from "./App.testSupport";
 
+const intakeResult = {
+  ok: true,
+  code: "validated",
+  message: "Validation is up to date.",
+  report: {
+    clientId: "acme",
+    projectId: "blue-sky",
+    expectedSampleRate: 48000,
+    expectedBitDepth: 24,
+    blockingErrors: 0,
+    warnings: 0,
+    enhancedInspectionAvailable: true,
+    files: [],
+  },
+  audioPrepAvailable: true,
+  audioPrepFiles: [],
+};
+
 afterEach(cleanup);
 
 describe("project navigation performance", () => {
@@ -24,7 +42,17 @@ describe("project navigation performance", () => {
       if (command === "summarize_workspace_storage") {
         return Promise.resolve({ fileCount: 0, sizeBytes: 0, failedPaths: [] });
       }
-      if (command === "list_project_references") return Promise.resolve([]);
+      if (command === "get_intake_report" || command === "refresh_client_files_validation") {
+        return Promise.resolve(intakeResult);
+      }
+      if (command === "list_project_files") {
+        return Promise.resolve({
+          clientId: "acme",
+          projectId: "blue-sky",
+          relativePath: "04_References",
+          entries: [],
+        });
+      }
       return Promise.resolve(null);
     });
 
@@ -41,5 +69,47 @@ describe("project navigation performance", () => {
     await Promise.resolve();
 
     expect(workspaceCalls).toBe(callsAfterOpen);
+  });
+
+  it("does not restart project validation merely because Client Files or Audio Prep is selected", async () => {
+    let validationCalls = 0;
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
+      if (command === "get_jl_mixing_version") return Promise.resolve(version);
+      if (command === "get_workspace_configuration") {
+        return Promise.resolve({ configured: false, workspacePath: "/tmp/Mixes" });
+      }
+      if (command === "summarize_workspace_storage") {
+        return Promise.resolve({ fileCount: 0, sizeBytes: 0, failedPaths: [] });
+      }
+      if (command === "get_intake_report") return Promise.resolve(intakeResult);
+      if (command === "refresh_client_files_validation") {
+        validationCalls += 1;
+        return Promise.resolve(intakeResult);
+      }
+      if (command === "list_project_files") {
+        return Promise.resolve({
+          clientId: "acme",
+          projectId: "blue-sky",
+          relativePath: "02_Audio_Preparation/Working_Audio",
+          entries: [],
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Projects" }));
+    await screen.findByRole("link", { name: "Blue Sky" });
+    fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
+
+    await waitFor(() => expect(validationCalls).toBe(1));
+    fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
+    await waitFor(() => expect(screen.getByRole("navigation", { name: "Project navigation" })).toHaveTextContent("Client Files"));
+    fireEvent.click(screen.getByRole("button", { name: "Audio Prep" }));
+    await waitFor(() => expect(screen.getByRole("navigation", { name: "Project navigation" })).toHaveTextContent("Audio Prep"));
+    await Promise.resolve();
+
+    expect(validationCalls).toBe(1);
   });
 });
