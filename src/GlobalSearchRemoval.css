@@ -1,0 +1,11 @@
+.global-search {
+  display: none !important;
+}
+
+.route-header {
+  justify-content: flex-start;
+}
+
+.compact-project-route-actions {
+  justify-content: flex-end;
+}
