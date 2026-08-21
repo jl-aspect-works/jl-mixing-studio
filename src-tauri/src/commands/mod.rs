@@ -2,6 +2,8 @@
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
+#[path = "native_audio_preview_command.rs"]
+mod native_audio_preview;
 #[path = "project_file_open_command.rs"]
 mod project_file_open;
 #[path = "project_file_summary_command.rs"]
@@ -26,6 +28,12 @@ mod workspace_storage_summary;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
+pub(super) use native_audio_preview::{
+    get_native_project_audio_preview_status, load_native_project_audio_preview,
+    pause_native_project_audio_preview, play_native_project_audio_preview,
+    seek_native_project_audio_preview, set_native_project_audio_preview_volume,
+    stop_native_project_audio_preview,
+};
 pub(super) use project_file_open::{
     open_project_file, prepare_project_audio_preview, reveal_project_file,
 };
