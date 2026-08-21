@@ -17,6 +17,8 @@ export function useWorkspaceResources() {
   const workspaceRequestId = useRef(0);
   const configurationRequestId = useRef(0);
   const versionRequestId = useRef(0);
+  const workspaceInFlight = useRef<Promise<void> | null>(null);
+  const refreshStorageAfterCurrentWorkspaceRequest = useRef(false);
 
   const reloadWorkspaceConfiguration = useCallback(async () => {
     const currentRequest = ++configurationRequestId.current;
@@ -43,24 +45,40 @@ export function useWorkspaceResources() {
   }, []);
 
   const refreshWorkspace = useCallback(async (blocking = true) => {
-    const currentRequest = ++workspaceRequestId.current;
     if (blocking) setRefreshingWorkspace(true);
     setWorkspaceRefreshError(null);
-    await yieldToBrowserPaint();
+    refreshStorageAfterCurrentWorkspaceRequest.current ||= blocking;
+
+    if (!workspaceInFlight.current) {
+      const currentRequest = ++workspaceRequestId.current;
+      const request = (async () => {
+        await yieldToBrowserPaint();
+        try {
+          const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
+          if (workspaceRequestId.current === currentRequest) {
+            setWorkspace({ status: "ready", value });
+            notifyWorkspaceRefreshed(refreshStorageAfterCurrentWorkspaceRequest.current);
+          }
+        } catch (error: unknown) {
+          if (workspaceRequestId.current === currentRequest) {
+            const message = safeError(error, "Workspace discovery could not be completed.");
+            setWorkspaceRefreshError(message);
+            setWorkspace((current) => current.status === "ready" ? current : { status: "error", message });
+          }
+        } finally {
+          if (workspaceInFlight.current === request) {
+            workspaceInFlight.current = null;
+            refreshStorageAfterCurrentWorkspaceRequest.current = false;
+          }
+        }
+      })();
+      workspaceInFlight.current = request;
+    }
+
     try {
-      const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
-      if (workspaceRequestId.current === currentRequest) {
-        setWorkspace({ status: "ready", value });
-        notifyWorkspaceRefreshed();
-      }
-    } catch (error: unknown) {
-      if (workspaceRequestId.current === currentRequest) {
-        const message = safeError(error, "Workspace discovery could not be completed.");
-        setWorkspaceRefreshError(message);
-        setWorkspace((current) => current.status === "ready" ? current : { status: "error", message });
-      }
+      await workspaceInFlight.current;
     } finally {
-      if (blocking && workspaceRequestId.current === currentRequest) setRefreshingWorkspace(false);
+      if (blocking) setRefreshingWorkspace(false);
     }
   }, []);
 
