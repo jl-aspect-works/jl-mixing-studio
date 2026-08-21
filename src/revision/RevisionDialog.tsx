@@ -4,6 +4,9 @@ import type { RevisionFormValues, RevisionWorkflowState } from "../AppWorkflowMo
 import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 
+const nextHistoricalRevisionNumber = (project: ProjectSummary): number =>
+  Math.max(0, ...project.revisions.map((revision) => revision.number)) + 1;
+
 export function RevisionDialog({
   state,
   values,
@@ -26,6 +29,7 @@ export function RevisionDialog({
   const descriptionInput = useRef<HTMLInputElement>(null);
   const confirmButton = useRef<HTMLButtonElement>(null);
   const pending = state.status === "preflighting" || state.status === "creating";
+  const nextRevisionNumber = nextHistoricalRevisionNumber(project);
   useEffect(() => {
     if (state.status === "editing") descriptionInput.current?.focus();
     if (state.status === "confirming") confirmButton.current?.focus();
@@ -48,7 +52,7 @@ export function RevisionDialog({
             {state.status === "editing" && state.error && <div className="form-error" role="alert">{state.error}</div>}
             <label>
               {productCopy.revision.description} <span>{productCopy.revision.optional}</span>
-              <input ref={descriptionInput} name="revisionDescription" value={values.description} onChange={(event) => onChange({ description: event.target.value })} placeholder={`Revision ${project.currentRevision + 1}`} autoComplete="off" disabled={pending} />
+              <input ref={descriptionInput} name="revisionDescription" value={values.description} onChange={(event) => onChange({ description: event.target.value })} placeholder={`Revision ${nextRevisionNumber}`} autoComplete="off" disabled={pending} />
               <small>{productCopy.revision.descriptionHelp}</small>
             </label>
             <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button><button type="submit" disabled={pending} aria-busy={pending}><ActionIcon name="check" />{pending ? productCopy.common.checking : productCopy.revision.review}</button></div>
