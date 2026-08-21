@@ -26,7 +26,7 @@ describe("useWorkspaceStorageSummary", () => {
 
   afterEach(cleanup);
 
-  it("uses one workspace scan and refreshes that shared result on workspace invalidation", async () => {
+  it("uses one workspace scan and refreshes that shared result on explicit storage invalidation", async () => {
     let calls = 0;
     mockedInvoke.mockImplementation((command) => {
       if (command !== "summarize_workspace_storage") {
@@ -48,6 +48,49 @@ describe("useWorkspaceStorageSummary", () => {
 
     expect(await screen.findByText("2:2048")).toBeInTheDocument();
     expect(calls).toBe(2);
+  });
+
+  it("does not rescan storage for metadata-only background workspace refreshes", async () => {
+    let calls = 0;
+    mockedInvoke.mockImplementation((command) => {
+      if (command !== "summarize_workspace_storage") {
+        return Promise.reject(new Error(`Unexpected command: ${command}`));
+      }
+      calls += 1;
+      return Promise.resolve({ fileCount: 4, sizeBytes: 4096, failedPaths: [] });
+    });
+
+    render(<Harness />);
+    expect(await screen.findByText("4:4096")).toBeInTheDocument();
+
+    notifyWorkspaceRefreshed(false);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    expect(calls).toBe(1);
+    expect(screen.getByText("4:4096")).toBeInTheDocument();
+  });
+
+  it("coalesces storage invalidation while a scan is already pending", async () => {
+    let resolveInitial: (value: StorageResult) => void = () => undefined;
+    let calls = 0;
+    mockedInvoke.mockImplementation((command) => {
+      if (command !== "summarize_workspace_storage") {
+        return Promise.reject(new Error(`Unexpected command: ${command}`));
+      }
+      calls += 1;
+      return new Promise<StorageResult>((resolve) => { resolveInitial = resolve; });
+    });
+
+    render(<Harness />);
+    await waitFor(() => expect(calls).toBe(1));
+
+    notifyWorkspaceRefreshed();
+    notifyWorkspaceRefreshed();
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    expect(calls).toBe(1);
+
+    resolveInitial({ fileCount: 5, sizeBytes: 5120, failedPaths: [] });
+    expect(await screen.findByText("5:5120")).toBeInTheDocument();
   });
 
   it("keeps the last summary visible while a refresh is pending", async () => {
