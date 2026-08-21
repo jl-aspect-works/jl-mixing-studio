@@ -43,12 +43,13 @@ mod windows {
         probe_unsupported_rejection(&files[0])?;
         probe_player_control_surface(&files[0])?;
 
-        match probe_default_output_device(&files[0]) {
-            Ok(()) => println!("PASS default Windows audio output device playback/control probe"),
-            Err(error) if !require_device => println!(
-                "SKIP default Windows audio output device probe: {error}. Decode/seek/player-control coverage still ran; packaged/manual acceptance must require a real output device."
-            ),
-            Err(error) => return Err(error),
+        if require_device {
+            probe_default_output_device(&files[0])?;
+            println!("PASS default Windows audio output device playback/control probe");
+        } else {
+            println!(
+                "SKIP default Windows audio output device probe in headless CI; packaged/manual acceptance covers real output-device playback."
+            );
         }
 
         println!("PASS Windows native audio preview spike");
