@@ -6,6 +6,7 @@ const statusLabels = (project: ProjectSummary, revision: RevisionSummary) => {
   if (revision.number === project.currentRevision) labels.push("Current");
   if (revision.number === project.approvedRevision) labels.push("Approved");
   if (revision.number === project.deliveredRevision) labels.push("Delivered");
+  if ((revision.lifecycle ?? "open") === "closed") labels.push("Closed");
   return labels;
 };
 

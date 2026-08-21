@@ -30,7 +30,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       expect(screen.getByRole("heading", { name: "Revision 01" })).toBeInTheDocument();
       expect(screen.getAllByText("Initial mix").length).toBeGreaterThan(0);
       expect(screen.getAllByText("Approved").length).toBeGreaterThan(0);
-      expect(screen.getByRole("button", { name: "Approve Revision" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Unapprove Revision" })).toBeDisabled();
     });
 
   it("keeps revision history readable in a partial workspace", async () => {
@@ -531,7 +531,7 @@ describe("JL Mixing Studio — revision, approval, and delivery workflows", () =
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Approve revision" }));
 
       expect(await screen.findByText("Revision 2 was approved by Client and verified.")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Approve Revision" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Unapprove Revision" })).toBeDisabled();
       expect(screen.getAllByText("Approved").length).toBeGreaterThan(0);
       expect(mockedInvoke.mock.calls.filter(([command]) => command === "approve_revision")).toHaveLength(1);
     });

@@ -1,0 +1,125 @@
+.revision-badge.closed {
+  background: #eef0f3;
+  color: #596273;
+  border: 1px solid #d9dee6;
+}
+
+.revision-history-item.closed {
+  background: #fafbfc;
+}
+
+.revision-history-item.closed .revision-history-description,
+.revision-history-item.closed .revision-history-date {
+  color: #7c8798;
+}
+
+/* History rows have limited horizontal space while the detail pane is visible.
+   Let the badge cluster move to its own line instead of compressing/covering the revision title. */
+.revision-history-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 5px 8px;
+}
+
+.revision-history-title > strong {
+  flex: 1 1 82px;
+}
+
+.revision-history-title > .revision-badges {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Keep selected history content readable. The blue rail remains the primary selection cue;
+   the background stays intentionally light so descriptions/dates do not disappear. */
+.revision-history-item.active,
+.revision-history-item.closed.active {
+  background: #eaf2ff;
+  color: #172033;
+  box-shadow: inset 3px 0 0 #3974c6;
+}
+
+.revision-history-item.active .revision-history-description,
+.revision-history-item.closed.active .revision-history-description {
+  color: #41536d;
+}
+
+.revision-history-item.active .revision-history-date,
+.revision-history-item.closed.active .revision-history-date {
+  color: #65758d;
+}
+
+.revision-detail-header.closed {
+  background: #fafbfc;
+}
+
+.revision-detail-heading-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.revision-lifecycle-action {
+  min-height: 28px !important;
+  padding: 4px 8px !important;
+  font-size: .68rem !important;
+  white-space: nowrap;
+}
+
+.revision-delivered-approval-note {
+  margin: 7px 0 0;
+  color: #667085;
+  font-size: .65rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
+/* The lifecycle view owns its confirmation locally rather than through the shared
+   dialog components, so give its existing class names the same modal behavior. */
+.client-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: rgba(19, 29, 48, .56);
+  backdrop-filter: blur(4px);
+}
+
+.client-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.revision-lifecycle-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.revision-lifecycle-dialog > p {
+  color: #59657a;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .revision-detail-heading {
+    flex-wrap: wrap;
+  }
+
+  .revision-detail-heading-actions {
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .revision-delivered-approval-note {
+    text-align: left;
+  }
+}

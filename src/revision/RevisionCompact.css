@@ -1,3 +1,5 @@
+@import "./RevisionLifecycle.css";
+
 .revision-detail { gap: 8px; }
 .revision-detail-header { padding: 10px 14px !important; }
 .revision-detail-heading h2 { font-size: 1rem; }

@@ -94,6 +94,7 @@
           "revision_id": {"type": "string", "format": "uuid"},
           "created_at": {"type": "string", "format": "date-time"},
           "description": {"type": "string", "pattern": "\\S"},
+          "lifecycle": {"type": "string", "enum": ["open", "closed"]},
           "approval": {
             "oneOf": [
               {

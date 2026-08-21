@@ -64,11 +64,12 @@
 .overview-revision-list strong { font-size: .75rem; }
 .overview-revision-list p { margin: 3px 0 0; color: #6e7b91; font-size: .68rem; }
 .overview-revision-meta { display: grid; justify-items: end; gap: 5px; color: #6f7c91; font-size: .64rem; }
-.overview-revision-meta > div { display: flex; gap: 4px; }
+.overview-revision-meta > div { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .overview-revision-badge { border-radius: 999px; background: #eef2f7; color: #68758a; padding: 2px 6px; font-size: .6rem; font-weight: 850; }
 .overview-revision-badge.current { background: #e8f7ef; color: #188653; }
 .overview-revision-badge.approved { background: #e8f7ef; color: #188653; }
 .overview-revision-badge.delivered { background: #eaf2ff; color: #1758d5; }
+.overview-revision-badge.closed { background: #eef0f3; color: #596273; border: 1px solid #d9dee6; }
 .overview-empty-copy { color: #77849a; font-size: .75rem; }
 
 .overview-storage-summary { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 18px; align-items: center; margin-top: 14px; }

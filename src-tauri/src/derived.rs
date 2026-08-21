@@ -290,6 +290,7 @@ mod tests {
                 description: "Initial mix".into(),
                 approved_at: approved.map(|_| "2026-07-03T12:00:00Z".into()),
                 approved_by: approved.map(|_| "Client".into()),
+                lifecycle: "open".into(),
             }],
         }
     }

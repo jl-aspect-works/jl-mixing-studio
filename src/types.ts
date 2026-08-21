@@ -177,6 +177,44 @@ export interface ApprovalOperationResult {
   approval: RevisionApprovalSummary | null;
 }
 
+export interface RevisionLifecycleSupport {
+  available: boolean;
+  lifecycleSupported: boolean;
+  unapproveSupported: boolean;
+  message: string;
+}
+
+export type RevisionLifecycleAction = "close" | "reopen" | "unapprove";
+export interface RevisionLifecycleRequest {
+  clientId: string;
+  projectId: string;
+  revision: number;
+  action: RevisionLifecycleAction;
+}
+
+export type RevisionLifecycleCode =
+  | "updated"
+  | "invalidInput"
+  | "automationUnavailable"
+  | "capabilityUnavailable"
+  | "workspaceBlocked"
+  | "projectUnavailable"
+  | "revisionUnavailable"
+  | "delivered"
+  | "rejected"
+  | "uncertain"
+  | "failed";
+
+export interface RevisionLifecycleResult {
+  ok: boolean;
+  code: RevisionLifecycleCode;
+  message: string;
+  currentRevision: number | null;
+  approvedRevision: number | null;
+  deliveredRevision: number | null;
+  lifecycle: "open" | "closed" | null;
+}
+
 export interface IntakeRequest {
   clientId: string;
   projectId: string;
@@ -399,6 +437,7 @@ export interface RevisionSummary {
   revisionId: string;
   createdAt: string;
   description: string;
+  lifecycle?: "open" | "closed";
   approvedAt: string | null;
   approvedBy: string | null;
 }
