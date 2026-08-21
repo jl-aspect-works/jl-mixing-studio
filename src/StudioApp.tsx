@@ -81,7 +81,7 @@ export default function StudioApp() {
   useEffect(() => {
     if (activeRoute !== "projects" || !selectedProject) return;
     void resources.refreshWorkspace(false);
-  }, [activeRoute, selectedProject?.clientId, selectedProject?.projectId, projectView, resources.refreshWorkspace]);
+  }, [activeRoute, selectedProject?.clientId, selectedProject?.projectId, resources.refreshWorkspace]);
 
   const openClientWorkflow = () => { if (!availability.clientCreationAvailable) return; projects.setState({ status: "closed" }); clients.open(); };
   const openRevisions = () => { if (!route.resolvedProjectClient || !route.resolvedProject) return; setProjectView("revisions"); intake.reset(); };
