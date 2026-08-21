@@ -5,13 +5,14 @@ import {
   type ProjectOverviewFileIndex,
 } from "./ProjectOverviewFileIndex";
 import { projectFilePaths } from "./files/projectFileService";
-import { getDeliveryOverviewStatus, getIntakeOverviewStatus, getRevisionOverviewStatus, getTaskOverviewStatus, type OverviewStatus } from "./ProjectOverviewModel";
+import { getAudioValidationOverviewStatus, getDeliveryOverviewStatus, getIntakeOverviewStatus, getRevisionOverviewStatus, getTaskOverviewStatus, type OverviewStatus } from "./ProjectOverviewModel";
 
 function HealthRow({ label, status }: { label: string; status: OverviewStatus }) {
   return <div className="overview-health-row"><span className={`overview-status-dot ${status.tone}`} aria-hidden="true"/><strong>{label}</strong><span>{status.label}</span><small>{status.detail}</small></div>;
 }
 
-const getAudioPrepStatus = (fileIndex: ProjectOverviewFileIndex): OverviewStatus => {
+const getAudioPrepStatus = (fileIndex: ProjectOverviewFileIndex, validation: OverviewStatus): OverviewStatus => {
+  if (validation.tone === "attention") return validation;
   if (fileIndex.status === "loading") return { label: "Checking", detail: "Reading Audio Prep files", tone: "neutral" };
   if (overviewAreaHasFailure(fileIndex, projectFilePaths.audioPreparation)) {
     return { label: "Unavailable", detail: "Audio Prep files could not be indexed", tone: "neutral" };
@@ -22,6 +23,7 @@ const getAudioPrepStatus = (fileIndex: ProjectOverviewFileIndex): OverviewStatus
   if (count === 0) {
     return { label: "Empty", detail: fileIndex.workingAudioAreaPresent ? "No working audio files" : "No Audio Prep files", tone: "neutral" };
   }
+  if (validation.label === "Validated") return validation;
   return {
     label: "Available",
     detail: fileIndex.workingAudioAreaPresent
@@ -33,11 +35,12 @@ const getAudioPrepStatus = (fileIndex: ProjectOverviewFileIndex): OverviewStatus
 
 export function ProjectOverviewHealth({ project, tasks, intakeReport, fileIndex }: { project: ProjectSummary; tasks: DerivedTask[]; intakeReport: IntakeReportState; fileIndex: ProjectOverviewFileIndex }) {
   const intake = getIntakeOverviewStatus(intakeReport);
+  const audioValidation = getAudioValidationOverviewStatus(intakeReport);
   const taskStatus = getTaskOverviewStatus(tasks);
   const revisionStatus = getRevisionOverviewStatus(project);
   const deliveryStatus = getDeliveryOverviewStatus(project);
-  const audioPrepStatus = getAudioPrepStatus(fileIndex);
-  const overallAttention = intake.tone === "attention" || taskStatus.tone === "attention";
+  const audioPrepStatus = getAudioPrepStatus(fileIndex, audioValidation);
+  const overallAttention = audioValidation.tone === "attention" || taskStatus.tone === "attention";
 
   return (
     <section className="overview-card overview-health-card" aria-labelledby="overview-health-heading">
