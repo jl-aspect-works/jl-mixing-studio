@@ -114,3 +114,40 @@ jobs:
             "$RUNNER_TEMP/jl-audio-preview-fixtures/aac-48000-stereo.aac" \
             "$RUNNER_TEMP/jl-audio-preview-fixtures/m4a-48000-stereo.m4a" \
             "$RUNNER_TEMP/jl-audio-preview-fixtures/mp4-48000-stereo.mp4"
+
+  windows-native-audio-preview-spike:
+    name: Windows native audio preview spike
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Ensure ffmpeg is available
+        shell: powershell
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg -y --no-progress
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+          }
+          ffmpeg -version | Select-Object -First 1
+      - name: Generate required Windows audio fixtures
+        shell: powershell
+        run: ./scripts/windows-audio-preview-fixtures.ps1 -OutDir "$env:RUNNER_TEMP/jl-audio-preview-fixtures"
+      - name: Probe Windows native decode, seek, controls, and file release
+        shell: powershell
+        run: |
+          cargo run --manifest-path src-tauri/Cargo.toml --bin windows_audio_preview_spike -- `
+            "$env:RUNNER_TEMP/jl-audio-preview-fixtures/wav16-44100-mono.wav" `
+            "$env:RUNNER_TEMP/jl-audio-preview-fixtures/wav24-48000-stereo.wav" `
+            "$env:RUNNER_TEMP/jl-audio-preview-fixtures/wavf32-96000-stereo.wav" `
+            "$env:RUNNER_TEMP/jl-audio-preview-fixtures/aiff24-48000-stereo.aiff" `
+            "$env:RUNNER_TEMP/jl-audio-preview-fixtures/mp3-44100-stereo.mp3"
+      - name: Build release-mode Windows probe
+        run: cargo build --release --manifest-path src-tauri/Cargo.toml --bin windows_audio_preview_spike
+      - name: Upload generated Cargo lockfile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-audio-spike-cargo-lock
+          path: src-tauri/Cargo.lock
+          if-no-files-found: warn
+          retention-days: 14
