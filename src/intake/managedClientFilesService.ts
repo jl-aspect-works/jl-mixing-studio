@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { stopActiveAudioPlayback } from "../project/files/audioPlaybackController";
 
 export type ManagedImportSourceKind = "zip" | "folder" | "files";
 export type ManagedConflictDecision = "replace" | "skip";
@@ -70,14 +71,18 @@ export const chooseManagedImportSources = (sourceKind: ManagedImportSourceKind) 
 export const planManagedImport = (request: ManagedImportRequest) =>
   invoke<ManagedOperationResult>("plan_managed_client_import", { request });
 
-export const executeManagedImport = (request: ManagedImportRequest) =>
-  invoke<ManagedOperationResult>("execute_managed_client_import", { request });
+export const executeManagedImport = async (request: ManagedImportRequest) => {
+  await stopActiveAudioPlayback();
+  return invoke<ManagedOperationResult>("execute_managed_client_import", { request });
+};
 
 export const planAudioPrepReset = (request: AudioPrepResetRequest) =>
   invoke<ManagedOperationResult>("plan_audio_prep_reset", { request });
 
-export const executeAudioPrepReset = (request: AudioPrepResetRequest) =>
-  invoke<ManagedOperationResult>("execute_audio_prep_reset", { request });
+export const executeAudioPrepReset = async (request: AudioPrepResetRequest) => {
+  await stopActiveAudioPlayback();
+  return invoke<ManagedOperationResult>("execute_audio_prep_reset", { request });
+};
 
 export const sourceRelativePathFromOriginalDelivery = (relativePath: string) => {
   const prefix = "01_Client_Files/Original_Delivery/";

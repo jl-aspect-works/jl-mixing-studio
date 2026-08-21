@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { FolderLocation, FolderResult } from "../../types";
+import { stopActiveAudioPlayback } from "./audioPlaybackController";
 
 export type ProjectFileArea =
   | "projectRoot"
@@ -150,36 +151,46 @@ export const addProjectReference = ({ clientId, projectId }: ProjectFileListRequ
     request: { clientId, projectId, relativePath: projectFilePaths.references },
   });
 
-export const deleteProjectReference = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
-  invoke<ProjectFileMutationResult>("delete_project_reference", {
+export const deleteProjectReference = async ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) => {
+  await stopActiveAudioPlayback();
+  return invoke<ProjectFileMutationResult>("delete_project_reference", {
     request: { clientId, projectId, relativePath },
   });
+};
 
-export const renameAudioPrepFile = (
+export const renameAudioPrepFile = async (
   { clientId, projectId, relativePath }: ProjectFileMutationRequest,
   newName: string,
-) =>
-  invoke<ProjectFileMutationResult>("rename_project_file", {
+) => {
+  await stopActiveAudioPlayback();
+  return invoke<ProjectFileMutationResult>("rename_project_file", {
     request: { clientId, projectId, relativePath, newName },
   });
+};
 
-export const deleteAudioPrepFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
-  invoke<ProjectFileMutationResult>("delete_project_file", {
+export const deleteAudioPrepFile = async ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) => {
+  await stopActiveAudioPlayback();
+  return invoke<ProjectFileMutationResult>("delete_project_file", {
     request: { clientId, projectId, relativePath },
   });
+};
 
-export const renameRevisionFile = (
+export const renameRevisionFile = async (
   { clientId, projectId, relativePath }: ProjectFileMutationRequest,
   newName: string,
-) =>
-  invoke<ProjectFileMutationResult>("rename_revision_file", {
+) => {
+  await stopActiveAudioPlayback();
+  return invoke<ProjectFileMutationResult>("rename_revision_file", {
     request: { clientId, projectId, relativePath, newName },
   });
+};
 
-export const deleteRevisionFile = ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) =>
-  invoke<ProjectFileMutationResult>("delete_revision_file", {
+export const deleteRevisionFile = async ({ clientId, projectId, relativePath }: ProjectFileMutationRequest) => {
+  await stopActiveAudioPlayback();
+  return invoke<ProjectFileMutationResult>("delete_revision_file", {
     request: { clientId, projectId, relativePath },
   });
+};
 
 export const formatProjectFileSize = (sizeBytes: number | null) => {
   if (sizeBytes === null) return "—";
