@@ -326,22 +326,7 @@ export function RevisionsView({
     <ProjectNavigationBar
       active="revisions"
       onSelect={onSelectView}
-      actions={<>
-        <button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button>
-        {(!selectedApproved || !selectedDelivered) && <button
-          type="button"
-          className="secondary"
-          onClick={() => {
-            if (!selected) return;
-            if (selectedApproved) setPendingMutation({ action: "unapprove", revision: selected });
-            else onApprove(selected);
-          }}
-          disabled={!selected || loading || (selectedApproved
-            ? !unapproveAvailable
-            : !approvalAvailable || selectedLifecycle === "closed")}
-          title={approvalTitle}
-        ><ActionIcon name={selectedApproved ? "undo" : "check"} />{selectedApproved ? "Unapprove Revision" : "Approve Revision"}</button>}
-      </>}
+      actions={<button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button>}
     />
 
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}
@@ -383,6 +368,18 @@ export function RevisionsView({
               </div>
               <div className="revision-detail-heading-actions">
                 <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} />
+                {(!selectedApproved || !selectedDelivered) && <button
+                  type="button"
+                  className="secondary revision-lifecycle-action"
+                  onClick={() => {
+                    if (selectedApproved) setPendingMutation({ action: "unapprove", revision: selected });
+                    else onApprove(selected);
+                  }}
+                  disabled={loading || (selectedApproved
+                    ? !unapproveAvailable
+                    : !approvalAvailable || selectedLifecycle === "closed")}
+                  title={approvalTitle}
+                ><ActionIcon name={selectedApproved ? "undo" : "check"} />{selectedApproved ? "Unapprove Revision" : "Approve Revision"}</button>}
                 {selectedApproved && <button
                   type="button"
                   className="secondary revision-lifecycle-action"
