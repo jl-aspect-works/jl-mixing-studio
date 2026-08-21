@@ -44,7 +44,8 @@ export function useWorkspaceStorageSummary({
 
     const sequence = ++requestSequence.current;
     setState((current) => ({ status: "loading", value: current.value, message: null }));
-    const request = (async () => {
+    let request: Promise<void>;
+    request = (async () => {
       try {
         const value = await invoke<WorkspaceStorageSummary>("summarize_workspace_storage");
         if (requestSequence.current !== sequence) return;
