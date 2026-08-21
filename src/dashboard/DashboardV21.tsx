@@ -4,6 +4,7 @@ import type { ResourceState } from "../AppShellViews";
 import type { ActivityEvent, ClientSummary, DerivedTask, ProjectSummary, VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceStorageState, WorkspaceStorageSummary } from "../app/useWorkspaceStorageSummary";
 import { AudioHeroArtwork } from "./HeroArtwork";
+import { deriveDashboardWorkflowSummary } from "./dashboardWorkflowSummary";
 import { loadRecentProject, type RecentProjectReference } from "./recentProject";
 import "./DashboardV21.css";
 
@@ -202,6 +203,7 @@ export function DashboardV21(props: DashboardV21Props) {
   const storagePartial = (props.storage.value?.failedPaths.length ?? 0) > 0;
   const storageHealthy = props.storage.value !== null && props.storage.status !== "error" && !storagePartial;
   const issueCount = snapshot?.issues.length ?? 0;
+  const workflowSummary = snapshot ? deriveDashboardWorkflowSummary(snapshot) : null;
 
   return (
     <div className="dashboard-v21">
@@ -250,12 +252,15 @@ export function DashboardV21(props: DashboardV21Props) {
           </section>
 
           <section className="dashboard-v21-card dashboard-v21-workspace" aria-labelledby="dashboard-workspace-heading">
-            <div className="dashboard-v21-card-heading"><div><h2 id="dashboard-workspace-heading">Workspace Summary</h2><p>Storage and scope</p></div></div>
+            <div className="dashboard-v21-card-heading"><div><h2 id="dashboard-workspace-heading">Workspace Summary</h2><p>Workflow, storage and scope</p></div></div>
             <div className="dashboard-v21-workspace-stats">
               <span><DashboardIcon name="wave" /><small>Studio</small><strong>{snapshot?.studio?.studioName ?? "—"}</strong></span>
               <span><DashboardIcon name="person" /><small>Clients</small><strong>{snapshot?.counts.clients ?? "—"}</strong></span>
               <span><DashboardIcon name="folder" /><small>Files</small><strong>{props.storage.value?.fileCount.toLocaleString() ?? "—"}</strong></span>
               <span><DashboardIcon name="folder" /><small>Projects</small><strong>{snapshot?.counts.projects ?? "—"}</strong></span>
+              <span><DashboardIcon name="review" /><small>Awaiting Review</small><strong>{workflowSummary?.awaitingReview ?? "—"}</strong></span>
+              <span><DashboardIcon name="package" /><small>Ready to Deliver</small><strong>{workflowSummary?.readyToDeliver ?? "—"}</strong></span>
+              <span><DashboardIcon name="check" /><small>Completed</small><strong>{workflowSummary?.completed ?? "—"}</strong></span>
               <span className="workspace-wide"><DashboardIcon name="storage" /><small>Storage</small><strong>{storageSummary(props.storage.value)}</strong></span>
             </div>
           </section>
