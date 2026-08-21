@@ -106,7 +106,6 @@ export function ManagedFileOperationDialog({ clientId, projectId, mode, relative
   const selectedSet = useMemo(() => new Set(selectedRelativePaths), [selectedRelativePaths]);
   const activeConflicts = mode === "import" ? conflicts.filter((item) => selectedSet.has(item.source_relative_path)) : conflicts;
   const unresolved = activeConflicts.filter((item) => !decisions[item.id]);
-  const originalItems = review?.plan.items.filter((item) => item.area === "original_delivery") ?? [];
   const audioItems = review?.plan.items.filter((item) => item.area === "audio_prep") ?? [];
   const skippedSelectionCount = mode === "import" && review ? review.plan.files.length - selectedRelativePaths.length : 0;
   const setAll = (decision: ManagedConflictDecision) => setDecisions((current) => ({
