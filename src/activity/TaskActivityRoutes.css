@@ -24,11 +24,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  height: 44px;
   border: 1px solid #dce3ec;
   border-radius: 8px;
   background: #fff;
   padding: 0 11px;
+  box-sizing: border-box;
 }
 
 .task-activity-search svg,
@@ -50,25 +51,56 @@
 }
 
 .task-activity-filter {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  width: 210px;
+  height: 44px;
   border: 1px solid #dce3ec;
   border-radius: 8px;
   background: #fff;
-  padding-left: 11px;
+  padding: 0 34px 0 11px;
+  box-sizing: border-box;
+}
+
+.task-activity-filter::after {
+  content: "";
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid #718096;
+  border-bottom: 1.5px solid #718096;
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
 }
 
 .task-activity-filter select {
-  min-width: 160px;
-  min-height: 38px;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
   border: 0;
+  border-radius: 0;
+  outline: 0;
+  appearance: none;
+  -webkit-appearance: none;
   background: transparent;
+  padding: 0;
+  color: #2f3d55;
+  font: inherit;
+  cursor: pointer;
+}
+
+.task-activity-filter:focus-within {
+  border-color: #9db9e8;
+  box-shadow: 0 0 0 2px rgb(46 108 246 / 10%);
 }
 
 .task-activity-controls > button {
-  min-height: 40px;
+  height: 44px;
 }
 
 @media (max-width: 720px) {
