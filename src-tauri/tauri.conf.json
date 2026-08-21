@@ -3,6 +3,7 @@
   "productName": "JL Mixing Studio",
   "version": "2.0.0",
   "identifier": "com.jlaudio.jlmixingstudio",
+  "mainBinaryName": "jl-mixing-studio",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
