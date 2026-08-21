@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { GlobalSearch, RouteHeader, Sidebar } from "./AppViews";
+import { Sidebar } from "./AppViews";
 import { type AppPreferences, loadPreferences } from "./AppWorkflowModels";
 import { getWorkflowAvailability } from "./AppWorkflowAvailability";
 import { getAppRouteContext } from "./AppRouteContext";
@@ -8,6 +8,7 @@ import { useWorkspaceStorageSummary } from "./app/useWorkspaceStorageSummary";
 import { AppNotices } from "./app/AppNotices";
 import { AppRoutes } from "./app/AppRoutes";
 import { AppDialogs } from "./app/AppDialogs";
+import { RouteHeader } from "./components/RouteHeader";
 import { rememberRecentProject } from "./dashboard/recentProject";
 import { ProjectBreadcrumbs } from "./project/ProjectBreadcrumbs";
 import { ProjectOverviewHeader } from "./project/ProjectOverviewHeader";
@@ -99,7 +100,7 @@ export default function StudioApp() {
   return <div className={`app-shell${preferences.compactLayout ? " compact-layout" : ""}${preferences.reduceMotion ? " reduce-motion" : ""}`}>
     <Sidebar activeRoute={activeRoute} onNavigate={navigate} workspace={resources.workspace} storage={workspaceStorage.state} />
     <main className={`main-content compact-global-headers${showOverviewToolbar ? " project-overview-open" : ""}`} id="main-content">
-      {projectOpen && projectHeaderProject ? <header className="route-header compact-project-route-header"><div><p className="eyebrow">{route.activeRouteDefinition.eyebrow}</p><h1>{route.activeRouteDefinition.title}</h1><p className="lede">{route.activeRouteDefinition.description}</p></div><div className="compact-project-route-context"><div className="compact-project-route-actions"><GlobalSearch /><button type="button" className="secondary overview-refresh-button" onClick={resources.refresh} disabled={resources.loading}>{resources.loading ? "Refreshing…" : "Refresh"}</button></div><ProjectBreadcrumbs project={projectHeaderProject} screen={projectScreenLabel[projectView]} onProjects={leaveProject} onOverview={() => selectProjectView("overview")} /></div></header> : <RouteHeader route={route.activeRouteDefinition} />}
+      {projectOpen && projectHeaderProject ? <header className="route-header compact-project-route-header"><div><p className="eyebrow">{route.activeRouteDefinition.eyebrow}</p><h1>{route.activeRouteDefinition.title}</h1><p className="lede">{route.activeRouteDefinition.description}</p></div><div className="compact-project-route-context"><div className="compact-project-route-actions"><button type="button" className="secondary overview-refresh-button" onClick={resources.refresh} disabled={resources.loading}>{resources.loading ? "Refreshing…" : "Refresh"}</button></div><ProjectBreadcrumbs project={projectHeaderProject} screen={projectScreenLabel[projectView]} onProjects={leaveProject} onOverview={() => selectProjectView("overview")} /></div></header> : <RouteHeader route={route.activeRouteDefinition} />}
       {projectHeaderClient && projectHeaderProject && <ProjectOverviewHeader client={projectHeaderClient} project={projectHeaderProject} workspacePath={workspacePath} />}
       {resources.workspace.status === "error" && <section className="notice warning workspace-discovery-error" role="alert"><strong>Workspace unavailable</strong><span>{resources.workspace.message}</span><p>Studio could not read the workspace. Check the storage connection and try again.</p><button type="button" className="secondary" onClick={resources.refresh} disabled={resources.loading}>{resources.loading ? "Retrying…" : "Try again"}</button></section>}
       {configuredUnavailable && <section className="notice warning workspace-unavailable-notice" role="alert"><strong>Workspace unavailable</strong><span>{configuredWorkspacePath}</span><p>Reconnect the configured drive, NAS share, or cloud-mounted folder, then retry. Studio will keep this workspace configured and will not switch to the default workspace.</p><button type="button" className="secondary" onClick={() => void resources.refreshWorkspace()} disabled={resources.loading}>{resources.loading ? "Retrying…" : "Retry workspace"}</button></section>}
