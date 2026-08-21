@@ -43,7 +43,9 @@ use models::{
     DeliveryCreationPreview, DeliveryReplacementMode, ProjectSummary, RevisionApprovalSummary,
     RevisionCreationSummary, WorkspaceStatus,
 };
-use revision_lifecycle::{RevisionLifecycleRequest, RevisionLifecycleResult, RevisionLifecycleSupport};
+use revision_lifecycle::{
+    RevisionLifecycleRequest, RevisionLifecycleResult, RevisionLifecycleSupport,
+};
 #[cfg(test)]
 use std::{fs, path::Path};
 #[cfg(test)]
