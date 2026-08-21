@@ -1,4 +1,4 @@
-import type { DerivedTask, ProjectSummary } from "../types";
+import type { DerivedTask, IntakeOperationResult, ProjectSummary } from "../types";
 import type { IntakeReportState } from "../AppShellViews";
 
 export type OverviewTone = "good" | "attention" | "neutral";
@@ -8,6 +8,12 @@ export interface OverviewStatus {
   detail: string;
   tone: OverviewTone;
 }
+
+type AudioValidationRecord = { status?: string | null };
+type StructuredIntakeResult = IntakeOperationResult & {
+  audioPrepAvailable?: boolean;
+  audioPrepFiles?: AudioValidationRecord[];
+};
 
 export const overviewString = (value: unknown, key: string) => {
   if (!value || typeof value !== "object" || !(key in value)) return null;
@@ -47,6 +53,18 @@ export const getIntakeOverviewStatus = (state: IntakeReportState): OverviewStatu
   if (report.blockingErrors > 0) return { label: "Needs attention", detail: `${report.blockingErrors} blocking finding${report.blockingErrors === 1 ? "" : "s"}`, tone: "attention", fileCount: report.filesDiscovered };
   if (report.warnings > 0) return { label: "Review", detail: `${report.warnings} warning${report.warnings === 1 ? "" : "s"}`, tone: "attention", fileCount: report.filesDiscovered };
   return { label: "Validated", detail: `${report.filesDiscovered} file${report.filesDiscovered === 1 ? "" : "s"}`, tone: "good", fileCount: report.filesDiscovered };
+};
+
+export const getAudioValidationOverviewStatus = (state: IntakeReportState): OverviewStatus => {
+  if (state.status === "loading") return { label: "Checking", detail: "Loading Audio Prep validation", tone: "neutral" };
+  if (state.status !== "ready") return { label: "Not validated", detail: "Audio Prep validation is not loaded", tone: "neutral" };
+  const result = state.value as StructuredIntakeResult;
+  if (result.audioPrepAvailable !== true) return { label: "Not validated", detail: "Audio Prep validation is not available", tone: "neutral" };
+  const files = Array.isArray(result.audioPrepFiles) ? result.audioPrepFiles : [];
+  const attentionCount = files.filter((file) => file.status === "blocked" || file.status === "needs_attention").length;
+  if (attentionCount > 0) return { label: "Needs attention", detail: `${attentionCount} Audio Prep ${attentionCount === 1 ? "file needs" : "files need"} attention`, tone: "attention" };
+  if (files.length > 0) return { label: "Validated", detail: `${files.length} Audio Prep ${files.length === 1 ? "file" : "files"} checked`, tone: "good" };
+  return { label: "Clear", detail: "No Audio Prep validation findings", tone: "good" };
 };
 
 export const getTaskOverviewStatus = (tasks: DerivedTask[]): OverviewStatus => tasks.length === 0
