@@ -55,6 +55,7 @@ export type ManagedImportRequest = {
   sources: string[];
   planId?: string | null;
   decisions?: Record<string, ManagedConflictDecision>;
+  selectedRelativePaths?: string[];
 };
 
 export type AudioPrepResetRequest = {
