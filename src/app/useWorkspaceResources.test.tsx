@@ -107,6 +107,39 @@ describe("useWorkspaceResources", () => {
     expect(versionCalls).toBe(1);
   });
 
+  it("coalesces overlapping workspace refresh requests", async () => {
+    let workspaceCalls = 0;
+    let resolveRefresh: ((value: WorkspaceSnapshot) => void) | null = null;
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "discover_default_workspace") {
+        workspaceCalls += 1;
+        if (workspaceCalls === 1) return Promise.resolve(snapshot("Initial Studio"));
+        return new Promise<WorkspaceSnapshot>((resolve) => { resolveRefresh = resolve; });
+      }
+      if (command === "get_workspace_configuration") return Promise.resolve(configuration);
+      if (command === "get_jl_mixing_version") return Promise.resolve(version);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
+    render(<Harness />);
+    expect(await screen.findByText("Initial Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
+
+    fireEvent.focus(window);
+    fireEvent.focus(window);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh workspace" }));
+
+    await waitFor(() => expect(workspaceCalls).toBe(2));
+    expect(workspaceCalls).toBe(2);
+
+    await act(async () => {
+      resolveRefresh?.(snapshot("Coalesced Studio"));
+    });
+
+    expect(await screen.findByText("Coalesced Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
+  });
+
   it("keeps the last workspace visible while a slow refresh is in progress", async () => {
     let workspaceCalls = 0;
     let resolveRefresh: ((value: WorkspaceSnapshot) => void) | null = null;
