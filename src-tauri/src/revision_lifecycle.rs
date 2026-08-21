@@ -6,8 +6,10 @@ use crate::automation_api::{
     AUTOMATION_EXECUTABLE,
 };
 use crate::models::WorkspaceStatus;
-use crate::{find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory};
 use crate::workspace;
+use crate::{
+    find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
+};
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -106,7 +108,9 @@ pub fn support(app: &tauri::AppHandle) -> RevisionLifecycleSupport {
             available: false,
             lifecycle_supported: false,
             unapprove_supported: false,
-            message: "JL Mixing Automation was not found in its default install location or on PATH".into(),
+            message:
+                "JL Mixing Automation was not found in its default install location or on PATH"
+                    .into(),
         };
     };
     let args = vec!["system-info".to_owned(), "--json".to_owned()];
@@ -142,15 +146,20 @@ pub fn support(app: &tauri::AppHandle) -> RevisionLifecycleSupport {
             available: false,
             lifecycle_supported: false,
             unapprove_supported: false,
-            message: "JL Mixing Automation capability discovery did not identify the provider.".into(),
+            message: "JL Mixing Automation capability discovery did not identify the provider."
+                .into(),
         };
     };
-    if discovery.api_version.as_deref() != Some("1.0") || application.name != AUTOMATION_EXECUTABLE {
+    if discovery.api_version.as_deref() != Some("1.0") || application.name != AUTOMATION_EXECUTABLE
+    {
         return RevisionLifecycleSupport {
             available: false,
             lifecycle_supported: false,
             unapprove_supported: false,
-            message: format!("JL Mixing Automation {} does not expose the required Automation API 1.0 contract.", application.version),
+            message: format!(
+                "JL Mixing Automation {} does not expose the required Automation API 1.0 contract.",
+                application.version
+            ),
         };
     }
     let capabilities = discovery.capabilities.unwrap_or_default();
@@ -169,21 +178,41 @@ pub fn support(app: &tauri::AppHandle) -> RevisionLifecycleSupport {
     }
 }
 
-pub fn mutate(app: &tauri::AppHandle, request: RevisionLifecycleRequest) -> RevisionLifecycleResult {
-    if request.client_id.trim().is_empty() || request.project_id.trim().is_empty() || request.revision == 0 {
-        return blocked(RevisionLifecycleCode::InvalidInput, "Select a valid revision before changing its state.");
+pub fn mutate(
+    app: &tauri::AppHandle,
+    request: RevisionLifecycleRequest,
+) -> RevisionLifecycleResult {
+    if request.client_id.trim().is_empty()
+        || request.project_id.trim().is_empty()
+        || request.revision == 0
+    {
+        return blocked(
+            RevisionLifecycleCode::InvalidInput,
+            "Select a valid revision before changing its state.",
+        );
     }
 
     let support = support(app);
     if !support.available {
-        return blocked(RevisionLifecycleCode::AutomationUnavailable, support.message);
+        return blocked(
+            RevisionLifecycleCode::AutomationUnavailable,
+            support.message,
+        );
     }
     match request.action {
-        RevisionLifecycleAction::Close | RevisionLifecycleAction::Reopen if !support.lifecycle_supported => {
-            return blocked(RevisionLifecycleCode::CapabilityUnavailable, "Installed JL Mixing Automation does not advertise revision close/reopen support.")
+        RevisionLifecycleAction::Close | RevisionLifecycleAction::Reopen
+            if !support.lifecycle_supported =>
+        {
+            return blocked(
+                RevisionLifecycleCode::CapabilityUnavailable,
+                "Installed JL Mixing Automation does not advertise revision close/reopen support.",
+            )
         }
         RevisionLifecycleAction::Unapprove if !support.unapprove_supported => {
-            return blocked(RevisionLifecycleCode::CapabilityUnavailable, "Installed JL Mixing Automation does not advertise revision unapprove support.")
+            return blocked(
+                RevisionLifecycleCode::CapabilityUnavailable,
+                "Installed JL Mixing Automation does not advertise revision unapprove support.",
+            )
         }
         _ => {}
     }
@@ -198,26 +227,61 @@ pub fn mutate(app: &tauri::AppHandle, request: RevisionLifecycleRequest) -> Revi
     };
     let before_snapshot = workspace::discover_workspace_at(&workspace_path);
     if before_snapshot.status != WorkspaceStatus::Healthy {
-        return blocked(RevisionLifecycleCode::WorkspaceBlocked, "Resolve workspace issues before changing revision state.");
+        return blocked(
+            RevisionLifecycleCode::WorkspaceBlocked,
+            "Resolve workspace issues before changing revision state.",
+        );
     }
-    let Some(before) = find_project_summary(&before_snapshot, request.client_id.trim(), request.project_id.trim()).cloned() else {
-        return blocked(RevisionLifecycleCode::ProjectUnavailable, "The selected project is no longer available in the validated workspace.");
+    let Some(before) = find_project_summary(
+        &before_snapshot,
+        request.client_id.trim(),
+        request.project_id.trim(),
+    )
+    .cloned()
+    else {
+        return blocked(
+            RevisionLifecycleCode::ProjectUnavailable,
+            "The selected project is no longer available in the validated workspace.",
+        );
     };
-    let Some(before_revision) = before.revisions.iter().find(|item| item.number == request.revision) else {
-        return blocked(RevisionLifecycleCode::RevisionUnavailable, "The selected revision is no longer available in the validated project.");
+    let Some(before_revision) = before
+        .revisions
+        .iter()
+        .find(|item| item.number == request.revision)
+    else {
+        return blocked(
+            RevisionLifecycleCode::RevisionUnavailable,
+            "The selected revision is no longer available in the validated project.",
+        );
     };
     match request.action {
         RevisionLifecycleAction::Close if before_revision.lifecycle == "closed" => {
-            return blocked(RevisionLifecycleCode::Rejected, "The selected revision is already closed.")
+            return blocked(
+                RevisionLifecycleCode::Rejected,
+                "The selected revision is already closed.",
+            )
         }
         RevisionLifecycleAction::Reopen if before_revision.lifecycle == "open" => {
-            return blocked(RevisionLifecycleCode::Rejected, "The selected revision is already open.")
+            return blocked(
+                RevisionLifecycleCode::Rejected,
+                "The selected revision is already open.",
+            )
         }
-        RevisionLifecycleAction::Unapprove if before.approved_revision != Some(request.revision) => {
-            return blocked(RevisionLifecycleCode::Rejected, "The selected revision is no longer the approved revision.")
+        RevisionLifecycleAction::Unapprove
+            if before.approved_revision != Some(request.revision) =>
+        {
+            return blocked(
+                RevisionLifecycleCode::Rejected,
+                "The selected revision is no longer the approved revision.",
+            )
         }
-        RevisionLifecycleAction::Unapprove if before.delivered_revision == Some(request.revision) => {
-            return blocked(RevisionLifecycleCode::Delivered, "This revision has been delivered. Resolve delivery state before unapproving it.")
+        RevisionLifecycleAction::Unapprove
+            if before.delivered_revision == Some(request.revision) =>
+        {
+            return blocked(
+                RevisionLifecycleCode::Delivered,
+                "This revision has been delivered. Resolve delivery state before unapproving it.",
+            )
         }
         _ => {}
     }
@@ -228,7 +292,10 @@ pub fn mutate(app: &tauri::AppHandle, request: RevisionLifecycleRequest) -> Revi
         request.client_id.trim(),
         request.project_id.trim(),
     ) else {
-        return blocked(RevisionLifecycleCode::ProjectUnavailable, "The selected project directory could not be resolved safely.");
+        return blocked(
+            RevisionLifecycleCode::ProjectUnavailable,
+            "The selected project directory could not be resolved safely.",
+        );
     };
 
     let (operation, command) = match request.action {
@@ -246,39 +313,78 @@ pub fn mutate(app: &tauri::AppHandle, request: RevisionLifecycleRequest) -> Revi
         request.revision.to_string(),
     ];
     let runner = SystemProcessRunner;
-    let response = match invoke_api(&home, operation, &args, Some(&project_directory), &runner) {
-        Ok(response) if response.status == ApiStatus::Success => response,
-        Ok(response) => {
-            let message = response.errors.first().map(|error| error.message.clone()).unwrap_or_else(|| "JL Mixing Automation rejected the revision state change.".into());
-            let code = if response.errors.first().is_some_and(|error| error.code == "REVISION_DELIVERED") {
-                RevisionLifecycleCode::Delivered
-            } else {
-                RevisionLifecycleCode::Rejected
-            };
-            return blocked(code, message);
-        }
-        Err(ApiCallError::Unavailable) => return blocked(RevisionLifecycleCode::AutomationUnavailable, "JL Mixing Automation was not found in its default install location or on PATH."),
-        Err(error) => return blocked(RevisionLifecycleCode::Uncertain, error.message()),
-    };
+    let response =
+        match invoke_api(&home, operation, &args, Some(&project_directory), &runner) {
+            Ok(response) if response.status == ApiStatus::Success => response,
+            Ok(response) => {
+                let message = response
+                    .errors
+                    .first()
+                    .map(|error| error.message.clone())
+                    .unwrap_or_else(|| {
+                        "JL Mixing Automation rejected the revision state change.".into()
+                    });
+                let code = if response
+                    .errors
+                    .first()
+                    .is_some_and(|error| error.code == "REVISION_DELIVERED")
+                {
+                    RevisionLifecycleCode::Delivered
+                } else {
+                    RevisionLifecycleCode::Rejected
+                };
+                return blocked(code, message);
+            }
+            Err(ApiCallError::Unavailable) => {
+                return blocked(
+                    RevisionLifecycleCode::AutomationUnavailable,
+                    "JL Mixing Automation was not found in its default install location or on PATH.",
+                )
+            }
+            Err(error) => return blocked(RevisionLifecycleCode::Uncertain, error.message()),
+        };
 
-    let Some(returned_revision) = response.data.get("revision").and_then(|value| value.get("number")).and_then(Value::as_u64) else {
-        return blocked(RevisionLifecycleCode::Uncertain, "Automation reported success, but Studio could not verify the affected revision.");
+    let Some(returned_revision) = response
+        .data
+        .get("revision")
+        .and_then(|value| value.get("number"))
+        .and_then(Value::as_u64)
+    else {
+        return blocked(
+            RevisionLifecycleCode::Uncertain,
+            "Automation reported success, but Studio could not verify the affected revision.",
+        );
     };
     if returned_revision != u64::from(request.revision) {
-        return blocked(RevisionLifecycleCode::Uncertain, "Automation reported success for a different revision than the one selected.");
+        return blocked(
+            RevisionLifecycleCode::Uncertain,
+            "Automation reported success for a different revision than the one selected.",
+        );
     }
 
     let refreshed = workspace::discover_workspace_at(&workspace_path);
-    let Some(after) = find_project_summary(&refreshed, request.client_id.trim(), request.project_id.trim()) else {
+    let Some(after) = find_project_summary(
+        &refreshed,
+        request.client_id.trim(),
+        request.project_id.trim(),
+    ) else {
         return blocked(RevisionLifecycleCode::Uncertain, "The revision state may have changed, but the refreshed project could not be verified. Do not retry automatically.");
     };
-    let Some(after_revision) = after.revisions.iter().find(|item| item.number == request.revision) else {
+    let Some(after_revision) = after
+        .revisions
+        .iter()
+        .find(|item| item.number == request.revision)
+    else {
         return blocked(RevisionLifecycleCode::Uncertain, "The revision state may have changed, but the refreshed revision could not be verified. Do not retry automatically.");
     };
     let verified = match request.action {
         RevisionLifecycleAction::Close => after_revision.lifecycle == "closed",
         RevisionLifecycleAction::Reopen => after_revision.lifecycle == "open",
-        RevisionLifecycleAction::Unapprove => after.approved_revision.is_none() && after_revision.approved_at.is_none() && after_revision.approved_by.is_none(),
+        RevisionLifecycleAction::Unapprove => {
+            after.approved_revision.is_none()
+                && after_revision.approved_at.is_none()
+                && after_revision.approved_by.is_none()
+        }
     };
     if !verified {
         return blocked(RevisionLifecycleCode::Uncertain, "Automation reported success, but the refreshed revision state did not match the requested change. Do not retry automatically.");
@@ -288,9 +394,15 @@ pub fn mutate(app: &tauri::AppHandle, request: RevisionLifecycleRequest) -> Revi
         ok: true,
         code: RevisionLifecycleCode::Updated,
         message: match request.action {
-            RevisionLifecycleAction::Close => format!("Revision {} was closed and verified.", request.revision),
-            RevisionLifecycleAction::Reopen => format!("Revision {} was reopened and verified.", request.revision),
-            RevisionLifecycleAction::Unapprove => format!("Revision {} was unapproved and verified.", request.revision),
+            RevisionLifecycleAction::Close => {
+                format!("Revision {} was closed and verified.", request.revision)
+            }
+            RevisionLifecycleAction::Reopen => {
+                format!("Revision {} was reopened and verified.", request.revision)
+            }
+            RevisionLifecycleAction::Unapprove => {
+                format!("Revision {} was unapproved and verified.", request.revision)
+            }
         },
         current_revision: Some(after.current_revision),
         approved_revision: after.approved_revision,
