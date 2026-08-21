@@ -33,6 +33,20 @@ const importPlan = {
   ],
 };
 
+const mixedPlan = {
+  ...importPlan,
+  sources: ["/incoming/vocal.wav", "/incoming/bass.wav"],
+  files: [
+    importPlan.files[0],
+    { relative_path: "bass.wav", source_path: "/incoming/bass.wav", zip_member: null, size: 110, fingerprint: "file:110:1" },
+  ],
+  items: [
+    ...importPlan.items,
+    { id: "original:1", area: "original_delivery", source_relative_path: "bass.wav", destination_relative_path: "01_Client_Files/Original_Delivery/bass.wav", action: "create", conflict: false, destination_state: "missing", size_bytes: 110 },
+    { id: "audio:1", area: "audio_prep", source_relative_path: "bass.wav", destination_relative_path: "02_Audio_Preparation/Working_Audio/bass.wav", action: "create", conflict: false, destination_state: "missing", size_bytes: 110, depends_on: "original:1" },
+  ],
+};
+
 const success = { ok: true, status: "success", message: "", data: { result: { items: [{ id: "original:0", result: "replaced" }, { id: "audio:0", result: "replaced" }], invalidations: [] } } };
 
 const mocked = <T,>(value: T) => vi.mocked(value);
@@ -47,7 +61,7 @@ describe("ManagedFileOperationDialog", () => {
     mocked(executeManagedImport).mockResolvedValue(success);
   });
 
-  it("shows one row per source file with independent Client Files and Audio Prep decisions", async () => {
+  it("shows one row per source file with import and independent destination decisions", async () => {
     const completed = vi.fn();
     render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" onClose={vi.fn()} onCompleted={completed} />);
 
@@ -55,9 +69,11 @@ describe("ManagedFileOperationDialog", () => {
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(2);
     expect(within(table).getByRole("columnheader", { name: "File" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Import" })).toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: "Client Files" })).toBeInTheDocument();
     expect(within(table).getByRole("columnheader", { name: "Audio Prep" })).toBeInTheDocument();
     expect(within(table).getByText("vocal.wav")).toBeInTheDocument();
+    expect(screen.getByLabelText("Import selection for vocal.wav")).toHaveValue("add");
     expect(screen.getByRole("button", { name: "Import Files" })).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText("Client Files action for vocal.wav"), { target: { value: "replace" } });
@@ -71,12 +87,53 @@ describe("ManagedFileOperationDialog", () => {
       projectId: "project",
       planId: importPlan.plan_id,
       decisions: { "original:0": "replace", "audio:0": "skip" },
+      selectedRelativePaths: ["vocal.wav"],
     })));
     expect(await screen.findByText("Import complete")).toBeInTheDocument();
     expect(completed).toHaveBeenCalledOnce();
   });
 
-  it("supports apply-to-all from the table review", async () => {
+  it("passes only Add-selected files and ignores conflicts on skipped files", async () => {
+    mocked(chooseManagedImportSources).mockResolvedValue(["/incoming/vocal.wav", "/incoming/bass.wav"]);
+    mocked(planManagedImport).mockResolvedValue({ ok: true, status: "planned", message: "", data: { plan: mixedPlan } });
+    mocked(executeManagedImport).mockResolvedValue({ ok: true, status: "success", message: "", data: { result: { items: [{ id: "original:1", result: "created" }, { id: "audio:1", result: "created" }], invalidations: [] } } });
+
+    render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" onClose={vi.fn()} onCompleted={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /Files/ }));
+    await screen.findByRole("table");
+
+    fireEvent.change(screen.getByLabelText("Import selection for vocal.wav"), { target: { value: "skip" } });
+    expect(screen.getAllByText("Skipped")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Import Files" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Import Files" }));
+
+    await waitFor(() => expect(executeManagedImport).toHaveBeenCalledWith(expect.objectContaining({
+      selectedRelativePaths: ["bass.wav"],
+      decisions: {},
+    })));
+  });
+
+  it("supports Add All and Skip All while preserving per-file choices", async () => {
+    mocked(chooseManagedImportSources).mockResolvedValue(["/incoming/vocal.wav", "/incoming/bass.wav"]);
+    mocked(planManagedImport).mockResolvedValue({ ok: true, status: "planned", message: "", data: { plan: mixedPlan } });
+
+    render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" onClose={vi.fn()} onCompleted={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /Files/ }));
+    await screen.findByRole("table");
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip All" }));
+    expect(screen.getByLabelText("Import selection for vocal.wav")).toHaveValue("skip");
+    expect(screen.getByLabelText("Import selection for bass.wav")).toHaveValue("skip");
+    expect(screen.getByText("No files are selected for import. Choose Add for at least one file to continue.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Import Files" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add All" }));
+    expect(screen.getByLabelText("Import selection for vocal.wav")).toHaveValue("add");
+    expect(screen.getByLabelText("Import selection for bass.wav")).toHaveValue("add");
+    expect(screen.getByRole("button", { name: "Import Files" })).toBeDisabled();
+  });
+
+  it("supports apply-to-all for selected destination conflicts", async () => {
     render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" onClose={vi.fn()} onCompleted={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Files/ }));
     await screen.findByRole("table");
@@ -115,6 +172,7 @@ describe("ManagedFileOperationDialog", () => {
     expect(await screen.findByText("No existing project files will be overwritten.")).toBeInTheDocument();
     const table = screen.getByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(3);
+    expect(within(table).queryByRole("columnheader", { name: "Import" })).not.toBeInTheDocument();
     expect(within(table).getAllByText("Source")).toHaveLength(2);
     expect(within(table).getAllByText("Add")).toHaveLength(2);
     expect(planAudioPrepReset).toHaveBeenCalledWith({ clientId: "client", projectId: "project", relativePaths: ["vocal.wav", "bass.wav"] });
