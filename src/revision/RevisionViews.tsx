@@ -86,9 +86,12 @@ export function RevisionsView({
   creationHelp,
   approvalAvailable,
   approvalHelp,
+  deliveryAvailable,
+  deliveryHelp,
   onRefresh,
   onNewRevision,
   onApprove,
+  onCreateDelivery,
   onSelectView,
 }: {
   client: ClientSummary;
@@ -99,11 +102,14 @@ export function RevisionsView({
   creationHelp: string;
   approvalAvailable: boolean;
   approvalHelp: string;
+  deliveryAvailable: boolean;
+  deliveryHelp: string;
   onProjects: () => void;
   onOverview: () => void;
   onRefresh: () => void;
   onNewRevision: () => void;
   onApprove: (revision: RevisionSummary) => void;
+  onCreateDelivery: () => void;
   onSelectView: (view: ProjectShellView) => void;
 }) {
   const revisions = useMemo(
@@ -244,7 +250,7 @@ export function RevisionsView({
       });
       setNotes({ status: "ready", content: document.content, saved: document.content, maxBytes: document.maxBytes });
     } catch (error) {
-      setNotes((current) => ({ ...current, status: "error", message: errorMessage(error, "Revision Notes could not be saved.") }));
+      setNotes((current) => ({ ...current, status: "error", message: errorMessage(error, "Revision Notes could not be saved."), }));
     } finally {
       setNotesBusy(false);
     }
@@ -377,6 +383,13 @@ export function RevisionsView({
               </div>
               <div className="revision-detail-heading-actions">
                 <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} />
+                {selectedApproved && <button
+                  type="button"
+                  className="secondary revision-lifecycle-action"
+                  onClick={onCreateDelivery}
+                  disabled={!deliveryAvailable || loading}
+                  title={deliveryHelp}
+                ><ActionIcon name="download" />Create Delivery</button>}
                 <button
                   type="button"
                   className="secondary revision-lifecycle-action"
