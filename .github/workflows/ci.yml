@@ -147,25 +147,3 @@ jobs:
           path: ${{ runner.temp }}/jl-audio-spike-installer/JL-Mixing-Studio_Windows-Audio-Spike-Test_x64.exe
           if-no-files-found: error
           retention-days: 14
-
-  windows-packaged-audio-acceptance:
-    name: Windows packaged Studio acceptance installer
-    if: github.event_name == 'pull_request' && github.head_ref == 'feature/v2.1-windows-embedded-audio-preview'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - uses: dtolnay/rust-toolchain@stable
-      - run: npm ci
-      - name: Build packaged Studio installer
-        run: npm run tauri build
-      - name: Upload packaged Studio installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-packaged-studio-acceptance
-          path: src-tauri/target/release/bundle/nsis/*.exe
-          if-no-files-found: error
-          retention-days: 14
