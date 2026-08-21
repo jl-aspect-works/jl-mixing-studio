@@ -13,6 +13,44 @@
   color: #7c8798;
 }
 
+/* History rows have limited horizontal space while the detail pane is visible.
+   Let the badge cluster move to its own line instead of compressing/covering the revision title. */
+.revision-history-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 5px 8px;
+}
+
+.revision-history-title > strong {
+  flex: 1 1 82px;
+}
+
+.revision-history-title > .revision-badges {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* Keep selected history content readable. The blue rail remains the primary selection cue;
+   the background stays intentionally light so descriptions/dates do not disappear. */
+.revision-history-item.active,
+.revision-history-item.closed.active {
+  background: #eaf2ff;
+  color: #172033;
+  box-shadow: inset 3px 0 0 #3974c6;
+}
+
+.revision-history-item.active .revision-history-description,
+.revision-history-item.closed.active .revision-history-description {
+  color: #41536d;
+}
+
+.revision-history-item.active .revision-history-date,
+.revision-history-item.closed.active .revision-history-date {
+  color: #65758d;
+}
+
 .revision-detail-header.closed {
   background: #fafbfc;
 }
