@@ -1,6 +1,8 @@
 use serde::Serialize;
 use std::path::Path;
+#[cfg(target_os = "windows")]
 use std::sync::Mutex;
+#[cfg(target_os = "windows")]
 use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize)]
@@ -13,18 +15,10 @@ pub(crate) struct NativeAudioPreviewStatus {
     pub duration_seconds: f64,
 }
 
+#[derive(Default)]
 pub(crate) struct NativeAudioPreviewState {
     #[cfg(target_os = "windows")]
     inner: Mutex<WindowsPlayback>,
-}
-
-impl Default for NativeAudioPreviewState {
-    fn default() -> Self {
-        Self {
-            #[cfg(target_os = "windows")]
-            inner: Mutex::new(WindowsPlayback::default()),
-        }
-    }
 }
 
 #[cfg(target_os = "windows")]
