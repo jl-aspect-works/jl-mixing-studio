@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { healthyWorkspace } from "../App.testSupport";
 import type { ActivityEvent, DerivedTask } from "../types";
 import { ActivityRoute, TasksRoute, filterActivity, filterTasks } from "./TaskActivityRoutes";
+
+afterEach(cleanup);
 
 const tasks: DerivedTask[] = [
   {
