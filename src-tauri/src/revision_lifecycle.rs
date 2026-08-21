@@ -237,8 +237,7 @@ pub fn mutate(
         request.client_id.trim(),
         request.project_id.trim(),
     )
-    .cloned()
-    else {
+    .cloned() else {
         return blocked(
             RevisionLifecycleCode::ProjectUnavailable,
             "The selected project is no longer available in the validated workspace.",
@@ -335,12 +334,10 @@ pub fn mutate(
                 };
                 return blocked(code, message);
             }
-            Err(ApiCallError::Unavailable) => {
-                return blocked(
-                    RevisionLifecycleCode::AutomationUnavailable,
-                    "JL Mixing Automation was not found in its default install location or on PATH.",
-                )
-            }
+            Err(ApiCallError::Unavailable) => return blocked(
+                RevisionLifecycleCode::AutomationUnavailable,
+                "JL Mixing Automation was not found in its default install location or on PATH.",
+            ),
             Err(error) => return blocked(RevisionLifecycleCode::Uncertain, error.message()),
         };
 
