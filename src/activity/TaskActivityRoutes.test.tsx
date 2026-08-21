@@ -118,7 +118,7 @@ describe("ActivityRoute", () => {
 
     fireEvent.change(screen.getByRole("combobox", { name: "Event type" }), { target: { value: "revisionApproved" } });
     expect(screen.getByRole("heading", { name: "1 of 2 events" })).toBeInTheDocument();
-    expect(screen.getByText("Revision approved")).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: /Revision approved/ })).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search activity" }), { target: { value: "north" } });
     expect(screen.getByRole("heading", { name: "No activity matches your search" })).toBeInTheDocument();
