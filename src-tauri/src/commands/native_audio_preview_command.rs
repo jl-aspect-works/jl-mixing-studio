@@ -28,7 +28,10 @@ fn resolve_project_audio_file(
     resolve_project_entry(&project_directory, &request.relative_path)
 }
 
-fn resolve_project_entry(project_directory: &Path, relative_path: &str) -> Result<(PathBuf, String), String> {
+fn resolve_project_entry(
+    project_directory: &Path,
+    relative_path: &str,
+) -> Result<(PathBuf, String), String> {
     let normalized = normalize_relative_path(relative_path)?;
     let project_metadata = fs::symlink_metadata(project_directory)
         .map_err(|error| format!("Unable to inspect the project root: {error}"))?;
@@ -170,6 +173,9 @@ mod tests {
         assert!(normalize_relative_path("../outside.wav").is_err());
         assert!(normalize_relative_path("/absolute.wav").is_err());
         assert!(normalize_relative_path("folder\\file.wav").is_err());
-        assert_eq!(normalize_relative_path("04_Revisions/Revision_01/mix.wav").unwrap(), "04_Revisions/Revision_01/mix.wav");
+        assert_eq!(
+            normalize_relative_path("04_Revisions/Revision_01/mix.wav").unwrap(),
+            "04_Revisions/Revision_01/mix.wav"
+        );
     }
 }
