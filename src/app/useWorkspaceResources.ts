@@ -51,7 +51,8 @@ export function useWorkspaceResources() {
 
     if (!workspaceInFlight.current) {
       const currentRequest = ++workspaceRequestId.current;
-      const request = (async () => {
+      let request: Promise<void>;
+      request = (async () => {
         await yieldToBrowserPaint();
         try {
           const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
