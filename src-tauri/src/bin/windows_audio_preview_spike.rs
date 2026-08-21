@@ -19,16 +19,21 @@ mod windows {
 
     pub fn run() -> Result<(), Box<dyn Error>> {
         let mut require_device = false;
+        let mut manual_play = false;
         let mut files = Vec::new();
         for argument in std::env::args().skip(1) {
-            if argument == "--require-device" {
-                require_device = true;
-            } else {
-                files.push(PathBuf::from(argument));
+            match argument.as_str() {
+                "--require-device" => require_device = true,
+                "--manual-play" => manual_play = true,
+                _ => files.push(PathBuf::from(argument)),
             }
         }
         if files.is_empty() {
             return Err("provide one or more audio fixture paths".into());
+        }
+
+        if manual_play {
+            return manual_playback(&files);
         }
 
         for path in &files {
@@ -47,6 +52,38 @@ mod windows {
         }
 
         println!("PASS Windows native audio preview spike");
+        Ok(())
+    }
+
+    fn manual_playback(files: &[PathBuf]) -> Result<(), Box<dyn Error>> {
+        let device = DeviceSinkBuilder::open_default_sink()
+            .map_err(|error| format!("Unable to open the default Windows audio output device: {error}"))?;
+        println!("JL Mixing Studio Windows native audio spike manual playback");
+        println!("Using the default Windows audio output device.");
+
+        for path in files {
+            let decoder = Decoder::try_from(File::open(path)?)?;
+            let duration = decoder
+                .total_duration()
+                .ok_or_else(|| format!("{} did not report a duration", path.display()))?;
+            let player = Player::connect_new(device.mixer());
+            player.append(decoder);
+            println!(
+                "PLAYING {} ({:.2}s)",
+                path.file_name()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or("<audio>"),
+                duration.as_secs_f64()
+            );
+            thread::sleep(duration + Duration::from_millis(250));
+            player.clear();
+            drop(player);
+            prove_file_release(path)?;
+            println!("PASS audible playback and file release: {}", path.display());
+        }
+
+        drop(device);
+        println!("PASS manual Windows output-device playback");
         Ok(())
     }
 
