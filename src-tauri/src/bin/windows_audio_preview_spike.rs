@@ -35,6 +35,7 @@ mod windows {
             probe_decode_seek_and_release(path)?;
         }
 
+        probe_unsupported_rejection(&files[0])?;
         probe_player_control_surface(&files[0])?;
 
         match probe_default_output_device(&files[0]) {
@@ -82,6 +83,22 @@ mod windows {
         Ok(())
     }
 
+    fn probe_unsupported_rejection(reference: &Path) -> Result<(), Box<dyn Error>> {
+        let unsupported = reference
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join("unsupported-preview.txt");
+        fs::write(&unsupported, b"not an audio stream")?;
+        let decode_result = Decoder::try_from(File::open(&unsupported)?);
+        if decode_result.is_ok() {
+            fs::remove_file(&unsupported)?;
+            return Err("unsupported input unexpectedly decoded".into());
+        }
+        fs::remove_file(&unsupported)?;
+        println!("PASS unsupported input rejected cleanly");
+        Ok(())
+    }
+
     fn probe_player_control_surface(path: &Path) -> Result<(), Box<dyn Error>> {
         let decoder = Decoder::try_from(File::open(path)?)?;
         let (player, output) = Player::new();
@@ -94,10 +111,14 @@ mod windows {
         if player.is_paused() {
             return Err("rodio Player did not resume from paused state".into());
         }
+        player.clear();
+        if !player.empty() {
+            return Err("rodio Player did not clear the active source".into());
+        }
         drop(player);
         drop(output);
         prove_file_release(path)?;
-        println!("PASS rodio Player play/pause/drop control surface");
+        println!("PASS rodio Player play/pause/clear/drop control surface");
         Ok(())
     }
 
