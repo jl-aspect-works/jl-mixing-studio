@@ -104,7 +104,7 @@ pub(crate) fn load_native_project_audio_preview(
     request: ProjectFileMutationRequest,
 ) -> Result<NativeAudioPreviewStatus, String> {
     if !cfg!(target_os = "windows") {
-        return Ok(audio_preview::status(&state)?);
+        return audio_preview::status(&state);
     }
     let (path, relative_path) = resolve_project_audio_file(&app, &request)?;
     audio_preview::load(&state, &path, relative_path)
