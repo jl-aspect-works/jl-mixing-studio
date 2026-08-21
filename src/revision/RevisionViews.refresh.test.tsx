@@ -54,20 +54,26 @@ const project = {
   }],
 } satisfies ProjectSummary;
 
-const renderView = () => render(<RevisionsView
+const renderView = (
+  projectValue: ProjectSummary = project,
+  onCreateDelivery = vi.fn(),
+) => render(<RevisionsView
   client={client}
-  project={project}
+  project={projectValue}
   loading={false}
   actionError={null}
   creationAvailable
   creationHelp=""
   approvalAvailable
   approvalHelp=""
+  deliveryAvailable
+  deliveryHelp="Build a package from the approved revision."
   onProjects={vi.fn()}
   onOverview={vi.fn()}
   onRefresh={vi.fn()}
   onNewRevision={vi.fn()}
   onApprove={vi.fn()}
+  onCreateDelivery={onCreateDelivery}
   onSelectView={vi.fn()}
 />);
 
@@ -109,5 +115,34 @@ describe("RevisionsView workspace refresh", () => {
 
     await waitFor(() => expect(editor).toHaveValue("Unsaved local edit"));
     expect(mocks.getRevisionNotes).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("RevisionsView delivery action", () => {
+  it("shows Create Delivery only for the approved revision and invokes the delivery handoff", async () => {
+    mocks.getRevisionNotes.mockResolvedValue({ content: "Notes", maxBytes: 65_536 });
+    const onCreateDelivery = vi.fn();
+    const approvedProject: ProjectSummary = {
+      ...project,
+      approvedRevision: 1,
+      revisions: [{
+        ...project.revisions[0],
+        approvedAt: "2026-08-16T13:00:00Z",
+        approvedBy: "Engineer",
+      }],
+    };
+
+    renderView(approvedProject, onCreateDelivery);
+
+    const button = await screen.findByRole("button", { name: "Create Delivery" });
+    fireEvent.click(button);
+    expect(onCreateDelivery).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show Create Delivery for an unapproved revision", async () => {
+    mocks.getRevisionNotes.mockResolvedValue({ content: "Notes", maxBytes: 65_536 });
+    renderView();
+    await screen.findByText("Notes");
+    expect(screen.queryByRole("button", { name: "Create Delivery" })).not.toBeInTheDocument();
   });
 });
