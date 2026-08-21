@@ -1,3 +1,4 @@
+mod audio_preview;
 mod automation_api;
 mod cli;
 mod client_edit;
@@ -15,11 +16,14 @@ mod workspace;
 use commands::{
     add_project_reference, choose_workspace_folder, delete_project_file, delete_project_reference,
     delete_revision_file, discover_default_workspace, get_delivery_notes, get_jl_mixing_version,
-    get_revision_notes, get_system_info, get_workspace_configuration, list_project_files,
-    open_folder, open_project_file, prepare_project_audio_preview, rename_project_file,
-    rename_revision_file, resolve_folder, reveal_project_file, set_workspace_root,
-    summarize_project_files, summarize_workspace_storage, update_delivery_notes,
-    update_revision_description, update_revision_notes, validate_workspace_root,
+    get_native_project_audio_preview_status, get_revision_notes, get_system_info,
+    get_workspace_configuration, list_project_files, load_native_project_audio_preview, open_folder,
+    open_project_file, pause_native_project_audio_preview, play_native_project_audio_preview,
+    prepare_project_audio_preview, rename_project_file, rename_revision_file, resolve_folder,
+    reveal_project_file, seek_native_project_audio_preview, set_native_project_audio_preview_volume,
+    set_workspace_root, stop_native_project_audio_preview, summarize_project_files,
+    summarize_workspace_storage, update_delivery_notes, update_revision_description,
+    update_revision_notes, validate_workspace_root,
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
@@ -317,6 +321,7 @@ fn delete_delivery_package(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(audio_preview::NativeAudioPreviewState::default())
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             get_system_info,
@@ -334,6 +339,13 @@ pub fn run() {
             open_project_file,
             reveal_project_file,
             prepare_project_audio_preview,
+            load_native_project_audio_preview,
+            play_native_project_audio_preview,
+            pause_native_project_audio_preview,
+            seek_native_project_audio_preview,
+            set_native_project_audio_preview_volume,
+            stop_native_project_audio_preview,
+            get_native_project_audio_preview_status,
             rename_project_file,
             delete_project_file,
             add_project_reference,
