@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import { FolderControl, RouteIssues, type ResourceState } from "../AppViews";
@@ -71,31 +71,13 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
   onSaveSuccess: (message: string) => void;
 }) {
   const snapshot = workspace.status === "ready" ? workspace.value : null;
-  const studio = snapshot?.studio ?? null;
   const [editInfo, setEditInfo] = useState<StudioEditInfo | null>(null);
   const [editInfoError, setEditInfoError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [preparingEdit, setPreparingEdit] = useState(false);
   const [form, setForm] = useState<StudioEditForm | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!studio || !snapshot) {
-      setEditInfo(null);
-      setEditInfoError(null);
-      return () => { cancelled = true; };
-    }
-    invoke<StudioEditInfo>("get_studio_edit_info")
-      .then((info) => { if (!cancelled) { setEditInfo(info); setEditInfoError(null); } })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setEditInfo(null);
-          setEditInfoError(error instanceof Error ? error.message : String(error));
-        }
-      });
-    return () => { cancelled = true; };
-  }, [snapshot?.workspacePath, studio?.studioId]);
 
   if (workspace.status === "loading") return <section className="state-panel"><h2>{productCopy.studio.readingWorkspace}</h2></section>;
   if (workspace.status === "error") return <section className="state-panel error"><h2>{productCopy.studio.workspaceUnavailable}</h2><p>{workspace.message}</p><button type="button" onClick={onRefresh}><ActionIcon name="retry" />{productCopy.studio.tryAgain}</button></section>;
@@ -110,16 +92,30 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
 
   const currentStudio = snapshot.studio;
   const beginEdit = () => {
-    if (!editInfo?.updateSupported) return;
     setForm(formFromStudio(currentStudio));
     setSaveError(null);
+    setEditInfoError(null);
+    setEditInfo(null);
     setEditing(true);
+    setPreparingEdit(true);
+    void invoke<StudioEditInfo>("get_studio_edit_info")
+      .then((info) => {
+        setEditInfo(info);
+        setEditInfoError(null);
+      })
+      .catch((error: unknown) => {
+        setEditInfo(null);
+        setEditInfoError(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => setPreparingEdit(false));
   };
   const cancelEdit = () => {
     if (saving) return;
     setEditing(false);
     setForm(null);
     setSaveError(null);
+    setEditInfoError(null);
+    setPreparingEdit(false);
   };
   const toggleDeliverable = (value: string) => {
     if (!form) return;
@@ -166,8 +162,7 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
   };
 
   const values = editing && form ? form : formFromStudio(currentStudio);
-  const editingAvailable = editInfo?.updateSupported === true;
-  const editUnavailableHelp = editInfo?.message ?? editInfoError ?? "Checking Automation editing support…";
+  const saveUnavailableHelp = editInfoError ?? (preparingEdit ? "Reading Studio conflict metadata…" : null);
 
   return <section className="studio-route" aria-labelledby="studio-details-heading">
     <div className="studio-hero">
@@ -179,15 +174,15 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
       <div className="studio-actions">
         {editing ? <>
           <button type="button" className="secondary" onClick={cancelEdit} disabled={saving}><ActionIcon name="close" />Cancel</button>
-          <button type="button" onClick={save} disabled={saving} aria-busy={saving}><ActionIcon name="save" />{saving ? "Saving…" : "Save Changes"}</button>
+          <button type="button" onClick={save} disabled={saving || preparingEdit || !editInfo} aria-busy={saving || preparingEdit}><ActionIcon name="save" />{saving ? "Saving…" : preparingEdit ? "Preparing…" : "Save Changes"}</button>
         </> : <>
-          <button type="button" onClick={beginEdit} disabled={!editingAvailable || loading} title={!editingAvailable ? editUnavailableHelp : undefined}><ActionIcon name="edit" />Edit Studio</button>
+          <button type="button" onClick={beginEdit}><ActionIcon name="edit" />Edit Studio</button>
           <button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{productCopy.common.refresh}</button>
         </>}
       </div>
     </div>
 
-    {!editingAvailable && !editing && <div className="studio-capability-note" role="status"><strong>Editing unavailable.</strong> {editUnavailableHelp}</div>}
+    {editing && saveUnavailableHelp && <div className="studio-capability-note" role="status"><strong>{editInfoError ? "Save unavailable." : "Preparing edit."}</strong> {saveUnavailableHelp}</div>}
     {saveError && <div className="form-error studio-save-error" role="alert">{saveError}</div>}
 
     <div className="studio-section-grid">
@@ -217,14 +212,14 @@ export function StudioRoute({ workspace, version, loading, setupAvailable, setup
       </article>
 
       <article className="studio-section studio-section-wide studio-information">
-        <div className="studio-section-heading"><div><h3>Studio Information</h3><p>Workspace location and immutable Studio metadata. These values are read-only.</p></div></div>
+        <div className="studio-section-heading"><div><h3>Studio Information</h3><p>Workspace location and immutable Studio metadata. Conflict metadata is read when editing begins.</p></div></div>
         <dl className="studio-info-grid">
           <div><dt>Studio ID</dt><dd><code>{currentStudio.studioId}</code></dd></div>
           <div><dt>Workspace</dt><dd><code>{snapshot.workspacePath}</code></dd></div>
           <div><dt>Created</dt><dd>{formatTimestamp(currentStudio.createdAt)}</dd></div>
-          <div><dt>Last Modified</dt><dd>{editInfo ? formatTimestamp(editInfo.lastModifiedAt) : "Checking…"}</dd></div>
+          <div><dt>Last Modified</dt><dd>{editInfo ? formatTimestamp(editInfo.lastModifiedAt) : editing && preparingEdit ? "Checking…" : "Read when editing"}</dd></div>
           <div><dt>Schema</dt><dd>{currentStudio.schemaVersion}</dd></div>
-          <div><dt>Document ID</dt><dd><code>{editInfo?.documentId ?? "Checking…"}</code></dd></div>
+          <div><dt>Document ID</dt><dd><code>{editInfo?.documentId ?? (editing && preparingEdit ? "Checking…" : "Read when editing")}</code></dd></div>
           <div><dt>Created With</dt><dd>{currentStudio.createdWith}</dd></div>
           <div><dt>Automation</dt><dd>{version.status === "ready" ? version.value.message : productCopy.studio.checkUnavailable}</dd></div>
           <div><dt>CLI Auto-directory Change</dt><dd>{currentStudio.changeDirectoryAfterCreate ? "Enabled" : "Disabled"}</dd></div>
