@@ -11,6 +11,10 @@ const key = (clientId: string, projectId: string) => `${clientId}\u0000${project
 export const cachedDeliveryStatus = (clientId: string, projectId: string) => statusCache.get(key(clientId, projectId)) ?? null;
 export const cachedDeliveryNotes = (clientId: string, projectId: string) => notesCache.get(key(clientId, projectId)) ?? null;
 
+export const cacheDeliveryNotes = (clientId: string, projectId: string, document: DeliveryNotesDocument) => {
+  notesCache.set(key(clientId, projectId), document);
+};
+
 export const readDeliveryStatus = (request: DeliveryStatusRequest) => {
   const cacheKey = key(request.clientId, request.projectId);
   const active = statusInFlight.get(cacheKey);
