@@ -41,7 +41,7 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     resetAppTestState();
   });
 
-  it("refreshes authoritative workspace state when entering a project and changing workflow screens", async () => {
+  it("refreshes authoritative workspace state when entering a project and when the app regains focus", async () => {
     let workspaceCalls = 0;
     mockedInvoke.mockImplementation((command) => {
       if (command === "discover_default_workspace") {
@@ -64,13 +64,19 @@ describe("JL Mixing Studio — shared workspace resilience", () => {
     fireEvent.click(projectLink);
 
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
+    const callsAfterProjectOpen = workspaceCalls;
 
     const projectNavigation = await screen.findByRole("navigation", { name: "Project navigation" });
     const filesButton = within(projectNavigation).getByRole("button", { name: "Files" });
     await waitFor(() => expect(filesButton).toBeEnabled());
     fireEvent.click(filesButton);
+    await Promise.resolve();
 
-    await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(3));
+    expect(workspaceCalls).toBe(callsAfterProjectOpen);
+
+    fireEvent.focus(window);
+
+    await waitFor(() => expect(workspaceCalls).toBeGreaterThan(callsAfterProjectOpen));
     expect(await screen.findByRole("heading", { name: "Externally Updated Blue Sky", level: 1 })).toBeInTheDocument();
   });
 
