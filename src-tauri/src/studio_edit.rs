@@ -68,29 +68,15 @@ fn discovery_supports_update(home: &Path) -> Result<bool, String> {
 }
 
 pub fn get_studio_edit_info(app: &AppHandle) -> Result<StudioEditInfo, String> {
-    let home = resolve_home(app)?;
     let workspace = resolve_workspace_root(app)?;
     let (document_id, last_modified_at) = read_edit_metadata(&workspace)?;
-    match discovery_supports_update(&home) {
-        Ok(true) => Ok(StudioEditInfo {
-            update_supported: true,
-            document_id,
-            last_modified_at,
-            message: "Studio editing is available.".into(),
-        }),
-        Ok(false) => Ok(StudioEditInfo {
-            update_supported: false,
-            document_id,
-            last_modified_at,
-            message: "The installed JL Mixing Automation does not advertise studio.update.".into(),
-        }),
-        Err(message) => Ok(StudioEditInfo {
-            update_supported: false,
-            document_id,
-            last_modified_at,
-            message,
-        }),
-    }
+    Ok(StudioEditInfo {
+        update_supported: true,
+        document_id,
+        last_modified_at,
+        message: "Studio edit metadata is ready. Automation capability is verified again before saving."
+            .into(),
+    })
 }
 
 fn blocked(code: StudioUpdateCode, message: impl Into<String>) -> StudioUpdateResult {
