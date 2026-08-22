@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceConfiguration } from "../settings/models";
 import { useWorkspaceResources } from "./useWorkspaceResources";
-import { storeCachedWorkspaceSnapshot } from "./workspaceSnapshotCache";
+import { storeCachedWorkspaceConfiguration, storeCachedWorkspaceSnapshot } from "./workspaceSnapshotCache";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -77,7 +77,8 @@ describe("useWorkspaceResources", () => {
 
   afterEach(cleanup);
 
-  it("paints a matching cached workspace while authoritative discovery is still running", async () => {
+  it("paints a matching cached workspace on the first React render while authoritative discovery is still running", async () => {
+    storeCachedWorkspaceConfiguration(configuration);
     storeCachedWorkspaceSnapshot(snapshot("Cached Studio"));
     let resolveDiscovery: ((value: WorkspaceSnapshot) => void) | null = null;
     mockedInvoke.mockImplementation((command) => {
@@ -91,7 +92,7 @@ describe("useWorkspaceResources", () => {
 
     render(<Harness />);
 
-    expect(await screen.findByText("Cached Studio")).toBeInTheDocument();
+    expect(screen.getByText("Cached Studio")).toBeInTheDocument();
     expect(screen.getByText("refreshing")).toBeInTheDocument();
 
     await act(async () => {
