@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { healthyWorkspace, mockedInvoke } from "../App.testSupport";
 import { notifyWorkspaceRefreshed } from "../app/workspaceRefreshEvents";
+import { resetDeliveryReadCache } from "./deliveryReadCache";
 import type { DeliveryStatusResult, ManagedDeliveryStatus } from "./statusModels";
 import { DeliveryView } from "./DeliveryView";
 
@@ -70,6 +71,7 @@ const renderView = () => render(<DeliveryView
 
 beforeEach(() => {
   mockedInvoke.mockReset();
+  resetDeliveryReadCache();
 });
 
 afterEach(cleanup);
