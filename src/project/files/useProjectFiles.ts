@@ -11,9 +11,35 @@ export type ProjectFilesState =
   | { status: "error"; listing: ProjectFileListing | null; message: string };
 
 const listingCache = new Map<string, ProjectFileListing>();
+const listingPrefetches = new Map<string, Promise<ProjectFileListing>>();
 
 const listingCacheKey = (clientId: string, projectId: string, relativePath: string) =>
   `${clientId}\u0000${projectId}\u0000${relativePath}`;
+
+export const prefetchProjectFiles = ({
+  clientId,
+  projectId,
+  relativePath,
+}: {
+  clientId: string;
+  projectId: string;
+  relativePath: string;
+}) => {
+  const key = listingCacheKey(clientId, projectId, relativePath);
+  if (listingCache.has(key)) return Promise.resolve(listingCache.get(key)!);
+  const existing = listingPrefetches.get(key);
+  if (existing) return existing;
+  const request = listProjectFiles({ clientId, projectId, relativePath })
+    .then((listing) => {
+      listingCache.set(key, listing);
+      return listing;
+    })
+    .finally(() => {
+      if (listingPrefetches.get(key) === request) listingPrefetches.delete(key);
+    });
+  listingPrefetches.set(key, request);
+  return request;
+};
 
 const errorMessage = (error: unknown) =>
   error instanceof Error && error.message
@@ -64,7 +90,23 @@ export function useProjectFiles({
     setState(cached
       ? { status: "ready", listing: cached, message: null }
       : { status: "loading", listing: null, message: null });
-    void refresh();
+    if (cached) {
+      void refresh();
+    } else {
+      const prefetched = listingPrefetches.get(cacheKey);
+      if (prefetched) {
+        const sequence = ++requestSequence.current;
+        void prefetched.then((listing) => {
+          if (requestSequence.current === sequence) setState({ status: "ready", listing, message: null });
+        }).catch((error) => {
+          if (requestSequence.current === sequence) {
+            setState({ status: "error", listing: null, message: errorMessage(error) });
+          }
+        });
+      } else {
+        void refresh();
+      }
+    }
     return () => {
       requestSequence.current += 1;
     };
