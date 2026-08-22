@@ -8,10 +8,18 @@ const revisionFolder = (revision: number) => `${projectFilePaths.revisions}/Revi
 
 /**
  * Warm secondary project tabs without competing with the initial Overview load.
- * Work is deliberately sequential, with the Automation-backed delivery reconciliation last.
+ * Work is deliberately sequential. Delivery goes first because its Automation-backed
+ * reconciliation is the highest-latency secondary read and the Delivery screen can join
+ * an in-flight request through the shared cache.
  */
 export const prefetchProjectTabs = async (client: ClientSummary, project: ProjectSummary) => {
   const identity = { clientId: client.clientId, projectId: project.projectId };
+
+  try {
+    await prefetchDeliveryReads(client.clientId, project.projectId, Boolean(project.delivery));
+  } catch {
+    // Prefetch is opportunistic; the tab owns user-visible error handling.
+  }
 
   try {
     await prefetchProjectFiles({ ...identity, relativePath: projectFilePaths.references });
@@ -30,11 +38,5 @@ export const prefetchProjectTabs = async (client: ClientSummary, project: Projec
     } catch {
       // Prefetch is opportunistic.
     }
-  }
-
-  try {
-    await prefetchDeliveryReads(client.clientId, project.projectId, Boolean(project.delivery));
-  } catch {
-    // Prefetch is opportunistic.
   }
 };
