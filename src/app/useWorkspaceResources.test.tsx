@@ -94,6 +94,7 @@ describe("useWorkspaceResources", () => {
 
     expect(screen.getByText("Cached Studio")).toBeInTheDocument();
     expect(screen.getByText("refreshing")).toBeInTheDocument();
+    await waitFor(() => expect(resolveDiscovery).not.toBeNull());
 
     await act(async () => {
       resolveDiscovery?.(snapshot("Authoritative Studio"));
