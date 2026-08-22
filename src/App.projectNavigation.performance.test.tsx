@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { healthyWorkspace, mockedInvoke, resetAppTestState, version } from "./App.testSupport";
 import App from "./App";
@@ -64,9 +64,13 @@ describe("project navigation performance", () => {
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
     const callsAfterOpen = workspaceCalls;
 
-    const referencesButton = screen.getByRole("button", { name: "References" });
-    fireEvent.click(referencesButton);
-    await waitFor(() => expect(referencesButton).toHaveAttribute("aria-current", "page"));
+    let projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+    fireEvent.click(within(projectNavigation).getByRole("button", { name: "References" }));
+    await waitFor(() => {
+      projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+      expect(within(projectNavigation).getByRole("button", { name: "References" }))
+        .toHaveAttribute("aria-current", "page");
+    });
     await Promise.resolve();
 
     expect(workspaceCalls).toBe(callsAfterOpen);
@@ -105,14 +109,25 @@ describe("project navigation performance", () => {
     fireEvent.click(projectLink);
 
     await waitFor(() => expect(validationCalls).toBe(1));
-    const clientFilesButton = screen.getByRole("button", { name: "Client Files" });
-    fireEvent.click(clientFilesButton);
-    await waitFor(() => expect(clientFilesButton).toHaveAttribute("aria-current", "page"));
-    const audioPrepButton = screen.getByRole("button", { name: "Audio Prep" });
-    fireEvent.click(audioPrepButton);
-    await waitFor(() => expect(audioPrepButton).toHaveAttribute("aria-current", "page"));
+    const callsAfterProjectOpen = validationCalls;
+
+    let projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+    fireEvent.click(within(projectNavigation).getByRole("button", { name: "Client Files" }));
+    await waitFor(() => {
+      projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+      expect(within(projectNavigation).getByRole("button", { name: "Client Files" }))
+        .toHaveAttribute("aria-current", "page");
+    });
+
+    projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+    fireEvent.click(within(projectNavigation).getByRole("button", { name: "Audio Prep" }));
+    await waitFor(() => {
+      projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+      expect(within(projectNavigation).getByRole("button", { name: "Audio Prep" }))
+        .toHaveAttribute("aria-current", "page");
+    });
     await Promise.resolve();
 
-    expect(validationCalls).toBe(1);
+    expect(validationCalls).toBe(callsAfterProjectOpen);
   });
 });
