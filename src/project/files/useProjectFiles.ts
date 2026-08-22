@@ -10,6 +10,37 @@ export type ProjectFilesState =
   | { status: "ready"; listing: ProjectFileListing; message: null }
   | { status: "error"; listing: ProjectFileListing | null; message: string };
 
+const listingCache = new Map<string, ProjectFileListing>();
+const listingPrefetches = new Map<string, Promise<ProjectFileListing>>();
+
+const listingCacheKey = (clientId: string, projectId: string, relativePath: string) =>
+  `${clientId}\u0000${projectId}\u0000${relativePath}`;
+
+export const prefetchProjectFiles = ({
+  clientId,
+  projectId,
+  relativePath,
+}: {
+  clientId: string;
+  projectId: string;
+  relativePath: string;
+}) => {
+  const key = listingCacheKey(clientId, projectId, relativePath);
+  if (listingCache.has(key)) return Promise.resolve(listingCache.get(key)!);
+  const existing = listingPrefetches.get(key);
+  if (existing) return existing;
+  const request = listProjectFiles({ clientId, projectId, relativePath })
+    .then((listing) => {
+      listingCache.set(key, listing);
+      return listing;
+    })
+    .finally(() => {
+      if (listingPrefetches.get(key) === request) listingPrefetches.delete(key);
+    });
+  listingPrefetches.set(key, request);
+  return request;
+};
+
 const errorMessage = (error: unknown) =>
   error instanceof Error && error.message
     ? error.message
@@ -26,36 +57,60 @@ export function useProjectFiles({
   projectId: string;
   relativePath: string;
 }) {
-  const [state, setState] = useState<ProjectFilesState>({
-    status: "loading",
-    listing: null,
-    message: null,
+  const cacheKey = listingCacheKey(clientId, projectId, relativePath);
+  const [state, setState] = useState<ProjectFilesState>(() => {
+    const cached = listingCache.get(cacheKey);
+    return cached
+      ? { status: "ready", listing: cached, message: null }
+      : { status: "loading", listing: null, message: null };
   });
   const requestSequence = useRef(0);
 
   const refresh = useCallback(async () => {
     const sequence = ++requestSequence.current;
-    setState((current) => ({ status: "loading", listing: current.listing, message: null }));
+    const cached = listingCache.get(cacheKey) ?? null;
+    setState((current) => ({ status: "loading", listing: current.listing ?? cached, message: null }));
     try {
       const listing = await listProjectFiles({ clientId, projectId, relativePath });
       if (requestSequence.current !== sequence) return;
+      listingCache.set(cacheKey, listing);
       setState({ status: "ready", listing, message: null });
     } catch (error) {
       if (requestSequence.current !== sequence) return;
       setState((current) => ({
         status: "error",
-        listing: current.listing,
+        listing: current.listing ?? cached,
         message: errorMessage(error),
       }));
     }
-  }, [clientId, projectId, relativePath]);
+  }, [cacheKey, clientId, projectId, relativePath]);
 
   useEffect(() => {
-    void refresh();
+    const cached = listingCache.get(cacheKey) ?? null;
+    setState(cached
+      ? { status: "ready", listing: cached, message: null }
+      : { status: "loading", listing: null, message: null });
+    if (cached) {
+      void refresh();
+    } else {
+      const prefetched = listingPrefetches.get(cacheKey);
+      if (prefetched) {
+        const sequence = ++requestSequence.current;
+        void prefetched.then((listing) => {
+          if (requestSequence.current === sequence) setState({ status: "ready", listing, message: null });
+        }).catch((error) => {
+          if (requestSequence.current === sequence) {
+            setState({ status: "error", listing: null, message: errorMessage(error) });
+          }
+        });
+      } else {
+        void refresh();
+      }
+    }
     return () => {
       requestSequence.current += 1;
     };
-  }, [refresh]);
+  }, [cacheKey, refresh]);
 
   useEffect(() => addWorkspaceRefreshListener(() => { void refresh(); }), [refresh]);
 

@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceConfiguration } from "../settings/models";
 import { useWorkspaceResources } from "./useWorkspaceResources";
+import { storeCachedWorkspaceConfiguration, storeCachedWorkspaceSnapshot } from "./workspaceSnapshotCache";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -71,9 +72,37 @@ function Harness() {
 describe("useWorkspaceResources", () => {
   beforeEach(() => {
     mockedInvoke.mockReset();
+    window.localStorage.clear();
   });
 
   afterEach(cleanup);
+
+  it("paints a matching cached workspace on the first React render while authoritative discovery is still running", async () => {
+    storeCachedWorkspaceConfiguration(configuration);
+    storeCachedWorkspaceSnapshot(snapshot("Cached Studio"));
+    let resolveDiscovery: ((value: WorkspaceSnapshot) => void) | null = null;
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "discover_default_workspace") {
+        return new Promise<WorkspaceSnapshot>((resolve) => { resolveDiscovery = resolve; });
+      }
+      if (command === "get_workspace_configuration") return Promise.resolve(configuration);
+      if (command === "get_jl_mixing_version") return Promise.resolve(version);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
+    render(<Harness />);
+
+    expect(screen.getByText("Cached Studio")).toBeInTheDocument();
+    expect(screen.getByText("refreshing")).toBeInTheDocument();
+    await waitFor(() => expect(resolveDiscovery).not.toBeNull());
+
+    await act(async () => {
+      resolveDiscovery?.(snapshot("Authoritative Studio"));
+    });
+
+    expect(await screen.findByText("Authoritative Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
+  });
 
   it("refreshes only the workspace snapshot when the window regains focus", async () => {
     let workspaceCalls = 0;
@@ -105,6 +134,39 @@ describe("useWorkspaceResources", () => {
     expect(workspaceCalls).toBe(2);
     expect(configurationCalls).toBe(1);
     expect(versionCalls).toBe(1);
+  });
+
+  it("coalesces overlapping workspace refresh requests", async () => {
+    let workspaceCalls = 0;
+    let resolveRefresh: ((value: WorkspaceSnapshot) => void) | null = null;
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "discover_default_workspace") {
+        workspaceCalls += 1;
+        if (workspaceCalls === 1) return Promise.resolve(snapshot("Initial Studio"));
+        return new Promise<WorkspaceSnapshot>((resolve) => { resolveRefresh = resolve; });
+      }
+      if (command === "get_workspace_configuration") return Promise.resolve(configuration);
+      if (command === "get_jl_mixing_version") return Promise.resolve(version);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
+    render(<Harness />);
+    expect(await screen.findByText("Initial Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
+
+    fireEvent.focus(window);
+    fireEvent.focus(window);
+    fireEvent.click(screen.getByRole("button", { name: "Refresh workspace" }));
+
+    await waitFor(() => expect(workspaceCalls).toBe(2));
+    expect(workspaceCalls).toBe(2);
+
+    await act(async () => {
+      resolveRefresh?.(snapshot("Coalesced Studio"));
+    });
+
+    expect(await screen.findByText("Coalesced Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
   });
 
   it("keeps the last workspace visible while a slow refresh is in progress", async () => {

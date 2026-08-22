@@ -6,7 +6,7 @@ use crate::models::{
 use crate::workspace;
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub(crate) const REVISION_NOTES_MAX_BYTES: usize = 65_536;
 
@@ -15,12 +15,11 @@ pub(crate) fn get_revision_notes(
     app: tauri::AppHandle,
     request: RevisionNotesRequest,
 ) -> Result<RevisionNotesDocument, String> {
-    let path = resolve_revision_notes_path(
+    let path = resolve_revision_notes_path_for_read(
         &app,
         &request.client_id,
         &request.project_id,
         request.revision,
-        true,
     )?;
     read_revision_notes(&path)
 }
@@ -50,6 +49,22 @@ pub(crate) fn update_revision_notes(
     Ok(saved)
 }
 
+fn resolve_revision_notes_path_for_read(
+    app: &tauri::AppHandle,
+    client_id: &str,
+    project_id: &str,
+    revision: u32,
+) -> Result<PathBuf, String> {
+    if revision == 0 {
+        return Err("Revision number must be greater than zero".into());
+    }
+    let root = resolve_workspace_root(app)?;
+    let project_path =
+        workspace::find_validated_project_path(&root, client_id.trim(), project_id.trim())
+            .ok_or("The selected project directory could not be resolved safely")?;
+    resolve_revision_notes_under_project(&project_path, revision)
+}
+
 fn resolve_revision_notes_path(
     app: &tauri::AppHandle,
     client_id: &str,
@@ -75,6 +90,13 @@ fn resolve_revision_notes_path(
     let project_path =
         validated_project_directory(&root, &snapshot, client_id.trim(), project_id.trim())
             .ok_or("The selected project directory could not be resolved safely")?;
+    resolve_revision_notes_under_project(&project_path, revision)
+}
+
+fn resolve_revision_notes_under_project(
+    project_path: &Path,
+    revision: u32,
+) -> Result<PathBuf, String> {
     let canonical_project = project_path
         .canonicalize()
         .map_err(|_| "The project folder is unavailable")?;

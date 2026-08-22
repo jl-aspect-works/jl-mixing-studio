@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ResourceState } from "../AppViews";
 import { ActionIcon } from "../components/ActionIcon";
 import type { ActivityEvent, ActivityEventType, DerivedTask, TaskPriority, WorkspaceSnapshot } from "../types";
@@ -20,8 +20,8 @@ const activityEventLabel: Record<ActivityEventType, string> = {
   deliveryCreated: "Delivery created",
 };
 
-const formatEventTimestamp = (value: string) =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const eventTimestampFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+const formatEventTimestamp = (value: string) => eventTimestampFormatter.format(new Date(value));
 
 const normalize = (value: string | null | undefined) => value?.toLocaleLowerCase() ?? "";
 
@@ -89,16 +89,17 @@ export function TasksRoute({ workspace, loading, onRefresh, onOpenProject }: {
 }) {
   const [query, setQuery] = useState("");
   const [priority, setPriority] = useState<TaskPriorityFilter>("all");
+  const snapshot = workspace.status === "ready" ? workspace.value : null;
+  const filtered = useMemo(() => snapshot ? filterTasks(snapshot.tasks, query, priority) : [], [snapshot?.tasks, query, priority]);
   if (workspace.status === "loading") return <section className="notice">Checking what needs attention…</section>;
   if (workspace.status === "error") return <section className="notice error"><strong>We couldn’t load your tasks</strong><span>{workspace.message}</span></section>;
-  const snapshot = workspace.value;
-  const filtered = filterTasks(snapshot.tasks, query, priority);
+  const currentSnapshot = workspace.value;
   const filtersActive = query.trim() !== "" || priority !== "all";
   const clear = () => { setQuery(""); setPriority("all"); };
   return <>
-    <section className="directory-toolbar"><div><p className="kicker">Studio work</p><ResultCount visible={filtered.length} total={snapshot.tasks.length} noun="task" /></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? "Refreshing…" : "Refresh"}</button></section>
+    <section className="directory-toolbar"><div><p className="kicker">Studio work</p><ResultCount visible={filtered.length} total={currentSnapshot.tasks.length} noun="task" /></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? "Refreshing…" : "Refresh"}</button></section>
     <FilterControls label="Tasks" query={query} onQueryChange={setQuery} filterLabel="Priority" filterValue={priority} onFilterChange={(value) => setPriority(value as TaskPriorityFilter)} options={[{ value: "all", label: "All priorities" }, ...Object.entries(taskPriorityLabel).map(([value, label]) => ({ value, label }))]} onClear={clear} active={filtersActive} />
-    {snapshot.tasks.length === 0 ? <section className="empty-state"><h2>Nothing needs your attention</h2><p>You’re all caught up for now.</p></section> : filtered.length === 0 ? <section className="empty-state"><h2>No tasks match your search</h2><p>Try another search or clear the current filters.</p><button type="button" className="secondary" onClick={clear}>Clear filters</button></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Priority</th><th>Task</th><th>Project</th><th>Reason</th><th>Recommended action</th></tr></thead><tbody>{filtered.map((task) => <tr key={task.id}><td><span className={`priority-pill ${task.priority}`}>{taskPriorityLabel[task.priority]}</span></td><td><strong>{task.title}</strong>{task.deadline && <small className="table-detail">Deadline {task.deadline}</small>}</td><td>{task.clientId && task.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(task.clientId!, task.projectId!)}>{task.projectName}</button> : task.projectName ?? "Workspace"}</td><td>{task.reason}</td><td>{task.recommendedAction}</td></tr>)}</tbody></table></div></section>}
+    {currentSnapshot.tasks.length === 0 ? <section className="empty-state"><h2>Nothing needs your attention</h2><p>You’re all caught up for now.</p></section> : filtered.length === 0 ? <section className="empty-state"><h2>No tasks match your search</h2><p>Try another search or clear the current filters.</p><button type="button" className="secondary" onClick={clear}>Clear filters</button></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Priority</th><th>Task</th><th>Project</th><th>Reason</th><th>Recommended action</th></tr></thead><tbody>{filtered.map((task) => <tr key={task.id}><td><span className={`priority-pill ${task.priority}`}>{taskPriorityLabel[task.priority]}</span></td><td><strong>{task.title}</strong>{task.deadline && <small className="table-detail">Deadline {task.deadline}</small>}</td><td>{task.clientId && task.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(task.clientId!, task.projectId!)}>{task.projectName}</button> : task.projectName ?? "Workspace"}</td><td>{task.reason}</td><td>{task.recommendedAction}</td></tr>)}</tbody></table></div></section>}
     <aside className="route-note"><strong>Updated when you refresh</strong><span>Tasks are based on the current state of your studio and projects.</span></aside>
   </>;
 }
@@ -111,16 +112,17 @@ export function ActivityRoute({ workspace, loading, onRefresh, onOpenProject }: 
 }) {
   const [query, setQuery] = useState("");
   const [eventType, setEventType] = useState<ActivityTypeFilter>("all");
+  const snapshot = workspace.status === "ready" ? workspace.value : null;
+  const filtered = useMemo(() => snapshot ? filterActivity(snapshot.activity, query, eventType) : [], [snapshot?.activity, query, eventType]);
   if (workspace.status === "loading") return <section className="notice">Loading recent activity…</section>;
   if (workspace.status === "error") return <section className="notice error"><strong>We couldn’t load recent activity</strong><span>{workspace.message}</span></section>;
-  const snapshot = workspace.value;
-  const filtered = filterActivity(snapshot.activity, query, eventType);
+  const currentSnapshot = workspace.value;
   const filtersActive = query.trim() !== "" || eventType !== "all";
   const clear = () => { setQuery(""); setEventType("all"); };
   return <>
-    <section className="directory-toolbar"><div><p className="kicker">Recent studio activity</p><ResultCount visible={filtered.length} total={snapshot.activity.length} noun="event" /></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? "Refreshing…" : "Refresh"}</button></section>
+    <section className="directory-toolbar"><div><p className="kicker">Recent studio activity</p><ResultCount visible={filtered.length} total={currentSnapshot.activity.length} noun="event" /></div><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? "Refreshing…" : "Refresh"}</button></section>
     <FilterControls label="Activity" query={query} onQueryChange={setQuery} filterLabel="Event type" filterValue={eventType} onFilterChange={(value) => setEventType(value as ActivityTypeFilter)} options={[{ value: "all", label: "All event types" }, ...Object.entries(activityEventLabel).map(([value, label]) => ({ value, label }))]} onClear={clear} active={filtersActive} />
-    {snapshot.activity.length === 0 ? <section className="empty-state"><h2>No recent activity yet</h2><p>Project activity will appear here as work moves forward.</p></section> : filtered.length === 0 ? <section className="empty-state"><h2>No activity matches your search</h2><p>Try another search or clear the current filters.</p><button type="button" className="secondary" onClick={clear}>Clear filters</button></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Timestamp</th><th>Event</th><th>Project or client</th><th>Source</th></tr></thead><tbody>{filtered.map((event) => <tr key={event.id}><td><time dateTime={event.timestamp}>{formatEventTimestamp(event.timestamp)}</time></td><td>{activityEventLabel[event.eventType]}{event.revision !== null && <small className="table-detail">Revision {event.revision}</small>}</td><td>{event.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(event.clientId, event.projectId!)}>{event.projectName}</button> : event.clientName}</td><td><code>{event.persistedSource}</code></td></tr>)}</tbody></table></div></section>}
+    {currentSnapshot.activity.length === 0 ? <section className="empty-state"><h2>No recent activity yet</h2><p>Project activity will appear here as work moves forward.</p></section> : filtered.length === 0 ? <section className="empty-state"><h2>No activity matches your search</h2><p>Try another search or clear the current filters.</p><button type="button" className="secondary" onClick={clear}>Clear filters</button></section> : <section className="panel"><div className="table-scroll"><table><thead><tr><th>Timestamp</th><th>Event</th><th>Project or client</th><th>Source</th></tr></thead><tbody>{filtered.map((event) => <tr key={event.id}><td><time dateTime={event.timestamp}>{formatEventTimestamp(event.timestamp)}</time></td><td>{activityEventLabel[event.eventType]}{event.revision !== null && <small className="table-detail">Revision {event.revision}</small>}</td><td>{event.projectId ? <button type="button" className="table-link" onClick={() => onOpenProject(event.clientId, event.projectId!)}>{event.projectName}</button> : event.clientName}</td><td><code>{event.persistedSource}</code></td></tr>)}</tbody></table></div></section>}
     <aside className="route-note"><strong>Activity history</strong><span>This view shows supported project milestones recorded by JL Mixing Automation.</span></aside>
   </>;
 }

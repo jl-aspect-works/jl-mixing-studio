@@ -4,12 +4,25 @@ import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceConfiguration } from "../settings/models";
 import { safeError, type ResourceState } from "../AppViews";
 import { notifyWorkspaceRefreshed } from "./workspaceRefreshEvents";
+import {
+  loadBootstrapWorkspaceSnapshot,
+  loadCachedWorkspaceConfiguration,
+  loadCachedWorkspaceSnapshot,
+  storeCachedWorkspaceConfiguration,
+  storeCachedWorkspaceSnapshot,
+} from "./workspaceSnapshotCache";
 
 const yieldToBrowserPaint = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0));
 
 export function useWorkspaceResources() {
-  const [workspace, setWorkspace] = useState<ResourceState<WorkspaceSnapshot>>({ status: "loading" });
-  const [workspaceConfiguration, setWorkspaceConfiguration] = useState<ResourceState<WorkspaceConfiguration>>({ status: "loading" });
+  const bootstrapConfiguration = loadCachedWorkspaceConfiguration();
+  const bootstrapWorkspace = loadBootstrapWorkspaceSnapshot();
+  const [workspace, setWorkspace] = useState<ResourceState<WorkspaceSnapshot>>(
+    bootstrapWorkspace ? { status: "ready", value: bootstrapWorkspace } : { status: "loading" },
+  );
+  const [workspaceConfiguration, setWorkspaceConfiguration] = useState<ResourceState<WorkspaceConfiguration>>(
+    bootstrapConfiguration ? { status: "ready", value: bootstrapConfiguration } : { status: "loading" },
+  );
   const [version, setVersion] = useState<ResourceState<VersionCheck>>({ status: "loading" });
   const [refreshingWorkspace, setRefreshingWorkspace] = useState(false);
   const [refreshingResources, setRefreshingResources] = useState(false);
@@ -17,12 +30,22 @@ export function useWorkspaceResources() {
   const workspaceRequestId = useRef(0);
   const configurationRequestId = useRef(0);
   const versionRequestId = useRef(0);
+  const workspaceInFlight = useRef<Promise<void> | null>(null);
+  const refreshStorageAfterCurrentWorkspaceRequest = useRef(false);
+  const workspaceAuthoritative = useRef(false);
 
   const reloadWorkspaceConfiguration = useCallback(async () => {
     const currentRequest = ++configurationRequestId.current;
     try {
       const value = await invoke<WorkspaceConfiguration>("get_workspace_configuration");
-      if (configurationRequestId.current === currentRequest) setWorkspaceConfiguration({ status: "ready", value });
+      if (configurationRequestId.current === currentRequest) {
+        storeCachedWorkspaceConfiguration(value);
+        setWorkspaceConfiguration({ status: "ready", value });
+        if (!workspaceAuthoritative.current) {
+          const cached = loadCachedWorkspaceSnapshot(value.workspacePath);
+          if (cached) setWorkspace({ status: "ready", value: cached });
+        }
+      }
     } catch (error: unknown) {
       if (configurationRequestId.current === currentRequest) {
         setWorkspaceConfiguration({ status: "error", message: safeError(error, "Workspace configuration could not be loaded.") });
@@ -43,24 +66,43 @@ export function useWorkspaceResources() {
   }, []);
 
   const refreshWorkspace = useCallback(async (blocking = true) => {
-    const currentRequest = ++workspaceRequestId.current;
     if (blocking) setRefreshingWorkspace(true);
     setWorkspaceRefreshError(null);
-    await yieldToBrowserPaint();
+    refreshStorageAfterCurrentWorkspaceRequest.current ||= blocking;
+
+    if (!workspaceInFlight.current) {
+      const currentRequest = ++workspaceRequestId.current;
+      workspaceInFlight.current = (async () => {
+        await yieldToBrowserPaint();
+        try {
+          const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
+          if (workspaceRequestId.current === currentRequest) {
+            workspaceAuthoritative.current = true;
+            setWorkspace({ status: "ready", value });
+            if (value.status === "healthy" || value.status === "partial" || value.status === "empty") {
+              storeCachedWorkspaceSnapshot(value);
+            }
+            notifyWorkspaceRefreshed(refreshStorageAfterCurrentWorkspaceRequest.current);
+          }
+        } catch (error: unknown) {
+          if (workspaceRequestId.current === currentRequest) {
+            const message = safeError(error, "Workspace discovery could not be completed.");
+            setWorkspaceRefreshError(message);
+            setWorkspace((current) => current.status === "ready" ? current : { status: "error", message });
+          }
+        } finally {
+          if (workspaceRequestId.current === currentRequest) {
+            workspaceInFlight.current = null;
+            refreshStorageAfterCurrentWorkspaceRequest.current = false;
+          }
+        }
+      })();
+    }
+
     try {
-      const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
-      if (workspaceRequestId.current === currentRequest) {
-        setWorkspace({ status: "ready", value });
-        notifyWorkspaceRefreshed();
-      }
-    } catch (error: unknown) {
-      if (workspaceRequestId.current === currentRequest) {
-        const message = safeError(error, "Workspace discovery could not be completed.");
-        setWorkspaceRefreshError(message);
-        setWorkspace((current) => current.status === "ready" ? current : { status: "error", message });
-      }
+      await workspaceInFlight.current;
     } finally {
-      if (blocking && workspaceRequestId.current === currentRequest) setRefreshingWorkspace(false);
+      if (blocking) setRefreshingWorkspace(false);
     }
   }, []);
 

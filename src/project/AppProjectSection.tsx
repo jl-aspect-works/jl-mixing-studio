@@ -20,7 +20,7 @@ export function AppProjectSection({ workspace, selected, client, project, projec
   if (selected && client && project) {
     const snapshot = workspace.status === "ready" ? workspace.value : null;
     const projectTasks = snapshot?.tasks.filter((task) => task.clientId === client.clientId && task.projectId === project.projectId) ?? [];
-    return <ProjectRouteContent client={client} project={project} workspacePath={snapshot?.workspacePath ?? ""} projectTasks={projectTasks} {...projectProps} />;
+    return <ProjectRouteContent key={`${client.clientId}\u0000${project.projectId}`} client={client} project={project} workspacePath={snapshot?.workspacePath ?? ""} projectTasks={projectTasks} {...projectProps} />;
   }
   return <ProjectsRouteV21 workspace={workspace} onRefresh={projectProps.onRefresh} onSaveSuccess={onProjectSaveSuccess} loading={projectProps.loading} onNewProject={onNewProject} projectCreationAvailable={projectCreationAvailable} projectCreationHelp={projectCreationHelp} onSelectProject={onSelectProject} />;
 }

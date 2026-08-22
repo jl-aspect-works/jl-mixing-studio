@@ -1,11 +1,23 @@
+import { useEffect } from "react";
 import type { ClientSummary, DerivedTask, ProjectSummary, RevisionSummary } from "../types";
 import type { IntakeReportState } from "../AppShellViews";
 import { ProjectNavigationBar } from "./ProjectNavigationBar";
 import { ProjectOverviewDetails } from "./ProjectOverviewDetails";
+import { prefetchProjectTabs } from "./prefetchProjectTabs";
 import type { ProjectShellView } from "./ProjectView";
 import "./ProjectOverview.css";
 
+const SECONDARY_TAB_PREFETCH_DELAY_MS = 1500;
+
 export function ProjectOverviewShell({ client, project, projectTasks, intakeReport, loading, revisionCreationAvailable, revisionApprovalAvailable, onRevisions, onNewRevision, onApproveRevision, onSelectView }: { client: ClientSummary; project: ProjectSummary; projectTasks: DerivedTask[]; intakeReport: IntakeReportState; loading: boolean; revisionCreationAvailable: boolean; revisionApprovalAvailable: boolean; onProjects: () => void; onRefresh: () => void; onRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onSelectView: (view: ProjectShellView) => void }) {
+  useEffect(() => {
+    if (loading || intakeReport.status === "loading" || intakeReport.status === "idle") return;
+    const timer = window.setTimeout(() => {
+      void prefetchProjectTabs(client, project);
+    }, SECONDARY_TAB_PREFETCH_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [client.clientId, project.projectId, project.currentRevision, project.delivery?.documentId, loading, intakeReport.status]);
+
   return (
     <>
       <ProjectNavigationBar active="overview" onSelect={onSelectView} />

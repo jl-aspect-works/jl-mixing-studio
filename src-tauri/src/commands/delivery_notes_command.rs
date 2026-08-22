@@ -6,7 +6,7 @@ use crate::models::{
 use crate::workspace;
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub(crate) const DELIVERY_NOTES_MAX_BYTES: usize = 65_536;
 
@@ -15,7 +15,7 @@ pub(crate) fn get_delivery_notes(
     app: tauri::AppHandle,
     request: DeliveryNotesRequest,
 ) -> Result<DeliveryNotesDocument, String> {
-    let path = resolve_delivery_notes_path(&app, &request.client_id, &request.project_id, true)?;
+    let path = resolve_delivery_notes_path_for_read(&app, &request.client_id, &request.project_id)?;
     read_delivery_notes(&path)
 }
 
@@ -36,6 +36,18 @@ pub(crate) fn update_delivery_notes(
         return Err("Delivery Notes were written but could not be verified exactly".into());
     }
     Ok(saved)
+}
+
+fn resolve_delivery_notes_path_for_read(
+    app: &tauri::AppHandle,
+    client_id: &str,
+    project_id: &str,
+) -> Result<PathBuf, String> {
+    let root = resolve_workspace_root(app)?;
+    let project_path =
+        workspace::find_validated_project_path(&root, client_id.trim(), project_id.trim())
+            .ok_or("The selected project directory could not be resolved safely")?;
+    resolve_delivery_notes_under_project(&root, &project_path)
 }
 
 fn resolve_delivery_notes_path(
@@ -59,6 +71,13 @@ fn resolve_delivery_notes_path(
     let project_path =
         validated_project_directory(&root, &snapshot, client_id.trim(), project_id.trim())
             .ok_or("The selected project directory could not be resolved safely")?;
+    resolve_delivery_notes_under_project(&root, &project_path)
+}
+
+fn resolve_delivery_notes_under_project(
+    root: &Path,
+    project_path: &Path,
+) -> Result<PathBuf, String> {
     let canonical_root = root
         .canonicalize()
         .map_err(|_| "The workspace folder is unavailable")?;

@@ -24,6 +24,9 @@ export type ProjectOverviewFileIndex = {
   failedPaths: string[];
 };
 
+const projectOverviewFileIndexCache = new Map<string, ProjectOverviewFileIndex>();
+const cacheKey = (clientId: string, projectId: string) => `${clientId}\u0000${projectId}`;
+
 const emptyFolders = (): Record<ProjectOverviewFolderKey, ProjectOverviewFolderSummary> => ({
   clientFiles: { fileCount: 0, sizeBytes: 0 },
   audioPreparation: { fileCount: 0, sizeBytes: 0 },
@@ -50,47 +53,54 @@ export const overviewAreaHasFailure = (index: ProjectOverviewFileIndex, prefix: 
     pathMatches(path, prefix) || pathMatches(prefix, path),
   );
 
+const fromSummary = (summary: Awaited<ReturnType<typeof summarizeProjectFiles>>): ProjectOverviewFileIndex => ({
+  status: summary.failedPaths.length > 0 ? "partial" : "ready",
+  folders: {
+    clientFiles: summary.clientFiles,
+    audioPreparation: summary.audioPreparation,
+    dawProject: summary.dawProject,
+    revisions: summary.revisions,
+    finalDelivery: summary.finalDelivery,
+    recall: summary.recall,
+  },
+  referencesCount: summary.referencesCount,
+  workingAudioCount: summary.workingAudioCount,
+  workingAudioAreaPresent: summary.workingAudioAreaPresent,
+  failedPaths: summary.failedPaths,
+});
+
 export function useProjectOverviewFileIndex(clientId: string, projectId: string) {
-  const [index, setIndex] = useState<ProjectOverviewFileIndex>(emptyProjectOverviewFileIndex);
+  const key = cacheKey(clientId, projectId);
+  const [index, setIndex] = useState<ProjectOverviewFileIndex>(() =>
+    projectOverviewFileIndexCache.get(key) ?? emptyProjectOverviewFileIndex(),
+  );
 
   useEffect(() => {
     let cancelled = false;
+    const cached = projectOverviewFileIndexCache.get(key);
+    setIndex(cached ?? emptyProjectOverviewFileIndex());
 
-    const load = (showLoading: boolean) => {
-      if (showLoading) setIndex(emptyProjectOverviewFileIndex());
-
+    const load = () => {
       void summarizeProjectFiles({ clientId, projectId })
         .then((summary) => {
           if (cancelled) return;
-          setIndex({
-            status: summary.failedPaths.length > 0 ? "partial" : "ready",
-            folders: {
-              clientFiles: summary.clientFiles,
-              audioPreparation: summary.audioPreparation,
-              dawProject: summary.dawProject,
-              revisions: summary.revisions,
-              finalDelivery: summary.finalDelivery,
-              recall: summary.recall,
-            },
-            referencesCount: summary.referencesCount,
-            workingAudioCount: summary.workingAudioCount,
-            workingAudioAreaPresent: summary.workingAudioAreaPresent,
-            failedPaths: summary.failedPaths,
-          });
+          const next = fromSummary(summary);
+          projectOverviewFileIndexCache.set(key, next);
+          setIndex(next);
         })
         .catch(() => {
           if (!cancelled) setIndex((current) => ({ ...current, status: "error" }));
         });
     };
 
-    load(true);
-    const removeRefreshListener = addWorkspaceRefreshListener(() => load(false));
+    load();
+    const removeRefreshListener = addWorkspaceRefreshListener(load);
 
     return () => {
       cancelled = true;
       removeRefreshListener();
     };
-  }, [clientId, projectId]);
+  }, [clientId, key, projectId]);
 
   return index;
 }

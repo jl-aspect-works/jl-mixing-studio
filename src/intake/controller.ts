@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { IntakeReportState } from "../AppShellViews";
 import { safeError } from "../AppShellViews";
@@ -26,20 +26,28 @@ export function useIntakeWorkflow({
   const [state, setState] = useState<IntakeWorkflowState>({ status: "closed" });
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const reportRequestSequence = useRef(0);
+  const validationInFlightKey = useRef<string | null>(null);
 
   const currentRequest = (): IntakeRequest | null =>
     clientId && projectId ? { clientId, projectId } : null;
 
-  const loadReport = useCallback((request: IntakeRequest) => {
-    setReportState({ status: "loading" });
-    invoke<IntakeOperationResult>("get_intake_report", { request })
-      .then((result) => setReportState({ status: "ready", value: result }))
-      .catch((error: unknown) => {
+  const loadReport = useCallback(async (request: IntakeRequest, showLoading = true) => {
+    const sequence = ++reportRequestSequence.current;
+    if (showLoading) setReportState({ status: "loading" });
+    try {
+      const result = await invoke<IntakeOperationResult>("get_intake_report", { request });
+      if (reportRequestSequence.current === sequence) {
+        setReportState({ status: "ready", value: result });
+      }
+    } catch (error: unknown) {
+      if (reportRequestSequence.current === sequence) {
         setReportState({
           status: "error",
           message: safeError(error, "The intake report could not be read."),
         });
-      });
+      }
+    }
   }, []);
 
   const refreshClientFiles = useCallback(async (
@@ -47,6 +55,11 @@ export function useIntakeWorkflow({
     announce: boolean,
     preserveCurrentReport = false,
   ) => {
+    const validationKey = `${request.clientId}\u0000${request.projectId}`;
+    if (validationInFlightKey.current === validationKey) return;
+    validationInFlightKey.current = validationKey;
+
+    const sequence = ++reportRequestSequence.current;
     setActionError(null);
     if (announce) setNotice(null);
     if (!preserveCurrentReport) setReportState({ status: "loading" });
@@ -54,6 +67,7 @@ export function useIntakeWorkflow({
     await yieldToBrowserPaint();
     try {
       const result = await invoke<IntakeOperationResult>("refresh_client_files_validation", { request });
+      if (reportRequestSequence.current !== sequence) return;
       if (
         result.ok &&
         result.report &&
@@ -73,32 +87,45 @@ export function useIntakeWorkflow({
 
       setState({ status: "closed" });
       if (result.code === "rejected") {
-        loadReport(request);
+        void loadReport(request, preserveCurrentReport ? false : true);
         if (announce) setActionError(result.message);
         return;
       }
 
       setActionError(result.message);
-      loadReport(request);
+      void loadReport(request, preserveCurrentReport ? false : true);
     } catch (error) {
+      if (reportRequestSequence.current !== sequence) return;
       setState({ status: "closed" });
       setActionError(safeError(error, "Project file validation could not be refreshed."));
-      loadReport(request);
+      void loadReport(request, preserveCurrentReport ? false : true);
+    } finally {
+      if (validationInFlightKey.current === validationKey) {
+        validationInFlightKey.current = null;
+      }
     }
   }, [loadReport]);
 
   useEffect(() => {
     if (!clientId || !projectId) {
+      reportRequestSequence.current += 1;
       setReportState({ status: "idle" });
       return;
     }
 
     const request: IntakeRequest = { clientId, projectId };
-    if (validationAvailable) {
-      void refreshClientFiles(request, false);
-    } else {
-      loadReport(request);
-    }
+    let cancelled = false;
+    const primeReportThenRefresh = async () => {
+      await loadReport(request);
+      if (!cancelled && validationAvailable) {
+        void refreshClientFiles(request, false, true);
+      }
+    };
+    void primeReportThenRefresh();
+    return () => {
+      cancelled = true;
+      reportRequestSequence.current += 1;
+    };
   }, [clientId, projectId, validationAvailable, loadReport, refreshClientFiles]);
 
   useEffect(() => {
@@ -108,14 +135,14 @@ export function useIntakeWorkflow({
       if (validationAvailable) {
         void refreshClientFiles(request, false, true);
       } else {
-        loadReport(request);
+        void loadReport(request, false);
       }
     });
   }, [clientId, projectId, validationAvailable, loadReport, refreshClientFiles]);
 
   const reload = () => {
     const request = currentRequest();
-    if (request) loadReport(request);
+    if (request) void loadReport(request);
   };
 
   const refreshStructured = () => {
@@ -131,10 +158,8 @@ export function useIntakeWorkflow({
     setState({ status: "closed" });
     setActionError(null);
     setNotice(null);
-    if (validationAvailable) {
-      void refreshClientFiles(request, false);
-    } else {
-      loadReport(request);
+    if (reportState.status === "idle") {
+      void loadReport(request);
     }
   };
 
@@ -150,6 +175,7 @@ export function useIntakeWorkflow({
   };
 
   const clear = () => {
+    reportRequestSequence.current += 1;
     reset();
     setReportState({ status: "idle" });
   };
@@ -211,6 +237,7 @@ export function useIntakeWorkflow({
           });
           return;
         }
+        reportRequestSequence.current += 1;
         setReportState({ status: "ready", value: result });
         setState({ status: "closed" });
         setNotice(
