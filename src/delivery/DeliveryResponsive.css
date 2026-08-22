@@ -1,0 +1,19 @@
+.delivery-package-actions {
+  flex-wrap: wrap;
+}
+
+.delivery-package-actions button {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+@media (max-width: 1050px) {
+  .delivery-package-metadata > div {
+    align-items: flex-start;
+  }
+
+  .delivery-package-metadata dd {
+    min-width: 0;
+    max-width: 62%;
+  }
+}
