@@ -110,10 +110,10 @@ jobs:
           )
       - name: Verify release notes
         run: |
-          test -s docs/RELEASE_NOTES_V2.0.md
-          grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.0.md
-          grep -q 'More info' docs/RELEASE_NOTES_V2.0.md
-          grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.0.md
+          test -s docs/RELEASE_NOTES_V2.1.md
+          grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.1.md
+          grep -q 'More info' docs/RELEASE_NOTES_V2.1.md
+          grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.1.md
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -125,6 +125,6 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --verify-tag \
             --title "JL Mixing Studio $GITHUB_REF_NAME" \
-            --notes-file docs/RELEASE_NOTES_V2.0.md \
+            --notes-file docs/RELEASE_NOTES_V2.1.md \
             "${prerelease[@]}" \
             release-assets/*

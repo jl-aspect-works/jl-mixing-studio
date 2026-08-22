@@ -9,7 +9,7 @@ JL Mixing Studio is an open-source desktop application for small-studio and home
 
 ## Current release line
 
-JL Mixing Studio 2.0 supports JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated stable provider release is JL Mixing Automation 2.0.
+JL Mixing Studio 2.1 supports JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated 2.1 release-candidate provider is JL Mixing Automation `2.1.0-rc.1`.
 
 Studio and Automation remain independently versioned products. Compatibility is determined from Automation API version, advertised capabilities, and supported metadata schemas rather than requiring matching application version numbers.
 
@@ -37,9 +37,9 @@ Project navigation:
 6. Delivery
 7. Files
 
-Studio 2.0 includes structured Client Files validation, Audio Prep validation/provenance and safe working-file mutations, reference management, revision history/notes/approval, authoritative Delivery status/package workflows, controlled project Files navigation, configurable/shared workspaces, storage visibility, and refresh/reconnect behavior.
+Studio 2.1 includes editable Studio/client/project metadata, managed Client Files import and Audio Prep reset, revision Close/Reopen and Unapprove controls, structured Client Files and Audio Prep validation, reference management, revision history/notes/approval, authoritative Delivery workflows, controlled project Files navigation, configurable/shared workspaces, Tasks/Activities search/filter, and a broad responsiveness pass.
 
-Embedded audio preview is available on macOS for supported project audio. Windows embedded preview is intentionally deferred beyond 2.0.
+Embedded audio preview is available on macOS and Windows for supported project audio. Windows 2.1 playback uses the native desktop provider for supported WAV, AIFF, and MP3 files.
 
 ## Architecture
 
@@ -57,28 +57,28 @@ JL Mixing Automation remains authoritative for workflow semantics, metadata, val
 
 Official Studio packages are currently unsigned. macOS Gatekeeper and Windows SmartScreen may therefore display unknown-developer/publisher warnings.
 
-Before bypassing an operating-system warning, verify the installer against the published `SHA256SUMS.txt`. See the [Studio 2.0 release notes](docs/RELEASE_NOTES_V2.0.md) for exact Intel/Apple Silicon/Windows installer selection and the required Gatekeeper/SmartScreen steps.
+Before bypassing an operating-system warning, verify the installer against the published `SHA256SUMS.txt`. See the [Studio 2.1 release notes](docs/RELEASE_NOTES_V2.1.md) for exact Intel/Apple Silicon/Windows installer selection and the required Gatekeeper/SmartScreen steps.
 
-JL Mixing Automation is installed separately. See the Automation repository and its 2.0 release notes for its platform-specific installation steps, including the recursive macOS quarantine workaround required by its bundled Python runtime.
+JL Mixing Automation is installed separately. See the Automation repository and its 2.1 release notes for its platform-specific installation steps, including the recursive macOS quarantine workaround required by its bundled Python runtime.
 
 ## Workspace compatibility
 
 Studio supports local paths, NAS paths, and OS-mounted synchronized/cloud paths as ordinary filesystems. An explicitly configured workspace remains authoritative if temporarily unavailable; Studio does not silently reinterpret it as the default workspace.
 
-Existing valid v1.1-schema workspaces remain compatible with Studio 2.0. No workspace migration is introduced by this release.
+Existing valid v1.1+ workspaces remain compatible with Studio 2.1. No workspace migration is introduced by this release.
 
 ## Safety boundaries
 
-- Original Delivery is read-only in Studio.
+- Original Delivery remains protected from unrestricted mutation; Client Files changes use the managed import workflow.
 - Files is a controlled project view rather than an unrestricted file manager.
 - Manifest-managed Delivery files remain Automation-owned.
 - Non-idempotent operations are not automatically retried after uncertain outcomes.
 - Project file operations preserve path-containment and symlink protections.
-- Audio Prep Fix/Convert, repair, normalization, and format conversion remain deferred beyond 2.0.
+- Audio Prep repair, normalization, and format conversion remain deferred beyond 2.1.
 
 ## Project documents
 
-- [Studio 2.0 release notes and installation](docs/RELEASE_NOTES_V2.0.md)
+- [Studio 2.1 release notes and installation](docs/RELEASE_NOTES_V2.1.md)
 - [Development status](docs/development-status.md)
 - [Studio 2.0 / Automation 2.0 coordinated acceptance](docs/v2.0-coordinated-acceptance.md)
 - [Automation API compatibility](docs/automation-api-compatibility.md)
