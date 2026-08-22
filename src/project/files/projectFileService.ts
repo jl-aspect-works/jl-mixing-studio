@@ -95,6 +95,9 @@ export const projectFilePaths = {
   recall: "06_Recall",
 } as const;
 
+const nativePreviewExtensions = new Set(["wav", "wave", "aif", "aiff", "mp3"]);
+let nativePreviewSupport: Promise<boolean> | null = null;
+
 const isManagedRevisionFile = (entry: ProjectFileEntry) => {
   if (entry.area !== "revisions" || entry.entryType !== "file" || entry.displayName === "Revision_Notes.md") {
     return false;
@@ -119,10 +122,39 @@ const withManagedMutationPermissions = (listing: ProjectFileListing): ProjectFil
     : entry),
 });
 
+const isNativePreviewCandidate = (entry: ProjectFileEntry) =>
+  entry.entryType === "file"
+  && entry.isAudio
+  && !entry.playable
+  && entry.extension !== null
+  && nativePreviewExtensions.has(entry.extension.toLowerCase());
+
+const nativePreviewSupported = () => {
+  if (!nativePreviewSupport) {
+    nativePreviewSupport = invoke<{ supported: boolean }>("get_native_project_audio_preview_status")
+      .then((status) => status.supported)
+      .catch(() => false);
+  }
+  return nativePreviewSupport;
+};
+
+const withNativePlaybackEligibility = async (listing: ProjectFileListing): Promise<ProjectFileListing> => {
+  if (!listing.entries.some(isNativePreviewCandidate)) return listing;
+  if (!(await nativePreviewSupported())) return listing;
+  return {
+    ...listing,
+    entries: listing.entries.map((entry) => isNativePreviewCandidate(entry)
+      ? { ...entry, playable: true }
+      : entry),
+  };
+};
+
 export const listProjectFiles = ({ clientId, projectId, relativePath = "" }: ProjectFileListRequest) =>
   invoke<ProjectFileListing>("list_project_files", {
     request: { clientId, projectId, relativePath },
-  }).then(withManagedMutationPermissions);
+  })
+    .then(withManagedMutationPermissions)
+    .then(withNativePlaybackEligibility);
 
 export const summarizeProjectFiles = ({ clientId, projectId }: ProjectFileListRequest) =>
   invoke<ProjectFileSummary>("summarize_project_files", {
