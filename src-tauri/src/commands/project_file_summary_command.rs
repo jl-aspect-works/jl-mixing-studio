@@ -3,6 +3,7 @@ use crate::models::{ProjectFileFolderSummary, ProjectFileListRequest, ProjectFil
 use crate::workspace;
 use std::fs;
 use std::path::Path;
+use std::thread;
 
 const CLIENT_FILES: &str = "01_Client_Files";
 const REFERENCES: &str = "01_Client_Files/References";
@@ -12,6 +13,14 @@ const DAW_PROJECT: &str = "03_DAW_Project";
 const REVISIONS: &str = "04_Revisions";
 const FINAL_DELIVERY: &str = "05_Final_Delivery";
 const RECALL: &str = "06_Recall";
+const SUMMARY_AREAS: [&str; 6] = [
+    CLIENT_FILES,
+    AUDIO_PREPARATION,
+    DAW_PROJECT,
+    REVISIONS,
+    FINAL_DELIVERY,
+    RECALL,
+];
 
 #[tauri::command]
 pub(crate) async fn summarize_project_files(
@@ -38,15 +47,8 @@ fn summarize_project_files_blocking(
     summarize_project_directory(&project_directory)
 }
 
-fn summarize_project_directory(project_directory: &Path) -> Result<ProjectFileSummary, String> {
-    let canonical_project = project_directory
-        .canonicalize()
-        .map_err(|error| format!("The selected project root could not be resolved: {error}"))?;
-    if !canonical_project.is_dir() {
-        return Err("The selected project root is unavailable".to_owned());
-    }
-
-    let mut summary = ProjectFileSummary {
+fn empty_summary() -> ProjectFileSummary {
+    ProjectFileSummary {
         client_files: ProjectFileFolderSummary::default(),
         audio_preparation: ProjectFileFolderSummary::default(),
         daw_project: ProjectFileFolderSummary::default(),
@@ -57,10 +59,82 @@ fn summarize_project_directory(project_directory: &Path) -> Result<ProjectFileSu
         working_audio_count: 0,
         working_audio_area_present: false,
         failed_paths: Vec::new(),
-    };
+    }
+}
 
-    walk_project_directory(&canonical_project, &canonical_project, "", 0, &mut summary)?;
+fn summarize_project_directory(project_directory: &Path) -> Result<ProjectFileSummary, String> {
+    let canonical_project = project_directory
+        .canonicalize()
+        .map_err(|error| format!("The selected project root could not be resolved: {error}"))?;
+    if !canonical_project.is_dir() {
+        return Err("The selected project root is unavailable".to_owned());
+    }
+
+    let partials = thread::scope(|scope| {
+        SUMMARY_AREAS
+            .iter()
+            .map(|relative_area| {
+                let project_root = &canonical_project;
+                scope.spawn(move || summarize_area(project_root, relative_area))
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .map(|handle| handle.join().unwrap_or_else(|_| {
+                let mut failed = empty_summary();
+                failed.failed_paths.push("Project indexing worker failed".to_owned());
+                failed
+            }))
+            .collect::<Vec<_>>()
+    });
+
+    let mut summary = empty_summary();
+    for partial in partials {
+        merge_summary(&mut summary, partial);
+    }
     Ok(summary)
+}
+
+fn summarize_area(project_root: &Path, relative_area: &str) -> ProjectFileSummary {
+    let mut summary = empty_summary();
+    let area_path = project_root.join(relative_area);
+    let metadata = match fs::symlink_metadata(&area_path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return summary,
+        Err(_) => {
+            summary.failed_paths.push(relative_area.to_owned());
+            return summary;
+        }
+    };
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return summary;
+    }
+
+    let _ = walk_project_directory(
+        project_root,
+        &area_path,
+        relative_area,
+        1,
+        &mut summary,
+    );
+    summary
+}
+
+fn merge_folder(target: &mut ProjectFileFolderSummary, source: ProjectFileFolderSummary) {
+    target.file_count = target.file_count.saturating_add(source.file_count);
+    target.size_bytes = target.size_bytes.saturating_add(source.size_bytes);
+}
+
+fn merge_summary(target: &mut ProjectFileSummary, source: ProjectFileSummary) {
+    merge_folder(&mut target.client_files, source.client_files);
+    merge_folder(&mut target.audio_preparation, source.audio_preparation);
+    merge_folder(&mut target.daw_project, source.daw_project);
+    merge_folder(&mut target.revisions, source.revisions);
+    merge_folder(&mut target.final_delivery, source.final_delivery);
+    merge_folder(&mut target.recall, source.recall);
+    target.references_count = target.references_count.saturating_add(source.references_count);
+    target.working_audio_count = target.working_audio_count.saturating_add(source.working_audio_count);
+    target.working_audio_area_present |= source.working_audio_area_present;
+    target.failed_paths.extend(source.failed_paths);
 }
 
 fn walk_project_directory(
@@ -98,9 +172,7 @@ fn walk_project_directory(
         let metadata = match fs::symlink_metadata(&path) {
             Ok(metadata) => metadata,
             Err(_) => {
-                summary
-                    .failed_paths
-                    .push(relative_path(project_root, &path));
+                summary.failed_paths.push(relative_path(project_root, &path));
                 continue;
             }
         };
@@ -198,6 +270,27 @@ mod tests {
         assert_eq!(summary.references_count, 1);
         assert_eq!(summary.working_audio_count, 1);
         assert!(summary.working_audio_area_present);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn summary_combines_independent_managed_areas() {
+        let root = std::env::temp_dir().join(format!(
+            "jl-studio-project-summary-parallel-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(root.join("04_Revisions/Revision_01")).unwrap();
+        fs::create_dir_all(root.join("05_Final_Delivery")).unwrap();
+        fs::write(root.join("04_Revisions/Revision_01/mix.wav"), b"123").unwrap();
+        fs::write(root.join("05_Final_Delivery/mix.wav"), b"12345").unwrap();
+
+        let summary = summarize_project_directory(&root).unwrap();
+        assert_eq!(summary.revisions.file_count, 1);
+        assert_eq!(summary.revisions.size_bytes, 3);
+        assert_eq!(summary.final_delivery.file_count, 1);
+        assert_eq!(summary.final_delivery.size_bytes, 5);
 
         let _ = fs::remove_dir_all(&root);
     }
