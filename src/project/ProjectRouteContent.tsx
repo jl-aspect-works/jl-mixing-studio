@@ -38,7 +38,7 @@ export function ProjectRouteContent(p: ProjectRouteContentProps) {
   const common = { onProjects: p.onProjects, onOverview: () => p.onSelectView("overview"), onSelectView: p.onSelectView };
   const renderRetained = (view: ProjectShellView, content: ReactNode) =>
     visitedRetainedViews.has(view) || p.view === view
-      ? <div hidden={p.view !== view}>{content}</div>
+      ? <div style={{ display: p.view === view ? "contents" : "none" }} aria-hidden={p.view !== view}>{content}</div>
       : null;
 
   return <>
