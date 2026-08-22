@@ -1,9 +1,8 @@
 use super::resolve_workspace_root;
-use super::workspace_command_support::validated_project_directory;
 use crate::models::{
     ProjectFileArea, ProjectFileEntry, ProjectFileEntryType, ProjectFileListRequest,
     ProjectFileListing, ProjectFileMutationRequest, ProjectFileMutationResult,
-    ProjectFilePermissions, ProjectFileRenameRequest, WorkspaceStatus,
+    ProjectFilePermissions, ProjectFileRenameRequest,
 };
 use crate::workspace;
 use std::fs;
@@ -52,15 +51,7 @@ fn resolve_project_directory(
     project_id: &str,
 ) -> Result<PathBuf, String> {
     let root = resolve_workspace_root(app)?;
-    let snapshot = workspace::discover_workspace_at(&root);
-    if !matches!(
-        snapshot.status,
-        WorkspaceStatus::Healthy | WorkspaceStatus::Empty | WorkspaceStatus::Partial
-    ) {
-        return Err("The configured workspace is unavailable; reconnect it and try again".into());
-    }
-
-    validated_project_directory(&root, &snapshot, client_id.trim(), project_id.trim())
+    workspace::find_validated_project_path(&root, client_id.trim(), project_id.trim())
         .ok_or_else(|| "The selected project could not be resolved safely".into())
 }
 
