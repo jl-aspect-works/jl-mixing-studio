@@ -4,6 +4,7 @@ import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceConfiguration } from "../settings/models";
 import { safeError, type ResourceState } from "../AppViews";
 import { notifyWorkspaceRefreshed } from "./workspaceRefreshEvents";
+import { loadCachedWorkspaceSnapshot, storeCachedWorkspaceSnapshot } from "./workspaceSnapshotCache";
 
 const yieldToBrowserPaint = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0));
 
@@ -19,12 +20,19 @@ export function useWorkspaceResources() {
   const versionRequestId = useRef(0);
   const workspaceInFlight = useRef<Promise<void> | null>(null);
   const refreshStorageAfterCurrentWorkspaceRequest = useRef(false);
+  const workspaceAuthoritative = useRef(false);
 
   const reloadWorkspaceConfiguration = useCallback(async () => {
     const currentRequest = ++configurationRequestId.current;
     try {
       const value = await invoke<WorkspaceConfiguration>("get_workspace_configuration");
-      if (configurationRequestId.current === currentRequest) setWorkspaceConfiguration({ status: "ready", value });
+      if (configurationRequestId.current === currentRequest) {
+        setWorkspaceConfiguration({ status: "ready", value });
+        if (!workspaceAuthoritative.current) {
+          const cached = loadCachedWorkspaceSnapshot(value.workspacePath);
+          if (cached) setWorkspace({ status: "ready", value: cached });
+        }
+      }
     } catch (error: unknown) {
       if (configurationRequestId.current === currentRequest) {
         setWorkspaceConfiguration({ status: "error", message: safeError(error, "Workspace configuration could not be loaded.") });
@@ -56,7 +64,11 @@ export function useWorkspaceResources() {
         try {
           const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
           if (workspaceRequestId.current === currentRequest) {
+            workspaceAuthoritative.current = true;
             setWorkspace({ status: "ready", value });
+            if (value.status === "healthy" || value.status === "partial" || value.status === "empty") {
+              storeCachedWorkspaceSnapshot(value);
+            }
             notifyWorkspaceRefreshed(refreshStorageAfterCurrentWorkspaceRequest.current);
           }
         } catch (error: unknown) {
