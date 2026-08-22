@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceConfiguration } from "../settings/models";
 import { useWorkspaceResources } from "./useWorkspaceResources";
+import { storeCachedWorkspaceSnapshot } from "./workspaceSnapshotCache";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -71,9 +72,35 @@ function Harness() {
 describe("useWorkspaceResources", () => {
   beforeEach(() => {
     mockedInvoke.mockReset();
+    window.localStorage.clear();
   });
 
   afterEach(cleanup);
+
+  it("paints a matching cached workspace while authoritative discovery is still running", async () => {
+    storeCachedWorkspaceSnapshot(snapshot("Cached Studio"));
+    let resolveDiscovery: ((value: WorkspaceSnapshot) => void) | null = null;
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "discover_default_workspace") {
+        return new Promise<WorkspaceSnapshot>((resolve) => { resolveDiscovery = resolve; });
+      }
+      if (command === "get_workspace_configuration") return Promise.resolve(configuration);
+      if (command === "get_jl_mixing_version") return Promise.resolve(version);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
+    render(<Harness />);
+
+    expect(await screen.findByText("Cached Studio")).toBeInTheDocument();
+    expect(screen.getByText("refreshing")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveDiscovery?.(snapshot("Authoritative Studio"));
+    });
+
+    expect(await screen.findByText("Authoritative Studio")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("idle")).toBeInTheDocument());
+  });
 
   it("refreshes only the workspace snapshot when the window regains focus", async () => {
     let workspaceCalls = 0;
