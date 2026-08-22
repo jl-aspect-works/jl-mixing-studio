@@ -51,7 +51,7 @@ export function useWorkspaceResources() {
 
     if (!workspaceInFlight.current) {
       const currentRequest = ++workspaceRequestId.current;
-      const request = (async () => {
+      workspaceInFlight.current = (async () => {
         await yieldToBrowserPaint();
         try {
           const value = await invoke<WorkspaceSnapshot>("discover_default_workspace");
@@ -72,7 +72,6 @@ export function useWorkspaceResources() {
           }
         }
       })();
-      workspaceInFlight.current = request;
     }
 
     try {
