@@ -60,8 +60,16 @@ pub(crate) fn resolve_folder(
         return Err("The requested folder could not be resolved safely".into());
     }
     Ok(FolderResult {
-        path: canonical.to_string_lossy().into_owned(),
+        path: user_visible_path(&canonical),
     })
+}
+
+fn user_visible_path(path: &Path) -> String {
+    let value = path.to_string_lossy();
+    if let Some(rest) = value.strip_prefix(r"\\?\UNC\") {
+        return format!(r"\\{rest}");
+    }
+    value.strip_prefix(r"\\?\").unwrap_or(&value).to_owned()
 }
 
 pub(crate) fn intake_directory(project_directory: &Path) -> PathBuf {
@@ -76,10 +84,17 @@ pub(crate) fn open_folder(
     request: FolderRequest,
 ) -> Result<FolderResult, String> {
     let result = resolve_folder(app, request)?;
+
+    if cfg!(target_os = "windows") {
+        std::process::Command::new("explorer.exe")
+            .arg(&result.path)
+            .spawn()
+            .map_err(|_| "The operating-system folder window could not be opened")?;
+        return Ok(result);
+    }
+
     let mut command = if cfg!(target_os = "macos") {
         std::process::Command::new("open")
-    } else if cfg!(target_os = "windows") {
-        std::process::Command::new("explorer.exe")
     } else {
         std::process::Command::new("xdg-open")
     };
@@ -91,4 +106,26 @@ pub(crate) fn open_folder(
         return Err("The operating-system folder window could not be opened".into());
     }
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::user_visible_path;
+    use std::path::Path;
+
+    #[test]
+    fn strips_windows_verbatim_drive_prefix_for_display() {
+        assert_eq!(
+            user_visible_path(Path::new(r"\\?\C:\Users\mix\Music\Mixes")),
+            r"C:\Users\mix\Music\Mixes"
+        );
+    }
+
+    #[test]
+    fn converts_windows_verbatim_unc_prefix_for_display() {
+        assert_eq!(
+            user_visible_path(Path::new(r"\\?\UNC\server\share\Mixes")),
+            r"\\server\share\Mixes"
+        );
+    }
 }
