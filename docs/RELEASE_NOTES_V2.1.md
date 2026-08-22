@@ -7,6 +7,8 @@ Studio remains a client of JL Mixing Automation API `1.0`; compatibility is dete
 - JL Mixing Studio `2.1.0-rc.1`
 - JL Mixing Automation `2.1.0-rc.1`
 
+Packaged Studio acceptance for this RC should be performed with the coordinated Automation `2.1.0-rc.1` provider installed so all new capability-backed workflows are exercised against the intended release candidate.
+
 ## Installation
 
 Download the installer for your platform from the Assets section of this release and verify it against `SHA256SUMS.txt` before bypassing any operating-system security warning.
