@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import App from "./App";
 import { healthyWorkspace, mockedInvoke, resetAppTestState, version } from "./App.testSupport";
+import App from "./App";
 
 const intakeResult = {
   ok: true,
@@ -58,14 +58,15 @@ describe("project navigation performance", () => {
 
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-    await screen.findByRole("link", { name: "Blue Sky" });
-    fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
+    const projectLink = await screen.findByRole("link", { name: "Blue Sky" });
+    fireEvent.click(projectLink);
 
     await waitFor(() => expect(workspaceCalls).toBeGreaterThanOrEqual(2));
     const callsAfterOpen = workspaceCalls;
 
-    fireEvent.click(screen.getByRole("button", { name: "References" }));
-    await waitFor(() => expect(screen.getByRole("navigation", { name: "Project navigation" })).toHaveTextContent("References"));
+    const referencesButton = screen.getByRole("button", { name: "References" });
+    fireEvent.click(referencesButton);
+    await waitFor(() => expect(referencesButton).toHaveAttribute("aria-current", "page"));
     await Promise.resolve();
 
     expect(workspaceCalls).toBe(callsAfterOpen);
@@ -100,14 +101,16 @@ describe("project navigation performance", () => {
 
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-    await screen.findByRole("link", { name: "Blue Sky" });
-    fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
+    const projectLink = await screen.findByRole("link", { name: "Blue Sky" });
+    fireEvent.click(projectLink);
 
     await waitFor(() => expect(validationCalls).toBe(1));
-    fireEvent.click(screen.getByRole("button", { name: "Client Files" }));
-    await waitFor(() => expect(screen.getByRole("navigation", { name: "Project navigation" })).toHaveTextContent("Client Files"));
-    fireEvent.click(screen.getByRole("button", { name: "Audio Prep" }));
-    await waitFor(() => expect(screen.getByRole("navigation", { name: "Project navigation" })).toHaveTextContent("Audio Prep"));
+    const clientFilesButton = screen.getByRole("button", { name: "Client Files" });
+    fireEvent.click(clientFilesButton);
+    await waitFor(() => expect(clientFilesButton).toHaveAttribute("aria-current", "page"));
+    const audioPrepButton = screen.getByRole("button", { name: "Audio Prep" });
+    fireEvent.click(audioPrepButton);
+    await waitFor(() => expect(audioPrepButton).toHaveAttribute("aria-current", "page"));
     await Promise.resolve();
 
     expect(validationCalls).toBe(1);
