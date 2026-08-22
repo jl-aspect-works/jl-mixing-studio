@@ -69,10 +69,7 @@ fn user_visible_path(path: &Path) -> String {
     if let Some(rest) = value.strip_prefix(r"\\?\UNC\") {
         return format!(r"\\{rest}");
     }
-    value
-        .strip_prefix(r"\\?\")
-        .unwrap_or(&value)
-        .to_owned()
+    value.strip_prefix(r"\\?\").unwrap_or(&value).to_owned()
 }
 
 pub(crate) fn intake_directory(project_directory: &Path) -> PathBuf {
