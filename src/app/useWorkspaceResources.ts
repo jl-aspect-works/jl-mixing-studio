@@ -4,13 +4,25 @@ import type { VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceConfiguration } from "../settings/models";
 import { safeError, type ResourceState } from "../AppViews";
 import { notifyWorkspaceRefreshed } from "./workspaceRefreshEvents";
-import { loadCachedWorkspaceSnapshot, storeCachedWorkspaceSnapshot } from "./workspaceSnapshotCache";
+import {
+  loadBootstrapWorkspaceSnapshot,
+  loadCachedWorkspaceConfiguration,
+  loadCachedWorkspaceSnapshot,
+  storeCachedWorkspaceConfiguration,
+  storeCachedWorkspaceSnapshot,
+} from "./workspaceSnapshotCache";
 
 const yieldToBrowserPaint = () => new Promise<void>((resolve) => window.setTimeout(resolve, 0));
 
 export function useWorkspaceResources() {
-  const [workspace, setWorkspace] = useState<ResourceState<WorkspaceSnapshot>>({ status: "loading" });
-  const [workspaceConfiguration, setWorkspaceConfiguration] = useState<ResourceState<WorkspaceConfiguration>>({ status: "loading" });
+  const bootstrapConfiguration = loadCachedWorkspaceConfiguration();
+  const bootstrapWorkspace = loadBootstrapWorkspaceSnapshot();
+  const [workspace, setWorkspace] = useState<ResourceState<WorkspaceSnapshot>>(
+    bootstrapWorkspace ? { status: "ready", value: bootstrapWorkspace } : { status: "loading" },
+  );
+  const [workspaceConfiguration, setWorkspaceConfiguration] = useState<ResourceState<WorkspaceConfiguration>>(
+    bootstrapConfiguration ? { status: "ready", value: bootstrapConfiguration } : { status: "loading" },
+  );
   const [version, setVersion] = useState<ResourceState<VersionCheck>>({ status: "loading" });
   const [refreshingWorkspace, setRefreshingWorkspace] = useState(false);
   const [refreshingResources, setRefreshingResources] = useState(false);
@@ -27,6 +39,7 @@ export function useWorkspaceResources() {
     try {
       const value = await invoke<WorkspaceConfiguration>("get_workspace_configuration");
       if (configurationRequestId.current === currentRequest) {
+        storeCachedWorkspaceConfiguration(value);
         setWorkspaceConfiguration({ status: "ready", value });
         if (!workspaceAuthoritative.current) {
           const cached = loadCachedWorkspaceSnapshot(value.workspacePath);
