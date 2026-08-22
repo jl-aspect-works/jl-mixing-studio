@@ -1,0 +1,97 @@
+.planned-route[aria-labelledby="settings-heading"] .project-detail-grid {
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .project-detail-grid > .panel {
+  padding: 18px;
+}
+
+/* Let the taller Health card share the first two grid rows instead of
+   forcing Configured Location to stretch to the same height. */
+.planned-route[aria-labelledby="settings-heading"] .project-detail-grid > .panel:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+.planned-route[aria-labelledby="settings-heading"] .project-detail-grid > .panel:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.planned-route[aria-labelledby="settings-heading"] .project-detail-grid > .panel:nth-child(3) {
+  grid-column: 1;
+  grid-row: 2;
+}
+.planned-route[aria-labelledby="settings-heading"] .project-detail-grid > .panel:nth-child(4) {
+  grid-column: 2;
+  grid-row: 3;
+}
+.planned-route[aria-labelledby="settings-heading"] .project-detail-grid > .panel:nth-child(5) {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .panel-heading {
+  margin-bottom: 12px;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .folder-control {
+  gap: 7px;
+  margin: 8px 0 0;
+  padding: 10px;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .folder-control .directory-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .folder-control .directory-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 9px;
+  font-size: .76rem;
+  line-height: 1.15;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .health-list div {
+  gap: 14px;
+  padding: 10px 0;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .health-detail {
+  margin-top: 9px;
+}
+
+.planned-route[aria-labelledby="settings-heading"] .setting-row {
+  padding: 12px 0;
+}
+
+@media (max-width: 1180px) {
+  .planned-route[aria-labelledby="settings-heading"] .folder-control .directory-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1040px) {
+  .planned-route[aria-labelledby="settings-heading"] .project-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .planned-route[aria-labelledby="settings-heading"] .project-detail-grid > .panel:nth-child(n) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .planned-route[aria-labelledby="settings-heading"] .folder-control .directory-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .planned-route[aria-labelledby="settings-heading"] .folder-control .directory-actions {
+    grid-template-columns: 1fr;
+  }
+}
