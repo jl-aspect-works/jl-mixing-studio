@@ -79,11 +79,15 @@ fn summarize_project_directory(project_directory: &Path) -> Result<ProjectFileSu
             })
             .collect::<Vec<_>>()
             .into_iter()
-            .map(|handle| handle.join().unwrap_or_else(|_| {
-                let mut failed = empty_summary();
-                failed.failed_paths.push("Project indexing worker failed".to_owned());
-                failed
-            }))
+            .map(|handle| {
+                handle.join().unwrap_or_else(|_| {
+                    let mut failed = empty_summary();
+                    failed
+                        .failed_paths
+                        .push("Project indexing worker failed".to_owned());
+                    failed
+                })
+            })
             .collect::<Vec<_>>()
     });
 
@@ -109,13 +113,7 @@ fn summarize_area(project_root: &Path, relative_area: &str) -> ProjectFileSummar
         return summary;
     }
 
-    let _ = walk_project_directory(
-        project_root,
-        &area_path,
-        relative_area,
-        1,
-        &mut summary,
-    );
+    let _ = walk_project_directory(project_root, &area_path, relative_area, 1, &mut summary);
     summary
 }
 
@@ -131,8 +129,12 @@ fn merge_summary(target: &mut ProjectFileSummary, source: ProjectFileSummary) {
     merge_folder(&mut target.revisions, source.revisions);
     merge_folder(&mut target.final_delivery, source.final_delivery);
     merge_folder(&mut target.recall, source.recall);
-    target.references_count = target.references_count.saturating_add(source.references_count);
-    target.working_audio_count = target.working_audio_count.saturating_add(source.working_audio_count);
+    target.references_count = target
+        .references_count
+        .saturating_add(source.references_count);
+    target.working_audio_count = target
+        .working_audio_count
+        .saturating_add(source.working_audio_count);
     target.working_audio_area_present |= source.working_audio_area_present;
     target.failed_paths.extend(source.failed_paths);
 }
@@ -172,7 +174,9 @@ fn walk_project_directory(
         let metadata = match fs::symlink_metadata(&path) {
             Ok(metadata) => metadata,
             Err(_) => {
-                summary.failed_paths.push(relative_path(project_root, &path));
+                summary
+                    .failed_paths
+                    .push(relative_path(project_root, &path));
                 continue;
             }
         };
