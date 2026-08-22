@@ -15,6 +15,13 @@ export const cacheDeliveryNotes = (clientId: string, projectId: string, document
   notesCache.set(key(clientId, projectId), document);
 };
 
+export const resetDeliveryReadCache = () => {
+  statusCache.clear();
+  statusInFlight.clear();
+  notesCache.clear();
+  notesInFlight.clear();
+};
+
 export const readDeliveryStatus = (request: DeliveryStatusRequest) => {
   const cacheKey = key(request.clientId, request.projectId);
   const active = statusInFlight.get(cacheKey);
