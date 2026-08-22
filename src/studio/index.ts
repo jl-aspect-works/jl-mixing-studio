@@ -1,3 +1,2 @@
-export { StudioDialog } from "./StudioViews";
-export { StudioRoute } from "./StudioRouteV21";
+export { StudioDialog, StudioRoute } from "./StudioViews";
 export { useStudioWorkflow } from "./controller";
