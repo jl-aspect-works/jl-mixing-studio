@@ -44,12 +44,9 @@ fn resolve_delivery_notes_path_for_read(
     project_id: &str,
 ) -> Result<PathBuf, String> {
     let root = resolve_workspace_root(app)?;
-    let project_path = workspace::find_validated_project_path(
-        &root,
-        client_id.trim(),
-        project_id.trim(),
-    )
-    .ok_or("The selected project directory could not be resolved safely")?;
+    let project_path =
+        workspace::find_validated_project_path(&root, client_id.trim(), project_id.trim())
+            .ok_or("The selected project directory could not be resolved safely")?;
     resolve_delivery_notes_under_project(&root, &project_path)
 }
 
@@ -77,7 +74,10 @@ fn resolve_delivery_notes_path(
     resolve_delivery_notes_under_project(&root, &project_path)
 }
 
-fn resolve_delivery_notes_under_project(root: &Path, project_path: &Path) -> Result<PathBuf, String> {
+fn resolve_delivery_notes_under_project(
+    root: &Path,
+    project_path: &Path,
+) -> Result<PathBuf, String> {
     let canonical_root = root
         .canonicalize()
         .map_err(|_| "The workspace folder is unavailable")?;
