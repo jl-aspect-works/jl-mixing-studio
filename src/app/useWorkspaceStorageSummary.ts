@@ -44,7 +44,7 @@ export function useWorkspaceStorageSummary({
 
     const sequence = ++requestSequence.current;
     setState((current) => ({ status: "loading", value: current.value, message: null }));
-    const request = (async () => {
+    inFlight.current = (async () => {
       try {
         const value = await invoke<WorkspaceStorageSummary>("summarize_workspace_storage");
         if (requestSequence.current !== sequence) return;
@@ -56,8 +56,7 @@ export function useWorkspaceStorageSummary({
         if (requestSequence.current === sequence) inFlight.current = null;
       }
     })();
-    inFlight.current = request;
-    return request;
+    return inFlight.current;
   }, [available, workspacePath]);
 
   useEffect(() => {
