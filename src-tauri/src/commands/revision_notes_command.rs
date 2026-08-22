@@ -59,12 +59,9 @@ fn resolve_revision_notes_path_for_read(
         return Err("Revision number must be greater than zero".into());
     }
     let root = resolve_workspace_root(app)?;
-    let project_path = workspace::find_validated_project_path(
-        &root,
-        client_id.trim(),
-        project_id.trim(),
-    )
-    .ok_or("The selected project directory could not be resolved safely")?;
+    let project_path =
+        workspace::find_validated_project_path(&root, client_id.trim(), project_id.trim())
+            .ok_or("The selected project directory could not be resolved safely")?;
     resolve_revision_notes_under_project(&project_path, revision)
 }
 
