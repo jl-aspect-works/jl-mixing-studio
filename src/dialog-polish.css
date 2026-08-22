@@ -1,0 +1,5 @@
+.dialog-actions > button {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: .86rem;
+}
