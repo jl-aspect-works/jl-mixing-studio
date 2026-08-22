@@ -74,8 +74,9 @@ pub fn get_studio_edit_info(app: &AppHandle) -> Result<StudioEditInfo, String> {
         update_supported: true,
         document_id,
         last_modified_at,
-        message: "Studio edit metadata is ready. Automation capability is verified again before saving."
-            .into(),
+        message:
+            "Studio edit metadata is ready. Automation capability is verified again before saving."
+                .into(),
     })
 }
 
