@@ -10,13 +10,22 @@ const intakeResult = {
   report: {
     clientId: "acme",
     projectId: "blue-sky",
+    source: "/workspace/Clients/acme/Projects/blue-sky/01_Client_Files/Original_Delivery",
+    filesDiscovered: 0,
     expectedSampleRate: 48000,
     expectedBitDepth: 24,
     blockingErrors: 0,
     warnings: 0,
     enhancedInspectionAvailable: true,
-    files: [],
+    criticalErrors: [],
+    duplicateFilenames: [],
+    formatMismatches: [],
+    unsupportedFiles: [],
+    unavailableChecks: [],
+    inventory: [],
+    recommendations: [],
   },
+  files: [],
   audioPrepAvailable: true,
   audioPrepFiles: [],
 };
@@ -49,7 +58,7 @@ describe("project navigation performance", () => {
         return Promise.resolve({
           clientId: "acme",
           projectId: "blue-sky",
-          relativePath: "04_References",
+          relativePath: "01_Client_Files/References",
           entries: [],
         });
       }
@@ -68,8 +77,7 @@ describe("project navigation performance", () => {
     fireEvent.click(within(projectNavigation).getByRole("button", { name: "References" }));
     await waitFor(() => {
       projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
-      expect(within(projectNavigation).getByRole("button", { name: "References" }))
-        .toHaveAttribute("aria-current", "page");
+      expect(within(projectNavigation).getByText("References")).toHaveAttribute("aria-current", "page");
     });
     await Promise.resolve();
 
@@ -115,16 +123,14 @@ describe("project navigation performance", () => {
     fireEvent.click(within(projectNavigation).getByRole("button", { name: "Client Files" }));
     await waitFor(() => {
       projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
-      expect(within(projectNavigation).getByRole("button", { name: "Client Files" }))
-        .toHaveAttribute("aria-current", "page");
+      expect(within(projectNavigation).getByText("Client Files")).toHaveAttribute("aria-current", "page");
     });
 
     projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
     fireEvent.click(within(projectNavigation).getByRole("button", { name: "Audio Prep" }));
     await waitFor(() => {
       projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
-      expect(within(projectNavigation).getByRole("button", { name: "Audio Prep" }))
-        .toHaveAttribute("aria-current", "page");
+      expect(within(projectNavigation).getByText("Audio Prep")).toHaveAttribute("aria-current", "page");
     });
     await Promise.resolve();
 
