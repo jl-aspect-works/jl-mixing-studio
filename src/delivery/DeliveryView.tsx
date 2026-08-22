@@ -13,11 +13,14 @@ import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { DeliveryFilesList } from "./DeliveryFilesList";
-import type {
-  DeliveryStatusRequest,
-  DeliveryStatusResult,
-  ManagedDeliveryStatus,
-} from "./statusModels";
+import {
+  cacheDeliveryNotes,
+  cachedDeliveryNotes,
+  cachedDeliveryStatus,
+  readDeliveryNotes,
+  readDeliveryStatus,
+} from "./deliveryReadCache";
+import type { DeliveryStatusRequest, ManagedDeliveryStatus } from "./statusModels";
 import "./DeliveryView.css";
 
 const formatTimestamp = (value: string | null | undefined) => {
@@ -82,26 +85,30 @@ export function DeliveryView({
 }) {
   const delivery = project.delivery;
   const deliveryDocumentId = delivery?.documentId;
-  const [notes, setNotes] = useState<ResourceState<DeliveryNotesDocument>>({ status: "loading" });
-  const [notesDraft, setNotesDraft] = useState("");
+  const initialNotes = deliveryDocumentId ? cachedDeliveryNotes(clientId, project.projectId) : null;
+  const initialStatus = cachedDeliveryStatus(clientId, project.projectId);
+  const [notes, setNotes] = useState<ResourceState<DeliveryNotesDocument>>(
+    initialNotes ? { status: "ready", value: initialNotes } : { status: "loading" },
+  );
+  const [notesDraft, setNotesDraft] = useState(initialNotes?.content ?? "");
   const [notesSaving, setNotesSaving] = useState(false);
   const [notesMessage, setNotesMessage] = useState<string | null>(null);
-  const [status, setStatus] = useState<ResourceState<ManagedDeliveryStatus>>({ status: "loading" });
+  const [status, setStatus] = useState<ResourceState<ManagedDeliveryStatus>>(
+    initialStatus ? { status: "ready", value: initialStatus } : { status: "loading" },
+  );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const refreshStatus = useCallback(async () => {
-    setStatus({ status: "loading" });
+    setStatus((current) => current.status === "ready" ? current : { status: "loading" });
     setStatusMessage(null);
     const request: DeliveryStatusRequest = { clientId, projectId: project.projectId };
     try {
-      const result = await invoke<DeliveryStatusResult>("get_delivery_status", { request });
-      if (!result.ok || !result.delivery) {
-        setStatus({ status: "error", message: result.message || "Delivery status is not available." });
-        return;
-      }
-      setStatus({ status: "ready", value: result.delivery });
+      const value = await readDeliveryStatus(request);
+      setStatus({ status: "ready", value });
     } catch (error: unknown) {
-      setStatus({ status: "error", message: safeError(error, "Delivery status could not be reconciled.") });
+      const message = safeError(error, "Delivery status could not be reconciled.");
+      setStatus((current) => current.status === "ready" ? current : { status: "error", message });
+      setStatusMessage(message);
     }
   }, [clientId, project.projectId]);
 
@@ -115,18 +122,25 @@ export function DeliveryView({
       setNotesDraft("");
       return;
     }
-    setNotes({ status: "loading" });
+    const cached = cachedDeliveryNotes(clientId, project.projectId);
+    if (cached) {
+      setNotes({ status: "ready", value: cached });
+      setNotesDraft(cached.content);
+    } else {
+      setNotes({ status: "loading" });
+    }
     setNotesMessage(null);
     const request: DeliveryNotesRequest = { clientId, projectId: project.projectId };
-    void invoke<DeliveryNotesDocument>("get_delivery_notes", { request })
+    void readDeliveryNotes(request)
       .then((document) => {
         setNotes({ status: "ready", value: document });
         setNotesDraft(document.content);
       })
-      .catch((error: unknown) => setNotes({
-        status: "error",
-        message: safeError(error, "Delivery Notes could not be read."),
-      }));
+      .catch((error: unknown) => {
+        const message = safeError(error, "Delivery Notes could not be read.");
+        setNotes((current) => current.status === "ready" ? current : { status: "error", message });
+        setNotesMessage(message);
+      });
   }, [clientId, project.projectId, deliveryDocumentId]);
 
   useEffect(() => addWorkspaceRefreshListener(() => {
@@ -135,7 +149,7 @@ export function DeliveryView({
     if (notes.status === "ready" && notesDraft !== notes.value.content) return;
 
     const request: DeliveryNotesRequest = { clientId, projectId: project.projectId };
-    void invoke<DeliveryNotesDocument>("get_delivery_notes", { request })
+    void readDeliveryNotes(request)
       .then((document) => {
         setNotes({ status: "ready", value: document });
         setNotesDraft(document.content);
@@ -157,6 +171,7 @@ export function DeliveryView({
     };
     void invoke<DeliveryNotesDocument>("update_delivery_notes", { request })
       .then(async (document) => {
+        cacheDeliveryNotes(clientId, project.projectId, document);
         setNotes({ status: "ready", value: document });
         setNotesDraft(document.content);
         setNotesMessage("Delivery Notes saved.");
