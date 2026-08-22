@@ -6,18 +6,35 @@ import { prefetchProjectFiles } from "./files/useProjectFiles";
 
 const revisionFolder = (revision: number) => `${projectFilePaths.revisions}/Revision_${String(revision).padStart(2, "0")}`;
 
-export const prefetchProjectTabs = (client: ClientSummary, project: ProjectSummary) => {
+/**
+ * Warm secondary project tabs without competing with the initial Overview load.
+ * Work is deliberately sequential, with the Automation-backed delivery reconciliation last.
+ */
+export const prefetchProjectTabs = async (client: ClientSummary, project: ProjectSummary) => {
   const identity = { clientId: client.clientId, projectId: project.projectId };
-  const work: Promise<unknown>[] = [
-    prefetchProjectFiles({ ...identity, relativePath: projectFilePaths.references }),
-  ];
 
-  if (project.currentRevision > 0) {
-    work.push(prefetchRevisionNotes({ ...identity, revision: project.currentRevision }));
-    work.push(prefetchProjectFiles({ ...identity, relativePath: revisionFolder(project.currentRevision) }));
+  try {
+    await prefetchProjectFiles({ ...identity, relativePath: projectFilePaths.references });
+  } catch {
+    // Prefetch is opportunistic; the tab owns user-visible error handling.
   }
 
-  work.push(prefetchDeliveryReads(client.clientId, project.projectId, Boolean(project.delivery)));
+  if (project.currentRevision > 0) {
+    try {
+      await prefetchRevisionNotes({ ...identity, revision: project.currentRevision });
+    } catch {
+      // Prefetch is opportunistic.
+    }
+    try {
+      await prefetchProjectFiles({ ...identity, relativePath: revisionFolder(project.currentRevision) });
+    } catch {
+      // Prefetch is opportunistic.
+    }
+  }
 
-  return Promise.allSettled(work).then(() => undefined);
+  try {
+    await prefetchDeliveryReads(client.clientId, project.projectId, Boolean(project.delivery));
+  } catch {
+    // Prefetch is opportunistic.
+  }
 };
