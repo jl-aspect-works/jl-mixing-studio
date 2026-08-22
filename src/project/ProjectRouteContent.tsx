@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { ClientSummary, DerivedTask, ProjectSummary, RevisionSummary } from "../types";
 import type { IntakeReportState } from "../AppShellViews";
 import { IntakeView } from "../intake/IntakeViews";
@@ -25,16 +25,18 @@ export function ProjectRouteContent(p: ProjectRouteContentProps) {
     retainedViews.has(p.view) ? new Set([p.view]) : new Set(),
   );
 
-  if (retainedViews.has(p.view) && !visitedRetainedViews.has(p.view)) {
+  useEffect(() => {
+    if (!retainedViews.has(p.view)) return;
     setVisitedRetainedViews((current) => {
+      if (current.has(p.view)) return current;
       const next = new Set(current);
       next.add(p.view);
       return next;
     });
-  }
+  }, [p.view]);
 
   const common = { onProjects: p.onProjects, onOverview: () => p.onSelectView("overview"), onSelectView: p.onSelectView };
-  const renderRetained = (view: ProjectShellView, content: React.ReactNode) =>
+  const renderRetained = (view: ProjectShellView, content: ReactNode) =>
     visitedRetainedViews.has(view) || p.view === view
       ? <div hidden={p.view !== view}>{content}</div>
       : null;
