@@ -1,4 +1,5 @@
 import "./studio/StudioViews.css";
+import "./dialog-polish.css";
 
 export { DeliveryDialog, DeliveryOptionsDialog } from "./delivery";
 export { RevisionDialog } from "./revision";
