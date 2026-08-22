@@ -27,6 +27,7 @@ export function useIntakeWorkflow({
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const reportRequestSequence = useRef(0);
+  const validationInFlightKey = useRef<string | null>(null);
 
   const currentRequest = (): IntakeRequest | null =>
     clientId && projectId ? { clientId, projectId } : null;
@@ -54,6 +55,10 @@ export function useIntakeWorkflow({
     announce: boolean,
     preserveCurrentReport = false,
   ) => {
+    const validationKey = `${request.clientId}\u0000${request.projectId}`;
+    if (validationInFlightKey.current === validationKey) return;
+    validationInFlightKey.current = validationKey;
+
     const sequence = ++reportRequestSequence.current;
     setActionError(null);
     if (announce) setNotice(null);
@@ -94,6 +99,10 @@ export function useIntakeWorkflow({
       setState({ status: "closed" });
       setActionError(safeError(error, "Project file validation could not be refreshed."));
       void loadReport(request, preserveCurrentReport ? false : true);
+    } finally {
+      if (validationInFlightKey.current === validationKey) {
+        validationInFlightKey.current = null;
+      }
     }
   }, [loadReport]);
 
