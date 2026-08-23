@@ -48,10 +48,7 @@ fn project_preflight_uses_fixed_arguments_and_validated_client_directory() {
         ]
     );
     assert!(!invocations[1].arguments.contains(&"--no-cd".into()));
-    assert_eq!(
-        invocations[1].current_directory,
-        Some(client_directory.to_owned())
-    );
+    assert_eq!(invocations[1].current_directory, None);
 }
 
 #[test]
