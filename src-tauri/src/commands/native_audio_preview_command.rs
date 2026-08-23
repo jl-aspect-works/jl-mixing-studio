@@ -63,9 +63,6 @@ fn resolve_project_entry(
     if !canonical.starts_with(&canonical_project) {
         return Err("The selected project entry could not be resolved safely".into());
     }
-    if !is_native_preview_audio_file(&canonical) {
-        return Err("This file format is not supported by Windows embedded preview".into());
-    }
     Ok((canonical, normalized))
 }
 
@@ -84,17 +81,6 @@ fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
         return Err("Unsafe project file path segments are not allowed".into());
     }
     Ok(value.to_owned())
-}
-
-fn is_native_preview_audio_file(path: &Path) -> bool {
-    path.extension()
-        .and_then(|extension| extension.to_str())
-        .is_some_and(|extension| {
-            matches!(
-                extension.to_ascii_lowercase().as_str(),
-                "wav" | "wave" | "aif" | "aiff" | "mp3"
-            )
-        })
 }
 
 #[tauri::command]
@@ -157,16 +143,6 @@ pub(crate) fn get_native_project_audio_preview_status(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn native_preview_accepts_required_windows_formats() {
-        for name in ["mix.wav", "mix.WAVE", "mix.aif", "mix.AIFF", "mix.mp3"] {
-            assert!(is_native_preview_audio_file(Path::new(name)), "{name}");
-        }
-        for name in ["mix.flac", "mix.m4a", "mix.aac", "mix.mp4", "notes.txt"] {
-            assert!(!is_native_preview_audio_file(Path::new(name)), "{name}");
-        }
-    }
 
     #[test]
     fn native_preview_rejects_unsafe_relative_paths() {

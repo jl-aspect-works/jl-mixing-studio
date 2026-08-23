@@ -42,8 +42,8 @@ pub(crate) fn prepare_project_audio_preview(
         resolve_project_directory(&app, &request.client_id, &request.project_id)?;
     let (path, relative_path) = resolve_project_entry(&project_directory, &request.relative_path)?;
 
-    if !path.is_file() || !is_preview_audio_file(&path) {
-        return Err("Only supported project audio files can be previewed".into());
+    if !path.is_file() {
+        return Err("Only regular project files can be previewed".into());
     }
 
     if !cfg!(target_os = "macos") {
@@ -138,17 +138,6 @@ fn resolve_project_entry(
     }
 
     Ok((canonical, normalized))
-}
-
-fn is_preview_audio_file(path: &Path) -> bool {
-    path.extension()
-        .and_then(|extension| extension.to_str())
-        .is_some_and(|extension| {
-            matches!(
-                extension.to_ascii_lowercase().as_str(),
-                "wav" | "wave" | "aif" | "aiff" | "mp3" | "flac" | "m4a" | "aac" | "mp4"
-            )
-        })
 }
 
 fn open_with_system(path: &Path) -> Result<(), String> {
@@ -251,16 +240,21 @@ mod tests {
     }
 
     #[test]
-    fn identifies_reference_preview_candidate_formats() {
-        for name in [
-            "mix.wav", "mix.AIFF", "mix.mp3", "mix.flac", "mix.m4a", "mix.aac", "mix.mp4",
+    fn preview_resolution_does_not_filter_regular_files_by_extension() {
+        let project = TestDirectory::new();
+        let folder = project.0.join("01_Client_Files/References");
+        fs::create_dir_all(&folder).expect("create folder");
+        fs::write(folder.join("reference.m4a"), b"audio").expect("create m4a");
+        fs::write(folder.join("reference.ogg"), b"audio").expect("create ogg");
+
+        for relative_path in [
+            "01_Client_Files/References/reference.m4a",
+            "01_Client_Files/References/reference.ogg",
         ] {
-            assert!(
-                is_preview_audio_file(Path::new(name)),
-                "{name} should be a preview candidate"
-            );
+            let (resolved, _) = resolve_project_entry(&project.0, relative_path)
+                .expect("preview candidate should resolve independently of extension");
+            assert!(resolved.is_file());
         }
-        assert!(!is_preview_audio_file(Path::new("notes.txt")));
     }
 
     #[cfg(unix)]

@@ -87,14 +87,8 @@ pub(super) fn run_project_operation<R: ProcessRunner>(
         );
     }
 
-    let arguments = project_arguments(&request, operation);
-    match invoke_api(
-        home,
-        "project.create",
-        &arguments,
-        Some(client_directory),
-        runner,
-    ) {
+    let arguments = project_arguments(&request, client_directory, operation);
+    match invoke_api(home, "project.create", &arguments, None, runner) {
         Ok(response)
             if matches!(
                 (operation, response.status),
@@ -236,11 +230,17 @@ fn normalize_project_request(
     })
 }
 
-fn project_arguments(request: &ProjectCreationRequest, operation: ProjectOperation) -> Vec<String> {
+fn project_arguments(
+    request: &ProjectCreationRequest,
+    client_directory: &Path,
+    operation: ProjectOperation,
+) -> Vec<String> {
     let mut arguments = vec![
         "project".into(),
         "create".into(),
         request.project_name.clone(),
+        "--client".into(),
+        client_directory.to_string_lossy().into_owned(),
         "--json".into(),
     ];
     if let Some(artist) = &request.artist {
@@ -251,4 +251,52 @@ fn project_arguments(request: &ProjectCreationRequest, operation: ProjectOperati
         arguments.push("--dry-run".into());
     }
     arguments
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn request() -> ProjectCreationRequest {
+        ProjectCreationRequest {
+            client_id: "acme".into(),
+            project_name: "Blue Sky".into(),
+            artist: None,
+        }
+    }
+
+    #[test]
+    fn project_create_explicitly_supplies_validated_client_path() {
+        let arguments = project_arguments(
+            &request(),
+            Path::new(r"\\server\mixes\Clients\Acme"),
+            ProjectOperation::Create,
+        );
+
+        assert_eq!(
+            arguments,
+            vec![
+                "project",
+                "create",
+                "Blue Sky",
+                "--client",
+                r"\\server\mixes\Clients\Acme",
+                "--json",
+            ]
+        );
+    }
+
+    #[test]
+    fn project_preflight_keeps_explicit_client_and_dry_run() {
+        let arguments = project_arguments(
+            &request(),
+            Path::new(r"C:\Mixes\Clients\Acme"),
+            ProjectOperation::Preflight,
+        );
+
+        assert!(arguments
+            .windows(2)
+            .any(|pair| pair == ["--client", r"C:\Mixes\Clients\Acme"]));
+        assert_eq!(arguments.last().map(String::as_str), Some("--dry-run"));
+    }
 }
