@@ -294,7 +294,9 @@ mod tests {
             ProjectOperation::Preflight,
         );
 
-        assert!(arguments.windows(2).any(|pair| pair == ["--client", r"C:\Mixes\Clients\Acme"]));
+        assert!(arguments
+            .windows(2)
+            .any(|pair| pair == ["--client", r"C:\Mixes\Clients\Acme"]));
         assert_eq!(arguments.last().map(String::as_str), Some("--dry-run"));
     }
 }
