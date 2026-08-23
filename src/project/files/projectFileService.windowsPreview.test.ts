@@ -5,7 +5,7 @@ import { listProjectFiles, type ProjectFileListing } from "./projectFileService"
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 const mockedInvoke = vi.mocked(invoke);
 
-const listing = (): ProjectFileListing => ({
+const listing = (extension = "m4a"): ProjectFileListing => ({
   relativePath: "04_Revisions/Revision_01",
   area: "revisions",
   permissions: {
@@ -17,10 +17,10 @@ const listing = (): ProjectFileListing => ({
   },
   entries: [
     {
-      id: "04_Revisions/Revision_01/Mix.wav",
-      relativePath: "04_Revisions/Revision_01/Mix.wav",
-      displayName: "Mix.wav",
-      extension: "wav",
+      id: `04_Revisions/Revision_01/Mix.${extension}`,
+      relativePath: `04_Revisions/Revision_01/Mix.${extension}`,
+      displayName: `Mix.${extension}`,
+      extension,
       entryType: "file",
       area: "revisions",
       sizeBytes: 1024,
@@ -43,9 +43,9 @@ describe("project file native preview eligibility", () => {
     mockedInvoke.mockReset();
   });
 
-  it("promotes supported native audio to playable for every shared project listing", async () => {
+  it("promotes every recognized audio type to native preview eligibility", async () => {
     mockedInvoke
-      .mockResolvedValueOnce(listing())
+      .mockResolvedValueOnce(listing("m4a"))
       .mockResolvedValueOnce({ supported: true });
 
     const result = await listProjectFiles({
