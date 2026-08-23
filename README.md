@@ -9,7 +9,7 @@ JL Mixing Studio is an open-source desktop application for small-studio and home
 
 ## Current release line
 
-JL Mixing Studio 2.1 supports JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated 2.1 release-candidate provider is JL Mixing Automation `2.1.0-rc.1`.
+JL Mixing Studio 2.1 supports JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated 2.1 release-candidate provider is JL Mixing Automation `2.1.0-rc.2`.
 
 Studio and Automation remain independently versioned products. Compatibility is determined from Automation API version, advertised capabilities, and supported metadata schemas rather than requiring matching application version numbers.
 
@@ -39,7 +39,7 @@ Project navigation:
 
 Studio 2.1 includes editable Studio/client/project metadata, managed Client Files import and Audio Prep reset, revision Close/Reopen and Unapprove controls, structured Client Files and Audio Prep validation, reference management, revision history/notes/approval, authoritative Delivery workflows, controlled project Files navigation, configurable/shared workspaces, Tasks/Activities search/filter, and a broad responsiveness pass.
 
-Embedded audio preview is available on macOS and Windows for supported project audio. Windows 2.1 playback uses the native desktop provider for supported WAV, AIFF, and MP3 files.
+Embedded audio preview is available on macOS and Windows for supported project audio. Windows 2.1 playback uses the native desktop provider; Studio broadly recognizes audio file types for preview eligibility and lets the bundled decoder determine whether the actual file contents are playable.
 
 ## Architecture
 
