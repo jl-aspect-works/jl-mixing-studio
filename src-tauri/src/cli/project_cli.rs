@@ -182,7 +182,7 @@ pub(super) fn run_project_operation<R: ProcessRunner>(
                 project: Some(project),
             }
         }
-        Ok(response) => rejected_project_api_response(response),
+        Ok(response) => rejected_project_api_response(response, operation),
         Err(ApiCallError::Unavailable) => blocked_project_operation(
             ProjectOperationCode::AutomationUnavailable,
             "JL Mixing Automation was not found in its default install location or on PATH",
@@ -230,10 +230,16 @@ fn project_summary_from_api(
     })
 }
 
-fn rejected_project_api_response(response: ApiResponse) -> ProjectOperationResult {
+fn rejected_project_api_response(
+    response: ApiResponse,
+    operation: ProjectOperation,
+) -> ProjectOperationResult {
     let error = response.errors.first();
     let collision = error
         .map(|item| item.code == "PROJECT_ALREADY_EXISTS")
+        .unwrap_or(false);
+    let process_failed = error
+        .map(|item| item.code == "AUTOMATION_PROCESS_FAILED")
         .unwrap_or(false);
     let message = error.map(|item| item.message.clone()).unwrap_or_else(|| {
         format!(
@@ -245,6 +251,10 @@ fn rejected_project_api_response(response: ApiResponse) -> ProjectOperationResul
         ok: false,
         code: if collision {
             ProjectOperationCode::Collision
+        } else if process_failed && matches!(operation, ProjectOperation::Create) {
+            ProjectOperationCode::Uncertain
+        } else if process_failed {
+            ProjectOperationCode::Failed
         } else {
             ProjectOperationCode::Rejected
         },
@@ -386,5 +396,25 @@ mod tests {
         });
 
         assert_eq!(result.stdout, stdout);
+    }
+
+    #[test]
+    fn unstructured_create_failure_remains_uncertain() {
+        let response: ApiResponse = serde_json::from_value(serde_json::json!({
+            "api_version": "1.0",
+            "operation": "project.create",
+            "status": "error",
+            "data": {},
+            "warnings": [],
+            "errors": [{
+                "code": "AUTOMATION_PROCESS_FAILED",
+                "message": "PermissionError: Access is denied",
+            }],
+        }))
+        .expect("API response");
+
+        let result = rejected_project_api_response(response, ProjectOperation::Create);
+        assert_eq!(result.code, ProjectOperationCode::Uncertain);
+        assert!(result.message.contains("Access is denied"));
     }
 }
