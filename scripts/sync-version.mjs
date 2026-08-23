@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
+import process from "node:process";
 
 const version = readFileSync("VERSION", "utf8").trim();
 const semver = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
