@@ -5,13 +5,25 @@ on:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+-*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build and publish, such as v2.1.0-rc.2"
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
   cancel-in-progress: false
+
+env:
+  RELEASE_TAG: >-
+    ${{ github.event_name == 'workflow_dispatch'
+        && inputs.tag
+        || github.ref_name }}
 
 jobs:
   validate:
@@ -19,12 +31,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: node scripts/verify-release-version.mjs "${{ github.ref_name }}"
+      - run: node scripts/verify-release-version.mjs "${{ env.RELEASE_TAG }}"
       - run: npm run check
 
   build:
@@ -55,6 +69,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -66,7 +82,7 @@ jobs:
       - name: Stage release asset
         run: >-
           node scripts/stage-release-asset.mjs
-          "${{ github.ref_name }}"
+          "${{ env.RELEASE_TAG }}"
           "${{ matrix.bundle_directory }}"
           "${{ matrix.extension }}"
           "${{ matrix.platform }}"
@@ -86,6 +102,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/download-artifact@v4
         with:
           pattern: installer-*
@@ -93,7 +111,7 @@ jobs:
           merge-multiple: true
       - name: Verify assets and generate checksums
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${RELEASE_TAG#v}"
           expected=(
             "JL-Mixing-Studio_${version}_macos_x86_64.dmg"
             "JL-Mixing-Studio_${version}_macos_aarch64.dmg"
@@ -119,12 +137,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           prerelease=()
-          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+          if [[ "$RELEASE_TAG" == *-* ]]; then
             prerelease=(--prerelease)
           fi
-          gh release create "$GITHUB_REF_NAME" \
+          gh release create "$RELEASE_TAG" \
             --verify-tag \
-            --title "JL Mixing Studio $GITHUB_REF_NAME" \
+            --title "JL Mixing Studio $RELEASE_TAG" \
             --notes-file docs/RELEASE_NOTES_V2.1.md \
             "${prerelease[@]}" \
             release-assets/*
