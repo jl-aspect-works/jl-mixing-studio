@@ -561,9 +561,8 @@ mod tests {
     #[test]
     fn recognizes_common_reference_formats_as_audio() {
         for extension in [
-            "wav", "wave", "bwf", "aif", "aiff", "aifc", "mp1", "mp2", "mp3", "mpa",
-            "flac", "m4a", "m4b", "aac", "mp4", "caf", "ogg", "oga", "opus", "mka", "mkv",
-            "webm", "alac",
+            "wav", "wave", "bwf", "aif", "aiff", "aifc", "mp1", "mp2", "mp3", "mpa", "flac", "m4a",
+            "m4b", "aac", "mp4", "caf", "ogg", "oga", "opus", "mka", "mkv", "webm", "alac",
         ] {
             assert!(is_audio_extension(extension), "{extension}");
         }
