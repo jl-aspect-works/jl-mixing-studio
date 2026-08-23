@@ -2,23 +2,18 @@
 
 JL Mixing Studio 2.1 expands the Daily Workflow desktop application for macOS and Windows with editable workspace metadata, managed Client Files and Audio Prep workflows, revision lifecycle controls, Windows embedded audio playback, search/filter improvements, and a substantial responsiveness pass.
 
-Studio remains a client of JL Mixing Automation API `1.0`; compatibility is determined by API version and advertised capabilities rather than requiring matching application version numbers. The coordinated release-candidate pair is:
-
-- JL Mixing Studio `2.1.0-rc.2`
-- JL Mixing Automation `2.1.0-rc.2`
-
-Packaged Studio acceptance for this RC should be performed with the coordinated Automation `2.1.0-rc.2` provider installed so all new capability-backed workflows are exercised against the intended release candidate.
+Studio remains a client of JL Mixing Automation API `1.0`; compatibility is determined by API version and advertised capabilities rather than requiring matching application version numbers. Prerelease validation should use the intended coordinated Studio and Automation 2.1 candidates.
 
 ## Installation
 
-Download the installer for your platform from the Assets section of this release and verify it against `SHA256SUMS.txt` before bypassing any operating-system security warning.
+Download the installer for your platform from the Assets section of this release and verify it against `SHA256SUMS.txt` before bypassing any operating-system security warning. Replace `<version>` below with the version shown on the release.
 
 ### macOS
 
 Choose the installer that matches your Mac:
 
-- `JL-Mixing-Studio_2.1.0-rc.2_macos_x86_64.dmg` for Intel Macs.
-- `JL-Mixing-Studio_2.1.0-rc.2_macos_aarch64.dmg` for Apple Silicon Macs.
+- `JL-Mixing-Studio_<version>_macos_x86_64.dmg` for Intel Macs.
+- `JL-Mixing-Studio_<version>_macos_aarch64.dmg` for Apple Silicon Macs.
 
 Open the DMG and drag **JL Mixing Studio** to **Applications**.
 
@@ -36,7 +31,7 @@ The recursive `xattr -dr com.apple.quarantine` workaround documented for JL Mixi
 Run:
 
 ```text
-JL-Mixing-Studio_2.1.0-rc.2_windows_x86_64.exe
+JL-Mixing-Studio_<version>_windows_x86_64.exe
 ```
 
 The Windows installer is currently unsigned. Microsoft Defender SmartScreen may show **Windows protected your PC** or identify the publisher as unknown.
@@ -49,7 +44,7 @@ After verifying the installer checksum:
 
 ### Automation requirement
 
-JL Mixing Automation is installed separately. Studio discovers Automation through API `1.0` and advertised capabilities. For the coordinated 2.1 RC validation cycle, install JL Mixing Automation `2.1.0-rc.2` before testing Studio `2.1.0-rc.2`.
+JL Mixing Automation is installed separately. Studio discovers Automation through API `1.0` and advertised capabilities. For coordinated 2.1 prerelease validation, install the intended Automation 2.1 candidate before testing the corresponding Studio candidate.
 
 ## Highlights
 
@@ -86,4 +81,4 @@ JL Mixing Automation is installed separately. Studio discovers Automation throug
 
 ## Release-candidate validation
 
-`2.1.0-rc.2` is intended for coordinated packaged acceptance on Windows and macOS. Acceptance should cover installation/launch, Automation provider discovery, Studio/Client/Project editing, managed Client Files import and Audio Prep reset, revision Close/Reopen and Approve/Unapprove flows, Delivery creation, shared-workspace refresh behavior, Tasks/Activities filters, Windows UNC/NAS workflows, and embedded audio playback across representative supported audio formats.
+Prerelease versions of 2.1 are intended for coordinated packaged acceptance on Windows and macOS. Acceptance should cover installation/launch, Automation provider discovery, Studio/Client/Project editing, managed Client Files import and Audio Prep reset, revision Close/Reopen and Approve/Unapprove flows, Delivery creation, shared-workspace refresh behavior, Tasks/Activities filters, Windows UNC/NAS workflows, and embedded audio playback across representative supported audio formats.
