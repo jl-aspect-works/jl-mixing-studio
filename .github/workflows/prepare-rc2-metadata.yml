@@ -1,0 +1,58 @@
+name: Prepare Studio RC2 metadata
+
+on:
+  push:
+    branches:
+      - release/v2.1.0-rc.2
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.1.0-rc.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Synchronize RC2 version metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm version 2.1.0-rc.2 --no-git-tag-version
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          tauri_path = Path('src-tauri/tauri.conf.json')
+          tauri = json.loads(tauri_path.read_text())
+          tauri['version'] = '2.1.0-rc.2'
+          tauri_path.write_text(json.dumps(tauri, indent=2) + '\n')
+
+          cargo_toml_path = Path('src-tauri/Cargo.toml')
+          cargo_toml = cargo_toml_path.read_text()
+          cargo_toml = cargo_toml.replace('version = "2.1.0-rc.1"', 'version = "2.1.0-rc.2"', 1)
+          cargo_toml_path.write_text(cargo_toml)
+
+          cargo_lock_path = Path('src-tauri/Cargo.lock')
+          cargo_lock = cargo_lock_path.read_text()
+          old = 'name = "jl-mixing-studio"\nversion = "2.1.0-rc.1"'
+          new = 'name = "jl-mixing-studio"\nversion = "2.1.0-rc.2"'
+          if old not in cargo_lock:
+              raise SystemExit('Studio package entry not found in Cargo.lock')
+          cargo_lock_path.write_text(cargo_lock.replace(old, new, 1))
+          PY
+      - name: Commit generated metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+          git commit -m 'Prepare Studio 2.1.0-rc.2 version metadata'
+          git push origin HEAD:release/v2.1.0-rc.2
