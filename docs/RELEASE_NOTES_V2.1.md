@@ -4,10 +4,10 @@ JL Mixing Studio 2.1 expands the Daily Workflow desktop application for macOS an
 
 Studio remains a client of JL Mixing Automation API `1.0`; compatibility is determined by API version and advertised capabilities rather than requiring matching application version numbers. The coordinated release-candidate pair is:
 
-- JL Mixing Studio `2.1.0-rc.1`
-- JL Mixing Automation `2.1.0-rc.1`
+- JL Mixing Studio `2.1.0-rc.2`
+- JL Mixing Automation `2.1.0-rc.2`
 
-Packaged Studio acceptance for this RC should be performed with the coordinated Automation `2.1.0-rc.1` provider installed so all new capability-backed workflows are exercised against the intended release candidate.
+Packaged Studio acceptance for this RC should be performed with the coordinated Automation `2.1.0-rc.2` provider installed so all new capability-backed workflows are exercised against the intended release candidate.
 
 ## Installation
 
@@ -17,8 +17,8 @@ Download the installer for your platform from the Assets section of this release
 
 Choose the installer that matches your Mac:
 
-- `JL-Mixing-Studio_2.1.0-rc.1_macos_x86_64.dmg` for Intel Macs.
-- `JL-Mixing-Studio_2.1.0-rc.1_macos_aarch64.dmg` for Apple Silicon Macs.
+- `JL-Mixing-Studio_2.1.0-rc.2_macos_x86_64.dmg` for Intel Macs.
+- `JL-Mixing-Studio_2.1.0-rc.2_macos_aarch64.dmg` for Apple Silicon Macs.
 
 Open the DMG and drag **JL Mixing Studio** to **Applications**.
 
@@ -36,7 +36,7 @@ The recursive `xattr -dr com.apple.quarantine` workaround documented for JL Mixi
 Run:
 
 ```text
-JL-Mixing-Studio_2.1.0-rc.1_windows_x86_64.exe
+JL-Mixing-Studio_2.1.0-rc.2_windows_x86_64.exe
 ```
 
 The Windows installer is currently unsigned. Microsoft Defender SmartScreen may show **Windows protected your PC** or identify the publisher as unknown.
@@ -49,7 +49,7 @@ After verifying the installer checksum:
 
 ### Automation requirement
 
-JL Mixing Automation is installed separately. Studio discovers Automation through API `1.0` and advertised capabilities. For the coordinated 2.1 RC validation cycle, install JL Mixing Automation `2.1.0-rc.1` before testing Studio `2.1.0-rc.1`.
+JL Mixing Automation is installed separately. Studio discovers Automation through API `1.0` and advertised capabilities. For the coordinated 2.1 RC validation cycle, install JL Mixing Automation `2.1.0-rc.2` before testing Studio `2.1.0-rc.2`.
 
 ## Highlights
 
@@ -60,7 +60,7 @@ JL Mixing Automation is installed separately. Studio discovers Automation throug
 - **Managed Audio Prep reset:** rebuild the managed Working Audio set from current Client Files without exposing unrestricted filesystem mutation.
 - **Revision lifecycle controls:** Close/Reopen revisions that should no longer be current without deleting their history, and Unapprove a previously approved revision when the approval must be reversed.
 - **Project health semantics:** Client Files findings remain visible on the Client Files screen, while project-level Needs Attention reflects Audio Prep / Audio Files validation readiness rather than non-blocking Client Files findings.
-- **Windows embedded audio playback:** native in-app preview/playback for supported WAV, AIFF, and MP3 project audio on Windows, alongside existing macOS preview support.
+- **Windows embedded audio playback:** native in-app preview eligibility follows Studio's broad audio-format recognition instead of a WAV/AIFF/MP3-only whitelist; the bundled player/decoder determines whether the actual file contents can be decoded.
 - **Tasks and Activities search/filter:** usable search and compact filter controls for both workflow lists.
 - **Project Files refinement:** full-width controlled Files browser with the obsolete Project Structure navigator removed.
 - **Delivery refinement:** faster status/notes hydration, cached authoritative reads, responsive package controls, and preserved Automation-owned package safety.
@@ -86,4 +86,4 @@ JL Mixing Automation is installed separately. Studio discovers Automation throug
 
 ## Release-candidate validation
 
-The 2.1 release candidate is intended for packaged acceptance on Windows and macOS. Acceptance should cover installation/launch, Automation provider discovery, Studio/Client/Project editing, managed Client Files import and Audio Prep reset, revision Close/Reopen and Approve/Unapprove flows, Delivery creation, shared-workspace refresh behavior, Tasks/Activities filters, and embedded audio playback on the supported platforms.
+`2.1.0-rc.2` is intended for coordinated packaged acceptance on Windows and macOS. Acceptance should cover installation/launch, Automation provider discovery, Studio/Client/Project editing, managed Client Files import and Audio Prep reset, revision Close/Reopen and Approve/Unapprove flows, Delivery creation, shared-workspace refresh behavior, Tasks/Activities filters, Windows UNC/NAS workflows, and embedded audio playback across representative supported audio formats.
