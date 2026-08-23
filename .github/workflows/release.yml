@@ -1,44 +1,52 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+-*"
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Existing release tag to build and publish, such as v2.1.0-rc.2"
-        required: true
-        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  group: release-${{ github.sha }}
   cancel-in-progress: false
-
-env:
-  RELEASE_TAG: >-
-    ${{ github.event_name == 'workflow_dispatch'
-        && inputs.tag
-        || github.ref_name }}
 
 jobs:
   validate:
     name: Validate release version
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
+      - name: Require main branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main" || {
+            echo "Normal releases must be dispatched from main; got $GITHUB_REF" >&2
+            exit 1
+          }
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ github.sha }}
+      - id: version
+        name: Read VERSION
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || {
+            echo "Invalid VERSION: $version" >&2
+            exit 1
+          }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: node scripts/verify-release-version.mjs "${{ env.RELEASE_TAG }}"
+      - run: npm run version:verify
       - run: npm run check
 
   build:
@@ -70,7 +78,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -82,7 +90,7 @@ jobs:
       - name: Stage release asset
         run: >-
           node scripts/stage-release-asset.mjs
-          "${{ env.RELEASE_TAG }}"
+          "${{ needs.validate.outputs.tag }}"
           "${{ matrix.bundle_directory }}"
           "${{ matrix.extension }}"
           "${{ matrix.platform }}"
@@ -96,26 +104,31 @@ jobs:
 
   publish:
     name: Publish GitHub Release
-    needs: build
+    needs: [validate, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+      RELEASE_TAG: ${{ needs.validate.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           pattern: installer-*
           path: release-assets
           merge-multiple: true
       - name: Verify assets and generate checksums
+        shell: bash
         run: |
-          version="${RELEASE_TAG#v}"
+          set -euo pipefail
           expected=(
-            "JL-Mixing-Studio_${version}_macos_x86_64.dmg"
-            "JL-Mixing-Studio_${version}_macos_aarch64.dmg"
-            "JL-Mixing-Studio_${version}_windows_x86_64.exe"
+            "JL-Mixing-Studio_${RELEASE_VERSION}_macos_x86_64.dmg"
+            "JL-Mixing-Studio_${RELEASE_VERSION}_macos_aarch64.dmg"
+            "JL-Mixing-Studio_${RELEASE_VERSION}_windows_x86_64.exe"
           )
           for asset in "${expected[@]}"; do
             test -s "release-assets/$asset"
@@ -127,22 +140,47 @@ jobs:
             sha256sum --check SHA256SUMS.txt
           )
       - name: Verify release notes
+        shell: bash
         run: |
+          set -euo pipefail
           test -s docs/RELEASE_NOTES_V2.1.md
           grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.1.md
           grep -q 'More info' docs/RELEASE_NOTES_V2.1.md
           grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.1.md
+      - name: Create release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
+            target="$(git rev-list -n 1 "$RELEASE_TAG")"
+            test "$target" = "$GITHUB_SHA" || {
+              echo "Tag $RELEASE_TAG already points to $target, not $GITHUB_SHA" >&2
+              exit 1
+            }
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git tag -a "$RELEASE_TAG" "$GITHUB_SHA" -m "JL Mixing Studio $RELEASE_TAG"
+            git push origin "$RELEASE_TAG"
+          fi
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
+          set -euo pipefail
           prerelease=()
-          if [[ "$RELEASE_TAG" == *-* ]]; then
+          if [[ "$RELEASE_VERSION" == *-* ]]; then
             prerelease=(--prerelease)
           fi
-          gh release create "$RELEASE_TAG" \
-            --verify-tag \
-            --title "JL Mixing Studio $RELEASE_TAG" \
-            --notes-file docs/RELEASE_NOTES_V2.1.md \
-            "${prerelease[@]}" \
-            release-assets/*
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          else
+            gh release create "$RELEASE_TAG" \
+              --verify-tag \
+              --title "JL Mixing Studio $RELEASE_TAG" \
+              --notes-file docs/RELEASE_NOTES_V2.1.md \
+              "${prerelease[@]}" \
+              release-assets/*
+          fi
