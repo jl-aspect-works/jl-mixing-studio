@@ -27,7 +27,7 @@ jsonschema = { version = "0.33", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 
 [target.'cfg(windows)'.dependencies]
-rodio = { version = "0.22.2", default-features = false, features = ["playback", "symphonia-aiff", "symphonia-mp3", "symphonia-pcm", "symphonia-wav"] }
+rodio = { version = "0.22.2", default-features = false, features = ["playback", "symphonia-all"] }
 
 [dev-dependencies]
 tempfile = "3"
