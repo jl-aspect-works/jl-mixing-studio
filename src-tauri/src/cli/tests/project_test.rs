@@ -39,6 +39,8 @@ fn project_preflight_uses_fixed_arguments_and_validated_client_directory() {
             "project",
             "create",
             "Blue Sky",
+            "--client",
+            "/fixed/workspace/Clients/Acme Records",
             "--json",
             "--artist",
             "The Artist",
@@ -71,7 +73,14 @@ fn confirmed_project_creation_uses_no_cd_and_inherits_artist() {
     assert_eq!(result.code, ProjectOperationCode::Created);
     assert_eq!(
         runner.invocations.borrow()[1].arguments,
-        vec!["project", "create", "Blue Sky", "--json"]
+        vec![
+            "project",
+            "create",
+            "Blue Sky",
+            "--client",
+            "/fixed/client",
+            "--json"
+        ]
     );
     assert_eq!(result.project.unwrap().artist, "Inherited Artist");
 }
