@@ -1,7 +1,9 @@
+use std::io;
 use std::path::Path;
 
 use crate::automation_api::{
-    invoke_api, ApiCallError, ApiResponse, ApiStatus, ProcessRunner, SystemProcessRunner,
+    invoke_api, ApiCallError, ApiResponse, ApiStatus, ProcessResult, ProcessRunner,
+    SystemProcessRunner,
 };
 use crate::models::{
     ProjectCreationRequest, ProjectCreationSummary, ProjectOperationCode, ProjectOperationResult,
@@ -53,6 +55,59 @@ pub(super) enum ProjectOperation {
     Create,
 }
 
+struct ProjectApiProcessRunner<'a, R> {
+    inner: &'a R,
+}
+
+impl<R: ProcessRunner> ProcessRunner for ProjectApiProcessRunner<'_, R> {
+    fn run(
+        &self,
+        executable: &Path,
+        arguments: &[String],
+        current_directory: Option<&Path>,
+    ) -> io::Result<ProcessResult> {
+        self.inner
+            .run(executable, arguments, current_directory)
+            .map(normalize_project_api_process_result)
+    }
+}
+
+fn normalize_project_api_process_result(mut result: ProcessResult) -> ProcessResult {
+    if result.success || serde_json::from_str::<serde_json::Value>(result.stdout.trim()).is_ok() {
+        return result;
+    }
+
+    let detail = result
+        .stderr
+        .lines()
+        .rev()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .map(ToOwned::to_owned)
+        .unwrap_or_else(|| {
+            format!(
+                "JL Mixing Automation exited with code {} without returning an API response",
+                result
+                    .exit_code
+                    .map_or_else(|| "unknown".into(), |code| code.to_string())
+            )
+        });
+
+    result.stdout = serde_json::json!({
+        "api_version": "1.0",
+        "operation": "project.create",
+        "status": "error",
+        "data": {},
+        "warnings": [],
+        "errors": [{
+            "code": "AUTOMATION_PROCESS_FAILED",
+            "message": detail,
+        }],
+    })
+    .to_string();
+    result
+}
+
 pub(super) fn run_project_operation<R: ProcessRunner>(
     home: &Path,
     client_directory: &Path,
@@ -88,7 +143,8 @@ pub(super) fn run_project_operation<R: ProcessRunner>(
     }
 
     let arguments = project_arguments(&request, client_directory, operation);
-    match invoke_api(home, "project.create", &arguments, None, runner) {
+    let project_runner = ProjectApiProcessRunner { inner: runner };
+    match invoke_api(home, "project.create", &arguments, None, &project_runner) {
         Ok(response)
             if matches!(
                 (operation, response.status),
@@ -126,7 +182,7 @@ pub(super) fn run_project_operation<R: ProcessRunner>(
                 project: Some(project),
             }
         }
-        Ok(response) => rejected_project_api_response(response),
+        Ok(response) => rejected_project_api_response(response, operation),
         Err(ApiCallError::Unavailable) => blocked_project_operation(
             ProjectOperationCode::AutomationUnavailable,
             "JL Mixing Automation was not found in its default install location or on PATH",
@@ -174,10 +230,16 @@ fn project_summary_from_api(
     })
 }
 
-fn rejected_project_api_response(response: ApiResponse) -> ProjectOperationResult {
+fn rejected_project_api_response(
+    response: ApiResponse,
+    operation: ProjectOperation,
+) -> ProjectOperationResult {
     let error = response.errors.first();
     let collision = error
         .map(|item| item.code == "PROJECT_ALREADY_EXISTS")
+        .unwrap_or(false);
+    let process_failed = error
+        .map(|item| item.code == "AUTOMATION_PROCESS_FAILED")
         .unwrap_or(false);
     let message = error.map(|item| item.message.clone()).unwrap_or_else(|| {
         format!(
@@ -189,6 +251,10 @@ fn rejected_project_api_response(response: ApiResponse) -> ProjectOperationResul
         ok: false,
         code: if collision {
             ProjectOperationCode::Collision
+        } else if process_failed && matches!(operation, ProjectOperation::Create) {
+            ProjectOperationCode::Uncertain
+        } else if process_failed {
+            ProjectOperationCode::Failed
         } else {
             ProjectOperationCode::Rejected
         },
@@ -298,5 +364,57 @@ mod tests {
             .windows(2)
             .any(|pair| pair == ["--client", r"C:\Mixes\Clients\Acme"]));
         assert_eq!(arguments.last().map(String::as_str), Some("--dry-run"));
+    }
+
+    #[test]
+    fn failed_process_stderr_becomes_structured_project_api_error() {
+        let result = normalize_project_api_process_result(ProcessResult {
+            success: false,
+            exit_code: Some(1),
+            stdout: String::new(),
+            stderr: "Traceback line\nPermissionError: Access is denied\n".into(),
+        });
+
+        let response: serde_json::Value =
+            serde_json::from_str(&result.stdout).expect("synthetic API response");
+        assert_eq!(response["operation"], "project.create");
+        assert_eq!(response["status"], "error");
+        assert_eq!(
+            response["errors"][0]["message"],
+            "PermissionError: Access is denied"
+        );
+    }
+
+    #[test]
+    fn structured_nonzero_api_response_is_preserved() {
+        let stdout = r#"{"api_version":"1.0","operation":"project.create","status":"error","data":{},"warnings":[],"errors":[{"code":"FILESYSTEM_ERROR","message":"Access is denied"}]}"#;
+        let result = normalize_project_api_process_result(ProcessResult {
+            success: false,
+            exit_code: Some(1),
+            stdout: stdout.into(),
+            stderr: "ignored stderr".into(),
+        });
+
+        assert_eq!(result.stdout, stdout);
+    }
+
+    #[test]
+    fn unstructured_create_failure_remains_uncertain() {
+        let response: ApiResponse = serde_json::from_value(serde_json::json!({
+            "api_version": "1.0",
+            "operation": "project.create",
+            "status": "error",
+            "data": {},
+            "warnings": [],
+            "errors": [{
+                "code": "AUTOMATION_PROCESS_FAILED",
+                "message": "PermissionError: Access is denied",
+            }],
+        }))
+        .expect("API response");
+
+        let result = rejected_project_api_response(response, ProjectOperation::Create);
+        assert_eq!(result.code, ProjectOperationCode::Uncertain);
+        assert!(result.message.contains("Access is denied"));
     }
 }
