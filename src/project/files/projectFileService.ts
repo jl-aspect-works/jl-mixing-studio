@@ -95,7 +95,6 @@ export const projectFilePaths = {
   recall: "06_Recall",
 } as const;
 
-const nativePreviewExtensions = new Set(["wav", "wave", "aif", "aiff", "mp3"]);
 let nativePreviewSupport: Promise<boolean> | null = null;
 
 const isManagedRevisionFile = (entry: ProjectFileEntry) => {
@@ -125,9 +124,7 @@ const withManagedMutationPermissions = (listing: ProjectFileListing): ProjectFil
 const isNativePreviewCandidate = (entry: ProjectFileEntry) =>
   entry.entryType === "file"
   && entry.isAudio
-  && !entry.playable
-  && entry.extension !== null
-  && nativePreviewExtensions.has(entry.extension.toLowerCase());
+  && !entry.playable;
 
 const nativePreviewSupported = () => {
   if (!nativePreviewSupport) {
