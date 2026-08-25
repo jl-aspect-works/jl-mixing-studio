@@ -67,13 +67,10 @@ fn status_name(status: ApiStatus) -> &'static str {
     }
 }
 
-fn with_project_argument(project: &Path, arguments: Vec<String>) -> Vec<String> {
-    let mut explicit = Vec::with_capacity(arguments.len() + 2);
-    explicit.extend(arguments.into_iter().take(2));
-    explicit.push("--project".into());
-    explicit.push(project.to_string_lossy().into_owned());
-    explicit.extend(arguments.into_iter().skip(2));
-    explicit
+fn with_project_argument(project: &Path, mut arguments: Vec<String>) -> Vec<String> {
+    arguments.insert(2, "--project".into());
+    arguments.insert(3, project.to_string_lossy().into_owned());
+    arguments
 }
 
 fn call_api(
