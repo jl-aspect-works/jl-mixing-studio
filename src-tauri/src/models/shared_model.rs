@@ -1,6 +1,6 @@
 //! Cross-domain serialized value objects shared by multiple model domains.
 
-use serde::{Deserialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 
 pub(crate) fn display_path(path: &str) -> String {
     if let Some(rest) = path.strip_prefix(r"\\?\UNC\") {
