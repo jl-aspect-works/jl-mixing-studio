@@ -28,6 +28,8 @@ fn preflight_uses_dry_run_without_directory_change_flags() {
             "create",
             "acme-records",
             "--json",
+            "--studio",
+            "/fixed/workspace",
             "--name",
             "Acme Records",
             "--artist",
@@ -36,7 +38,7 @@ fn preflight_uses_dry_run_without_directory_change_flags() {
         ]
     );
     assert!(!invocations[1].arguments.contains(&"--no-cd".into()));
-    assert_eq!(invocations[1].current_directory, Some(workspace.to_owned()));
+    assert_eq!(invocations[1].current_directory, None);
 }
 
 #[test]
@@ -60,10 +62,13 @@ fn confirmed_creation_uses_no_cd_and_omits_empty_artist() {
             "create",
             "acme-records",
             "--json",
+            "--studio",
+            "/fixed/workspace",
             "--name",
             "Acme Records"
         ]
     );
+    assert_eq!(runner.invocations.borrow()[1].current_directory, None);
 }
 
 #[test]

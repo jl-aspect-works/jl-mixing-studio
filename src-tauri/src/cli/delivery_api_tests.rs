@@ -212,10 +212,7 @@ fn delivery_preflight_uses_structured_api_and_preserves_plan() {
             "--dry-run"
         ]
     );
-    assert_eq!(
-        invocations[1].current_directory,
-        Some(project_directory.to_owned())
-    );
+    assert_eq!(invocations[1].current_directory, None);
 }
 
 #[test]

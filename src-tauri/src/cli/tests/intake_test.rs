@@ -31,10 +31,7 @@ fn intake_preflight_uses_structured_api_from_the_validated_project() {
             "--dry-run"
         ]
     );
-    assert_eq!(
-        invocations[1].current_directory,
-        Some(project_directory.into())
-    );
+    assert_eq!(invocations[1].current_directory, None);
 }
 
 #[test]
@@ -79,10 +76,7 @@ fn confirmed_intake_run_uses_structured_api_and_embedded_authoritative_report() 
             project.path().to_string_lossy().as_ref()
         ]
     );
-    assert_eq!(
-        runner.invocations.borrow()[1].current_directory,
-        Some(project.path().into())
-    );
+    assert_eq!(runner.invocations.borrow()[1].current_directory, None);
 }
 
 #[test]

@@ -37,10 +37,7 @@ fn revision_preflight_uses_description_and_dry_run_from_validated_project() {
             "--dry-run"
         ]
     );
-    assert_eq!(
-        invocations[1].current_directory,
-        Some(project_directory.to_owned())
-    );
+    assert_eq!(invocations[1].current_directory, None);
 }
 
 #[test]
@@ -70,6 +67,7 @@ fn confirmed_revision_creation_uses_no_cd_and_automation_default_description() {
             "/fixed/project"
         ]
     );
+    assert_eq!(runner.invocations.borrow()[1].current_directory, None);
     assert_eq!(result.revision.unwrap().description, "Revision 3");
 }
 
