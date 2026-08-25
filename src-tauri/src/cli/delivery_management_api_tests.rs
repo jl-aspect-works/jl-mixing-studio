@@ -142,7 +142,7 @@ fn delivery_status_uses_explicit_project_api_contract() {
             "/fixed/project"
         ]
     );
-    assert_eq!(invocations[0].current_directory, Some(project.to_owned()));
+    assert_eq!(invocations[0].current_directory, None);
 }
 
 #[test]
@@ -181,6 +181,7 @@ fn package_delete_uses_only_generated_filename_and_returns_refreshed_status() {
             "blue-sky-rev-02-20260815210000.zip"
         ]
     );
+    assert_eq!(invocations[0].current_directory, None);
 }
 
 #[test]
