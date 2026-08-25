@@ -91,13 +91,7 @@ fn call_api(
         }
     };
     let arguments = with_project_argument(project, arguments);
-    match invoke_api(
-        &home,
-        operation,
-        &arguments,
-        None,
-        &SystemProcessRunner,
-    ) {
+    match invoke_api(&home, operation, &arguments, None, &SystemProcessRunner) {
         Ok(response) => {
             let ok = matches!(response.status, ApiStatus::Success | ApiStatus::Planned);
             let message = response
