@@ -1,6 +1,6 @@
 [package]
 name = "jl-mixing-studio"
-version = "2.1.0-rc.2"
+version = "2.1.0-rc.3"
 description = "Studio-aware desktop workflow for JL Mixing Automation"
 authors = ["JL Aspect Works contributors"]
 edition = "2021"
