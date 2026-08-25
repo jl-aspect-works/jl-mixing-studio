@@ -1,0 +1,35 @@
+name: RC3 version sync
+
+on:
+  push:
+    branches:
+      - release/v2.1.0-rc.3
+    paths:
+      - VERSION
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.1.0-rc.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run version:sync
+      - name: Commit generated version metadata and remove helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/rc3-version-sync.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION package.json package-lock.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/tauri.conf.json
+          git commit -m 'Prepare Studio v2.1.0-rc.3'
+          git push origin HEAD:release/v2.1.0-rc.3
