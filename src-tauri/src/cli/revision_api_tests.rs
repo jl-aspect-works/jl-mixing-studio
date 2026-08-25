@@ -179,10 +179,7 @@ fn approval_preflight_uses_structured_api_and_dry_run() {
             "--dry-run"
         ]
     );
-    assert_eq!(
-        invocations[1].current_directory,
-        Some(project_directory.to_owned())
-    );
+    assert_eq!(invocations[1].current_directory, None);
 }
 
 #[test]
