@@ -32,14 +32,14 @@ where
     }
 }
 
-pub(crate) fn serialize_display_paths<S>(
-    paths: &[String],
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub(crate) fn serialize_display_paths<S>(paths: &[String], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let paths = paths.iter().map(|path| display_path(path)).collect::<Vec<_>>();
+    let paths = paths
+        .iter()
+        .map(|path| display_path(path))
+        .collect::<Vec<_>>();
     paths.serialize(serializer)
 }
 
