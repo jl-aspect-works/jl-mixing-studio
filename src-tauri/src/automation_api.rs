@@ -367,9 +367,9 @@ fn compatibility_result(
     VersionCheck {
         available: true,
         supported: true,
-        // Studio workspace creation is still a human-CLI path in Studio v1.1, so preserve its
-        // existing platform gate independently of the API-backed workflows below.
-        studio_creation_supported: !cfg!(target_os = "windows"),
+        // Studio's guided workspace creation uses the packaged new-studio launcher and native
+        // folder picker, both of which are supported on macOS and Windows.
+        studio_creation_supported: cfg!(any(target_os = "macos", target_os = "windows")),
         client_creation_supported: has("client.create") && has("client.create.context"),
         project_creation_supported: has("project.create") && has("project.create.artist"),
         intake_validation_supported: has("intake.validate") && has("intake.validate.report"),
@@ -542,6 +542,10 @@ mod tests {
         assert!(result.available);
         assert!(result.supported);
         assert_eq!(result.version.as_deref(), Some("1.5.0-rc.1"));
+        assert_eq!(
+            result.studio_creation_supported,
+            cfg!(any(target_os = "macos", target_os = "windows"))
+        );
         assert!(result.client_creation_supported);
         assert!(result.project_creation_supported);
         assert!(result.intake_validation_supported);
