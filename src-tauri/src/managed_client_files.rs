@@ -67,6 +67,15 @@ fn status_name(status: ApiStatus) -> &'static str {
     }
 }
 
+fn with_project_argument(project: &Path, arguments: Vec<String>) -> Vec<String> {
+    let mut explicit = Vec::with_capacity(arguments.len() + 2);
+    explicit.extend(arguments.into_iter().take(2));
+    explicit.push("--project".into());
+    explicit.push(project.to_string_lossy().into_owned());
+    explicit.extend(arguments.into_iter().skip(2));
+    explicit
+}
+
 fn call_api(
     app: &AppHandle,
     project: &Path,
@@ -84,11 +93,12 @@ fn call_api(
             }
         }
     };
+    let arguments = with_project_argument(project, arguments);
     match invoke_api(
         &home,
         operation,
         &arguments,
-        Some(project),
+        None,
         &SystemProcessRunner,
     ) {
         Ok(response) => {
@@ -276,5 +286,31 @@ pub fn choose_import_sources(source_kind: &str) -> Result<Vec<String>, String> {
             .map(|path| path.to_string_lossy().into_owned())
             .collect()),
         _ => Err("Import source kind must be zip, folder, or files.".into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::with_project_argument;
+    use std::path::Path;
+
+    #[test]
+    fn managed_operations_supply_explicit_project_path() {
+        let project = Path::new(r"\\NAS\media\Mixes\Clients\Client\Projects\Project");
+        let arguments = vec![
+            "client-files".into(),
+            "import-plan".into(),
+            "--json".into(),
+            "--source-kind".into(),
+            "files".into(),
+        ];
+
+        let arguments = with_project_argument(project, arguments);
+
+        assert_eq!(arguments[0], "client-files");
+        assert_eq!(arguments[1], "import-plan");
+        assert_eq!(arguments[2], "--project");
+        assert_eq!(arguments[3], project.to_string_lossy());
+        assert!(arguments.iter().any(|argument| argument == "--json"));
     }
 }
