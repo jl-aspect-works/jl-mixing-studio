@@ -223,21 +223,22 @@ pub(crate) fn invoke_api<R: ProcessRunner>(
     home: &Path,
     expected_operation: &str,
     arguments: &[String],
-    current_directory: Option<&Path>,
+    _current_directory: Option<&Path>,
     runner: &R,
 ) -> Result<ApiResponse, ApiCallError> {
     let Some(executable) = resolve_command(home, AUTOMATION_EXECUTABLE) else {
         return Err(ApiCallError::Unavailable);
     };
-    let output = runner
-        .run(&executable, arguments, current_directory)
-        .map_err(|error| {
-            if error.kind() == io::ErrorKind::NotFound {
-                ApiCallError::Unavailable
-            } else {
-                ApiCallError::StartFailed
-            }
-        })?;
+    // Automation API context must be carried explicitly in command arguments. Never use cwd as
+    // workspace/studio/client/project identity: Windows cannot reliably set a UNC path as a
+    // process working directory and may silently fall back to C:\Windows.
+    let output = runner.run(&executable, arguments, None).map_err(|error| {
+        if error.kind() == io::ErrorKind::NotFound {
+            ApiCallError::Unavailable
+        } else {
+            ApiCallError::StartFailed
+        }
+    })?;
     let response: ApiResponse =
         serde_json::from_str(output.stdout.trim()).map_err(|_| ApiCallError::Malformed)?;
     if response.api_version != SUPPORTED_API_VERSION {
@@ -369,7 +370,8 @@ fn compatibility_result(
         // Studio workspace creation is still a human-CLI path in Studio v1.1, so preserve its
         // existing platform gate independently of the API-backed workflows below.
         studio_creation_supported: !cfg!(target_os = "windows"),
-        client_creation_supported: has("client.create"),
+        client_creation_supported: has("client.create")
+            && has("client.create.explicit-context"),
         project_creation_supported: has("project.create") && has("project.create.artist"),
         intake_validation_supported: has("intake.validate") && has("intake.validate.report"),
         revision_creation_supported: has("revision.create") && has("revision.create.description"),
@@ -534,7 +536,7 @@ mod tests {
         let discovery = r#"{
             "api_version":"1.0",
             "application":{"name":"jl-mixing","version":"1.5.0-rc.1"},
-            "capabilities":["system.info","client.create","project.create","project.create.artist","revision.create","revision.create.description","intake.validate","intake.validate.report","revision.approve","delivery.create"]
+            "capabilities":["system.info","client.create","client.create.explicit-context","project.create","project.create.artist","revision.create","revision.create.description","intake.validate","intake.validate.report","revision.approve","delivery.create"]
         }"#;
         let result =
             check_automation_compatibility(home.path(), &FakeRunner::new(vec![success(discovery)]));
@@ -587,7 +589,7 @@ mod tests {
         let result =
             check_automation_compatibility(home.path(), &FakeRunner::new(vec![success(discovery)]));
         assert!(result.supported);
-        assert!(result.client_creation_supported);
+        assert!(!result.client_creation_supported);
         assert!(!result.project_creation_supported);
         assert!(!result.delivery_creation_supported);
     }
