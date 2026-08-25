@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::shared_model::{serialize_display_paths, serialize_optional_display_path};
+
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectFileListRequest {
@@ -105,6 +107,7 @@ pub struct ProjectFileSummary {
     pub references_count: u64,
     pub working_audio_count: u64,
     pub working_audio_area_present: bool,
+    #[serde(serialize_with = "serialize_display_paths")]
     pub failed_paths: Vec<String>,
 }
 
@@ -113,6 +116,7 @@ pub struct ProjectFileSummary {
 pub struct WorkspaceStorageSummary {
     pub file_count: u64,
     pub size_bytes: u64,
+    #[serde(serialize_with = "serialize_display_paths")]
     pub failed_paths: Vec<String>,
 }
 
@@ -127,5 +131,6 @@ pub struct ProjectFileMutationResult {
 pub struct ProjectAudioPreviewResult {
     pub supported: bool,
     pub relative_path: String,
+    #[serde(serialize_with = "serialize_optional_display_path")]
     pub file_path: Option<String>,
 }

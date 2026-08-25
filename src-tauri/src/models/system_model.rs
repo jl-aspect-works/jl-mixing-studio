@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::shared_model::serialize_display_path;
+
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct SystemInfo {
@@ -32,6 +34,7 @@ pub enum FolderLocation {
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct FolderResult {
+    #[serde(serialize_with = "serialize_display_path")]
     pub path: String,
 }
 

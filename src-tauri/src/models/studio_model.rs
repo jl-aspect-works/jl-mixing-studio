@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::shared_model::{Audio, Metadata};
+use super::shared_model::{serialize_display_path, Audio, Metadata};
 
 #[derive(Debug, Deserialize)]
 pub struct StudioDocument {
@@ -37,6 +37,7 @@ pub struct StudioCliDefaults {
 pub struct StudioSummary {
     pub studio_id: String,
     pub studio_name: String,
+    #[serde(serialize_with = "serialize_display_path")]
     pub root_path: String,
     pub schema_version: String,
     pub created_with: String,
@@ -64,6 +65,7 @@ pub struct StudioCreationRequest {
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct StudioCreationSummary {
+    #[serde(serialize_with = "serialize_display_path")]
     pub workspace_root: String,
     pub studio_name: String,
     pub mix_engineer: Option<String>,

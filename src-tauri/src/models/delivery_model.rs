@@ -2,7 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::shared_model::DeliveryMethod;
+use super::shared_model::{
+    serialize_display_path, serialize_optional_display_path, DeliveryMethod,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct DeliveryManifest {
@@ -171,6 +173,7 @@ pub struct DeliveryPackageDeleteRequest {
 pub struct ManagedDeliveryIssue {
     pub code: String,
     pub message: String,
+    #[serde(serialize_with = "serialize_optional_display_path")]
     pub path: Option<String>,
 }
 
@@ -186,6 +189,7 @@ pub struct ManagedDeliveryRevisions {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliverableStatus {
+    #[serde(serialize_with = "serialize_display_path")]
     pub path: String,
     pub deliverable_type: Option<String>,
     pub size_bytes: Option<u64>,
@@ -197,6 +201,7 @@ pub struct ManagedDeliverableStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryNotesStatus {
+    #[serde(serialize_with = "serialize_display_path")]
     pub path: String,
     pub present: bool,
     pub size_bytes: Option<u64>,
@@ -207,6 +212,7 @@ pub struct ManagedDeliveryNotesStatus {
 #[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryPackageStatus {
     pub name: String,
+    #[serde(serialize_with = "serialize_display_path")]
     pub path: String,
     pub size_bytes: Option<u64>,
     pub modified_at: Option<String>,
@@ -217,7 +223,9 @@ pub struct ManagedDeliveryPackageStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct ManagedDeliveryStatus {
+    #[serde(serialize_with = "serialize_display_path")]
     pub delivery_path: String,
+    #[serde(serialize_with = "serialize_display_path")]
     pub delivery_manifest_path: String,
     pub state: String,
     pub revisions: ManagedDeliveryRevisions,

@@ -1,11 +1,13 @@
 use serde::Serialize;
 
 use super::client_model::ClientSummary;
+use super::shared_model::serialize_display_path;
 use super::studio_model::StudioSummary;
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceConfiguration {
+    #[serde(serialize_with = "serialize_display_path")]
     pub workspace_path: String,
     pub configured: bool,
 }
@@ -13,6 +15,7 @@ pub struct WorkspaceConfiguration {
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceSnapshot {
+    #[serde(serialize_with = "serialize_display_path")]
     pub workspace_path: String,
     pub status: WorkspaceStatus,
     pub studio: Option<StudioSummary>,

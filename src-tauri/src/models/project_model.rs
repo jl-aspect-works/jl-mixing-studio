@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use super::delivery_model::DeliverySummary;
 use super::revision_model::{RevisionDocument, RevisionSummary};
-use super::shared_model::{Audio, DeliveryMethod, Metadata};
+use super::shared_model::{serialize_display_path, Audio, DeliveryMethod, Metadata};
 
 #[derive(Debug, Deserialize)]
 pub struct ProjectManifest {
@@ -145,6 +145,7 @@ pub struct ProjectEditInfo {
     pub update_supported: bool,
     pub client_id: String,
     pub project_id: String,
+    #[serde(serialize_with = "serialize_display_path")]
     pub project_path: String,
     pub document_id: String,
     pub schema_version: String,
