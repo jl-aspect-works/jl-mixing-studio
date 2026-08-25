@@ -1,0 +1,39 @@
+name: RC5 Version Sync
+
+on:
+  push:
+    branches:
+      - release/v2.1.0-rc.5
+    paths:
+      - VERSION
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v2.1.0-rc.5
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run version:sync
+      - name: Commit generated version metadata and remove helper
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/rc5-version-sync.yml
+          git add package.json package-lock.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/tauri.conf.json
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+            exit 1
+          fi
+          git commit -m "Prepare Studio v2.1.0-rc.5"
+          git push origin HEAD:release/v2.1.0-rc.5
