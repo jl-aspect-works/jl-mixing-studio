@@ -79,12 +79,12 @@ pub(super) fn run_client_operation<R: ProcessRunner>(
     if !version.client_creation_supported {
         return blocked_client_operation(
             ClientOperationCode::Rejected,
-            "JL Mixing Automation does not advertise the client.create capability",
+            "JL Mixing Automation does not advertise explicit-context client.create support",
         );
     }
 
-    let arguments = client_arguments(&client, operation);
-    match invoke_api(home, "client.create", &arguments, Some(workspace), runner) {
+    let arguments = client_arguments(&client, workspace, operation);
+    match invoke_api(home, "client.create", &arguments, None, runner) {
         Ok(response)
             if matches!(
                 (operation, response.status),
@@ -199,6 +199,7 @@ pub(super) fn normalize_request(
 
 pub(super) fn client_arguments(
     client: &ClientCreationSummary,
+    workspace: &Path,
     operation: ClientOperation,
 ) -> Vec<String> {
     let mut arguments = vec![
@@ -206,6 +207,8 @@ pub(super) fn client_arguments(
         "create".into(),
         client.client_id.clone(),
         "--json".into(),
+        "--studio".into(),
+        workspace.to_string_lossy().into_owned(),
         "--name".into(),
         client.client_name.clone(),
     ];
@@ -217,4 +220,23 @@ pub(super) fn client_arguments(
         arguments.push("--dry-run".into());
     }
     arguments
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn client_create_supplies_explicit_unc_studio_path() {
+        let client = ClientCreationSummary {
+            client_id: "new-client".into(),
+            client_name: "New Client".into(),
+            default_artist: None,
+        };
+        let workspace = Path::new(r"\\NAS\media\Mixes");
+        let arguments = client_arguments(&client, workspace, ClientOperation::Create);
+        assert!(arguments
+            .windows(2)
+            .any(|pair| pair == ["--studio", r"\\NAS\media\Mixes"]));
+    }
 }
