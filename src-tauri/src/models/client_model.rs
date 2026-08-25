@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::project_model::ProjectSummary;
-use super::shared_model::Metadata;
+use super::shared_model::{serialize_display_path, Metadata};
 
 #[derive(Debug, Deserialize)]
 pub struct ClientDocument {
@@ -109,6 +109,7 @@ pub enum ClientUpdateCode {
 pub struct ClientEditInfo {
     pub update_supported: bool,
     pub client_id: String,
+    #[serde(serialize_with = "serialize_display_path")]
     pub client_path: String,
     pub document_id: String,
     pub schema_version: String,
