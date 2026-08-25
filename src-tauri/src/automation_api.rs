@@ -370,8 +370,7 @@ fn compatibility_result(
         // Studio workspace creation is still a human-CLI path in Studio v1.1, so preserve its
         // existing platform gate independently of the API-backed workflows below.
         studio_creation_supported: !cfg!(target_os = "windows"),
-        client_creation_supported: has("client.create")
-            && has("client.create.explicit-context"),
+        client_creation_supported: has("client.create") && has("client.create.context"),
         project_creation_supported: has("project.create") && has("project.create.artist"),
         intake_validation_supported: has("intake.validate") && has("intake.validate.report"),
         revision_creation_supported: has("revision.create") && has("revision.create.description"),
@@ -536,7 +535,7 @@ mod tests {
         let discovery = r#"{
             "api_version":"1.0",
             "application":{"name":"jl-mixing","version":"1.5.0-rc.1"},
-            "capabilities":["system.info","client.create","client.create.explicit-context","project.create","project.create.artist","revision.create","revision.create.description","intake.validate","intake.validate.report","revision.approve","delivery.create"]
+            "capabilities":["system.info","client.create","client.create.context","project.create","project.create.artist","revision.create","revision.create.description","intake.validate","intake.validate.report","revision.approve","delivery.create"]
         }"#;
         let result =
             check_automation_compatibility(home.path(), &FakeRunner::new(vec![success(discovery)]));
