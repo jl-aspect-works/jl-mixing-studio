@@ -2,7 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use super::shared_model::{serialize_display_path, serialize_optional_display_path, DeliveryMethod};
+use super::shared_model::{
+    serialize_display_path, serialize_optional_display_path, DeliveryMethod,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct DeliveryManifest {
