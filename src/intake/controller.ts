@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import type { IntakeReportState } from "../AppShellViews";
 import { safeError } from "../AppShellViews";
 import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import type { IntakeOperationResult, IntakeRequest } from "../types";
-import type { IntakeWorkflowState } from "./models";
+import type { IntakeValidationProgress, IntakeWorkflowState } from "./models";
 
 const yieldToBrowserPaint = (): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, 0));
@@ -24,10 +25,34 @@ export function useIntakeWorkflow({
 }: UseIntakeWorkflowOptions) {
   const [reportState, setReportState] = useState<IntakeReportState>({ status: "idle" });
   const [state, setState] = useState<IntakeWorkflowState>({ status: "closed" });
+  const [progress, setProgress] = useState<IntakeValidationProgress | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const reportRequestSequence = useRef(0);
   const validationInFlightKey = useRef<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+    void listen<IntakeValidationProgress>("intake-validation-progress", ({ payload }) => {
+      if (
+        !cancelled &&
+        payload.clientId === clientId &&
+        payload.projectId === projectId
+      ) {
+        setProgress(payload);
+      }
+    }).then((removeListener) => {
+      if (cancelled) removeListener();
+      else unlisten = removeListener;
+    }).catch(() => {
+      // Older/non-Tauri test hosts may not expose the event channel. Validation itself still works.
+    });
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [clientId, projectId]);
 
   const currentRequest = (): IntakeRequest | null =>
     clientId && projectId ? { clientId, projectId } : null;
@@ -61,6 +86,7 @@ export function useIntakeWorkflow({
 
     const sequence = ++reportRequestSequence.current;
     setActionError(null);
+    setProgress(null);
     if (announce) setNotice(null);
     if (!preserveCurrentReport) setReportState({ status: "loading" });
     setState({ status: "preflighting" });
@@ -100,6 +126,7 @@ export function useIntakeWorkflow({
       setActionError(safeError(error, "Project file validation could not be refreshed."));
       void loadReport(request, preserveCurrentReport ? false : true);
     } finally {
+      setProgress(null);
       if (validationInFlightKey.current === validationKey) {
         validationInFlightKey.current = null;
       }
@@ -110,6 +137,7 @@ export function useIntakeWorkflow({
     if (!clientId || !projectId) {
       reportRequestSequence.current += 1;
       setReportState({ status: "idle" });
+      setProgress(null);
       return;
     }
 
@@ -158,6 +186,7 @@ export function useIntakeWorkflow({
     setState({ status: "closed" });
     setActionError(null);
     setNotice(null);
+    setProgress(null);
     if (reportState.status === "idle") {
       void loadReport(request);
     }
@@ -172,6 +201,7 @@ export function useIntakeWorkflow({
   const reset = () => {
     setState({ status: "closed" });
     setActionError(null);
+    setProgress(null);
   };
 
   const clear = () => {
@@ -185,6 +215,7 @@ export function useIntakeWorkflow({
     if (!request || !validationAvailable) return;
     setActionError(null);
     setNotice(null);
+    setProgress(null);
     setState({ status: "preflighting" });
     await yieldToBrowserPaint();
     invoke<IntakeOperationResult>("preflight_intake_validation", { request })
@@ -210,6 +241,7 @@ export function useIntakeWorkflow({
     const request = currentRequest();
     if (state.status !== "confirming" || !request) return;
     const preview = state.preview;
+    setProgress(null);
     setState({ status: "running", preview });
     await yieldToBrowserPaint();
     invoke<IntakeOperationResult>("run_intake_validation", { request })
@@ -254,17 +286,20 @@ export function useIntakeWorkflow({
             "The intake-validation result could not be confirmed. The report may have been updated; do not retry automatically.",
           ),
         });
-      });
+      })
+      .finally(() => setProgress(null));
   };
 
   const closeDialog = () => {
     if (state.status === "running") return;
     setState({ status: "closed" });
+    setProgress(null);
     reload();
   };
 
   return {
     state,
+    progress,
     reportState,
     actionError,
     notice,
