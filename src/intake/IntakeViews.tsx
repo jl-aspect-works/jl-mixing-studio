@@ -82,7 +82,7 @@ export function IntakeView({ client, project, reportState, actionError, validati
         </div>
         <div className="client-files-original-delivery-main">
           <div className="client-files-original-delivery-copy">
-            <p>The client’s supplied source material is preserved here unchanged. Managed Import is the controlled way to add or replace client-delivered files.</p>
+            <p>The client’s files stay read-only here. Use Import Client Files to add new files or replace existing client files.</p>
           </div>
           {report && <ValidationSummary report={report} files={validationFiles} />}
         </div>

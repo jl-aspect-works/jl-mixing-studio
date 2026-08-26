@@ -258,7 +258,7 @@ export function ClientDetails({
       </section>
 
       <aside className="client-details-rail" aria-label="Client Details">
-        <article className="client-section"><div className="client-section-heading"><div><h3>Client Identity</h3><p>Stable identity and display defaults.</p></div></div><div className="client-fields client-fields-rail">
+        <article className="client-section"><div className="client-section-heading"><div><h3>Client Identity</h3><p>Client name, ID, and default artist.</p></div></div><div className="client-fields client-fields-rail">
           <div className="client-field"><span>Client Name</span>{editing ? <input aria-label="Client Name" value={values.clientName} onChange={(event) => setForm({ ...values, clientName: event.target.value })} disabled={saving} /> : <strong>{editInfo?.clientName ?? client.clientName}</strong>}</div>
           <div className="client-field"><span>Client ID</span><strong><code>{client.clientId}</code></strong></div>
           <div className="client-field"><span>Default Artist</span>{editing ? <input aria-label="Default Artist" value={values.artist} onChange={(event) => setForm({ ...values, artist: event.target.value })} disabled={saving} placeholder="Not set" /> : <strong>{editInfo?.artist || client.defaultArtist || productCopy.common.notSet}</strong>}</div>
@@ -275,7 +275,7 @@ export function ClientDetails({
           <div className="client-field"><span>Requested Deliverables</span>{editing ? <div className="client-deliverable-options client-deliverable-options-rail">{DELIVERABLES.map(([value, label]) => <label key={value}><input type="checkbox" checked={values.requestedDeliverables.includes(value)} onChange={() => toggleDeliverable(value)} disabled={saving} /><span>{label}</span></label>)}</div> : editInfo ? <div className="client-chip-list">{editInfo.requestedDeliverables.map((value) => <span key={value} className="client-chip">{friendlyDeliverable(value)}</span>)}</div> : <strong>Checking…</strong>}</div>
         </div></article>
 
-        <article className="client-section"><div className="client-section-heading"><div><h3>Client Information</h3><p>Read-only authoritative metadata.</p></div></div>
+        <article className="client-section"><div className="client-section-heading"><div><h3>Client Information</h3><p>Storage and technical details for this client.</p></div></div>
           <dl className="client-info-grid client-info-grid-rail">
             <div><dt>Storage Path</dt><dd><code>{editInfo?.clientPath ?? "Checking…"}</code></dd></div>
             <div><dt>Created</dt><dd>{editInfo ? formatTimestamp(editInfo.createdAt) : formatTimestamp(client.createdAt)}</dd></div>

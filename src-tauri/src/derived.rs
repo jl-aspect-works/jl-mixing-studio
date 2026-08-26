@@ -56,7 +56,7 @@ pub fn derive_tasks(
                         priority,
                         title,
                         reason,
-                        "Review the deadline and current revision, approval, and delivery state.",
+                        "Check the deadline and make sure the current revision, approval, and delivery are where you expect.",
                         project.deadline.clone(),
                     ));
                 }
@@ -70,7 +70,7 @@ pub fn derive_tasks(
                     TaskPriority::Delivery,
                     "Create or update delivery",
                     "The approved revision differs from the delivered revision.",
-                    "Open Delivery and review the authoritative package state.",
+                    "Open Delivery and create or update the package for the approved revision.",
                     None,
                 ));
             }
@@ -81,7 +81,7 @@ pub fn derive_tasks(
                     TaskPriority::Review,
                     "Review current revision",
                     "The current revision differs from the approved revision.",
-                    "Open Revisions and review the current revision; this does not imply approval readiness.",
+                    "Open Revisions and check the current revision before deciding whether it’s ready for approval.",
                     None,
                 ));
             }
