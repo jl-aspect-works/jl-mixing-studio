@@ -1,0 +1,55 @@
+import { describe, expect, it } from "vitest";
+import type { ManagedImportProgress } from "./models";
+import { managedImportProgressPresentation } from "./managedImportProgress";
+
+const progress = (phase: ManagedImportProgress["phase"], completed: number, total: number | null): ManagedImportProgress => ({
+  clientId: "client",
+  projectId: "project",
+  phase,
+  completed,
+  total,
+  active: [],
+});
+
+describe("managedImportProgressPresentation", () => {
+  it("keeps overall progress monotonic across staging, importing, finalizing, and complete", () => {
+    const states = [
+      progress("staging", 0, 2),
+      progress("staging", 1, 2),
+      progress("staging", 2, 2),
+      progress("importing", 0, 2),
+      progress("importing", 1, 2),
+      progress("importing", 2, 2),
+      progress("finalizing", 2, 2),
+      progress("complete", 2, 2),
+    ].map((event) => managedImportProgressPresentation(event, 2));
+
+    expect(states.map((state) => state.value)).toEqual([0, 1, 2, 2, 3, 4, 4, 5]);
+    expect(states.every((state) => state.max === 5)).toBe(true);
+    expect(states.at(-2)?.label).toBe("Finalizing import…");
+    expect(states.at(-1)?.label).toBe("Import complete");
+    expect(states.at(-2)?.value).toBeLessThan(states.at(-2)?.max ?? 0);
+    expect(states.at(-1)?.value).toBe(states.at(-1)?.max);
+  });
+
+  it("shows staging file counts instead of discarding them", () => {
+    const state = managedImportProgressPresentation(progress("staging", 3, 12), 12);
+    expect(state.label).toBe("Preparing 3 of 12 files");
+    expect(state.determinate).toBe(true);
+    expect(state.value).toBe(3);
+    expect(state.max).toBe(25);
+  });
+
+  it("keeps planning indeterminate until a file total is known", () => {
+    const state = managedImportProgressPresentation(progress("planning", 0, null), 12);
+    expect(state.label).toBe("Preparing import…");
+    expect(state.determinate).toBe(false);
+  });
+
+  it("still presents older phase-local importing payloads sensibly", () => {
+    const state = managedImportProgressPresentation(progress("importing", 4, 10), 10);
+    expect(state.label).toBe("Importing 4 of 10 files");
+    expect(state.value).toBe(14);
+    expect(state.max).toBe(21);
+  });
+});
