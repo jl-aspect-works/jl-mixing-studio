@@ -1,4 +1,5 @@
 import type { IntakeValidationProgress } from "./models";
+import "./ValidationProgress.css";
 
 export function ValidationProgress({ progress }: { progress: IntakeValidationProgress }) {
   const total = progress.total;
