@@ -42,7 +42,9 @@ pub(crate) fn log_path() -> PathBuf {
         .map(PathBuf::from)
         .or_else(|| env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state")))
         .unwrap_or_else(env::temp_dir);
-    root.join("jl-mixing-studio").join("logs").join("studio.jsonl")
+    root.join("jl-mixing-studio")
+        .join("logs")
+        .join("studio.jsonl")
 }
 
 fn rotate(path: &PathBuf) {
@@ -108,6 +110,9 @@ mod tests {
 
     #[test]
     fn log_path_has_stable_file_name() {
-        assert_eq!(log_path().file_name().and_then(|value| value.to_str()), Some("studio.jsonl"));
+        assert_eq!(
+            log_path().file_name().and_then(|value| value.to_str()),
+            Some("studio.jsonl")
+        );
     }
 }
