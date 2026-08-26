@@ -45,18 +45,12 @@ describe("JL Mixing Studio — Client Files workflow", () => {
     resetAppTestState();
   });
 
-  it("automatically refreshes cached validation when Client Files opens", async () => {
-    const refreshed = {
-      ...intakePreview,
-      code: "validated",
-      message: "Intake validation completed and the report was verified.",
-    } satisfies IntakeOperationResult;
-
+  it("loads cached validation without revalidating when Client Files opens", async () => {
     mockedInvoke.mockImplementation((command) => {
       if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
       if (command === "get_workspace_configuration") return Promise.resolve(defaultWorkspaceConfiguration);
       if (command === "get_jl_mixing_version") return Promise.resolve(version);
-      if (command === "refresh_client_files_validation") return Promise.resolve(refreshed);
+      if (command === "refresh_client_files_validation") return Promise.resolve(validatedIntakeReport());
       if (command === "get_intake_report") return Promise.resolve(validatedIntakeReport());
       if (command === "list_project_files") return Promise.resolve(emptyClientFilesListing);
       return Promise.reject(new Error(`Unexpected command: ${command}`));
@@ -65,10 +59,11 @@ describe("JL Mixing Studio — Client Files workflow", () => {
     render(<App />);
     await openClientFiles();
 
-    await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("refresh_client_files_validation", {
-      request: { clientId: "acme", projectId: "blue-sky" },
-    }));
     const summary = await screen.findByLabelText("Original Delivery file stats");
+    expect(mockedInvoke).toHaveBeenCalledWith("get_intake_report", {
+      request: { clientId: "acme", projectId: "blue-sky" },
+    });
+    expect(mockedInvoke).not.toHaveBeenCalledWith("refresh_client_files_validation", expect.anything());
     expect(within(summary).getByText("Files").previousElementSibling).toHaveTextContent("2");
     expect(within(summary).getByText("Status").previousElementSibling).toHaveTextContent("Needs attention");
     expect(screen.getByRole("button", { name: "Recheck" })).toBeEnabled();
@@ -122,7 +117,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
     render(<App />);
     await openClientFiles();
     await screen.findByLabelText("Original Delivery file stats");
-    await waitFor(() => expect(refreshCalls).toBeGreaterThan(0));
+    expect(refreshCalls).toBe(0);
     const callsBeforeRecheck = refreshCalls;
 
     fireEvent.click(screen.getByRole("button", { name: "Recheck" }));
