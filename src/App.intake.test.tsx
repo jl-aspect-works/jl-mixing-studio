@@ -100,7 +100,7 @@ describe("JL Mixing Studio — Client Files workflow", () => {
     expect(mockedInvoke).toHaveBeenCalledWith("get_intake_report", {
       request: { clientId: "acme", projectId: "blue-sky" },
     });
-    expect(screen.getByText(/client’s supplied source material is preserved here unchanged/i)).toBeInTheDocument();
+    expect(screen.getByText(/client’s files stay read-only here/i)).toBeInTheDocument();
     expect(screen.getByText("View intake report details")).toBeInTheDocument();
   });
 
