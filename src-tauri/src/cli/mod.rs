@@ -50,7 +50,8 @@ use delivery_legacy_testsupport::{
 pub use delivery_management::{delete_delivery_package, get_delivery_status};
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
-    refresh_client_files_validation, run_intake_validation,
+    refresh_client_files_validation, refresh_client_files_validation_with_progress,
+    run_intake_validation, run_intake_validation_with_progress, IntakeProgressEvent,
 };
 #[cfg(test)]
 use intake::{run_intake_operation, IntakeOperation};
