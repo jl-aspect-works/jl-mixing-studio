@@ -271,6 +271,18 @@ where
         Ok(value) => value,
         Err(message) => return request_error(message),
     };
+    let total = request
+        .selected_relative_paths
+        .as_ref()
+        .map_or(request.sources.len(), Vec::len);
+    let mut on_progress = on_progress;
+    on_progress(IntakeProgressEvent {
+        operation: IMPORT_EXECUTE_OPERATION.into(),
+        phase: "staging".into(),
+        completed: 0,
+        total: Some(total),
+        active: Vec::new(),
+    });
     if !supports_import_progress(&home) {
         return call_api(app, &project, IMPORT_EXECUTE_OPERATION, arguments);
     }
