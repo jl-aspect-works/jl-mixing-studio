@@ -30,7 +30,7 @@ pub(crate) struct IntakeProgressEvent {
 }
 
 #[derive(Debug, Deserialize)]
-pub(crate) struct StreamingIntakeResponse {
+pub(crate) struct StreamingAutomationResponse {
     api_version: String,
     operation: String,
     pub(crate) status: ApiStatus,
@@ -38,11 +38,12 @@ pub(crate) struct StreamingIntakeResponse {
     pub(crate) errors: Vec<ApiError>,
 }
 
-pub(crate) fn invoke_intake_with_progress<F>(
+pub(crate) fn invoke_with_progress<F>(
     home: &Path,
     arguments: &[String],
+    expected_operation: &str,
     mut on_progress: F,
-) -> Result<StreamingIntakeResponse, ApiCallError>
+) -> Result<StreamingAutomationResponse, ApiCallError>
 where
     F: FnMut(IntakeProgressEvent) + Send + 'static,
 {
@@ -103,12 +104,12 @@ where
     child.wait().map_err(|_| ApiCallError::StartFailed)?;
     let _diagnostics = stderr_thread.join().map_err(|_| ApiCallError::Malformed)?;
 
-    let response: StreamingIntakeResponse =
+    let response: StreamingAutomationResponse =
         serde_json::from_str(stdout_text.trim()).map_err(|_| ApiCallError::Malformed)?;
     if response.api_version != SUPPORTED_API_VERSION {
         return Err(ApiCallError::IncompatibleVersion(response.api_version));
     }
-    if response.operation != "intake.validate" {
+    if response.operation != expected_operation {
         return Err(ApiCallError::UnexpectedOperation(response.operation));
     }
     Ok(response)

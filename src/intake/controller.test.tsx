@@ -60,16 +60,14 @@ describe("useIntakeWorkflow background refresh", () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it("loads saved validation before structured refresh and keeps structured data visible during background refresh", async () => {
+  it("loads saved validation without triggering validation on open or workspace refresh", async () => {
     let refreshCalls = 0;
-    let resolveBackground: ((value: IntakeOperationResult) => void) | null = null;
 
     mockedInvoke.mockImplementation((command) => {
       if (command === "get_intake_report") return Promise.resolve(legacyResult);
       if (command === "refresh_client_files_validation") {
         refreshCalls += 1;
-        if (refreshCalls === 1) return Promise.resolve(structuredResult);
-        return new Promise<IntakeOperationResult>((resolve) => { resolveBackground = resolve; });
+        return Promise.resolve(structuredResult);
       }
       return Promise.reject(new Error(`Unexpected command: ${command}`));
     });
@@ -81,23 +79,19 @@ describe("useIntakeWorkflow background refresh", () => {
     }));
 
     await waitFor(() => {
-      expect(refreshCalls).toBe(1);
       expect(result.current.reportState.status).toBe("ready");
       if (result.current.reportState.status === "ready") {
-        expect(result.current.reportState.value).toBe(structuredResult);
+        expect(result.current.reportState.value).toBe(legacyResult);
       }
     });
+    expect(refreshCalls).toBe(0);
     expect(mockedInvoke.mock.calls.filter(([command]) => command === "get_intake_report")).toHaveLength(1);
 
     act(() => notifyWorkspaceRefreshed());
 
-    await waitFor(() => expect(refreshCalls).toBe(2));
+    await waitFor(() => expect(mockedInvoke.mock.calls.filter(([command]) => command === "get_intake_report")).toHaveLength(2));
+    expect(refreshCalls).toBe(0);
     expect(result.current.reportState.status).toBe("ready");
-    if (result.current.reportState.status === "ready") {
-      expect(result.current.reportState.value).toBe(structuredResult);
-      expect("files" in result.current.reportState.value).toBe(true);
-    }
-    expect(mockedInvoke.mock.calls.filter(([command]) => command === "get_intake_report")).toHaveLength(1);
 
     act(() => eventMock.listener?.({
       payload: {
@@ -110,9 +104,13 @@ describe("useIntakeWorkflow background refresh", () => {
       },
     }));
     expect(result.current.progress).toEqual(expect.objectContaining({ completed: 7, total: 20 }));
-
-    act(() => resolveBackground?.(structuredResult));
-    await waitFor(() => expect(result.current.state.status).toBe("closed"));
-    expect(result.current.progress).toBeNull();
   });
+
+  it("explicit Re-check invokes structured validation", async () => {
+    const { result } = renderHook(() => useIntakeWorkflow({ validationAvailable: true, clientId: "client", projectId: "project" }));
+    await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("get_intake_report", { request: { clientId: "client", projectId: "project" } }));
+    act(() => result.current.recheck());
+    await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("refresh_client_files_validation", { request: { clientId: "client", projectId: "project" } }));
+  });
+
 });

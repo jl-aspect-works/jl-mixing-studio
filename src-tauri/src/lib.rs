@@ -163,7 +163,22 @@ fn execute_managed_client_import(
     app: tauri::AppHandle,
     request: ManagedImportRequest,
 ) -> ManagedOperationResult {
-    managed_client_files::execute_import(&app, request)
+    let event_app = app.clone();
+    let client_id = request.client_id.clone();
+    let project_id = request.project_id.clone();
+    managed_client_files::execute_import_with_progress(&app, request, move |progress| {
+        let _ = event_app.emit(
+            "managed-import-progress",
+            serde_json::json!({
+                "clientId": &client_id,
+                "projectId": &project_id,
+                "phase": progress.phase,
+                "completed": progress.completed,
+                "total": progress.total,
+                "active": progress.active,
+            }),
+        );
+    })
 }
 
 #[tauri::command]

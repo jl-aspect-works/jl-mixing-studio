@@ -60,6 +60,7 @@ export function IntakeView({ client, project, reportState, actionError, validati
   };
 
   const managedCompleted = () => {
+    setManagedMode(null);
     setBrowserVersion((value) => value + 1);
     setSelectedFile(null);
     setSelectedPaths([]);

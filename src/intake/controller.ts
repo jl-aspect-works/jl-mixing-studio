@@ -142,31 +142,19 @@ export function useIntakeWorkflow({
     }
 
     const request: IntakeRequest = { clientId, projectId };
-    let cancelled = false;
-    const primeReportThenRefresh = async () => {
-      await loadReport(request);
-      if (!cancelled && validationAvailable) {
-        void refreshClientFiles(request, false, true);
-      }
-    };
-    void primeReportThenRefresh();
+    void loadReport(request);
     return () => {
-      cancelled = true;
       reportRequestSequence.current += 1;
     };
-  }, [clientId, projectId, validationAvailable, loadReport, refreshClientFiles]);
+  }, [clientId, projectId, loadReport]);
 
   useEffect(() => {
     if (!clientId || !projectId) return;
     const request: IntakeRequest = { clientId, projectId };
     return addWorkspaceRefreshListener(() => {
-      if (validationAvailable) {
-        void refreshClientFiles(request, false, true);
-      } else {
-        void loadReport(request, false);
-      }
+      void loadReport(request, false);
     });
-  }, [clientId, projectId, validationAvailable, loadReport, refreshClientFiles]);
+  }, [clientId, projectId, loadReport]);
 
   const reload = () => {
     const request = currentRequest();
