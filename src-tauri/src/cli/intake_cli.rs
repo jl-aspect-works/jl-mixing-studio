@@ -44,20 +44,6 @@ pub fn preflight_intake_validation(
     )
 }
 
-pub fn run_intake_validation(
-    home: &Path,
-    project_directory: &Path,
-    request: IntakeRequest,
-) -> IntakeOperationResult {
-    run_intake_operation(
-        home,
-        project_directory,
-        request,
-        IntakeOperation::Run,
-        &SystemProcessRunner,
-    )
-}
-
 pub fn run_intake_validation_with_progress<F>(
     home: &Path,
     project_directory: &Path,
@@ -84,27 +70,6 @@ where
 /// Refresh Client Files using Automation's cached structured validation contract. The same
 /// Automation response may also carry the additive Audio Prep status/provenance section; keeping
 /// one request avoids duplicate validation scans when Studio needs both working surfaces.
-pub fn refresh_client_files_validation(
-    home: &Path,
-    project_directory: &Path,
-    request: IntakeRequest,
-) -> IntakeOperationResult {
-    let runner = SystemProcessRunner;
-    if !supports_client_files_validation(home, &runner) {
-        return blocked_intake_operation(
-            IntakeOperationCode::Rejected,
-            "JL Mixing Automation does not advertise the incremental structured intake capabilities required by Client Files",
-        );
-    }
-    verify_structured_refresh(run_intake_operation(
-        home,
-        project_directory,
-        request,
-        IntakeOperation::Run,
-        &runner,
-    ))
-}
-
 pub fn refresh_client_files_validation_with_progress<F>(
     home: &Path,
     project_directory: &Path,
@@ -214,7 +179,7 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
 ) -> IntakeOperationResult {
     let request = match validate_operation_request(home, request, runner) {
         Ok(request) => request,
-        Err(result) => return result,
+        Err(result) => return *result,
     };
 
     let arguments = intake_arguments(project_directory, operation, false);
@@ -248,7 +213,7 @@ where
     let runner = SystemProcessRunner;
     let request = match validate_operation_request(home, request, &runner) {
         Ok(request) => request,
-        Err(result) => return result,
+        Err(result) => return *result,
     };
     let arguments = intake_arguments(project_directory, IntakeOperation::Run, true);
     match invoke_intake_with_progress(home, &arguments, on_progress) {
@@ -267,28 +232,32 @@ fn validate_operation_request<R: ProcessRunner>(
     home: &Path,
     request: IntakeRequest,
     runner: &R,
-) -> Result<IntakeRequest, IntakeOperationResult> {
-    let request = normalize_intake_request(request)
-        .map_err(|message| blocked_intake_operation(IntakeOperationCode::InvalidInput, &message))?;
+) -> Result<IntakeRequest, Box<IntakeOperationResult>> {
+    let request = normalize_intake_request(request).map_err(|message| {
+        Box::new(blocked_intake_operation(
+            IntakeOperationCode::InvalidInput,
+            &message,
+        ))
+    })?;
 
     let version = super::check_version_with_runner(home, runner);
     if !version.available {
-        return Err(blocked_intake_operation(
+        return Err(Box::new(blocked_intake_operation(
             IntakeOperationCode::AutomationUnavailable,
             &version.message,
-        ));
+        )));
     }
     if !version.supported {
-        return Err(blocked_intake_operation(
+        return Err(Box::new(blocked_intake_operation(
             IntakeOperationCode::UnsupportedVersion,
             &version.message,
-        ));
+        )));
     }
     if !version.intake_validation_supported {
-        return Err(blocked_intake_operation(
+        return Err(Box::new(blocked_intake_operation(
             IntakeOperationCode::Rejected,
             "JL Mixing Automation does not advertise the intake.validate report capability required by Studio",
-        ));
+        )));
     }
     Ok(request)
 }
