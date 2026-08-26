@@ -1,0 +1,37 @@
+name: Fix UI copy test #299
+
+on:
+  push:
+    branches:
+      - fix/299-ui-copy-polish
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/299-ui-copy-polish
+      - name: Update stale copy assertion
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('src/App.intake.test.tsx')
+          text = path.read_text()
+          old = 'expect(screen.getByText(/client’s supplied source material is preserved here unchanged/i)).toBeInTheDocument();'
+          new = 'expect(screen.getByText(/client’s files stay read-only here/i)).toBeInTheDocument();'
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one stale assertion, found {text.count(old)}')
+          path.write_text(text.replace(old, new))
+          PY
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/App.intake.test.tsx
+          git commit -m 'Update Client Files copy assertion'
+          git push origin HEAD:fix/299-ui-copy-polish
