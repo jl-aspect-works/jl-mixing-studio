@@ -6,7 +6,10 @@ export function ValidationProgress({ progress }: { progress: IntakeValidationPro
   const scanning = progress.phase === "scanning" || total === null;
   const finalizing = progress.phase === "finalizing" || progress.phase === "complete";
   const completed = total === null ? 0 : Math.min(progress.completed, total);
-  const active = progress.active.map((path) => path.split(/[\\/]/).at(-1) ?? path);
+  const active = progress.active.map((path) => {
+    const parts = path.split(/[\\/]/);
+    return parts[parts.length - 1] ?? path;
+  });
 
   const label = scanning
     ? "Scanning files…"
