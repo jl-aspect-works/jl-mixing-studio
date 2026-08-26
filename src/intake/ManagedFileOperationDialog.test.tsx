@@ -61,7 +61,7 @@ describe("ManagedFileOperationDialog", () => {
     mocked(executeManagedImport).mockResolvedValue(success);
   });
 
-  it("shows one row per source file with import and independent destination decisions", async () => {
+  it("moves from review into post-import validation after executing selected file decisions", async () => {
     const completed = vi.fn();
     render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" onClose={vi.fn()} onCompleted={completed} />);
 
@@ -96,6 +96,7 @@ describe("ManagedFileOperationDialog", () => {
       selectedRelativePaths: ["vocal.wav"],
     })));
     expect(await screen.findByText("Checking imported files…")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(completed).toHaveBeenCalledOnce();
   });
 
@@ -113,10 +114,7 @@ describe("ManagedFileOperationDialog", () => {
     expect(screen.getByRole("button", { name: "Import Files" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Import Files" }));
 
-    await waitFor(() => expect(executeManagedImport).toHaveBeenCalledWith(expect.objectContaining({
-      selectedRelativePaths: ["bass.wav"],
-      decisions: {},
-    })));
+    await waitFor(() => expect(executeManagedImport).toHaveBeenCalledWith(expect.objectContaining({ selectedRelativePaths: ["bass.wav"], decisions: {} })));
   });
 
   it("supports Add All and Skip All while preserving per-file choices", async () => {
@@ -126,13 +124,11 @@ describe("ManagedFileOperationDialog", () => {
     render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" onClose={vi.fn()} onCompleted={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Files/ }));
     await screen.findByRole("table");
-
     fireEvent.click(screen.getByRole("button", { name: "Skip All" }));
     expect(screen.getByLabelText("Import selection for vocal.wav")).toHaveValue("skip");
     expect(screen.getByLabelText("Import selection for bass.wav")).toHaveValue("skip");
     expect(screen.getByText("No files are selected for import. Choose Add for at least one file to continue.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Import Files" })).toBeDisabled();
-
     fireEvent.click(screen.getByRole("button", { name: "Add All" }));
     expect(screen.getByLabelText("Import selection for vocal.wav")).toHaveValue("add");
     expect(screen.getByLabelText("Import selection for bass.wav")).toHaveValue("add");
