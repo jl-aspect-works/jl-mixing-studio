@@ -3,13 +3,17 @@ import { IntakeReportContent } from "../AppViews";
 import type { IntakeWorkflowState } from "../AppWorkflowModels";
 import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
+import type { IntakeValidationProgress } from "./models";
+import { ValidationProgress } from "./ValidationProgress";
 
 export function IntakeDialog({
   state,
+  progress,
   onConfirm,
   onClose,
 }: {
   state: Exclude<IntakeWorkflowState, { status: "closed" } | { status: "preflighting" }>;
+  progress: IntakeValidationProgress | null;
   onConfirm: () => void;
   onClose: () => void;
 }) {
@@ -26,6 +30,7 @@ export function IntakeDialog({
         {state.status === "uncertain" ? <><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.intake.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></> : <>
           <p className="dialog-intro">{productCopy.intake.previewIntroPrefix} <code>00_Admin/Intake_Report.md</code>. {productCopy.intake.previewIntroSuffix}</p>
           <IntakeReportContent report={state.preview} compact />
+          {pending && progress && <ValidationProgress progress={progress} />}
           <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button><button ref={confirmButton} type="button" onClick={onConfirm} disabled={pending} aria-busy={pending}><ActionIcon name="refresh" />{pending ? productCopy.intake.updating : productCopy.intake.update}</button></div>
         </>}
       </section>

@@ -3,9 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { notifyWorkspaceRefreshed } from "../app/workspaceRefreshEvents";
 import type { IntakeOperationResult, IntakeReport } from "../types";
+import type { IntakeValidationProgress } from "./models";
 import { useIntakeWorkflow } from "./controller";
 
+const eventMock = vi.hoisted(() => ({
+  listener: null as ((event: { payload: IntakeValidationProgress }) => void) | null,
+}));
+
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: vi.fn(async (_name: string, listener: (event: { payload: IntakeValidationProgress }) => void) => {
+    eventMock.listener = listener;
+    return () => { eventMock.listener = null; };
+  }),
+}));
 const mockedInvoke = vi.mocked(invoke);
 
 const report: IntakeReport = {
@@ -43,7 +54,10 @@ const structuredResult = {
 } as IntakeOperationResult & { files: Array<{ relativePath: string; isAudio: boolean; status: string }> };
 
 describe("useIntakeWorkflow background refresh", () => {
-  beforeEach(() => mockedInvoke.mockReset());
+  beforeEach(() => {
+    mockedInvoke.mockReset();
+    eventMock.listener = null;
+  });
   afterEach(() => vi.restoreAllMocks());
 
   it("loads saved validation before structured refresh and keeps structured data visible during background refresh", async () => {
@@ -85,7 +99,20 @@ describe("useIntakeWorkflow background refresh", () => {
     }
     expect(mockedInvoke.mock.calls.filter(([command]) => command === "get_intake_report")).toHaveLength(1);
 
+    act(() => eventMock.listener?.({
+      payload: {
+        clientId: "acme",
+        projectId: "blue-sky",
+        phase: "validating",
+        completed: 7,
+        total: 20,
+        active: ["Kick.wav", "Snare.wav"],
+      },
+    }));
+    expect(result.current.progress).toEqual(expect.objectContaining({ completed: 7, total: 20 }));
+
     act(() => resolveBackground?.(structuredResult));
     await waitFor(() => expect(result.current.state.status).toBe("closed"));
+    expect(result.current.progress).toBeNull();
   });
 });

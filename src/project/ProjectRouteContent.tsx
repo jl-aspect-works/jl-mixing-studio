@@ -1,5 +1,6 @@
 import type { ClientSummary, DerivedTask, ProjectSummary, RevisionSummary } from "../types";
 import type { IntakeReportState } from "../AppShellViews";
+import type { IntakeValidationProgress } from "../intake/models";
 import { IntakeView } from "../intake/IntakeViews";
 import { AudioPrepView } from "../audioPrep/AudioPrepView";
 import { ReferencesView } from "../references/ReferencesView";
@@ -11,7 +12,7 @@ import type { ProjectShellView } from "./ProjectView";
 
 export interface ProjectRouteContentProps {
   view: ProjectShellView; client: ClientSummary; project: ProjectSummary; workspacePath: string; projectTasks: DerivedTask[]; loading: boolean;
-  intakeReport: IntakeReportState; intakeActionError: string | null; intakeValidationAvailable: boolean; intakeValidationHelp: string; intakeLoading: boolean;
+  intakeReport: IntakeReportState; intakeActionError: string | null; intakeValidationAvailable: boolean; intakeValidationHelp: string; intakeLoading: boolean; intakeProgress: IntakeValidationProgress | null;
   revisionActionError: string | null; revisionCreationAvailable: boolean; revisionCreationHelp: string; revisionApprovalAvailable: boolean; revisionApprovalHelp: string;
   deliveryActionError: string | null; deliveryCreationAvailable: boolean; deliveryCreationHelp: string; deliveryLoading: boolean;
   onProjects: () => void; onRefresh: () => void; onIntakeRefresh: () => void; onStructuredValidationRefresh: () => void; onSelectView: (view: ProjectShellView) => void; onOpenIntake: () => void; onRecheckIntake: () => void; onOpenRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onCreateDelivery: () => void;
@@ -21,7 +22,7 @@ export function ProjectRouteContent(p: ProjectRouteContentProps) {
   const common = { onProjects: p.onProjects, onOverview: () => p.onSelectView("overview"), onSelectView: p.onSelectView };
 
   if (p.view === "intake") {
-    return <IntakeView client={p.client} project={p.project} reportState={p.intakeReport} actionError={p.intakeActionError} validationAvailable={p.intakeValidationAvailable} validationHelp={p.intakeValidationHelp} loading={p.intakeLoading} onRecheck={p.onRecheckIntake} onRefresh={p.onIntakeRefresh} {...common} />;
+    return <IntakeView client={p.client} project={p.project} reportState={p.intakeReport} actionError={p.intakeActionError} validationAvailable={p.intakeValidationAvailable} validationHelp={p.intakeValidationHelp} loading={p.intakeLoading} progress={p.intakeProgress} onRecheck={p.onRecheckIntake} onRefresh={p.onIntakeRefresh} {...common} />;
   }
   if (p.view === "audioPrep") {
     return <AudioPrepView client={p.client} project={p.project} reportState={p.intakeReport} onValidationRefresh={p.onStructuredValidationRefresh} {...common} />;

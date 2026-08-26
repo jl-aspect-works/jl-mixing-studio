@@ -1,15 +1,21 @@
 use std::path::Path;
 
+#[path = "../intake_progress.rs"]
+mod intake_progress;
+
 use crate::automation_api::{
-    invoke_api, resolve_command, ApiCallError, ApiStatus, ProcessRunner, SystemProcessRunner,
-    AUTOMATION_EXECUTABLE,
+    invoke_api, resolve_command, ApiCallError, ApiError, ApiStatus, ProcessRunner,
+    SystemProcessRunner, AUTOMATION_EXECUTABLE,
 };
 use crate::intake as intake_report;
 use crate::intake::IntakeReportError;
 use crate::models::{IntakeOperationCode, IntakeOperationResult, IntakeRequest};
+use intake_progress::invoke_intake_with_progress;
+pub(crate) use intake_progress::IntakeProgressEvent;
 
 const INCREMENTAL_INTAKE_CAPABILITY: &str = "intake.validate.incremental";
 const STRUCTURED_INTAKE_CAPABILITY: &str = "intake.validate.structured";
+const PROGRESS_INTAKE_CAPABILITY: &str = "intake.validate.progress";
 
 pub fn read_intake_report(
     project_directory: &Path,
@@ -38,28 +44,41 @@ pub fn preflight_intake_validation(
     )
 }
 
-pub fn run_intake_validation(
+pub fn run_intake_validation_with_progress<F>(
     home: &Path,
     project_directory: &Path,
     request: IntakeRequest,
-) -> IntakeOperationResult {
-    run_intake_operation(
-        home,
-        project_directory,
-        request,
-        IntakeOperation::Run,
-        &SystemProcessRunner,
-    )
+    on_progress: F,
+) -> IntakeOperationResult
+where
+    F: FnMut(IntakeProgressEvent) + Send + 'static,
+{
+    let runner = SystemProcessRunner;
+    if supports_intake_progress(home, &runner) {
+        run_intake_operation_streaming(home, project_directory, request, on_progress)
+    } else {
+        run_intake_operation(
+            home,
+            project_directory,
+            request,
+            IntakeOperation::Run,
+            &runner,
+        )
+    }
 }
 
 /// Refresh Client Files using Automation's cached structured validation contract. The same
 /// Automation response may also carry the additive Audio Prep status/provenance section; keeping
 /// one request avoids duplicate validation scans when Studio needs both working surfaces.
-pub fn refresh_client_files_validation(
+pub fn refresh_client_files_validation_with_progress<F>(
     home: &Path,
     project_directory: &Path,
     request: IntakeRequest,
-) -> IntakeOperationResult {
+    on_progress: F,
+) -> IntakeOperationResult
+where
+    F: FnMut(IntakeProgressEvent) + Send + 'static,
+{
     let runner = SystemProcessRunner;
     if !supports_client_files_validation(home, &runner) {
         return blocked_intake_operation(
@@ -67,13 +86,21 @@ pub fn refresh_client_files_validation(
             "JL Mixing Automation does not advertise the incremental structured intake capabilities required by Client Files",
         );
     }
-    let result = run_intake_operation(
-        home,
-        project_directory,
-        request,
-        IntakeOperation::Run,
-        &runner,
-    );
+    let result = if supports_intake_progress(home, &runner) {
+        run_intake_operation_streaming(home, project_directory, request, on_progress)
+    } else {
+        run_intake_operation(
+            home,
+            project_directory,
+            request,
+            IntakeOperation::Run,
+            &runner,
+        )
+    };
+    verify_structured_refresh(result)
+}
+
+fn verify_structured_refresh(result: IntakeOperationResult) -> IntakeOperationResult {
     if result.ok
         && result.files.is_empty()
         && result
@@ -89,32 +116,40 @@ pub fn refresh_client_files_validation(
     result
 }
 
-fn supports_client_files_validation<R: ProcessRunner>(home: &Path, runner: &R) -> bool {
-    let Some(executable) = resolve_command(home, AUTOMATION_EXECUTABLE) else {
-        return false;
-    };
+fn advertised_capabilities<R: ProcessRunner>(home: &Path, runner: &R) -> Option<Vec<String>> {
+    let executable = resolve_command(home, AUTOMATION_EXECUTABLE)?;
     let arguments = vec!["system-info".to_owned(), "--json".to_owned()];
-    let Ok(output) = runner.run(&executable, &arguments, None) else {
-        return false;
-    };
+    let output = runner.run(&executable, &arguments, None).ok()?;
     if !output.success {
-        return false;
+        return None;
     }
-    let Ok(document) = serde_json::from_str::<serde_json::Value>(output.stdout.trim()) else {
+    let document = serde_json::from_str::<serde_json::Value>(output.stdout.trim()).ok()?;
+    if document.get("api_version").and_then(|value| value.as_str()) != Some("1.0") {
+        return None;
+    }
+    document
+        .get("capabilities")?
+        .as_array()?
+        .iter()
+        .filter_map(|value| value.as_str().map(str::to_owned))
+        .collect::<Vec<_>>()
+        .into()
+}
+
+fn supports_client_files_validation<R: ProcessRunner>(home: &Path, runner: &R) -> bool {
+    let Some(capabilities) = advertised_capabilities(home, runner) else {
         return false;
     };
-    let Some(capabilities) = document
-        .get("capabilities")
-        .and_then(|value| value.as_array())
-    else {
-        return false;
-    };
-    let has = |capability: &str| {
+    let has = |capability: &str| capabilities.iter().any(|value| value == capability);
+    has(INCREMENTAL_INTAKE_CAPABILITY) && has(STRUCTURED_INTAKE_CAPABILITY)
+}
+
+fn supports_intake_progress<R: ProcessRunner>(home: &Path, runner: &R) -> bool {
+    advertised_capabilities(home, runner).is_some_and(|capabilities| {
         capabilities
             .iter()
-            .any(|value| value.as_str() == Some(capability))
-    };
-    has(INCREMENTAL_INTAKE_CAPABILITY) && has(STRUCTURED_INTAKE_CAPABILITY)
+            .any(|value| value == PROGRESS_INTAKE_CAPABILITY)
+    })
 }
 
 pub fn blocked_intake_operation(code: IntakeOperationCode, message: &str) -> IntakeOperationResult {
@@ -142,31 +177,12 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
     operation: IntakeOperation,
     runner: &R,
 ) -> IntakeOperationResult {
-    let request = match normalize_intake_request(request) {
+    let request = match validate_operation_request(home, request, runner) {
         Ok(request) => request,
-        Err(message) => {
-            return blocked_intake_operation(IntakeOperationCode::InvalidInput, &message)
-        }
+        Err(result) => return *result,
     };
 
-    let version = super::check_version_with_runner(home, runner);
-    if !version.available {
-        return blocked_intake_operation(
-            IntakeOperationCode::AutomationUnavailable,
-            &version.message,
-        );
-    }
-    if !version.supported {
-        return blocked_intake_operation(IntakeOperationCode::UnsupportedVersion, &version.message);
-    }
-    if !version.intake_validation_supported {
-        return blocked_intake_operation(
-            IntakeOperationCode::Rejected,
-            "JL Mixing Automation does not advertise the intake.validate report capability required by Studio",
-        );
-    }
-
-    let arguments = intake_arguments(project_directory, operation);
+    let arguments = intake_arguments(project_directory, operation, false);
     match invoke_api(
         home,
         "intake.validate",
@@ -174,112 +190,182 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
         Some(project_directory),
         runner,
     ) {
-        Ok(response) => {
-            let completed_with_findings = response.status == ApiStatus::Blocked
-                && response
-                    .errors
-                    .first()
-                    .is_some_and(|error| error.code == "INTAKE_BLOCKING_FINDINGS");
-            let completed = matches!(
-                (operation, response.status),
-                (IntakeOperation::Preflight, ApiStatus::Planned)
-                    | (IntakeOperation::Run, ApiStatus::Success)
-            ) || completed_with_findings;
+        Ok(response) => finish_intake_response(
+            operation,
+            response.status,
+            response.data,
+            response.errors,
+            &request,
+        ),
+        Err(error) => intake_api_error(operation, error),
+    }
+}
 
-            if !completed {
-                let message = response
-                    .errors
-                    .first()
-                    .map(|error| error.message.clone())
-                    .unwrap_or_else(|| {
-                        format!(
-                            "JL Mixing Automation returned unexpected status {:?} for intake.validate",
-                            response.status
-                        )
-                    });
-                return blocked_intake_operation(IntakeOperationCode::Rejected, &message);
-            }
+fn run_intake_operation_streaming<F>(
+    home: &Path,
+    project_directory: &Path,
+    request: IntakeRequest,
+    on_progress: F,
+) -> IntakeOperationResult
+where
+    F: FnMut(IntakeProgressEvent) + Send + 'static,
+{
+    let runner = SystemProcessRunner;
+    let request = match validate_operation_request(home, request, &runner) {
+        Ok(request) => request,
+        Err(result) => return *result,
+    };
+    let arguments = intake_arguments(project_directory, IntakeOperation::Run, true);
+    match invoke_intake_with_progress(home, &arguments, on_progress) {
+        Ok(response) => finish_intake_response(
+            IntakeOperation::Run,
+            response.status,
+            response.data,
+            response.errors,
+            &request,
+        ),
+        Err(error) => intake_api_error(IntakeOperation::Run, error),
+    }
+}
 
-            let Some(report_markdown) = response
-                .data
-                .get("report_markdown")
-                .and_then(|value| value.as_str())
-            else {
+fn validate_operation_request<R: ProcessRunner>(
+    home: &Path,
+    request: IntakeRequest,
+    runner: &R,
+) -> Result<IntakeRequest, Box<IntakeOperationResult>> {
+    let request = normalize_intake_request(request).map_err(|message| {
+        Box::new(blocked_intake_operation(
+            IntakeOperationCode::InvalidInput,
+            &message,
+        ))
+    })?;
+
+    let version = super::check_version_with_runner(home, runner);
+    if !version.available {
+        return Err(Box::new(blocked_intake_operation(
+            IntakeOperationCode::AutomationUnavailable,
+            &version.message,
+        )));
+    }
+    if !version.supported {
+        return Err(Box::new(blocked_intake_operation(
+            IntakeOperationCode::UnsupportedVersion,
+            &version.message,
+        )));
+    }
+    if !version.intake_validation_supported {
+        return Err(Box::new(blocked_intake_operation(
+            IntakeOperationCode::Rejected,
+            "JL Mixing Automation does not advertise the intake.validate report capability required by Studio",
+        )));
+    }
+    Ok(request)
+}
+
+fn finish_intake_response(
+    operation: IntakeOperation,
+    status: ApiStatus,
+    data: serde_json::Value,
+    errors: Vec<ApiError>,
+    request: &IntakeRequest,
+) -> IntakeOperationResult {
+    let completed_with_findings = status == ApiStatus::Blocked
+        && errors
+            .first()
+            .is_some_and(|error| error.code == "INTAKE_BLOCKING_FINDINGS");
+    let completed = matches!(
+        (operation, status),
+        (IntakeOperation::Preflight, ApiStatus::Planned)
+            | (IntakeOperation::Run, ApiStatus::Success)
+    ) || completed_with_findings;
+
+    if !completed {
+        let message = errors
+            .first()
+            .map(|error| error.message.clone())
+            .unwrap_or_else(|| {
+                format!(
+                    "JL Mixing Automation returned unexpected status {:?} for intake.validate",
+                    status
+                )
+            });
+        return blocked_intake_operation(IntakeOperationCode::Rejected, &message);
+    }
+
+    let Some(report_markdown) = data.get("report_markdown").and_then(|value| value.as_str()) else {
+        return unverifiable_intake_result(operation);
+    };
+
+    let structured_files = data
+        .get("files")
+        .and_then(|value| value.as_array())
+        .cloned()
+        .unwrap_or_default();
+
+    let (audio_prep_available, audio_prep_files) = match data.get("audio_prep") {
+        None => (false, Vec::new()),
+        Some(audio_prep) => {
+            let Some(files) = audio_prep.get("files").and_then(|value| value.as_array()) else {
                 return unverifiable_intake_result(operation);
             };
-
-            let structured_files = response
-                .data
-                .get("files")
-                .and_then(|value| value.as_array())
-                .cloned()
-                .unwrap_or_default();
-
-            let (audio_prep_available, audio_prep_files) = match response.data.get("audio_prep") {
-                None => (false, Vec::new()),
-                Some(audio_prep) => {
-                    let Some(files) = audio_prep.get("files").and_then(|value| value.as_array())
-                    else {
-                        return unverifiable_intake_result(operation);
-                    };
-                    (true, files.clone())
-                }
-            };
-
-            let parsed = intake_report::parse_report(report_markdown, &request);
-            let mut result = report_result(parsed, matches!(operation, IntakeOperation::Preflight));
-            let Some(report) = result.report.as_ref() else {
-                return unverifiable_intake_result(operation);
-            };
-
-            let returned_project_id = response
-                .data
-                .get("project")
-                .and_then(|value| value.get("id"))
-                .and_then(|value| value.as_str());
-            let summary = response.data.get("summary");
-            let files_discovered = summary
-                .and_then(|value| value.get("files_discovered"))
-                .and_then(|value| value.as_u64());
-            let blocking_errors = summary
-                .and_then(|value| value.get("blocking_errors"))
-                .and_then(|value| value.as_u64());
-            let warnings = summary
-                .and_then(|value| value.get("warnings"))
-                .and_then(|value| value.as_u64());
-
-            let blocking_matches = completed_with_findings == (report.blocking_errors > 0);
-            let summary_matches = returned_project_id == Some(request.project_id.as_str())
-                && files_discovered == Some(report.files_discovered as u64)
-                && blocking_errors == Some(report.blocking_errors as u64)
-                && warnings == Some(report.warnings as u64);
-
-            if !blocking_matches || !summary_matches {
-                return unverifiable_intake_result(operation);
-            }
-
-            result.files = structured_files;
-            result.audio_prep_files = audio_prep_files;
-            result.audio_prep_available = audio_prep_available;
-            if matches!(operation, IntakeOperation::Run)
-                && result.code == IntakeOperationCode::Validated
-            {
-                result.message = "Intake validation completed and the report was verified.".into();
-            }
-            result
+            (true, files.clone())
         }
-        Err(ApiCallError::Unavailable) => blocked_intake_operation(
+    };
+
+    let parsed = intake_report::parse_report(report_markdown, request);
+    let mut result = report_result(parsed, matches!(operation, IntakeOperation::Preflight));
+    let Some(report) = result.report.as_ref() else {
+        return unverifiable_intake_result(operation);
+    };
+
+    let returned_project_id = data
+        .get("project")
+        .and_then(|value| value.get("id"))
+        .and_then(|value| value.as_str());
+    let summary = data.get("summary");
+    let files_discovered = summary
+        .and_then(|value| value.get("files_discovered"))
+        .and_then(|value| value.as_u64());
+    let blocking_errors = summary
+        .and_then(|value| value.get("blocking_errors"))
+        .and_then(|value| value.as_u64());
+    let warnings = summary
+        .and_then(|value| value.get("warnings"))
+        .and_then(|value| value.as_u64());
+
+    let blocking_matches = completed_with_findings == (report.blocking_errors > 0);
+    let summary_matches = returned_project_id == Some(request.project_id.as_str())
+        && files_discovered == Some(report.files_discovered as u64)
+        && blocking_errors == Some(report.blocking_errors as u64)
+        && warnings == Some(report.warnings as u64);
+
+    if !blocking_matches || !summary_matches {
+        return unverifiable_intake_result(operation);
+    }
+
+    result.files = structured_files;
+    result.audio_prep_files = audio_prep_files;
+    result.audio_prep_available = audio_prep_available;
+    if matches!(operation, IntakeOperation::Run) && result.code == IntakeOperationCode::Validated {
+        result.message = "Intake validation completed and the report was verified.".into();
+    }
+    result
+}
+
+fn intake_api_error(operation: IntakeOperation, error: ApiCallError) -> IntakeOperationResult {
+    match error {
+        ApiCallError::Unavailable => blocked_intake_operation(
             IntakeOperationCode::AutomationUnavailable,
             "JL Mixing Automation was not found in its default install location or on PATH",
         ),
-        Err(ApiCallError::IncompatibleVersion(version)) => blocked_intake_operation(
+        ApiCallError::IncompatibleVersion(version) => blocked_intake_operation(
             IntakeOperationCode::UnsupportedVersion,
             &format!(
                 "JL Mixing Automation returned API {}; Studio requires Automation API 1.0",
                 version
             ),
         ),
-        Err(error) => blocked_intake_operation(
+        error => blocked_intake_operation(
             match operation {
                 IntakeOperation::Preflight => IntakeOperationCode::Failed,
                 IntakeOperation::Run => IntakeOperationCode::Uncertain,
@@ -289,7 +375,11 @@ pub(super) fn run_intake_operation<R: ProcessRunner>(
     }
 }
 
-fn intake_arguments(project_directory: &Path, operation: IntakeOperation) -> Vec<String> {
+fn intake_arguments(
+    project_directory: &Path,
+    operation: IntakeOperation,
+    progress: bool,
+) -> Vec<String> {
     let mut arguments = vec![
         "intake".into(),
         "validate".into(),
@@ -299,6 +389,9 @@ fn intake_arguments(project_directory: &Path, operation: IntakeOperation) -> Vec
     ];
     if matches!(operation, IntakeOperation::Preflight) {
         arguments.push("--dry-run".into());
+    }
+    if progress {
+        arguments.push("--progress=stderr-json".into());
     }
     arguments
 }

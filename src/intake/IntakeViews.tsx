@@ -7,7 +7,9 @@ import type { ProjectShellView } from "../project/ProjectView";
 import { openProjectFile, projectFilePaths } from "../project/files/projectFileService";
 import { ClientFilesBrowser, type ClientFilesSelection, type IntakeValidationFile } from "./ClientFilesBrowser";
 import { ManagedFileOperationDialog, type ManagedFileOperationMode } from "./ManagedFileOperationDialog";
+import type { IntakeValidationProgress } from "./models";
 import { sourceRelativePathFromOriginalDelivery } from "./managedClientFilesService";
+import { ValidationProgress } from "./ValidationProgress";
 import "./ClientFilesLayout.css";
 
 export function IntakeReportContent({ report, compact = false }: { report: IntakeReport; compact?: boolean }) {
@@ -38,7 +40,7 @@ function ValidationSummary({ report, files }: { report: IntakeReport; files: Int
   </section>;
 }
 
-export function IntakeView({ client, project, reportState, actionError, validationAvailable, validationHelp, loading, onRecheck, onRefresh, onSelectView }: { client: ClientSummary; project: ProjectSummary; reportState: IntakeReportState; actionError: string | null; validationAvailable: boolean; validationHelp: string; loading: boolean; onProjects: () => void; onOverview: () => void; onRecheck: () => void; onRefresh: () => void; onSelectView: (view: ProjectShellView) => void; }) {
+export function IntakeView({ client, project, reportState, actionError, validationAvailable, validationHelp, loading, progress, onRecheck, onRefresh, onSelectView }: { client: ClientSummary; project: ProjectSummary; reportState: IntakeReportState; actionError: string | null; validationAvailable: boolean; validationHelp: string; loading: boolean; progress: IntakeValidationProgress | null; onProjects: () => void; onOverview: () => void; onRecheck: () => void; onRefresh: () => void; onSelectView: (view: ProjectShellView) => void; }) {
   const [folderActionError, setFolderActionError] = useState<string | null>(null);
   const [managedMode, setManagedMode] = useState<ManagedFileOperationMode | null>(null);
   const [selectedFile, setSelectedFile] = useState<ClientFilesSelection | null>(null);
@@ -73,6 +75,7 @@ export function IntakeView({ client, project, reportState, actionError, validati
     {folderActionError && <div className="notice error" role="alert">{folderActionError}</div>}
     {reportState.status === "error" && <section className="notice error" role="alert"><strong>Validation details unavailable</strong><span>{reportState.message}</span></section>}
     {result && !result.ok && <section className="notice error" role="alert"><strong>Validation details unavailable</strong><span>{result.message}</span></section>}
+    {loading && progress && <ValidationProgress progress={progress} />}
 
     <div className="client-files-summary-row">
       <section className="panel client-files-original-delivery" aria-labelledby="original-delivery-heading">
