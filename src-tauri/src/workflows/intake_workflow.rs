@@ -41,11 +41,14 @@ pub(crate) fn read_intake_report(
     cli::read_intake_report(&project_directory, request)
 }
 
-pub(crate) fn run_intake_operation(
+pub(crate) fn run_intake_operation<F>(
     app: &tauri::AppHandle,
     request: IntakeRequest,
-    operation: fn(&std::path::Path, &std::path::Path, IntakeRequest) -> IntakeOperationResult,
-) -> IntakeOperationResult {
+    operation: F,
+) -> IntakeOperationResult
+where
+    F: FnOnce(&std::path::Path, &std::path::Path, IntakeRequest) -> IntakeOperationResult,
+{
     let home = match resolve_home(app) {
         Ok(home) => home,
         Err(message) => {
