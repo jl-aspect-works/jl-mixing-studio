@@ -92,6 +92,7 @@ describe("ProjectsRouteV21", () => {
         return Promise.resolve({ ...editInfo, projectId, projectName: projectId === "night-drive" ? "Night Drive" : "Blue Sky", clientId: projectId === "night-drive" ? "north" : "acme" });
       }
       if (command === "update_project") return Promise.resolve({ ok: true, code: "updated", message: "Project settings were updated and verified." });
+      if (command === "refresh_client_files_validation") return Promise.resolve({ ok: true, code: "validated", message: "Validation refreshed." });
       return Promise.reject(new Error(`Unexpected command: ${command}`));
     });
   });
@@ -124,4 +125,26 @@ describe("ProjectsRouteV21", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open Project" }));
     expect(props.onSelectProject).toHaveBeenCalledWith("acme", "blue-sky");
   });
+
+  it("validation-relevant settings force validation", async () => {
+    render(<ProjectsRouteV21 {...props} />);
+    const edit = await screen.findByRole("button", { name: "Edit Project" });
+    await waitFor(() => expect(edit).toBeEnabled());
+    fireEvent.click(edit);
+    fireEvent.change(screen.getByLabelText("Sample Rate"), { target: { value: "96000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("refresh_client_files_validation", { request: { clientId: "acme", projectId: "blue-sky" } }));
+  });
+
+  it("metadata-only settings do not force validation", async () => {
+    render(<ProjectsRouteV21 {...props} />);
+    const edit = await screen.findByRole("button", { name: "Edit Project" });
+    await waitFor(() => expect(edit).toBeEnabled());
+    fireEvent.click(edit);
+    fireEvent.change(screen.getByLabelText("Artist"), { target: { value: "Updated Artist" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("update_project", expect.anything()));
+    expect(mockedInvoke).not.toHaveBeenCalledWith("refresh_client_files_validation", expect.anything());
+  });
+
 });

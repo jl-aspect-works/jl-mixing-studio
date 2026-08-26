@@ -10,8 +10,8 @@ use crate::automation_api::{
 use crate::intake as intake_report;
 use crate::intake::IntakeReportError;
 use crate::models::{IntakeOperationCode, IntakeOperationResult, IntakeRequest};
-use intake_progress::invoke_intake_with_progress;
-pub(crate) use intake_progress::IntakeProgressEvent;
+pub(crate) use intake_progress::invoke_with_progress;
+pub(crate) use intake_progress::{IntakeProgressEvent, StreamingAutomationResponse};
 
 const INCREMENTAL_INTAKE_CAPABILITY: &str = "intake.validate.incremental";
 const STRUCTURED_INTAKE_CAPABILITY: &str = "intake.validate.structured";
@@ -116,7 +116,10 @@ fn verify_structured_refresh(result: IntakeOperationResult) -> IntakeOperationRe
     result
 }
 
-fn advertised_capabilities<R: ProcessRunner>(home: &Path, runner: &R) -> Option<Vec<String>> {
+pub(crate) fn advertised_capabilities<R: ProcessRunner>(
+    home: &Path,
+    runner: &R,
+) -> Option<Vec<String>> {
     let executable = resolve_command(home, AUTOMATION_EXECUTABLE)?;
     let arguments = vec!["system-info".to_owned(), "--json".to_owned()];
     let output = runner.run(&executable, &arguments, None).ok()?;
@@ -216,7 +219,7 @@ where
         Err(result) => return *result,
     };
     let arguments = intake_arguments(project_directory, IntakeOperation::Run, true);
-    match invoke_intake_with_progress(home, &arguments, on_progress) {
+    match invoke_with_progress(home, &arguments, "intake.validate", on_progress) {
         Ok(response) => finish_intake_response(
             IntakeOperation::Run,
             response.status,

@@ -116,7 +116,8 @@ describe("project navigation performance", () => {
     const projectLink = await screen.findByRole("link", { name: "Blue Sky" });
     fireEvent.click(projectLink);
 
-    await waitFor(() => expect(validationCalls).toBe(1));
+    await screen.findByRole("navigation", { name: "Project navigation" });
+    expect(validationCalls).toBe(0);
     const callsAfterProjectOpen = validationCalls;
 
     let projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });

@@ -15,3 +15,12 @@ export type IntakeWorkflowState =
   | { status: "confirming"; preview: IntakeReport }
   | { status: "running"; preview: IntakeReport }
   | { status: "uncertain"; message: string };
+
+export interface ManagedImportProgress {
+  clientId: string;
+  projectId: string;
+  phase: "staging" | "importing" | "complete";
+  completed: number;
+  total: number | null;
+  active: string[];
+}

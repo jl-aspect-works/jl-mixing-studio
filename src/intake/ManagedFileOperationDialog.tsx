@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { ActionIcon } from "../components/ActionIcon";
+import type { ManagedImportProgress } from "./models";
 import {
   chooseManagedImportSources,
   executeAudioPrepReset,
@@ -65,6 +67,19 @@ export function ManagedFileOperationDialog({ clientId, projectId, mode, relative
   const [state, setState] = useState<DialogState>(mode === "import" ? { status: "source" } : { status: "planning" });
   const [decisions, setDecisions] = useState<Record<string, ManagedConflictDecision>>({});
   const [selections, setSelections] = useState<Record<string, ImportSelection>>({});
+  const [importProgress, setImportProgress] = useState<ManagedImportProgress | null>(null);
+
+  useEffect(() => {
+    if (mode !== "import") return;
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+    void listen<ManagedImportProgress>("managed-import-progress", ({ payload }) => {
+      if (!cancelled && payload.clientId === clientId && payload.projectId === projectId) setImportProgress(payload);
+    }).then((removeListener) => {
+      if (cancelled) removeListener(); else unlisten = removeListener;
+    }).catch(() => undefined);
+    return () => { cancelled = true; unlisten?.(); };
+  }, [clientId, projectId, mode]);
 
   const planReset = () => {
     setState({ status: "planning" });
@@ -154,6 +169,7 @@ export function ManagedFileOperationDialog({ clientId, projectId, mode, relative
     const activeDecisions = mode === "import"
       ? Object.fromEntries(activeConflicts.flatMap((item) => decisions[item.id] ? [[item.id, decisions[item.id]]] : []))
       : decisions;
+    setImportProgress(null);
     setState({ status: "executing", plan: review.plan, sourceKind: review.sourceKind, sources: review.sources });
     try {
       const result = mode === "import"
@@ -183,7 +199,7 @@ export function ManagedFileOperationDialog({ clientId, projectId, mode, relative
         {mode === "import" && <div className="managed-table-actions"><span>{selectedRelativePaths.length} of {review.plan.files.length} planned {review.plan.files.length === 1 ? "file" : "files"} selected.</span><div className="managed-apply-all"><span>Import selection:</span><button type="button" className="secondary" onClick={() => setAllSelections("add")} disabled={pending}>Add All</button><button type="button" className="secondary" onClick={() => setAllSelections("skip")} disabled={pending}>Skip All</button></div></div>}
         {mode === "import" && selectedRelativePaths.length === 0 ? <p className="managed-no-conflicts">No files are selected for import. Choose Add for at least one file to continue.</p> : activeConflicts.length === 0 ? <p className="managed-no-conflicts">No existing project files will be overwritten.</p> : <div className="managed-table-actions"><span>{conflictFileCount} {conflictFileCount === 1 ? "file has" : "files have"} {activeConflicts.length} destination {activeConflicts.length === 1 ? "conflict" : "conflicts"}. {unresolved.length} {unresolved.length === 1 ? "decision remains" : "decisions remain"}.</span>{activeConflicts.length > 1 && <div className="managed-apply-all"><span>Apply to selected conflicts:</span><button type="button" className="secondary" onClick={() => setAll("replace")} disabled={pending}>Replace All</button><button type="button" className="secondary" onClick={() => setAll("skip")} disabled={pending}>Skip All Conflicts</button></div>}</div>}
         <div className="managed-review-table-wrap"><table className={`managed-review-table ${mode === "import" ? "managed-review-table-import" : ""}`}><thead><tr><th>File</th>{mode === "import" && <th>Import</th>}<th>Client Files</th><th>Audio Prep</th></tr></thead><tbody>{rows.map((row) => <tr key={row.sourcePath}><td><strong>{row.sourcePath}</strong></td>{mode === "import" && <td><select aria-label={`Import selection for ${row.sourcePath}`} value={selections[row.sourcePath] ?? "add"} disabled={pending} onChange={(event) => setSelection(row.sourcePath, event.target.value)}><option value="add">Add</option><option value="skip">Skip</option></select></td>}<td>{mode === "audioPrepReset" ? <span className="managed-action-static source">Source</span> : actionCell(row.original, "original")}</td><td>{actionCell(row.audio, "audio")}</td></tr>)}</tbody></table></div>
-        {state.status === "executing" && <div className="managed-executing" role="status"><span className="client-files-spinner" aria-hidden="true" />{mode === "import" ? "Importing client files…" : "Updating Audio Prep…"}</div>}
+        {state.status === "executing" && (mode === "import" && importProgress ? <div className="managed-operation-progress" role="status" aria-live="polite"><strong>{importProgress.phase === "staging" ? "Preparing files…" : `Importing ${Math.min(importProgress.completed, importProgress.total ?? importProgress.completed)} of ${importProgress.total ?? selectedRelativePaths.length} files`}</strong>{importProgress.phase === "staging" ? <progress aria-label="Preparing files for import" /> : <progress aria-label={`Imported ${importProgress.completed} of ${importProgress.total ?? selectedRelativePaths.length} files`} value={importProgress.completed} max={Math.max(importProgress.total ?? selectedRelativePaths.length, 1)} />}{importProgress.active.length > 0 && <small>Processing: {importProgress.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small>}</div> : <div className="managed-executing" role="status"><span className="client-files-spinner" aria-hidden="true" />{mode === "import" ? "Importing client files…" : "Updating Audio Prep…"}</div>)}
         <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{mode === "import" ? "Cancel Import" : "Cancel"}</button><button type="button" onClick={() => void execute()} disabled={pending || unresolved.length > 0 || (mode === "import" && selectedRelativePaths.length === 0)}><ActionIcon name="check" />{state.status === "executing" ? "Working…" : mode === "import" ? "Import Files" : "Copy to Audio Prep"}</button></div></>}
       {state.status === "success" && <><div className="managed-operation-success" role="status"><strong>{mode === "import" ? "Import complete" : "Audio Prep updated"}</strong><p>{(() => { const items = state.result.data.result?.items ?? []; const changed = items.filter((item) => item.result === "created" || item.result === "replaced").length; const operationSkipped = items.filter((item) => item.result === "skipped").length; const skipped = operationSkipped + (mode === "import" ? Object.values(selections).filter((value) => value === "skip").length : 0); return `${changed} ${changed === 1 ? "file operation" : "file operations"} completed${skipped ? ` · ${skipped} skipped` : ""}.`; })()}</p></div><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="check" />Done</button></div></>}
       {state.status === "error" && <><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">No additional changes will be made until you try again.</p><div className="dialog-actions">{mode === "import" && <button type="button" className="secondary" onClick={() => setState({ status: "source" })}><ActionIcon name="back" />Choose another source</button>}{mode === "audioPrepReset" && <button type="button" className="secondary" onClick={planReset}><ActionIcon name="refresh" />Try again</button>}<button type="button" onClick={onClose}><ActionIcon name="close" />Close</button></div></>}

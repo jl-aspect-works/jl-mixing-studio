@@ -6,11 +6,13 @@ use serde_json::Value;
 use tauri::AppHandle;
 
 use crate::automation_api::{invoke_api, ApiStatus, SystemProcessRunner};
+use crate::cli::{advertised_capabilities, invoke_with_progress, IntakeProgressEvent};
 use crate::workspace::find_validated_project_path;
 use crate::{resolve_home, resolve_workspace_root};
 
 const IMPORT_PLAN_OPERATION: &str = "client.files.import.plan";
 const IMPORT_EXECUTE_OPERATION: &str = "client.files.import.execute";
+const IMPORT_PROGRESS_CAPABILITY: &str = "client.files.import.progress";
 const RESET_PLAN_OPERATION: &str = "audio.prep.reset.plan";
 const RESET_EXECUTE_OPERATION: &str = "audio.prep.reset.execute";
 
@@ -113,6 +115,31 @@ fn call_api(
             data: Value::Object(Default::default()),
         },
     }
+}
+
+fn finish_streaming_response(
+    response: crate::cli::StreamingAutomationResponse,
+) -> ManagedOperationResult {
+    let ok = matches!(response.status, ApiStatus::Success | ApiStatus::Planned);
+    let message = response
+        .errors
+        .first()
+        .map(|error| error.message.clone())
+        .unwrap_or_default();
+    ManagedOperationResult {
+        ok,
+        status: status_name(response.status).into(),
+        message,
+        data: response.data,
+    }
+}
+
+fn supports_import_progress(home: &Path) -> bool {
+    advertised_capabilities(home, &SystemProcessRunner).is_some_and(|capabilities| {
+        capabilities
+            .iter()
+            .any(|value| value == IMPORT_PROGRESS_CAPABILITY)
+    })
 }
 
 fn import_arguments(request: &ManagedImportRequest, execute: bool) -> Result<Vec<String>, String> {
@@ -224,14 +251,39 @@ pub fn plan_import(app: &AppHandle, request: ManagedImportRequest) -> ManagedOpe
     }
 }
 
-pub fn execute_import(app: &AppHandle, request: ManagedImportRequest) -> ManagedOperationResult {
+pub fn execute_import_with_progress<F>(
+    app: &AppHandle,
+    request: ManagedImportRequest,
+    on_progress: F,
+) -> ManagedOperationResult
+where
+    F: FnMut(IntakeProgressEvent) + Send + 'static,
+{
     let project = match project_directory(app, &request.client_id, &request.project_id) {
         Ok(value) => value,
         Err(message) => return request_error(message),
     };
-    match import_arguments(&request, true) {
-        Ok(arguments) => call_api(app, &project, IMPORT_EXECUTE_OPERATION, arguments),
-        Err(message) => request_error(message),
+    let mut arguments = match import_arguments(&request, true) {
+        Ok(arguments) => arguments,
+        Err(message) => return request_error(message),
+    };
+    let home = match resolve_home(app) {
+        Ok(value) => value,
+        Err(message) => return request_error(message),
+    };
+    if !supports_import_progress(&home) {
+        return call_api(app, &project, IMPORT_EXECUTE_OPERATION, arguments);
+    }
+    arguments.push("--progress=stderr-json".into());
+    let arguments = with_project_argument(&project, arguments);
+    match invoke_with_progress(&home, &arguments, IMPORT_EXECUTE_OPERATION, on_progress) {
+        Ok(response) => finish_streaming_response(response),
+        Err(error) => ManagedOperationResult {
+            ok: false,
+            status: "error".into(),
+            message: error.message(),
+            data: Value::Object(Default::default()),
+        },
     }
 }
 

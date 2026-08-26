@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import type { ClientSummary, ProjectSummary, WorkspaceSnapshot } from "../types";
 import { ActionIcon } from "../components/ActionIcon";
 import { RouteIssues, WorkspaceContent, type ResourceState } from "../AppShellViews";
 import { copy as productCopy } from "../resources/copy";
+import { ValidationProgress } from "../intake/ValidationProgress";
+import type { IntakeOperationResult } from "../types";
+import type { IntakeValidationProgress } from "../intake/models";
 import "./ProjectsRouteV21.css";
 import "./ProjectUiPolish.css";
 
@@ -162,6 +166,8 @@ export function ProjectsRouteV21({
   const [editExpectedLastModifiedAt, setEditExpectedLastModifiedAt] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [validationProgress, setValidationProgress] = useState<IntakeValidationProgress | null>(null);
+
 
   const snapshot = workspace.status === "ready" ? workspace.value : null;
   const entries = useMemo<ProjectEntry[]>(() => snapshot
@@ -194,6 +200,16 @@ export function ProjectsRouteV21({
   }, [filteredEntries.map(entryKey).join("|"), selectedKey]);
 
   const selected = entries.find((entry) => entryKey(entry) === selectedKey) ?? null;
+
+  useEffect(() => {
+    if (!selected) return;
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+    void listen<IntakeValidationProgress>("intake-validation-progress", ({ payload }) => {
+      if (!cancelled && payload.clientId === selected.client.clientId && payload.projectId === selected.project.projectId) setValidationProgress(payload);
+    }).then((removeListener) => { if (cancelled) removeListener(); else unlisten = removeListener; }).catch(() => undefined);
+    return () => { cancelled = true; unlisten?.(); };
+  }, [selected?.client.clientId, selected?.project.projectId]);
 
   useEffect(() => {
     setEditing(false);
@@ -254,6 +270,7 @@ export function ProjectsRouteV21({
     if (form.requestedDeliverables.length === 0) { setSaveError("Select at least one requested deliverable."); return; }
     const bpm = form.bpm.trim() ? Number(form.bpm) : null;
     if (bpm !== null && (!Number.isFinite(bpm) || bpm <= 0)) { setSaveError("BPM must be a positive number or blank."); return; }
+    const validationRelevantChanged = editInfo.sampleRate !== form.sampleRate || editInfo.bitDepth !== form.bitDepth || editInfo.fileFormat !== form.fileFormat;
     setSaving(true);
     setSaveError(null);
     try {
@@ -284,6 +301,12 @@ export function ProjectsRouteV21({
       onSaveSuccess(result.message);
       onRefresh();
       setEditInfo(await invoke<ProjectEditInfo>("get_project_edit_info", { clientId: selected.client.clientId, projectId: selected.project.projectId }));
+      if (validationRelevantChanged) {
+        setValidationProgress({ clientId: selected.client.clientId, projectId: selected.project.projectId, phase: "scanning", completed: 0, total: null, active: [] });
+        const validation = await invoke<IntakeOperationResult>("refresh_client_files_validation", { request: { clientId: selected.client.clientId, projectId: selected.project.projectId } });
+        if (!validation.ok) setSaveError(`Project settings were saved, but validation could not be refreshed: ${validation.message}`);
+        setValidationProgress(null);
+      }
     } catch (error: unknown) {
       setSaveError(error instanceof Error ? error.message : String(error));
     } finally {
@@ -296,6 +319,7 @@ export function ProjectsRouteV21({
   ];
 
   return <div className="projects-v21-route">
+    {validationProgress && <ValidationProgress progress={validationProgress} />}
     <section className="directory-toolbar" aria-labelledby="project-directory-heading">
       <div><p className="kicker">{productCopy.clients.studioKicker}</p><h2 id="project-directory-heading">{entries.length} {entries.length === 1 ? productCopy.projects.singular : productCopy.projects.plural}</h2></div>
       <div className="directory-actions"><button type="button" className="secondary" onClick={onRefresh} disabled={loading}><ActionIcon name="refresh" />{loading ? productCopy.common.refreshing : productCopy.common.refresh}</button><button type="button" onClick={onNewProject} disabled={!projectCreationAvailable} aria-describedby="projects-new-project-help"><ActionIcon name="add" />{productCopy.clients.newProject}</button></div>
