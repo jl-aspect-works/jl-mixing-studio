@@ -52,6 +52,7 @@ use revision_lifecycle::{
 };
 #[cfg(test)]
 use std::{fs, path::Path};
+use tauri::Emitter;
 #[cfg(test)]
 use workflows::{
     list_delivery_entries, verify_delivery_artifacts, verify_delivery_creation,
@@ -194,9 +195,34 @@ fn preflight_intake_validation(
     run_intake_operation(&app, request, cli::preflight_intake_validation)
 }
 
+fn intake_progress_callback(
+    app: &tauri::AppHandle,
+    request: &IntakeRequest,
+) -> impl FnMut(cli::IntakeProgressEvent) + Send + 'static {
+    let event_app = app.clone();
+    let client_id = request.client_id.clone();
+    let project_id = request.project_id.clone();
+    move |progress| {
+        let _ = event_app.emit(
+            "intake-validation-progress",
+            serde_json::json!({
+                "clientId": &client_id,
+                "projectId": &project_id,
+                "phase": progress.phase,
+                "completed": progress.completed,
+                "total": progress.total,
+                "active": progress.active,
+            }),
+        );
+    }
+}
+
 #[tauri::command]
 fn run_intake_validation(app: tauri::AppHandle, request: IntakeRequest) -> IntakeOperationResult {
-    run_intake_operation(&app, request, cli::run_intake_validation)
+    let progress = intake_progress_callback(&app, &request);
+    run_intake_operation(&app, request, move |home, project_directory, request| {
+        cli::run_intake_validation_with_progress(home, project_directory, request, progress)
+    })
 }
 
 #[tauri::command]
@@ -204,7 +230,15 @@ fn refresh_client_files_validation(
     app: tauri::AppHandle,
     request: IntakeRequest,
 ) -> IntakeOperationResult {
-    run_intake_operation(&app, request, cli::refresh_client_files_validation)
+    let progress = intake_progress_callback(&app, &request);
+    run_intake_operation(&app, request, move |home, project_directory, request| {
+        cli::refresh_client_files_validation_with_progress(
+            home,
+            project_directory,
+            request,
+            progress,
+        )
+    })
 }
 
 #[tauri::command]
