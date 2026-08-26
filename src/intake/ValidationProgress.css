@@ -1,0 +1,34 @@
+.intake-validation-progress {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #d9dee8);
+  border-radius: 8px;
+  background: var(--surface-subtle, #f7f9fc);
+}
+
+.intake-validation-progress-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.intake-validation-progress-heading strong {
+  font-size: 0.82rem;
+}
+
+.intake-validation-progress-heading span,
+.intake-validation-progress small {
+  overflow: hidden;
+  color: var(--text-muted, #68758a);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intake-validation-progress progress {
+  width: 100%;
+  height: 8px;
+}
