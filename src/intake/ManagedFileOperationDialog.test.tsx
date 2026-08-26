@@ -95,7 +95,7 @@ describe("ManagedFileOperationDialog", () => {
       decisions: { "original:0": "replace", "audio:0": "skip" },
       selectedRelativePaths: ["vocal.wav"],
     })));
-    expect(await screen.findByText("Import complete")).toBeInTheDocument();
+    expect(await screen.findByText("Checking imported files…")).toBeInTheDocument();
     expect(completed).toHaveBeenCalledOnce();
   });
 
