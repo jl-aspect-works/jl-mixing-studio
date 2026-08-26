@@ -48,12 +48,12 @@ use delivery_legacy_testsupport::{
     parse_delivery_output, run_delivery_operation, DeliveryOperation, DELIVERY_EXECUTABLE,
 };
 pub use delivery_management::{delete_delivery_package, get_delivery_status};
+pub(crate) use intake::IntakeProgressEvent;
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
     refresh_client_files_validation, refresh_client_files_validation_with_progress,
     run_intake_validation, run_intake_validation_with_progress,
 };
-pub(crate) use intake::IntakeProgressEvent;
 #[cfg(test)]
 use intake::{run_intake_operation, IntakeOperation};
 pub use project::{blocked_project_operation, create_project, preflight_project_creation};
