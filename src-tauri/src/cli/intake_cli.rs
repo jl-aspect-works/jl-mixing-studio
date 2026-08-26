@@ -10,8 +10,8 @@ use crate::automation_api::{
 use crate::intake as intake_report;
 use crate::intake::IntakeReportError;
 use crate::models::{IntakeOperationCode, IntakeOperationResult, IntakeRequest};
-pub(crate) use intake_progress::IntakeProgressEvent;
 use intake_progress::invoke_intake_with_progress;
+pub(crate) use intake_progress::IntakeProgressEvent;
 
 const INCREMENTAL_INTAKE_CAPABILITY: &str = "intake.validate.incremental";
 const STRUCTURED_INTAKE_CAPABILITY: &str = "intake.validate.structured";
@@ -180,8 +180,11 @@ fn supports_client_files_validation<R: ProcessRunner>(home: &Path, runner: &R) -
 }
 
 fn supports_intake_progress<R: ProcessRunner>(home: &Path, runner: &R) -> bool {
-    advertised_capabilities(home, runner)
-        .is_some_and(|capabilities| capabilities.iter().any(|value| value == PROGRESS_INTAKE_CAPABILITY))
+    advertised_capabilities(home, runner).is_some_and(|capabilities| {
+        capabilities
+            .iter()
+            .any(|value| value == PROGRESS_INTAKE_CAPABILITY)
+    })
 }
 
 pub fn blocked_intake_operation(code: IntakeOperationCode, message: &str) -> IntakeOperationResult {
