@@ -13,6 +13,7 @@ jobs:
       - name: Patch source
         shell: bash
         run: |
+          echo "Applying import progress diagnostic patch"
           python - <<'PY'
           from pathlib import Path
           rust = Path('src-tauri/src/managed_client_files.rs')
