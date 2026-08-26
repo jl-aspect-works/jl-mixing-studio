@@ -40,7 +40,7 @@ export function AppDialogs({ workspace, project, studio, clients, projects, inta
       followupRunning={intake.state.status === "preflighting"}
       followupProgress={intake.progress}
       onCompleted={() => { intake.refreshStructured(); }}
-      onClose={() => { projects.setPostCreateImport(null); void onRefresh(); }}
+      onClose={() => projects.setPostCreateImport(null)}
     />}
     {intake.state.status !== "closed" && intake.state.status !== "preflighting" && <IntakeDialog state={intake.state} progress={intake.progress} onConfirm={intake.confirm} onClose={intake.closeDialog} />}
     {revision.state.status !== "closed" && project && <RevisionDialog state={revision.state} values={revision.form} project={project} onChange={revision.setForm} onPreflight={revision.preflight} onConfirm={revision.confirm} onBack={revision.back} onClose={revision.close} />}
