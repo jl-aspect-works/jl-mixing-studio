@@ -23,13 +23,15 @@ describe("managedImportProgressPresentation", () => {
       progress("finalizing", 2, 2),
       progress("complete", 2, 2),
     ].map((event) => managedImportProgressPresentation(event, 2));
+    const finalizing = states[states.length - 2];
+    const complete = states[states.length - 1];
 
     expect(states.map((state) => state.value)).toEqual([0, 1, 2, 2, 3, 4, 4, 5]);
     expect(states.every((state) => state.max === 5)).toBe(true);
-    expect(states.at(-2)?.label).toBe("Finalizing import…");
-    expect(states.at(-1)?.label).toBe("Import complete");
-    expect(states.at(-2)?.value).toBeLessThan(states.at(-2)?.max ?? 0);
-    expect(states.at(-1)?.value).toBe(states.at(-1)?.max);
+    expect(finalizing.label).toBe("Finalizing import…");
+    expect(complete.label).toBe("Import complete");
+    expect(finalizing.value).toBeLessThan(finalizing.max);
+    expect(complete.value).toBe(complete.max);
   });
 
   it("shows staging file counts instead of discarding them", () => {
