@@ -19,7 +19,7 @@ export type IntakeWorkflowState =
 export interface ManagedImportProgress {
   clientId: string;
   projectId: string;
-  phase: "staging" | "importing" | "complete";
+  phase: "planning" | "staging" | "importing" | "finalizing" | "complete";
   completed: number;
   total: number | null;
   active: string[];
