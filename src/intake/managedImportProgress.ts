@@ -24,6 +24,7 @@ export function managedImportProgressPresentation(
   }
 
   const completed = Math.max(0, Math.min(progress.completed, total));
+  const activeFileNumber = Math.min(completed + 1, total);
   const reconstructedOverallTotal = total * 2 + 1;
   const overallTotal = progress.overallTotal && progress.overallTotal > 0
     ? progress.overallTotal
@@ -34,11 +35,11 @@ export function managedImportProgressPresentation(
   switch (progress.phase) {
     case "staging":
       reconstructedValue = completed;
-      label = `Preparing ${completed} of ${total} files`;
+      label = `Preparing ${activeFileNumber} of ${total} files`;
       break;
     case "importing":
       reconstructedValue = total + completed;
-      label = `Importing ${completed} of ${total} files`;
+      label = `Importing ${activeFileNumber} of ${total} files`;
       break;
     case "finalizing":
       reconstructedValue = total * 2;
