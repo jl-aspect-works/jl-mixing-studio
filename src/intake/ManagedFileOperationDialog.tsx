@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { ActionIcon } from "../components/ActionIcon";
 import { managedImportProgressPresentation } from "./managedImportProgress";
 import type { IntakeValidationProgress, ManagedImportProgress } from "./models";
@@ -91,18 +90,6 @@ export function ManagedFileOperationDialog({
   const [selections, setSelections] = useState<Record<string, ImportSelection>>({});
   const [importProgress, setImportProgress] = useState<ManagedImportProgress | null>(null);
   const followupObserved = useRef(false);
-
-  useEffect(() => {
-    if (mode !== "import") return;
-    let cancelled = false;
-    let unlisten: (() => void) | null = null;
-    void listen<ManagedImportProgress>("managed-import-progress", ({ payload }) => {
-      if (!cancelled && payload.clientId === clientId && payload.projectId === projectId) setImportProgress(payload);
-    }).then((removeListener) => {
-      if (cancelled) removeListener(); else unlisten = removeListener;
-    }).catch(() => undefined);
-    return () => { cancelled = true; unlisten?.(); };
-  }, [clientId, projectId, mode]);
 
   useEffect(() => {
     if (state.status !== "finalizing") {
@@ -209,7 +196,10 @@ export function ManagedFileOperationDialog({
     setState({ status: "executing", plan: review.plan, sourceKind: review.sourceKind, sources: review.sources });
     try {
       const result = mode === "import"
-        ? await executeManagedImport({ clientId, projectId, sourceKind: review.sourceKind!, sources: review.sources!, planId: review.plan.plan_id, decisions: activeDecisions, selectedRelativePaths })
+        ? await executeManagedImport(
+          { clientId, projectId, sourceKind: review.sourceKind!, sources: review.sources!, planId: review.plan.plan_id, decisions: activeDecisions, selectedRelativePaths },
+          setImportProgress,
+        )
         : await executeAudioPrepReset({ clientId, projectId, relativePaths, planId: review.plan.plan_id, decisions: activeDecisions });
       if (!result.ok) { setState({ status: "error", message: messageFrom(result, "The managed file operation could not be completed.") }); return; }
       if (mode === "import") {
