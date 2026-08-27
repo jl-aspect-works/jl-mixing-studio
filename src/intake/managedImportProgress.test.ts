@@ -28,6 +28,10 @@ describe("managedImportProgressPresentation", () => {
 
     expect(states.slice(0, -1).map((state) => state.value)).toEqual([0, 1, 2, 2, 3, 4, 4]);
     expect(states.every((state) => state.max === 5)).toBe(true);
+    expect(states[0].label).toBe("Preparing 1 of 2 files");
+    expect(states[1].label).toBe("Preparing 2 of 2 files");
+    expect(states[3].label).toBe("Importing 1 of 2 files");
+    expect(states[4].label).toBe("Importing 2 of 2 files");
     expect(finalizing.label).toBe("Finalizing import…");
     expect(complete.label).toBe("Finalizing import…");
     expect(finalizing.value).toBeLessThan(finalizing.max);
@@ -41,14 +45,14 @@ describe("managedImportProgressPresentation", () => {
       overallCompleted: 16,
       overallTotal: 25,
     }, 12);
-    expect(state.label).toBe("Importing 4 of 12 files");
+    expect(state.label).toBe("Importing 5 of 12 files");
     expect(state.value).toBe(16);
     expect(state.max).toBe(25);
   });
 
   it("shows staging file counts instead of discarding them", () => {
     const state = managedImportProgressPresentation(progress("staging", 3, 12), 12);
-    expect(state.label).toBe("Preparing 3 of 12 files");
+    expect(state.label).toBe("Preparing 4 of 12 files");
     expect(state.determinate).toBe(true);
     expect(state.value).toBe(3);
     expect(state.max).toBe(25);
@@ -62,7 +66,7 @@ describe("managedImportProgressPresentation", () => {
 
   it("still presents older phase-local importing payloads sensibly", () => {
     const state = managedImportProgressPresentation(progress("importing", 4, 10), 10);
-    expect(state.label).toBe("Importing 4 of 10 files");
+    expect(state.label).toBe("Importing 5 of 10 files");
     expect(state.value).toBe(14);
     expect(state.max).toBe(21);
   });
