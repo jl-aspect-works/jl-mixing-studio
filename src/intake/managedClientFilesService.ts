@@ -1,5 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import { stopActiveAudioPlayback } from "../project/files/audioPlaybackController";
+import type { ManagedImportProgress } from "./models";
 
 export type ManagedImportSourceKind = "zip" | "folder" | "files";
 export type ManagedConflictDecision = "replace" | "skip";
@@ -72,9 +73,14 @@ export const chooseManagedImportSources = (sourceKind: ManagedImportSourceKind) 
 export const planManagedImport = (request: ManagedImportRequest) =>
   invoke<ManagedOperationResult>("plan_managed_client_import", { request });
 
-export const executeManagedImport = async (request: ManagedImportRequest) => {
+export const executeManagedImport = async (
+  request: ManagedImportRequest,
+  onProgress?: (progress: ManagedImportProgress) => void,
+) => {
   await stopActiveAudioPlayback();
-  return invoke<ManagedOperationResult>("execute_managed_client_import", { request });
+  const progress = new Channel<ManagedImportProgress>();
+  if (onProgress) progress.onmessage = onProgress;
+  return invoke<ManagedOperationResult>("execute_managed_client_import", { request, progress });
 };
 
 export const planAudioPrepReset = (request: AudioPrepResetRequest) =>

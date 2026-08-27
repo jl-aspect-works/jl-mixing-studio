@@ -24,27 +24,34 @@ export function managedImportProgressPresentation(
   }
 
   const completed = Math.max(0, Math.min(progress.completed, total));
-  const overallTotal = total * 2 + 1;
-  let value = 0;
+  const reconstructedOverallTotal = total * 2 + 1;
+  const overallTotal = progress.overallTotal && progress.overallTotal > 0
+    ? progress.overallTotal
+    : reconstructedOverallTotal;
+  let reconstructedValue = 0;
   let label = "Preparing import…";
 
   switch (progress.phase) {
     case "staging":
-      value = completed;
+      reconstructedValue = completed;
       label = `Preparing ${completed} of ${total} files`;
       break;
     case "importing":
-      value = total + completed;
+      reconstructedValue = total + completed;
       label = `Importing ${completed} of ${total} files`;
       break;
     case "finalizing":
-      value = total * 2;
+      reconstructedValue = total * 2;
       label = "Finalizing import…";
       break;
     case "complete":
-      value = overallTotal;
-      label = "Import complete";
-      break;
+      return {
+        label: "Finalizing import…",
+        determinate: false,
+        value: Math.max(0, overallTotal - 1),
+        max: overallTotal,
+        ariaLabel: "Finalizing import",
+      };
     default:
       return {
         label,
@@ -54,6 +61,11 @@ export function managedImportProgressPresentation(
         ariaLabel: "Preparing import",
       };
   }
+
+  const reportedOverall = progress.overallCompleted;
+  const value = reportedOverall === null || reportedOverall === undefined
+    ? reconstructedValue
+    : Math.max(0, Math.min(reportedOverall, overallTotal));
 
   return {
     label,

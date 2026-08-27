@@ -31,6 +31,10 @@ pub(crate) struct IntakeProgressEvent {
     pub phase: String,
     pub completed: usize,
     pub total: Option<usize>,
+    #[serde(default, alias = "overall_completed")]
+    pub overall_completed: Option<usize>,
+    #[serde(default, alias = "overall_total")]
+    pub overall_total: Option<usize>,
     pub active: Vec<String>,
 }
 
@@ -131,6 +135,8 @@ where
                                 ("phase", json!(event.phase)),
                                 ("completed", json!(event.completed)),
                                 ("total", json!(event.total)),
+                                ("overall_completed", json!(event.overall_completed)),
+                                ("overall_total", json!(event.overall_total)),
                                 ("active", json!(event.active)),
                             ],
                         );
@@ -194,6 +200,24 @@ mod tests {
         .expect("progress JSON");
         assert_eq!(event.completed, 7);
         assert_eq!(event.total, Some(20));
+        assert_eq!(event.overall_completed, None);
+        assert_eq!(event.overall_total, None);
         assert_eq!(event.active, ["Kick.wav", "Snare.wav"]);
+    }
+
+    #[test]
+    fn managed_import_progress_preserves_whole_operation_counts() {
+        let event: IntakeProgressEvent = serde_json::from_str(
+            r#"{"operation":"client.files.import.execute","phase":"importing","completed":4,"total":12,"overall_completed":16,"overall_total":25,"active":["Kick.wav"]}"#,
+        )
+        .expect("managed import progress JSON");
+        assert_eq!(event.completed, 4);
+        assert_eq!(event.total, Some(12));
+        assert_eq!(event.overall_completed, Some(16));
+        assert_eq!(event.overall_total, Some(25));
+
+        let encoded = serde_json::to_value(event).expect("progress serialization");
+        assert_eq!(encoded["overallCompleted"], 16);
+        assert_eq!(encoded["overallTotal"], 25);
     }
 }
