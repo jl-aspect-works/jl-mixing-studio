@@ -22,5 +22,7 @@ export interface ManagedImportProgress {
   phase: "planning" | "staging" | "importing" | "finalizing" | "complete";
   completed: number;
   total: number | null;
+  overallCompleted?: number | null;
+  overallTotal?: number | null;
   active: string[];
 }
