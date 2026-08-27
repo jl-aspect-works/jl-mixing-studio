@@ -31,9 +31,9 @@ pub(crate) struct IntakeProgressEvent {
     pub phase: String,
     pub completed: usize,
     pub total: Option<usize>,
-    #[serde(default)]
+    #[serde(default, alias = "overall_completed")]
     pub overall_completed: Option<usize>,
-    #[serde(default)]
+    #[serde(default, alias = "overall_total")]
     pub overall_total: Option<usize>,
     pub active: Vec<String>,
 }
@@ -215,5 +215,9 @@ mod tests {
         assert_eq!(event.total, Some(12));
         assert_eq!(event.overall_completed, Some(16));
         assert_eq!(event.overall_total, Some(25));
+
+        let encoded = serde_json::to_value(event).expect("progress serialization");
+        assert_eq!(encoded["overallCompleted"], 16);
+        assert_eq!(encoded["overallTotal"], 25);
     }
 }
