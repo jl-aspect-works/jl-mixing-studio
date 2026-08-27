@@ -45,9 +45,13 @@ export function managedImportProgressPresentation(
       label = "Finalizing import…";
       break;
     case "complete":
-      reconstructedValue = reconstructedOverallTotal;
-      label = "Import complete";
-      break;
+      return {
+        label: "Finalizing import…",
+        determinate: false,
+        value: Math.max(0, overallTotal - 1),
+        max: overallTotal,
+        ariaLabel: "Finalizing import",
+      };
     default:
       return {
         label,
