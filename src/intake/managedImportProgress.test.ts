@@ -34,6 +34,17 @@ describe("managedImportProgressPresentation", () => {
     expect(complete.value).toBe(complete.max);
   });
 
+  it("uses Automation's reported whole-operation counts when present", () => {
+    const state = managedImportProgressPresentation({
+      ...progress("importing", 4, 12),
+      overallCompleted: 16,
+      overallTotal: 25,
+    }, 12);
+    expect(state.label).toBe("Importing 4 of 12 files");
+    expect(state.value).toBe(16);
+    expect(state.max).toBe(25);
+  });
+
   it("shows staging file counts instead of discarding them", () => {
     const state = managedImportProgressPresentation(progress("staging", 3, 12), 12);
     expect(state.label).toBe("Preparing 3 of 12 files");
