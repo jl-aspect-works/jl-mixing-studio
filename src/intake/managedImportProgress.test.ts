@@ -12,7 +12,7 @@ const progress = (phase: ManagedImportProgress["phase"], completed: number, tota
 });
 
 describe("managedImportProgressPresentation", () => {
-  it("keeps overall progress monotonic across staging, importing, finalizing, and complete", () => {
+  it("keeps completion in finalizing presentation until the import command returns", () => {
     const states = [
       progress("staging", 0, 2),
       progress("staging", 1, 2),
@@ -26,12 +26,13 @@ describe("managedImportProgressPresentation", () => {
     const finalizing = states[states.length - 2];
     const complete = states[states.length - 1];
 
-    expect(states.map((state) => state.value)).toEqual([0, 1, 2, 2, 3, 4, 4, 5]);
+    expect(states.slice(0, -1).map((state) => state.value)).toEqual([0, 1, 2, 2, 3, 4, 4]);
     expect(states.every((state) => state.max === 5)).toBe(true);
     expect(finalizing.label).toBe("Finalizing import…");
-    expect(complete.label).toBe("Import complete");
+    expect(complete.label).toBe("Finalizing import…");
     expect(finalizing.value).toBeLessThan(finalizing.max);
-    expect(complete.value).toBe(complete.max);
+    expect(complete.determinate).toBe(false);
+    expect(complete.value).toBeLessThan(complete.max);
   });
 
   it("uses Automation's reported whole-operation counts when present", () => {
