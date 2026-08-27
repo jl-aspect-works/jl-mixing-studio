@@ -159,25 +159,29 @@ fn plan_managed_client_import(
 }
 
 #[tauri::command]
-fn execute_managed_client_import(
+async fn execute_managed_client_import(
     app: tauri::AppHandle,
     request: ManagedImportRequest,
     progress: tauri::ipc::Channel<serde_json::Value>,
-) -> ManagedOperationResult {
-    let client_id = request.client_id.clone();
-    let project_id = request.project_id.clone();
-    managed_client_files::execute_import_with_progress(&app, request, move |event| {
-        let _ = progress.send(serde_json::json!({
-            "clientId": &client_id,
-            "projectId": &project_id,
-            "phase": event.phase,
-            "completed": event.completed,
-            "total": event.total,
-            "overallCompleted": event.overall_completed,
-            "overallTotal": event.overall_total,
-            "active": event.active,
-        }));
+) -> Result<ManagedOperationResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let client_id = request.client_id.clone();
+        let project_id = request.project_id.clone();
+        managed_client_files::execute_import_with_progress(&app, request, move |event| {
+            let _ = progress.send(serde_json::json!({
+                "clientId": &client_id,
+                "projectId": &project_id,
+                "phase": event.phase,
+                "completed": event.completed,
+                "total": event.total,
+                "overallCompleted": event.overall_completed,
+                "overallTotal": event.overall_total,
+                "active": event.active,
+            }));
+        })
     })
+    .await
+    .map_err(|error| format!("Managed import task failed: {error}"))
 }
 
 #[tauri::command]
