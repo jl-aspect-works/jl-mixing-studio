@@ -37,7 +37,9 @@ export function AppDialogs({ workspace, project, studio, clients, projects, inta
       mode="import"
       title="Add Client Files"
       sourceCancelLabel="Skip for now"
-      onCompleted={() => { onRefresh(); intake.refreshStructured(); }}
+      followupRunning={intake.state.status === "preflighting"}
+      followupProgress={intake.progress}
+      onCompleted={() => { intake.refreshStructured(); }}
       onClose={() => projects.setPostCreateImport(null)}
     />}
     {intake.state.status !== "closed" && intake.state.status !== "preflighting" && <IntakeDialog state={intake.state} progress={intake.progress} onConfirm={intake.confirm} onClose={intake.closeDialog} />}
