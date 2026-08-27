@@ -89,7 +89,7 @@ describe("ManagedFileOperationDialog", () => {
       planId: importPlan.plan_id,
       decisions: { "original:0": "replace", "audio:0": "skip" },
       selectedRelativePaths: ["vocal.wav"],
-    })));
+    }), expect.any(Function)));
     expect(await screen.findByText("Checking imported files…")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(completed).toHaveBeenCalledOnce();
@@ -123,7 +123,7 @@ describe("ManagedFileOperationDialog", () => {
     expect(screen.getAllByText("Skipped")).toHaveLength(2);
     expect(screen.getByRole("button", { name: "Import Files" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Import Files" }));
-    await waitFor(() => expect(executeManagedImport).toHaveBeenCalledWith(expect.objectContaining({ selectedRelativePaths: ["bass.wav"], decisions: {} })));
+    await waitFor(() => expect(executeManagedImport).toHaveBeenCalledWith(expect.objectContaining({ selectedRelativePaths: ["bass.wav"], decisions: {} }), expect.any(Function)));
   });
 
   it("supports Add All and Skip All while preserving per-file choices", async () => {
