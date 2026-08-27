@@ -9,7 +9,7 @@ const core = vi.hoisted(() => ({
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: core.invoke,
   Channel: class<T> {
-    onmessage = (_message: T) => undefined;
+    onmessage: (message: T) => void = () => undefined;
 
     constructor() {
       core.channels.push(this as unknown as { onmessage: (message: ManagedImportProgress) => void });
