@@ -129,7 +129,7 @@ describe("ProjectsRouteV21", () => {
   it("keeps validation progress visible before refreshing after validation-relevant settings change", async () => {
     let finishValidation: ((value: { ok: boolean; code: string; message: string }) => void) | null = null;
     const validationPending = new Promise<{ ok: boolean; code: string; message: string }>((resolve) => { finishValidation = resolve; });
-    mockedInvoke.mockImplementation((command, args) => {
+    mockedInvoke.mockImplementation((command) => {
       if (command === "get_project_edit_info") return Promise.resolve(editInfo);
       if (command === "update_project") return Promise.resolve({ ok: true, code: "updated", message: "Project settings were updated and verified." });
       if (command === "refresh_client_files_validation") return validationPending;
