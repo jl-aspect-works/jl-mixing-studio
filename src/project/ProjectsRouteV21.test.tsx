@@ -126,14 +126,30 @@ describe("ProjectsRouteV21", () => {
     expect(props.onSelectProject).toHaveBeenCalledWith("acme", "blue-sky");
   });
 
-  it("validation-relevant settings force validation", async () => {
+  it("keeps validation progress visible before refreshing after validation-relevant settings change", async () => {
+    let finishValidation!: (value: { ok: boolean; code: string; message: string }) => void;
+    const validationPending = new Promise<{ ok: boolean; code: string; message: string }>((resolve) => { finishValidation = resolve; });
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "get_project_edit_info") return Promise.resolve(editInfo);
+      if (command === "update_project") return Promise.resolve({ ok: true, code: "updated", message: "Project settings were updated and verified." });
+      if (command === "refresh_client_files_validation") return validationPending;
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+
     render(<ProjectsRouteV21 {...props} />);
     const edit = await screen.findByRole("button", { name: "Edit Project" });
     await waitFor(() => expect(edit).toBeEnabled());
     fireEvent.click(edit);
     fireEvent.change(screen.getByLabelText("Sample Rate"), { target: { value: "96000" } });
     fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+
     await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("refresh_client_files_validation", { request: { clientId: "acme", projectId: "blue-sky" } }));
+    expect(await screen.findByText("Scanning files…")).toBeInTheDocument();
+    expect(props.onRefresh).not.toHaveBeenCalled();
+
+    finishValidation({ ok: true, code: "validated", message: "Validation refreshed." });
+    await waitFor(() => expect(props.onRefresh).toHaveBeenCalledOnce());
+    expect(screen.queryByText("Scanning files…")).not.toBeInTheDocument();
   });
 
   it("metadata-only settings do not force validation", async () => {
@@ -146,5 +162,4 @@ describe("ProjectsRouteV21", () => {
     await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("update_project", expect.anything()));
     expect(mockedInvoke).not.toHaveBeenCalledWith("refresh_client_files_validation", expect.anything());
   });
-
 });

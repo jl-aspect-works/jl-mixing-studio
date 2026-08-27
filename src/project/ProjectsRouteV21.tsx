@@ -168,7 +168,6 @@ export function ProjectsRouteV21({
   const [saving, setSaving] = useState(false);
   const [validationProgress, setValidationProgress] = useState<IntakeValidationProgress | null>(null);
 
-
   const snapshot = workspace.status === "ready" ? workspace.value : null;
   const entries = useMemo<ProjectEntry[]>(() => snapshot
     ? snapshot.clients.flatMap((client) => client.projects.map((project) => ({ client, project })))
@@ -299,14 +298,20 @@ export function ProjectsRouteV21({
       setForm(null);
       setEditExpectedLastModifiedAt(null);
       onSaveSuccess(result.message);
-      onRefresh();
       setEditInfo(await invoke<ProjectEditInfo>("get_project_edit_info", { clientId: selected.client.clientId, projectId: selected.project.projectId }));
       if (validationRelevantChanged) {
         setValidationProgress({ clientId: selected.client.clientId, projectId: selected.project.projectId, phase: "scanning", completed: 0, total: null, active: [] });
-        const validation = await invoke<IntakeOperationResult>("refresh_client_files_validation", { request: { clientId: selected.client.clientId, projectId: selected.project.projectId } });
-        if (!validation.ok) setSaveError(`Project settings were saved, but validation could not be refreshed: ${validation.message}`);
-        setValidationProgress(null);
+        try {
+          const validation = await invoke<IntakeOperationResult>("refresh_client_files_validation", { request: { clientId: selected.client.clientId, projectId: selected.project.projectId } });
+          if (!validation.ok) setSaveError(`Project settings were saved, but validation could not be refreshed: ${validation.message}`);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : String(error);
+          setSaveError(`Project settings were saved, but validation could not be refreshed: ${message}`);
+        } finally {
+          setValidationProgress(null);
+        }
       }
+      onRefresh();
     } catch (error: unknown) {
       setSaveError(error instanceof Error ? error.message : String(error));
     } finally {

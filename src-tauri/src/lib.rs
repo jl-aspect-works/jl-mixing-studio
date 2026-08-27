@@ -236,27 +236,38 @@ fn intake_progress_callback(
 }
 
 #[tauri::command]
-fn run_intake_validation(app: tauri::AppHandle, request: IntakeRequest) -> IntakeOperationResult {
-    let progress = intake_progress_callback(&app, &request);
-    run_intake_operation(&app, request, move |home, project_directory, request| {
-        cli::run_intake_validation_with_progress(home, project_directory, request, progress)
+async fn run_intake_validation(
+    app: tauri::AppHandle,
+    request: IntakeRequest,
+) -> Result<IntakeOperationResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let progress = intake_progress_callback(&app, &request);
+        run_intake_operation(&app, request, move |home, project_directory, request| {
+            cli::run_intake_validation_with_progress(home, project_directory, request, progress)
+        })
     })
+    .await
+    .map_err(|error| format!("Intake validation task failed: {error}"))
 }
 
 #[tauri::command]
-fn refresh_client_files_validation(
+async fn refresh_client_files_validation(
     app: tauri::AppHandle,
     request: IntakeRequest,
-) -> IntakeOperationResult {
-    let progress = intake_progress_callback(&app, &request);
-    run_intake_operation(&app, request, move |home, project_directory, request| {
-        cli::refresh_client_files_validation_with_progress(
-            home,
-            project_directory,
-            request,
-            progress,
-        )
+) -> Result<IntakeOperationResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let progress = intake_progress_callback(&app, &request);
+        run_intake_operation(&app, request, move |home, project_directory, request| {
+            cli::refresh_client_files_validation_with_progress(
+                home,
+                project_directory,
+                request,
+                progress,
+            )
+        })
     })
+    .await
+    .map_err(|error| format!("Client Files validation task failed: {error}"))
 }
 
 #[tauri::command]
