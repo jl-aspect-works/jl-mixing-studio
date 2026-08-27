@@ -60,10 +60,14 @@ export function IntakeView({ client, project, reportState, actionError, validati
   };
 
   const managedCompleted = () => {
-    setManagedMode(null);
     setBrowserVersion((value) => value + 1);
     setSelectedFile(null);
     setSelectedPaths([]);
+    if (managedMode === "import" && validationAvailable) {
+      onRecheck();
+      return;
+    }
+    setManagedMode(null);
     onRefresh();
     if (validationAvailable) onRecheck();
   };
@@ -125,6 +129,8 @@ export function IntakeView({ client, project, reportState, actionError, validati
       projectId={project.projectId}
       mode={managedMode}
       relativePaths={managedMode === "audioPrepReset" ? resetRelativePaths : []}
+      followupRunning={managedMode === "import" && validationAvailable ? loading : false}
+      followupProgress={managedMode === "import" && validationAvailable ? progress : null}
       onClose={() => setManagedMode(null)}
       onCompleted={managedCompleted}
     />}
