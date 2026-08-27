@@ -127,7 +127,7 @@ describe("ProjectsRouteV21", () => {
   });
 
   it("keeps validation progress visible before refreshing after validation-relevant settings change", async () => {
-    let finishValidation: ((value: { ok: boolean; code: string; message: string }) => void) | null = null;
+    let finishValidation!: (value: { ok: boolean; code: string; message: string }) => void;
     const validationPending = new Promise<{ ok: boolean; code: string; message: string }>((resolve) => { finishValidation = resolve; });
     mockedInvoke.mockImplementation((command) => {
       if (command === "get_project_edit_info") return Promise.resolve(editInfo);
@@ -147,7 +147,7 @@ describe("ProjectsRouteV21", () => {
     expect(await screen.findByText("Scanning files…")).toBeInTheDocument();
     expect(props.onRefresh).not.toHaveBeenCalled();
 
-    finishValidation?.({ ok: true, code: "validated", message: "Validation refreshed." });
+    finishValidation({ ok: true, code: "validated", message: "Validation refreshed." });
     await waitFor(() => expect(props.onRefresh).toHaveBeenCalledOnce());
     expect(screen.queryByText("Scanning files…")).not.toBeInTheDocument();
   });
