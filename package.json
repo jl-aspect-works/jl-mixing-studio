@@ -1,7 +1,7 @@
 {
   "name": "jl-mixing-studio",
   "private": true,
-  "version": "2.1.0-rc.7",
+  "version": "2.1.0-rc.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
