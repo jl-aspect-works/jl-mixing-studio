@@ -241,7 +241,7 @@ export function ManagedFileOperationDialog({
 
       {state.status === "finalizing" && <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite">
         <strong>{finalizingProgress?.phase === "finalizing" ? "Finalizing project…" : finalizingProgress?.total ? `Checking imported files… ${finalizingProgress.completed} of ${finalizingProgress.total}` : "Checking imported files…"}</strong>
-        {finalizingProgress?.total ? <progress aria-label={`Checked ${finalizingProgress.completed} of ${finalizingProgress.total} files`} value={finalizingProgress.completed} max={Math.max(finalizingProgress.total, 1)} /> : <progress aria-label="Checking imported files" />}
+        {finalizingProgress?.phase === "finalizing" ? <progress aria-label="Finalizing project" /> : finalizingProgress?.total ? <progress aria-label={`Checked ${finalizingProgress.completed} of ${finalizingProgress.total} files`} value={finalizingProgress.completed} max={Math.max(finalizingProgress.total, 1)} /> : <progress aria-label="Checking imported files" />}
         {finalizingProgress?.active.length ? <small>Processing: {finalizingProgress.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small> : <p>Import is complete. Studio is verifying the project before it becomes ready.</p>}
       </div>}
 
