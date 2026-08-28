@@ -257,17 +257,17 @@ fn import_stdin_request(
         arguments.push(request.plan_id.clone().expect("validated plan id"));
     }
     let payload = if execute {
-    json!({
-        "sources": request.sources,
-        "selected_relative_paths": request.selected_relative_paths,
-        "decisions": request.decisions,
-    })
-} else {
-    json!({
-        "sources": request.sources,
-    })
-};
-serde_json::to_string(&payload)
+        json!({
+            "sources": request.sources,
+            "selected_relative_paths": request.selected_relative_paths,
+            "decisions": request.decisions,
+        })
+    } else {
+        json!({
+            "sources": request.sources,
+        })
+    };
+    serde_json::to_string(&payload)
         .map(|payload| (arguments, payload))
         .map_err(|_| "Import request could not be encoded.".to_owned())
 }
@@ -339,16 +339,16 @@ fn reset_stdin_request(
         arguments.push(request.plan_id.clone().expect("validated plan id"));
     }
     let payload = if execute {
-    json!({
-        "relative_paths": request.relative_paths,
-        "decisions": request.decisions,
-    })
-} else {
-    json!({
-        "relative_paths": request.relative_paths,
-    })
-};
-serde_json::to_string(&payload)
+        json!({
+            "relative_paths": request.relative_paths,
+            "decisions": request.decisions,
+        })
+    } else {
+        json!({
+            "relative_paths": request.relative_paths,
+        })
+    };
+    serde_json::to_string(&payload)
         .map(|payload| (arguments, payload))
         .map_err(|_| "Audio Prep request could not be encoded.".to_owned())
 }
@@ -575,9 +575,8 @@ mod tests {
     }
 }
 
-
 #[cfg(test)]
-mod tests {
+mod stdin_payload_contract_tests {
     use super::*;
 
     fn import_request() -> ManagedImportRequest {
