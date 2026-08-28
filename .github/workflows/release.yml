@@ -46,6 +46,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Synchronize version metadata from VERSION
+        run: npm run version:sync
       - run: npm run version:verify
       - run: npm run check
 
@@ -85,6 +87,8 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
       - run: npm ci
+      - name: Synchronize version metadata from VERSION
+        run: npm run version:sync
       - name: Build installer
         run: npm run tauri build
       - name: Stage release asset
