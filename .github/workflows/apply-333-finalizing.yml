@@ -1,0 +1,39 @@
+name: Apply finalizing project progress fix
+on:
+  push:
+    branches: [perf/332-import-progress-ux]
+    paths: [.github/workflows/apply-333-finalizing.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: perf/332-import-progress-ux
+          fetch-depth: 0
+      - name: Update finalizing project progress
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("src/intake/ManagedFileOperationDialog.tsx")
+          text = path.read_text()
+          old = '''        {finalizingProgress?.total ? <progress aria-label={`Checked ${finalizingProgress.completed} of ${finalizingProgress.total} files`} value={finalizingProgress.completed} max={Math.max(finalizingProgress.total, 1)} /> : <progress aria-label="Checking imported files" />}'''
+          new = '''        {finalizingProgress?.phase === "finalizing" ? <progress aria-label="Finalizing project" /> : finalizingProgress?.total ? <progress aria-label={`Checked ${finalizingProgress.completed} of ${finalizingProgress.total} files`} value={finalizingProgress.completed} max={Math.max(finalizingProgress.total, 1)} /> : <progress aria-label="Checking imported files" />}'''
+          if old not in text:
+              raise SystemExit("expected finalizing progress anchor not found")
+          path.write_text(text.replace(old, new, 1))
+      - name: Focused checks
+        run: |
+          npm ci
+          npm run typecheck
+          npx vitest run src/intake/managedImportProgress.test.ts
+      - name: Commit product change and remove helper
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/apply-333-finalizing.yml
+          git add src/intake/ManagedFileOperationDialog.tsx
+          git commit -m 'Keep project finalization visibly active'
+          git push origin HEAD:perf/332-import-progress-ux
