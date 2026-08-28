@@ -11,7 +11,8 @@ use crate::intake as intake_report;
 use crate::intake::IntakeReportError;
 use crate::models::{IntakeOperationCode, IntakeOperationResult, IntakeRequest};
 pub(crate) use intake_progress::{
-    invoke_with_progress, invoke_with_progress_input, IntakeProgressEvent, StreamingAutomationResponse,
+    invoke_with_progress, invoke_with_progress_input, IntakeProgressEvent,
+    StreamingAutomationResponse,
 };
 
 const INCREMENTAL_INTAKE_CAPABILITY: &str = "intake.validate.incremental";
