@@ -362,7 +362,14 @@ fn request_error(message: String) -> ManagedOperationResult {
     }
 }
 
-pub fn plan_import(app: &AppHandle, request: ManagedImportRequest) -> ManagedOperationResult {
+pub fn plan_import_with_progress<F>(
+    app: &AppHandle,
+    request: ManagedImportRequest,
+    on_progress: F,
+) -> ManagedOperationResult
+where
+    F: FnMut(IntakeProgressEvent) + Send + 'static,
+{
     let project = match project_directory(app, &request.client_id, &request.project_id) {
         Ok(value) => value,
         Err(message) => return request_error(message),
@@ -371,18 +378,40 @@ pub fn plan_import(app: &AppHandle, request: ManagedImportRequest) -> ManagedOpe
         Ok(value) => value,
         Err(message) => return request_error(message),
     };
+    let progress = supports_import_progress(&home);
     if supports_managed_stdin(&home) {
-        match import_stdin_request(&request, false) {
-            Ok((arguments, payload)) => {
-                call_api_with_stdin(app, &project, IMPORT_PLAN_OPERATION, arguments, &payload)
-            }
-            Err(message) => request_error(message),
+        let (mut arguments, payload) = match import_stdin_request(&request, false) {
+            Ok(value) => value,
+            Err(message) => return request_error(message),
+        };
+        if progress {
+            arguments.push("--progress=stderr-json".into());
         }
-    } else {
-        match import_arguments(&request, false) {
-            Ok(arguments) => call_api(app, &project, IMPORT_PLAN_OPERATION, arguments),
-            Err(message) => request_error(message),
-        }
+        let arguments = with_project_argument(&project, arguments);
+        return match invoke_with_progress_input(
+            &home,
+            &arguments,
+            IMPORT_PLAN_OPERATION,
+            Some(&payload),
+            on_progress,
+        ) {
+            Ok(response) => finish_streaming_response(response),
+            Err(error) => request_error(error.message()),
+        };
+    }
+
+    let mut arguments = match import_arguments(&request, false) {
+        Ok(arguments) => arguments,
+        Err(message) => return request_error(message),
+    };
+    if !progress {
+        return call_api(app, &project, IMPORT_PLAN_OPERATION, arguments);
+    }
+    arguments.push("--progress=stderr-json".into());
+    let arguments = with_project_argument(&project, arguments);
+    match invoke_with_progress(&home, &arguments, IMPORT_PLAN_OPERATION, on_progress) {
+        Ok(response) => finish_streaming_response(response),
+        Err(error) => request_error(error.message()),
     }
 }
 
