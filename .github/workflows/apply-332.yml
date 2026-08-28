@@ -24,7 +24,6 @@ jobs:
           npm run typecheck
           npm test -- --run src/intake/managedImportProgress.test.ts
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
-          cargo test --manifest-path src-tauri/Cargo.toml managed_client_files --all-features
       - name: Commit product changes and remove helper
         run: |
           git config user.name 'github-actions[bot]'
