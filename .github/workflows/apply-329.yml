@@ -26,22 +26,22 @@ jobs:
           browser = Path("src/intake/ClientFilesBrowser.tsx")
           text = browser.read_text()
 
-          insertion = '''
+          insertion = """
 
-  const displayedSelectablePaths = listing?.entries.filter((entry) => entry.entryType === "file").map((entry) => entry.relativePath) ?? [];
-  const displayedSelectedCount = displayedSelectablePaths.filter((path) => selectedPaths.includes(path)).length;
-  const allDisplayedSelected = displayedSelectablePaths.length > 0 && displayedSelectedCount === displayedSelectablePaths.length;
-  const someDisplayedSelected = displayedSelectedCount > 0 && !allDisplayedSelected;
+            const displayedSelectablePaths = listing?.entries.filter((entry) => entry.entryType === "file").map((entry) => entry.relativePath) ?? [];
+            const displayedSelectedCount = displayedSelectablePaths.filter((path) => selectedPaths.includes(path)).length;
+            const allDisplayedSelected = displayedSelectablePaths.length > 0 && displayedSelectedCount === displayedSelectablePaths.length;
+            const someDisplayedSelected = displayedSelectedCount > 0 && !allDisplayedSelected;
 
-  const toggleAllDisplayedPaths = () => {
-    if (!onSelectedPathsChange || displayedSelectablePaths.length === 0) return;
-    if (allDisplayedSelected) {
-      onSelectedPathsChange(selectedPaths.filter((path) => !displayedSelectablePaths.includes(path)));
-      return;
-    }
-    onSelectedPathsChange([...new Set([...selectedPaths, ...displayedSelectablePaths])]);
-  };
-'''
+            const toggleAllDisplayedPaths = () => {
+              if (!onSelectedPathsChange || displayedSelectablePaths.length === 0) return;
+              if (allDisplayedSelected) {
+                onSelectedPathsChange(selectedPaths.filter((path) => !displayedSelectablePaths.includes(path)));
+                return;
+              }
+              onSelectedPathsChange([...new Set([...selectedPaths, ...displayedSelectablePaths])]);
+            };
+          """
           pattern = re.compile(r'(  const toggleSelectedPath = \(entry: ProjectFileEntry\) => \{.*?^  \};)(\n\n  const canNavigateUp)', re.MULTILINE | re.DOTALL)
           text, count = pattern.subn(r'\1' + insertion + r'\2', text, count=1)
           if count != 1:
@@ -55,35 +55,35 @@ jobs:
 
           test = Path("src/intake/ClientFilesBrowser.test.tsx")
           test_text = test.read_text()
-          tests = '''
+          tests = """
 
-  it("selects and clears all displayed Client Files from the header checkbox", () => {
-    const onSelectedPathsChange = vi.fn();
-    const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[]} onSelectedPathsChange={onSelectedPathsChange} />);
-    const browser = within(view.container);
+            it("selects and clears all displayed Client Files from the header checkbox", () => {
+              const onSelectedPathsChange = vi.fn();
+              const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[]} onSelectedPathsChange={onSelectedPathsChange} />);
+              const browser = within(view.container);
 
-    const selectAll = browser.getByRole("checkbox", { name: "Select all displayed files" });
-    expect(selectAll).not.toBeChecked();
-    fireEvent.click(selectAll);
-    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([
-      "01_Client_Files/Original_Delivery/Lead.wav",
-      "01_Client_Files/Original_Delivery/Notes.txt",
-    ]);
+              const selectAll = browser.getByRole("checkbox", { name: "Select all displayed files" });
+              expect(selectAll).not.toBeChecked();
+              fireEvent.click(selectAll);
+              expect(onSelectedPathsChange).toHaveBeenLastCalledWith([
+                "01_Client_Files/Original_Delivery/Lead.wav",
+                "01_Client_Files/Original_Delivery/Notes.txt",
+              ]);
 
-    view.rerender(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[
-      "01_Client_Files/Original_Delivery/Lead.wav",
-      "01_Client_Files/Original_Delivery/Notes.txt",
-    ]} onSelectedPathsChange={onSelectedPathsChange} />);
-    expect(browser.getByRole("checkbox", { name: "Select all displayed files" })).toBeChecked();
-    fireEvent.click(browser.getByRole("checkbox", { name: "Select all displayed files" }));
-    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([]);
-  });
+              view.rerender(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[
+                "01_Client_Files/Original_Delivery/Lead.wav",
+                "01_Client_Files/Original_Delivery/Notes.txt",
+              ]} onSelectedPathsChange={onSelectedPathsChange} />);
+              expect(browser.getByRole("checkbox", { name: "Select all displayed files" })).toBeChecked();
+              fireEvent.click(browser.getByRole("checkbox", { name: "Select all displayed files" }));
+              expect(onSelectedPathsChange).toHaveBeenLastCalledWith([]);
+            });
 
-  it("shows an indeterminate Select All state for partial displayed selection", () => {
-    const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={["01_Client_Files/Original_Delivery/Lead.wav"]} onSelectedPathsChange={vi.fn()} />);
-    expect(within(view.container).getByRole("checkbox", { name: "Select all displayed files" })).toHaveProperty("indeterminate", true);
-  });
-'''
+            it("shows an indeterminate Select All state for partial displayed selection", () => {
+              const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={["01_Client_Files/Original_Delivery/Lead.wav"]} onSelectedPathsChange={vi.fn()} />);
+              expect(within(view.container).getByRole("checkbox", { name: "Select all displayed files" })).toHaveProperty("indeterminate", true);
+            });
+          """
           closing = "\n});\n"
           if "selects and clears all displayed Client Files" not in test_text:
             if not test_text.endswith(closing):
