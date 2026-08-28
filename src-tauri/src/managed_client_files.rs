@@ -544,9 +544,7 @@ mod tests {
         };
         let (arguments, payload) = import_stdin_request(&request, true).expect("stdin request");
         assert!(arguments.len() < 12);
-        assert!(arguments
-            .iter()
-            .any(|value| value == "--request-stdin"));
+        assert!(arguments.iter().any(|value| value == "--request-stdin"));
         assert!(payload.len() > 50_000);
 
         let reset = AudioPrepResetRequest {
