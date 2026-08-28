@@ -1,0 +1,35 @@
+name: Apply issue 332
+on:
+  push:
+    branches: [perf/332-import-progress-ux]
+    paths: [.github/workflows/apply-332.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: perf/332-import-progress-ux
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Apply focused edits
+        run: python tools/apply_issue_332_temp.py
+      - name: Focused checks
+        run: |
+          npm ci
+          npm run typecheck
+          npm test -- --run src/intake/managedImportProgress.test.ts
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          cargo test --manifest-path src-tauri/Cargo.toml managed_client_files --all-features
+      - name: Commit product changes and remove helper
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm tools/apply_issue_332_temp.py .github/workflows/apply-332.yml
+          git add src src-tauri/src
+          git commit -m 'Improve large import progress UX'
+          git push origin HEAD:perf/332-import-progress-ux
