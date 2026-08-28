@@ -256,12 +256,18 @@ fn import_stdin_request(
         arguments.push("--plan-id".into());
         arguments.push(request.plan_id.clone().expect("validated plan id"));
     }
-    let payload = json!({
+    let payload = if execute {
+    json!({
         "sources": request.sources,
         "selected_relative_paths": request.selected_relative_paths,
         "decisions": request.decisions,
-    });
-    serde_json::to_string(&payload)
+    })
+} else {
+    json!({
+        "sources": request.sources,
+    })
+};
+serde_json::to_string(&payload)
         .map(|payload| (arguments, payload))
         .map_err(|_| "Import request could not be encoded.".to_owned())
 }
@@ -332,11 +338,17 @@ fn reset_stdin_request(
         arguments.push("--plan-id".into());
         arguments.push(request.plan_id.clone().expect("validated plan id"));
     }
-    let payload = json!({
+    let payload = if execute {
+    json!({
         "relative_paths": request.relative_paths,
         "decisions": request.decisions,
-    });
-    serde_json::to_string(&payload)
+    })
+} else {
+    json!({
+        "relative_paths": request.relative_paths,
+    })
+};
+serde_json::to_string(&payload)
         .map(|payload| (arguments, payload))
         .map_err(|_| "Audio Prep request could not be encoded.".to_owned())
 }
@@ -560,5 +572,75 @@ mod tests {
             reset_stdin_request(&reset, true).expect("reset stdin");
         assert!(reset_arguments.len() < 10);
         assert!(reset_payload.len() > 5_000);
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn import_request() -> ManagedImportRequest {
+        ManagedImportRequest {
+            client_id: "client".into(),
+            project_id: "project".into(),
+            source_kind: "zip".into(),
+            sources: vec!["mix.zip".into()],
+            plan_id: Some("plan-1".into()),
+            decisions: HashMap::from([("track.wav".into(), "replace".into())]),
+            selected_relative_paths: Some(vec!["track.wav".into()]),
+        }
+    }
+
+    fn reset_request() -> AudioPrepResetRequest {
+        AudioPrepResetRequest {
+            client_id: "client".into(),
+            project_id: "project".into(),
+            relative_paths: vec!["track.wav".into()],
+            plan_id: Some("plan-2".into()),
+            decisions: HashMap::from([("track.wav".into(), "replace".into())]),
+        }
+    }
+
+    #[test]
+    fn import_plan_stdin_payload_excludes_execute_only_fields() {
+        let (arguments, payload) = import_stdin_request(&import_request(), false).unwrap();
+        let payload: Value = serde_json::from_str(&payload).unwrap();
+
+        assert!(arguments.contains(&"import-plan".to_owned()));
+        assert_eq!(payload, json!({ "sources": ["mix.zip"] }));
+        assert!(payload.get("selected_relative_paths").is_none());
+        assert!(payload.get("decisions").is_none());
+    }
+
+    #[test]
+    fn import_execute_stdin_payload_keeps_execute_fields() {
+        let (arguments, payload) = import_stdin_request(&import_request(), true).unwrap();
+        let payload: Value = serde_json::from_str(&payload).unwrap();
+
+        assert!(arguments.contains(&"import-execute".to_owned()));
+        assert_eq!(payload["sources"], json!(["mix.zip"]));
+        assert_eq!(payload["selected_relative_paths"], json!(["track.wav"]));
+        assert_eq!(payload["decisions"], json!({ "track.wav": "replace" }));
+    }
+
+    #[test]
+    fn reset_plan_stdin_payload_excludes_execute_only_fields() {
+        let (arguments, payload) = reset_stdin_request(&reset_request(), false).unwrap();
+        let payload: Value = serde_json::from_str(&payload).unwrap();
+
+        assert!(arguments.contains(&"reset-plan".to_owned()));
+        assert_eq!(payload, json!({ "relative_paths": ["track.wav"] }));
+        assert!(payload.get("decisions").is_none());
+    }
+
+    #[test]
+    fn reset_execute_stdin_payload_keeps_execute_fields() {
+        let (arguments, payload) = reset_stdin_request(&reset_request(), true).unwrap();
+        let payload: Value = serde_json::from_str(&payload).unwrap();
+
+        assert!(arguments.contains(&"reset-execute".to_owned()));
+        assert_eq!(payload["relative_paths"], json!(["track.wav"]));
+        assert_eq!(payload["decisions"], json!({ "track.wav": "replace" }));
     }
 }
