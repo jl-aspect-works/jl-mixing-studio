@@ -1,0 +1,50 @@
+name: Format issue 327 fix
+
+on:
+  push:
+    branches:
+      - fix/327-managed-plan-stdin-payloads
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/327-managed-plan-stdin-payloads
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Rename focused regression module
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('src-tauri/src/managed_client_files.rs')
+          text = path.read_text()
+          marker = '''#[cfg(test)]
+          mod tests {
+              use super::*;
+
+              fn import_request() -> ManagedImportRequest {'''
+          replacement = '''#[cfg(test)]
+          mod stdin_payload_contract_tests {
+              use super::*;
+
+              fn import_request() -> ManagedImportRequest {'''
+          if marker not in text:
+              raise SystemExit('new regression test module marker not found')
+          path.write_text(text.replace(marker, replacement, 1))
+      - name: Apply rustfmt
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/fix-327-format.yml
+      - name: Commit formatted fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src-tauri/src/managed_client_files.rs .github/workflows/fix-327-format.yml
+          git commit -m 'Format managed plan payload fix (#327)'
+          git push origin HEAD:fix/327-managed-plan-stdin-payloads
