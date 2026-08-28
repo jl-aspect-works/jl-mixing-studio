@@ -49,7 +49,8 @@ use delivery_legacy_testsupport::{
 };
 pub use delivery_management::{delete_delivery_package, get_delivery_status};
 pub(crate) use intake::{
-    advertised_capabilities, invoke_with_progress, IntakeProgressEvent, StreamingAutomationResponse,
+    advertised_capabilities, invoke_with_progress, invoke_with_progress_input, IntakeProgressEvent,
+    StreamingAutomationResponse,
 };
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
