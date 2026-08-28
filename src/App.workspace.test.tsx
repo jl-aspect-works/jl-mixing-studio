@@ -199,7 +199,7 @@ describe("JL Mixing Studio — workspace and studio states", () => {
     render(<App />);
     await screen.findByText("JL Mixing Automation 1.3.1 detected");
 
-    fireEvent.click(screen.getByRole("button", { name: "Refresh Workspace" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Refresh Workspace" }));
 
     expect((await screen.findAllByText("After Refresh")).length).toBeGreaterThan(0);
     expect(workspaceCalls).toBe(2);
