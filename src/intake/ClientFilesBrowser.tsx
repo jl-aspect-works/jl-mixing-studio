@@ -188,6 +188,21 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
     onSelectedPathsChange(next);
   };
 
+  const displayedSelectablePaths = listing?.entries.filter((entry) => entry.entryType === "file").map((entry) => entry.relativePath) ?? [];
+  const displayedSelectedCount = displayedSelectablePaths.filter((path) => selectedPaths.includes(path)).length;
+  const allDisplayedSelected = displayedSelectablePaths.length > 0 && displayedSelectedCount === displayedSelectablePaths.length;
+  const someDisplayedSelected = displayedSelectedCount > 0 && !allDisplayedSelected;
+
+  const toggleAllDisplayedPaths = () => {
+    if (!onSelectedPathsChange || displayedSelectablePaths.length === 0) return;
+    if (allDisplayedSelected) {
+      onSelectedPathsChange(selectedPaths.filter((path) => !displayedSelectablePaths.includes(path)));
+      return;
+    }
+    onSelectedPathsChange([...new Set([...selectedPaths, ...displayedSelectablePaths])]);
+  };
+
+
   const canNavigateUp = canNavigateProjectFilesUp(relativePath, rootPath);
   const runAction = async (action: typeof openProjectFile | typeof revealProjectFile, entry: ProjectFileEntry) => {
     setActionError(null);
@@ -211,7 +226,7 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
 
     {listing && <>
       <div className="table-scroll client-files-table"><table><thead><tr>
-        {bulkSelectionEnabled && <th className="client-file-select-heading" aria-label="Select files" />}
+        {bulkSelectionEnabled && <th className="client-file-select-heading"><input type="checkbox" aria-label="Select all displayed files" checked={allDisplayedSelected} disabled={displayedSelectablePaths.length === 0} ref={(element) => { if (element) element.indeterminate = someDisplayedSelected; }} onChange={toggleAllDisplayedPaths} /></th>}
         <th className="client-file-status-heading" aria-label="Status" /><th>Name</th><th>Preview</th><th>Audio Details</th><th>Modified</th>
       </tr></thead><tbody>{listing.entries.map((entry) => {
         const record = validationByPath.get(sourceRelativePath(entry));
