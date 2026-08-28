@@ -26,8 +26,6 @@ mod delivery_management;
 mod delivery_management_api_tests;
 #[path = "intake_cli.rs"]
 mod intake;
-#[path = "../intake_progress.rs"]
-mod intake_progress_input;
 #[path = "project_cli.rs"]
 mod project;
 #[path = "revision_cli.rs"]
@@ -50,9 +48,9 @@ use delivery_legacy_testsupport::{
     parse_delivery_output, run_delivery_operation, DeliveryOperation, DELIVERY_EXECUTABLE,
 };
 pub use delivery_management::{delete_delivery_package, get_delivery_status};
-pub(crate) use intake::advertised_capabilities;
-pub(crate) use intake_progress_input::{
-    invoke_with_progress, invoke_with_progress_input, IntakeProgressEvent, StreamingAutomationResponse,
+pub(crate) use intake::{
+    advertised_capabilities, invoke_with_progress, invoke_with_progress_input, IntakeProgressEvent,
+    StreamingAutomationResponse,
 };
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
