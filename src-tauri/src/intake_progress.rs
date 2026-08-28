@@ -1,5 +1,5 @@
 use std::env;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -51,6 +51,19 @@ pub(crate) fn invoke_with_progress<F>(
     home: &Path,
     arguments: &[String],
     expected_operation: &str,
+    on_progress: F,
+) -> Result<StreamingAutomationResponse, ApiCallError>
+where
+    F: FnMut(IntakeProgressEvent) + Send + 'static,
+{
+    invoke_with_progress_input(home, arguments, expected_operation, None, on_progress)
+}
+
+pub(crate) fn invoke_with_progress_input<F>(
+    home: &Path,
+    arguments: &[String],
+    expected_operation: &str,
+    stdin_payload: Option<&str>,
     mut on_progress: F,
 ) -> Result<StreamingAutomationResponse, ApiCallError>
 where
@@ -70,6 +83,7 @@ where
             ("operation", json!(expected_operation)),
             ("executable", json!(executable.to_string_lossy())),
             ("argument_count", json!(arguments.len())),
+            ("stdin_bytes", json!(stdin_payload.map_or(0, str::len))),
         ],
     );
 
@@ -78,6 +92,9 @@ where
         .args(arguments)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    if stdin_payload.is_some() {
+        command.stdin(Stdio::piped());
+    }
     if let Some(path) = automation_subprocess_path(env::var_os("PATH").as_deref()) {
         command.env("PATH", path);
     }
@@ -100,6 +117,16 @@ where
             ApiCallError::StartFailed
         }
     })?;
+
+    if let Some(payload) = stdin_payload {
+        let Some(mut stdin) = child.stdin.take() else {
+            return Err(ApiCallError::StartFailed);
+        };
+        stdin
+            .write_all(payload.as_bytes())
+            .map_err(|_| ApiCallError::StartFailed)?;
+    }
+
     let Some(stdout) = child.stdout.take() else {
         return Err(ApiCallError::StartFailed);
     };
