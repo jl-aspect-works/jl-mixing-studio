@@ -116,4 +116,32 @@ describe("ClientFilesBrowser", () => {
       "01_Client_Files/Original_Delivery/Notes.txt",
     ]);
   });
+
+  it("selects and clears all displayed Client Files from the header checkbox", () => {
+    const onSelectedPathsChange = vi.fn();
+    const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[]} onSelectedPathsChange={onSelectedPathsChange} />);
+    const browser = within(view.container);
+
+    const selectAll = browser.getByRole("checkbox", { name: "Select all displayed files" });
+    expect(selectAll).not.toBeChecked();
+    fireEvent.click(selectAll);
+    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([
+      "01_Client_Files/Original_Delivery/Lead.wav",
+      "01_Client_Files/Original_Delivery/Notes.txt",
+    ]);
+
+    view.rerender(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[
+      "01_Client_Files/Original_Delivery/Lead.wav",
+      "01_Client_Files/Original_Delivery/Notes.txt",
+    ]} onSelectedPathsChange={onSelectedPathsChange} />);
+    expect(browser.getByRole("checkbox", { name: "Select all displayed files" })).toBeChecked();
+    fireEvent.click(browser.getByRole("checkbox", { name: "Select all displayed files" }));
+    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("shows an indeterminate Select All state for partial displayed selection", () => {
+    const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={["01_Client_Files/Original_Delivery/Lead.wav"]} onSelectedPathsChange={vi.fn()} />);
+    expect(within(view.container).getByRole("checkbox", { name: "Select all displayed files" })).toHaveProperty("indeterminate", true);
+  });
+
 });
