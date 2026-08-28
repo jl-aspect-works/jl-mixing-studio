@@ -50,10 +50,10 @@ use delivery_legacy_testsupport::{
     parse_delivery_output, run_delivery_operation, DeliveryOperation, DELIVERY_EXECUTABLE,
 };
 pub use delivery_management::{delete_delivery_package, get_delivery_status};
-pub(crate) use intake::{
-    advertised_capabilities, invoke_with_progress, IntakeProgressEvent, StreamingAutomationResponse,
+pub(crate) use intake::advertised_capabilities;
+pub(crate) use intake_progress_input::{
+    invoke_with_progress_input, IntakeProgressEvent, StreamingAutomationResponse,
 };
-pub(crate) use intake_progress_input::invoke_with_progress_input;
 pub use intake::{
     blocked_intake_operation, preflight_intake_validation, read_intake_report,
     refresh_client_files_validation_with_progress, run_intake_validation_with_progress,
