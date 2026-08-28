@@ -1,0 +1,104 @@
+name: Apply issue 329 Select All
+
+on:
+  push:
+    branches:
+      - feat/329-client-files-select-all
+    paths:
+      - .github/workflows/apply-329.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/329-client-files-select-all
+      - name: Apply Select All implementation
+        shell: python
+        run: |
+          import re
+          from pathlib import Path
+
+          browser = Path("src/intake/ClientFilesBrowser.tsx")
+          text = browser.read_text()
+
+          insertion = '''
+
+  const displayedSelectablePaths = listing?.entries.filter((entry) => entry.entryType === "file").map((entry) => entry.relativePath) ?? [];
+  const displayedSelectedCount = displayedSelectablePaths.filter((path) => selectedPaths.includes(path)).length;
+  const allDisplayedSelected = displayedSelectablePaths.length > 0 && displayedSelectedCount === displayedSelectablePaths.length;
+  const someDisplayedSelected = displayedSelectedCount > 0 && !allDisplayedSelected;
+
+  const toggleAllDisplayedPaths = () => {
+    if (!onSelectedPathsChange || displayedSelectablePaths.length === 0) return;
+    if (allDisplayedSelected) {
+      onSelectedPathsChange(selectedPaths.filter((path) => !displayedSelectablePaths.includes(path)));
+      return;
+    }
+    onSelectedPathsChange([...new Set([...selectedPaths, ...displayedSelectablePaths])]);
+  };
+'''
+          pattern = re.compile(r'(  const toggleSelectedPath = \(entry: ProjectFileEntry\) => \{.*?^  \};)(\n\n  const canNavigateUp)', re.MULTILINE | re.DOTALL)
+          text, count = pattern.subn(r'\1' + insertion + r'\2', text, count=1)
+          if count != 1:
+            raise SystemExit(f"toggleSelectedPath structural anchor count={count}")
+
+          old_header = '{bulkSelectionEnabled && <th className="client-file-select-heading" aria-label="Select files" />}'
+          new_header = '{bulkSelectionEnabled && <th className="client-file-select-heading"><input type="checkbox" aria-label="Select all displayed files" checked={allDisplayedSelected} disabled={displayedSelectablePaths.length === 0} ref={(element) => { if (element) element.indeterminate = someDisplayedSelected; }} onChange={toggleAllDisplayedPaths} /></th>}'
+          if text.count(old_header) != 1:
+            raise SystemExit(f"header anchor count={text.count(old_header)}")
+          browser.write_text(text.replace(old_header, new_header, 1))
+
+          test = Path("src/intake/ClientFilesBrowser.test.tsx")
+          test_text = test.read_text()
+          tests = '''
+
+  it("selects and clears all displayed Client Files from the header checkbox", () => {
+    const onSelectedPathsChange = vi.fn();
+    const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[]} onSelectedPathsChange={onSelectedPathsChange} />);
+    const browser = within(view.container);
+
+    const selectAll = browser.getByRole("checkbox", { name: "Select all displayed files" });
+    expect(selectAll).not.toBeChecked();
+    fireEvent.click(selectAll);
+    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([
+      "01_Client_Files/Original_Delivery/Lead.wav",
+      "01_Client_Files/Original_Delivery/Notes.txt",
+    ]);
+
+    view.rerender(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={[
+      "01_Client_Files/Original_Delivery/Lead.wav",
+      "01_Client_Files/Original_Delivery/Notes.txt",
+    ]} onSelectedPathsChange={onSelectedPathsChange} />);
+    expect(browser.getByRole("checkbox", { name: "Select all displayed files" })).toBeChecked();
+    fireEvent.click(browser.getByRole("checkbox", { name: "Select all displayed files" }));
+    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("shows an indeterminate Select All state for partial displayed selection", () => {
+    const view = render(<ClientFilesBrowser clientId="client" projectId="project" selectedPaths={["01_Client_Files/Original_Delivery/Lead.wav"]} onSelectedPathsChange={vi.fn()} />);
+    expect(within(view.container).getByRole("checkbox", { name: "Select all displayed files" })).toHaveProperty("indeterminate", true);
+  });
+'''
+          closing = "\n});\n"
+          if "selects and clears all displayed Client Files" not in test_text:
+            if not test_text.endswith(closing):
+              raise SystemExit("test describe closing not found")
+            test.write_text(test_text[:-len(closing)] + tests + closing)
+      - name: Focused test
+        run: |
+          npm ci
+          npm test -- --run src/intake/ClientFilesBrowser.test.tsx
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/apply-329.yml
+      - name: Commit implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/intake/ClientFilesBrowser.tsx src/intake/ClientFilesBrowser.test.tsx .github/workflows/apply-329.yml
+          git commit -m 'Add Client Files Select All (#329)'
+          git push origin HEAD:feat/329-client-files-select-all
