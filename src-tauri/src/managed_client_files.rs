@@ -15,7 +15,7 @@ use crate::{resolve_home, resolve_workspace_root};
 const IMPORT_PLAN_OPERATION: &str = "client.files.import.plan";
 const IMPORT_EXECUTE_OPERATION: &str = "client.files.import.execute";
 const IMPORT_PROGRESS_CAPABILITY: &str = "client.files.import.progress";
-const MANAGED_STDIN_CAPABILITY: &str = "managed.requests.stdin-json";
+const MANAGED_STDIN_CAPABILITY: &str = "managed.requests.stdinjson";
 const RESET_PLAN_OPERATION: &str = "audio.prep.reset.plan";
 const RESET_EXECUTE_OPERATION: &str = "audio.prep.reset.execute";
 
@@ -199,7 +199,12 @@ fn import_arguments(request: &ManagedImportRequest, execute: bool) -> Result<Vec
     validate_import_request(request, execute)?;
     let mut arguments = vec![
         "client-files".into(),
-        if execute { "import-execute" } else { "import-plan" }.into(),
+        if execute {
+            "import-execute"
+        } else {
+            "import-plan"
+        }
+        .into(),
         "--json".into(),
         "--source-kind".into(),
         request.source_kind.clone(),
@@ -236,7 +241,12 @@ fn import_stdin_request(
     validate_import_request(request, execute)?;
     let mut arguments = vec![
         "client-files".into(),
-        if execute { "import-execute" } else { "import-plan" }.into(),
+        if execute {
+            "import-execute"
+        } else {
+            "import-plan"
+        }
+        .into(),
         "--json".into(),
         "--request-stdin".into(),
         "--source-kind".into(),
@@ -274,7 +284,12 @@ fn reset_arguments(request: &AudioPrepResetRequest, execute: bool) -> Result<Vec
     validate_reset_request(request, execute)?;
     let mut arguments = vec![
         "audio-prep".into(),
-        if execute { "reset-execute" } else { "reset-plan" }.into(),
+        if execute {
+            "reset-execute"
+        } else {
+            "reset-plan"
+        }
+        .into(),
         "--json".into(),
     ];
     for path in &request.relative_paths {
@@ -304,7 +319,12 @@ fn reset_stdin_request(
     validate_reset_request(request, execute)?;
     let mut arguments = vec![
         "audio-prep".into(),
-        if execute { "reset-execute" } else { "reset-plan" }.into(),
+        if execute {
+            "reset-execute"
+        } else {
+            "reset-plan"
+        }
+        .into(),
         "--json".into(),
         "--request-stdin".into(),
     ];
@@ -480,7 +500,10 @@ pub fn choose_import_sources(source_kind: &str) -> Result<Vec<String>, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{import_stdin_request, reset_stdin_request, with_project_argument, AudioPrepResetRequest, ManagedImportRequest};
+    use super::{
+        import_stdin_request, reset_stdin_request, with_project_argument, AudioPrepResetRequest,
+        ManagedImportRequest,
+    };
     use std::collections::HashMap;
     use std::path::Path;
 
@@ -521,17 +544,22 @@ mod tests {
         };
         let (arguments, payload) = import_stdin_request(&request, true).expect("stdin request");
         assert!(arguments.len() < 12);
-        assert!(arguments.iter().any(|value| value == "--request-stdin"));
+        assert!(arguments
+            .iter()
+            .any(|value| value == "--request-stdin"));
         assert!(payload.len() > 50_000);
 
         let reset = AudioPrepResetRequest {
             client_id: "client".into(),
             project_id: "project".into(),
-            relative_paths: (0..500).map(|index| format!("track-{index:04}.wav")).collect(),
+            relative_paths: (0..500)
+                .map(|index| format!("track-{index:04}.wav"))
+                .collect(),
             plan_id: Some("plan".into()),
             decisions: HashMap::new(),
         };
-        let (reset_arguments, reset_payload) = reset_stdin_request(&reset, true).expect("reset stdin");
+        let (reset_arguments, reset_payload) =
+            reset_stdin_request(&reset, true).expect("reset stdin");
         assert!(reset_arguments.len() < 10);
         assert!(reset_payload.len() > 5_000);
     }
