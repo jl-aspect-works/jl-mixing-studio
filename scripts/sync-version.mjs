@@ -40,7 +40,7 @@ writeFileSync(cargoTomlPath, nextCargoToml);
 
 const cargoLockPath = "src-tauri/Cargo.lock";
 const cargoLock = readFileSync(cargoLockPath, "utf8");
-const packagePattern = /(\[\[package\]\]\nname = "jl-mixing-studio"\nversion = ")[^"]+("\n)/;
+const packagePattern = /(\[\[package\]\]\r?\nname = "jl-mixing-studio"\r?\nversion = ")[^"]+("\r?\n)/;
 if (!packagePattern.test(cargoLock)) {
   throw new Error("Could not find jl-mixing-studio package in src-tauri/Cargo.lock");
 }
