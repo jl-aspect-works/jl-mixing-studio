@@ -70,8 +70,14 @@ export type AudioPrepResetRequest = {
 export const chooseManagedImportSources = (sourceKind: ManagedImportSourceKind) =>
   invoke<string[]>("choose_managed_import_sources", { sourceKind });
 
-export const planManagedImport = (request: ManagedImportRequest) =>
-  invoke<ManagedOperationResult>("plan_managed_client_import", { request });
+export const planManagedImport = (
+  request: ManagedImportRequest,
+  onProgress?: (progress: ManagedImportProgress) => void,
+) => {
+  const progress = new Channel<ManagedImportProgress>();
+  if (onProgress) progress.onmessage = onProgress;
+  return invoke<ManagedOperationResult>("plan_managed_client_import", { request, progress });
+};
 
 export const executeManagedImport = async (
   request: ManagedImportRequest,

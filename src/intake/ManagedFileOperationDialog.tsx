@@ -126,7 +126,8 @@ export function ManagedFileOperationDialog({
       const sources = await chooseManagedImportSources(sourceKind);
       if (sources.length === 0) { setState({ status: "source" }); return; }
       setState({ status: "planning", sourceKind, sources });
-      const result = await planManagedImport({ clientId, projectId, sourceKind, sources });
+      setImportProgress(null);
+      const result = await planManagedImport({ clientId, projectId, sourceKind, sources }, setImportProgress);
       if (!result.ok || !result.data.plan) { setState({ status: "error", message: messageFrom(result, "The selected client files could not be reviewed.") }); return; }
       setSelections(initialSelections(result.data.plan));
       setState({ status: "review", plan: result.data.plan, sourceKind, sources });
@@ -228,7 +229,7 @@ export function ManagedFileOperationDialog({
         <button type="button" onClick={() => void chooseSource("files")}><strong>Files</strong><span>Choose one or more individual files.</span></button>
       </div><div className="dialog-actions"><button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />{sourceCancelLabel}</button></div></>}
 
-      {state.status === "planning" && <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite"><span className="client-files-spinner" aria-hidden="true" /><strong>{sourceReviewLabel(state.sourceKind, state.sources)}</strong><p>Preparing the selected files for import. No project files are being changed yet.</p></div>}
+      {state.status === "planning" && <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite">{importProgressUi?.determinate ? <><strong>{importProgressUi.label}</strong><progress aria-label={importProgressUi.ariaLabel} value={importProgressUi.value} max={importProgressUi.max} /><p>Reviewing destinations and existing Audio Prep lineage. No project files are being changed yet.</p></> : <><span className="client-files-spinner" aria-hidden="true" /><strong>{sourceReviewLabel(state.sourceKind, state.sources)}</strong><p>Preparing the selected files for import. No project files are being changed yet.</p></>}</div>}
 
       {state.status === "review" && <><p className="dialog-intro">{mode === "import" ? "Choose Add or Skip for each planned file, then resolve any destination conflicts for files being added." : "Review each file and choose what to do anywhere a destination already exists."}</p><section className="managed-plan-summary" aria-label="Managed file operation summary">{mode === "import" ? <><article><strong>{selectedRelativePaths.length}</strong><span>Files to add</span></article><article><strong>{skippedSelectionCount}</strong><span>Files to skip</span></article></> : <article><strong>{audioItems.length}</strong><span>Audio Prep operations</span></article>}<article><strong>{unresolved.length}</strong><span>Decisions remaining</span></article></section>
         {mode === "import" && <div className="managed-table-actions"><span>{selectedRelativePaths.length} of {state.plan.files.length} planned {state.plan.files.length === 1 ? "file" : "files"} selected.</span><div className="managed-apply-all"><span>Import selection:</span><button type="button" className="secondary" onClick={() => setAllSelections("add")}>Add All</button><button type="button" className="secondary" onClick={() => setAllSelections("skip")}>Skip All</button></div></div>}
@@ -240,7 +241,7 @@ export function ManagedFileOperationDialog({
 
       {state.status === "finalizing" && <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite">
         <strong>{finalizingProgress?.phase === "finalizing" ? "Finalizing project…" : finalizingProgress?.total ? `Checking imported files… ${finalizingProgress.completed} of ${finalizingProgress.total}` : "Checking imported files…"}</strong>
-        {finalizingProgress?.total ? <progress aria-label={`Checked ${finalizingProgress.completed} of ${finalizingProgress.total} files`} value={finalizingProgress.completed} max={Math.max(finalizingProgress.total, 1)} /> : <progress aria-label="Checking imported files" />}
+        {finalizingProgress?.phase === "finalizing" ? <progress aria-label="Finalizing project" /> : finalizingProgress?.total ? <progress aria-label={`Checked ${finalizingProgress.completed} of ${finalizingProgress.total} files`} value={finalizingProgress.completed} max={Math.max(finalizingProgress.total, 1)} /> : <progress aria-label="Checking imported files" />}
         {finalizingProgress?.active.length ? <small>Processing: {finalizingProgress.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small> : <p>Import is complete. Studio is verifying the project before it becomes ready.</p>}
       </div>}
 

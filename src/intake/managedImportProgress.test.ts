@@ -12,7 +12,7 @@ const progress = (phase: ManagedImportProgress["phase"], completed: number, tota
 });
 
 describe("managedImportProgressPresentation", () => {
-  it("keeps completion in finalizing presentation until the import command returns", () => {
+  it("reserves 100 percent for true completion", () => {
     const states = [
       progress("staging", 0, 2),
       progress("staging", 1, 2),
@@ -33,10 +33,10 @@ describe("managedImportProgressPresentation", () => {
     expect(states[3].label).toBe("Importing 1 of 2 files");
     expect(states[4].label).toBe("Importing 2 of 2 files");
     expect(finalizing.label).toBe("Finalizing import…");
-    expect(complete.label).toBe("Finalizing import…");
     expect(finalizing.value).toBeLessThan(finalizing.max);
-    expect(complete.determinate).toBe(false);
-    expect(complete.value).toBeLessThan(complete.max);
+    expect(complete.label).toBe("Import complete");
+    expect(complete.determinate).toBe(true);
+    expect(complete.value).toBe(complete.max);
   });
 
   it("uses Automation's reported whole-operation counts when present", () => {
@@ -58,10 +58,18 @@ describe("managedImportProgressPresentation", () => {
     expect(state.max).toBe(25);
   });
 
-  it("keeps planning indeterminate until a file total is known", () => {
+  it("keeps planning indeterminate until Automation supplies a file total", () => {
     const state = managedImportProgressPresentation(progress("planning", 0, null), 12);
-    expect(state.label).toBe("Preparing import…");
+    expect(state.label).toBe("Scanning import…");
     expect(state.determinate).toBe(false);
+  });
+
+  it("shows determinate planning progress once a file total is known", () => {
+    const state = managedImportProgressPresentation(progress("planning", 4, 12), 12);
+    expect(state.label).toBe("Checking import files 4 of 12");
+    expect(state.determinate).toBe(true);
+    expect(state.value).toBe(4);
+    expect(state.max).toBe(12);
   });
 
   it("still presents older phase-local importing payloads sensibly", () => {
