@@ -37,7 +37,6 @@ mod workspace_configuration;
 mod workspace_storage_summary;
 
 pub(crate) use delivered_listening::publish_after_delivery_creation;
-pub(super) use delivered_listening::republish_delivered_listening;
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
 // #342 consumes the shared publish engine; configuration writes remain reserved for the settings
