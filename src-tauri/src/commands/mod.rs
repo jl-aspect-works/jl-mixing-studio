@@ -4,11 +4,13 @@ pub(crate) mod delivered_listening;
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
+#[path = "listening_metadata.rs"]
+mod listening_metadata;
 // #342 consumes the shared publish/read path. Configuration writes become production-reachable
 // from the Listening settings UX in #346, so keep dead-code allowance scoped to this module until
 // that handoff lands.
 #[allow(dead_code)]
-#[path = "listening_publish_command.rs"]
+#[path = "listening_publish_with_metadata.rs"]
 mod listening_publish;
 #[path = "native_audio_preview_command.rs"]
 mod native_audio_preview;
