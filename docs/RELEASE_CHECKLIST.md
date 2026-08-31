@@ -8,6 +8,7 @@
 - [ ] Update `VERSION` to the intended SemVer value (for example `2.1.0-rc.3` or `2.1.0`).
 - [ ] Run `npm run version:sync` and commit the generated manifest/lockfile changes with the `VERSION` change.
 - [ ] Update release notes only when release content or installation guidance actually changed; do not edit them solely to change an RC number.
+- [ ] Before a stable release, perform a final documentation-only pass: remove RC/prerelease wording from the release notes, describe completed qualification in past tense, verify installation/version examples match the stable release, and convert the release acceptance document from an active candidate-test plan into the final qualification record.
 - [ ] Run `npm run version:verify`.
 - [ ] Open the release-preparation PR.
 - [ ] Confirm the full PR CI matrix is green before merge.
@@ -26,7 +27,7 @@
 
 ## Acceptance
 
-For the 2.1 release, use [`RELEASE_ACCEPTANCE_V2.1.md`](RELEASE_ACCEPTANCE_V2.1.md) as the high-level packaged sanity acceptance matrix.
+For the 2.1 release, use [`RELEASE_ACCEPTANCE_V2.1.md`](RELEASE_ACCEPTANCE_V2.1.md) as the high-level packaged sanity acceptance matrix and final qualification record.
 
 - [ ] Install the published package on Windows and perform the release acceptance pass.
 - [ ] Install the appropriate published package on macOS and perform the release acceptance pass.
