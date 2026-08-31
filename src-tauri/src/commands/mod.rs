@@ -19,7 +19,7 @@ mod project_revision_files;
 #[path = "revision_description_command.rs"]
 mod revision_description;
 #[path = "revision_listening_command.rs"]
-mod revision_listening;
+pub(crate) mod revision_listening;
 #[path = "revision_notes_command.rs"]
 mod revision_notes;
 #[path = "system_command.rs"]
@@ -53,9 +53,7 @@ pub(super) use project_references::{add_project_reference, delete_project_refere
 pub(crate) use project_revision_files::ListeningSourceSelection;
 pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
 pub(super) use revision_description::update_revision_description;
-pub(super) use revision_listening::{
-    set_revision_listening_project, start_revision_listening_monitor, RevisionListeningMonitorState,
-};
+pub(super) use revision_listening::{start_revision_listening_monitor, RevisionListeningMonitorState};
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
 pub(super) use workspace_configuration::{
