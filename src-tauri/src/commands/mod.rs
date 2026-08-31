@@ -1,3 +1,5 @@
+#[path = "delivered_listening_command.rs"]
+pub(crate) mod delivered_listening;
 #[path = "delivery_notes_command.rs"]
 mod delivery_notes;
 #[path = "folder_command.rs"]
@@ -34,6 +36,8 @@ mod workspace_configuration;
 #[path = "workspace_storage_summary_command.rs"]
 mod workspace_storage_summary;
 
+pub(super) use delivered_listening::republish_delivered_listening;
+pub(crate) use delivered_listening::publish_after_delivery_creation;
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
 // #342 consumes the shared publish engine; configuration writes remain reserved for the settings
