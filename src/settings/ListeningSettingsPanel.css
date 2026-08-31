@@ -9,13 +9,14 @@
 
 .settings-tab {
   position: relative;
+  appearance: none;
   min-height: 40px;
   margin-bottom: -1px;
   padding: 9px 18px;
   border: 1px solid transparent;
   border-bottom-color: var(--line);
   border-radius: 8px 8px 0 0;
-  background: transparent;
+  background: #fff;
   color: var(--muted);
   font: inherit;
   font-weight: 700;
@@ -23,11 +24,18 @@
 }
 
 .settings-tab:hover {
-  background: #f8fafc;
+  background: #f3f6fa;
   color: var(--ink);
 }
 
-.settings-tab.active {
+.settings-tab:active {
+  background: #e9eef5;
+  color: var(--ink);
+}
+
+.settings-tab.active,
+.settings-tab.active:hover,
+.settings-tab.active:active {
   z-index: 1;
   border-color: var(--line);
   border-bottom-color: #fff;
@@ -36,7 +44,7 @@
 }
 
 .settings-tab:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid #94a3b8;
   outline-offset: -3px;
 }
 
