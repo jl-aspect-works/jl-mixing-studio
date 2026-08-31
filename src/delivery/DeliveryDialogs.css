@@ -1,3 +1,64 @@
+.delivery-note-field {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.delivery-note-field > span {
+  color: #344054;
+  font-weight: 600;
+}
+
+.delivery-note-field > span small {
+  color: #667085;
+  font-weight: 400;
+}
+
+.delivery-note-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 104px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid #cfd7e3;
+  border-radius: 7px;
+  background: #fff;
+  color: #1d2939;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.delivery-note-field textarea:focus {
+  outline: 2px solid rgba(47, 108, 246, .2);
+  outline-offset: 1px;
+  border-color: #2f6cf6;
+}
+
+.delivery-note-field textarea:disabled {
+  background: #f5f7fa;
+  color: #667085;
+}
+
+.delivery-note-help {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 5px;
+  color: #667085;
+  font-size: .8rem;
+  line-height: 1.35;
+}
+
+.delivery-note-count {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.delivery-note-count-error {
+  color: #b42318;
+  font-weight: 600;
+}
+
 .setting-row.delivery-clean-option {
   display: flex;
   align-items: flex-start;

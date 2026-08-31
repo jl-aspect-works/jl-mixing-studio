@@ -5,6 +5,8 @@ import { safeError } from "../AppShellViews";
 import type {
   DeliveryCreationPreview,
   DeliveryCreationRequest,
+  DeliveryNotesDocument,
+  DeliveryNotesUpdateRequest,
   DeliveryOperationResult,
   ProjectSummary,
   WorkspaceSnapshot,
@@ -12,6 +14,7 @@ import type {
 import type { DeliveryStatusResult } from "./statusModels";
 import { sameDeliveryPlan, type DeliveryWorkflowState } from "./models";
 
+const DELIVERY_NOTES_MAX_BYTES = 65_536;
 const yieldToBrowserPaint = (): Promise<void> =>
   new Promise((resolve) => window.setTimeout(resolve, 0));
 
@@ -31,6 +34,28 @@ export function useDeliveryWorkflow({
   const [state, setState] = useState<DeliveryWorkflowState>({ status: "closed" });
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [deliveryNote, setDeliveryNote] = useState("");
+  const [savedDeliveryNote, setSavedDeliveryNote] = useState("");
+  const [deliveryNoteLoading, setDeliveryNoteLoading] = useState(false);
+  const [deliveryNoteError, setDeliveryNoteError] = useState<string | null>(null);
+  const [deliveryNoteMaxBytes, setDeliveryNoteMaxBytes] = useState(DELIVERY_NOTES_MAX_BYTES);
+
+  const loadDeliveryNote = (noteClientId: string, projectId: string) => {
+    setDeliveryNoteLoading(true);
+    setDeliveryNoteError(null);
+    void invoke<DeliveryNotesDocument>("get_delivery_notes", {
+      request: { clientId: noteClientId, projectId },
+    })
+      .then((document) => {
+        setDeliveryNote(document.content);
+        setSavedDeliveryNote(document.content);
+        setDeliveryNoteMaxBytes(document.maxBytes);
+      })
+      .catch((error: unknown) => {
+        setDeliveryNoteError(safeError(error, "Delivery Notes could not be read."));
+      })
+      .finally(() => setDeliveryNoteLoading(false));
+  };
 
   const open = () => {
     if (!clientId || !project || !creationAvailable) return;
@@ -43,17 +68,54 @@ export function useDeliveryWorkflow({
     };
     setNotice(null);
     setActionError(null);
+    setDeliveryNote("");
+    setSavedDeliveryNote("");
+    setDeliveryNoteMaxBytes(DELIVERY_NOTES_MAX_BYTES);
     setState({ status: "options", request, cleanFirst: false });
+    loadDeliveryNote(clientId, project.projectId);
   };
 
   const close = () => {
     if (state.status === "preflighting" || state.status === "creating") return;
     setState({ status: "closed" });
+    setDeliveryNoteError(null);
   };
 
   const setCleanFirst = (cleanFirst: boolean) => {
     if (state.status !== "options") return;
     setState({ ...state, cleanFirst });
+  };
+
+  const setDeliveryNoteDraft = (value: string) => {
+    if (state.status !== "options") return;
+    setDeliveryNote(value);
+    setDeliveryNoteError(null);
+  };
+
+  const saveDeliveryNote = async (request: DeliveryCreationRequest): Promise<boolean> => {
+    if (deliveryNote === savedDeliveryNote) return true;
+    const byteLength = new TextEncoder().encode(deliveryNote).length;
+    if (byteLength > deliveryNoteMaxBytes) {
+      setDeliveryNoteError(`Delivery Notes must not exceed ${deliveryNoteMaxBytes.toLocaleString()} bytes.`);
+      return false;
+    }
+    const notesRequest: DeliveryNotesUpdateRequest = {
+      clientId: request.clientId,
+      projectId: request.projectId,
+      content: deliveryNote,
+    };
+    try {
+      const document = await invoke<DeliveryNotesDocument>("update_delivery_notes", {
+        request: notesRequest,
+      });
+      setDeliveryNote(document.content);
+      setSavedDeliveryNote(document.content);
+      setDeliveryNoteMaxBytes(document.maxBytes);
+      return document.content === deliveryNote;
+    } catch (error: unknown) {
+      setDeliveryNoteError(safeError(error, "Delivery Notes could not be saved before building the package."));
+      return false;
+    }
   };
 
   const finishBuild = async (
@@ -176,7 +238,7 @@ export function useDeliveryWorkflow({
   };
 
   const preflight = async () => {
-    if (state.status !== "options" || !project) return;
+    if (state.status !== "options" || !project || deliveryNoteLoading) return;
     const request: DeliveryCreationRequest = {
       ...state.request,
       replacementMode: project.delivery ? "overwrite" : "default",
@@ -184,6 +246,7 @@ export function useDeliveryWorkflow({
       confirmedDeletions: [],
     };
     const { cleanFirst } = state;
+    setDeliveryNoteError(null);
     setState({ status: "preflighting", request, cleanFirst });
     await yieldToBrowserPaint();
 
@@ -203,6 +266,11 @@ export function useDeliveryWorkflow({
         result.delivery.createZip === true &&
         result.delivery.selected.length > 0
       ) {
+        const notesSaved = await saveDeliveryNote(request);
+        if (!notesSaved) {
+          setState({ status: "options", request, cleanFirst });
+          return;
+        }
         await finishBuild(request, result.delivery, cleanFirst);
       } else {
         setState({ status: "closed" });
@@ -225,9 +293,14 @@ export function useDeliveryWorkflow({
     setActionError,
     notice,
     setNotice,
+    deliveryNote,
+    deliveryNoteLoading,
+    deliveryNoteError,
+    deliveryNoteMaxBytes,
     open,
     close,
     setCleanFirst,
+    setDeliveryNoteDraft,
     preflight,
   };
 }

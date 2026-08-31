@@ -6,23 +6,52 @@ export function DeliveryOptionsDialog({
   approvedRevision,
   showCleanOption,
   cleanFirst,
+  deliveryNote,
+  deliveryNoteLoading,
+  deliveryNoteError,
+  deliveryNoteMaxBytes,
   onCleanFirstChange,
+  onDeliveryNoteChange,
   onBuild,
   onClose,
 }: {
   approvedRevision: number;
   showCleanOption: boolean;
   cleanFirst: boolean;
+  deliveryNote: string;
+  deliveryNoteLoading: boolean;
+  deliveryNoteError: string | null;
+  deliveryNoteMaxBytes: number;
   onCleanFirstChange: (cleanFirst: boolean) => void;
+  onDeliveryNoteChange: (deliveryNote: string) => void;
   onBuild: () => void;
   onClose: () => void;
 }) {
+  const deliveryNoteBytes = new TextEncoder().encode(deliveryNote).length;
+  const deliveryNoteTooLarge = deliveryNoteBytes > deliveryNoteMaxBytes;
+  const buildDisabled = deliveryNoteLoading || deliveryNoteTooLarge;
+
   return <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}>
     <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="delivery-options-title">
       <p className="kicker">Delivery package</p>
       <h2 id="delivery-options-title">Build Package</h2>
       <p className="dialog-intro">Create a delivery package from <strong>Approved Revision {String(approvedRevision).padStart(2, "0")}</strong>.</p>
-      <p className="dialog-intro">Delivery Notes are included automatically.</p>
+      <label className="delivery-note-field">
+        <span>Delivery Note <small>(optional)</small></span>
+        <textarea
+          rows={5}
+          value={deliveryNote}
+          disabled={deliveryNoteLoading}
+          aria-describedby="delivery-note-help"
+          onChange={(event) => onDeliveryNoteChange(event.target.value)}
+          placeholder={deliveryNoteLoading ? "Loading Delivery Notes…" : "Add a note to include with this delivery…"}
+        />
+      </label>
+      <div id="delivery-note-help" className="delivery-note-help">
+        <span>{deliveryNoteLoading ? "Reading Delivery_Notes.md…" : "Delivery Notes are included automatically. Changes are saved before package creation."}</span>
+        {!deliveryNoteLoading && <span className={deliveryNoteTooLarge ? "delivery-note-count delivery-note-count-error" : "delivery-note-count"}>{deliveryNoteBytes.toLocaleString()} / {deliveryNoteMaxBytes.toLocaleString()} bytes</span>}
+      </div>
+      {deliveryNoteError && <div className="form-error" role="alert">{deliveryNoteError}</div>}
       {showCleanOption && <label className="setting-row delivery-clean-option">
         <input
           type="checkbox"
@@ -36,7 +65,7 @@ export function DeliveryOptionsDialog({
       </label>}
       <div className="dialog-actions">
         <button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />Cancel</button>
-        <button type="button" onClick={onBuild}><ActionIcon name="download" />Build Package</button>
+        <button type="button" onClick={onBuild} disabled={buildDisabled}><ActionIcon name="download" />Build Package</button>
       </div>
     </section>
   </div>;
