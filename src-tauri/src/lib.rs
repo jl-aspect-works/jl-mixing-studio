@@ -120,7 +120,7 @@ fn preflight_project_creation(
     app: tauri::AppHandle,
     request: ProjectCreationRequest,
 ) -> ProjectOperationResult {
-    run_project_operation(&app, request, cli::preflight_project_creation)
+    run_project_operation(&app, request, cli::preflight_project_creation, false)
 }
 
 #[tauri::command]
@@ -128,7 +128,7 @@ fn create_project(
     app: tauri::AppHandle,
     request: ProjectCreationRequest,
 ) -> ProjectOperationResult {
-    run_project_operation(&app, request, cli::create_project)
+    run_project_operation(&app, request, cli::create_project, true)
 }
 
 #[tauri::command]
@@ -403,6 +403,11 @@ fn delete_delivery_package(
 pub fn run() {
     tauri::Builder::default()
         .manage(audio_preview::NativeAudioPreviewState::default())
+        .manage(commands::RevisionListeningMonitorState::default())
+        .setup(|app| {
+            commands::start_revision_listening_monitor(app.handle().clone());
+            Ok(())
+        })
         .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(tauri::generate_handler![
             get_system_info,
@@ -436,6 +441,7 @@ pub fn run() {
             get_revision_notes,
             update_revision_notes,
             update_revision_description,
+            commands::set_revision_listening_project,
             get_delivery_notes,
             update_delivery_notes,
             preflight_studio_creation,
