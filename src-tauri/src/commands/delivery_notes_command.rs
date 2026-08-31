@@ -1,5 +1,5 @@
 use super::resolve_workspace_root;
-use super::workspace_command_support::{find_project_summary, validated_project_directory};
+use super::workspace_command_support::validated_project_directory;
 use crate::models::{
     DeliveryNotesDocument, DeliveryNotesRequest, DeliveryNotesUpdateRequest, WorkspaceStatus,
 };
@@ -62,11 +62,6 @@ fn resolve_delivery_notes_path(
         && !(allow_partial && snapshot.status == WorkspaceStatus::Partial)
     {
         return Err("Resolve workspace issues before editing Delivery Notes".into());
-    }
-    let project = find_project_summary(&snapshot, client_id.trim(), project_id.trim())
-        .ok_or("The selected project is no longer available in the validated workspace")?;
-    if project.delivery.is_none() || project.delivered_revision.is_none() {
-        return Err("Create a validated delivery package before editing Delivery Notes".into());
     }
     let project_path =
         validated_project_directory(&root, &snapshot, client_id.trim(), project_id.trim())
