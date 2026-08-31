@@ -41,6 +41,8 @@ pub(super) use project_file_summary::summarize_project_files;
 pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
 pub(super) use project_references::{add_project_reference, delete_project_reference};
 pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
+// Phase 1 source-selection contract. The first production consumer is the publish engine in #341.
+#[allow(unused_imports)]
 pub(crate) use project_revision_files::{select_listening_source, ListeningSourceSelection};
 pub(super) use revision_description::update_revision_description;
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
