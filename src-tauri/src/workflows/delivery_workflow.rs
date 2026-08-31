@@ -7,6 +7,7 @@
 use std::fs;
 
 use crate::cli;
+use crate::commands::publish_after_delivery_creation;
 use crate::models::{
     DeliveryCreationPreview, DeliveryCreationRequest, DeliveryOperationCode,
     DeliveryOperationResult, DeliveryReplacementMode, ProjectSummary, WorkspaceStatus,
@@ -180,6 +181,11 @@ pub(crate) fn run_delivery_operation(
     {
         return uncertain_delivery_result();
     }
+
+    // Delivery creation is already authoritative and reconciled at this point. Listening
+    // publication is deliberately secondary: per-destination failures are reported through the
+    // listening results event and must never turn a successful delivery package into a failure.
+    publish_after_delivery_creation(app, &project_directory, expected);
     result
 }
 
