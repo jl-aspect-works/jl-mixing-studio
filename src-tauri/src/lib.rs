@@ -442,6 +442,7 @@ pub fn run() {
             update_revision_notes,
             update_revision_description,
             commands::revision_listening::set_revision_listening_project,
+            commands::delivered_listening::republish_delivered_listening,
             get_delivery_notes,
             update_delivery_notes,
             preflight_studio_creation,
