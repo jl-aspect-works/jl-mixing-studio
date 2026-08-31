@@ -2,11 +2,11 @@
 
 JL Mixing Studio 2.1 expands the Daily Workflow desktop application for macOS and Windows with editable workspace metadata, managed Client Files and Audio Prep workflows, revision lifecycle controls, Windows embedded audio playback, search/filter improvements, and a substantial responsiveness pass.
 
-Studio remains a client of JL Mixing Automation API `1.0`; compatibility is determined by API version and advertised capabilities rather than requiring matching application version numbers. Prerelease validation should use the intended coordinated Studio and Automation 2.1 candidates.
+Studio remains a client of JL Mixing Automation API `1.0`; compatibility is determined by API version and advertised capabilities rather than requiring matching application version numbers. Studio 2.1.0 was qualified with the coordinated Automation 2.1 release-candidate set before stable promotion.
 
 ## Installation
 
-Download the installer for your platform from the Assets section of this release and verify it against `SHA256SUMS.txt` before bypassing any operating-system security warning. Replace `<version>` below with the version shown on the release.
+Download the installer for your platform from the Assets section of this release and verify it against `SHA256SUMS.txt` before bypassing any operating-system security warning. Replace `<version>` below with the version shown on the release (for this stable release, `2.1.0`).
 
 ### macOS
 
@@ -44,7 +44,7 @@ After verifying the installer checksum:
 
 ### Automation requirement
 
-JL Mixing Automation is installed separately. Studio discovers Automation through API `1.0` and advertised capabilities. For coordinated 2.1 prerelease validation, install the intended Automation 2.1 candidate before testing the corresponding Studio candidate.
+JL Mixing Automation is installed separately. Studio discovers Automation through API `1.0` and advertised capabilities. Studio 2.1.0 was qualified with Automation 2.1.0 release candidates and remains independently versioned from Automation.
 
 ## Highlights
 
@@ -79,6 +79,6 @@ JL Mixing Automation is installed separately. Studio discovers Automation throug
 - Real-time simultaneous multi-machine conflict merging.
 - DAW-like waveform editing, playlists, A/B comparison, or transport features.
 
-## Release-candidate validation
+## Release qualification
 
-Prerelease versions of 2.1 are intended for coordinated packaged acceptance on Windows and macOS. Acceptance should cover installation/launch, Automation provider discovery, Studio/Client/Project editing, managed Client Files import and Audio Prep reset, revision Close/Reopen and Approve/Unapprove flows, Delivery creation, shared-workspace refresh behavior, Tasks/Activities filters, Windows UNC/NAS workflows, and embedded audio playback across representative supported audio formats.
+Studio 2.1.0 was qualified through coordinated packaged acceptance on Windows and macOS. The acceptance pass covered installation/launch, Automation provider discovery, Studio/Client/Project editing, managed Client Files import and Audio Prep reset, revision Close/Reopen and Approve/Unapprove flows, Delivery creation, shared-workspace refresh behavior, Tasks/Activities filters, Windows UNC/NAS workflows, embedded audio playback, and responsiveness sanity. The completed qualification record is maintained in [`RELEASE_ACCEPTANCE_V2.1.md`](RELEASE_ACCEPTANCE_V2.1.md).
