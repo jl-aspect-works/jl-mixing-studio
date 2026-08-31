@@ -9,9 +9,8 @@ use lofty::tag::Tag;
 use crate::models::ListeningArtworkPolicy;
 
 const STUDIO_ARTWORK_FILE_NAME: &str = "cover.png";
-pub(crate) const STUDIO_ARTWORK_BYTES: &[u8] = include_bytes!(
-    "../../../vendor/jl-brand/listening-cover-dark-1200.png"
-);
+pub(crate) const STUDIO_ARTWORK_BYTES: &[u8] =
+    include_bytes!("../../../vendor/jl-brand/listening-cover-dark-1200.png");
 
 pub(crate) fn apply_listening_artwork(
     published_copy: &Path,
@@ -19,9 +18,7 @@ pub(crate) fn apply_listening_artwork(
 ) -> Option<String> {
     match policy {
         ListeningArtworkPolicy::Off => None,
-        ListeningArtworkPolicy::PreserveExisting => {
-            Some("existing artwork preserved".to_owned())
-        }
+        ListeningArtworkPolicy::PreserveExisting => Some("existing artwork preserved".to_owned()),
         ListeningArtworkPolicy::ReplaceWithStudioArtwork => {
             Some(replace_with_studio_artwork(published_copy))
         }
