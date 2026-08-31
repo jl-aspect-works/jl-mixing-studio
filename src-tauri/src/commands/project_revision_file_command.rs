@@ -361,7 +361,8 @@ pub(crate) fn select_listening_source(
     for entry in fs::read_dir(revision_root)
         .map_err(|error| filesystem_error("read the revision folder", error))?
     {
-        let entry = entry.map_err(|error| filesystem_error("read a revision folder entry", error))?;
+        let entry =
+            entry.map_err(|error| filesystem_error("read a revision folder entry", error))?;
         let path = entry.path();
         if !listening_extension_matches(&path, &extension) {
             continue;
@@ -375,10 +376,12 @@ pub(crate) fn select_listening_source(
         candidates.push(listening_selection_for_file(path, false)?);
     }
 
-    candidates.sort_by(|left, right| match left.modified_at_ms.cmp(&right.modified_at_ms) {
-        Ordering::Equal => left.file_name.cmp(&right.file_name),
-        ordering => ordering,
-    });
+    candidates.sort_by(
+        |left, right| match left.modified_at_ms.cmp(&right.modified_at_ms) {
+            Ordering::Equal => left.file_name.cmp(&right.file_name),
+            ordering => ordering,
+        },
+    );
     Ok(candidates.pop())
 }
 
@@ -511,9 +514,11 @@ mod tests {
         let override_path = revision.0.join("Primary.wav");
         fs::write(&override_path, b"wave").expect("write override");
 
-        assert!(select_listening_source(&revision.0, "mp3", Some(&override_path))
-            .expect("select")
-            .is_none());
+        assert!(
+            select_listening_source(&revision.0, "mp3", Some(&override_path))
+                .expect("select")
+                .is_none()
+        );
     }
 
     #[cfg(unix)]
