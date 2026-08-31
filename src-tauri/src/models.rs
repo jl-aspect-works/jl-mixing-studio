@@ -7,6 +7,7 @@
 mod client_model;
 mod delivery_model;
 mod intake_model;
+mod listening_model;
 mod project_file_model;
 mod project_model;
 mod revision_model;
@@ -18,6 +19,7 @@ mod workspace_model;
 pub use client_model::*;
 pub use delivery_model::*;
 pub use intake_model::*;
+pub use listening_model::*;
 pub use project_file_model::*;
 pub use project_model::*;
 pub use revision_model::*;
