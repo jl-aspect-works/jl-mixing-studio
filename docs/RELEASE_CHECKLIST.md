@@ -26,6 +26,8 @@
 
 ## Acceptance
 
+For the 2.1 release, use [`RELEASE_ACCEPTANCE_V2.1.md`](RELEASE_ACCEPTANCE_V2.1.md) as the high-level packaged sanity acceptance matrix.
+
 - [ ] Install the published package on Windows and perform the release acceptance pass.
 - [ ] Install the appropriate published package on macOS and perform the release acceptance pass.
 - [ ] Record release-blocking findings as issues/PRs and do not advance to the next RC or stable release until resolved or explicitly deferred.
