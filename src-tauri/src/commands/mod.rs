@@ -6,6 +6,8 @@ mod delivery_notes;
 mod folders;
 #[path = "listening_metadata.rs"]
 mod listening_metadata;
+#[path = "listening_publish_command.rs"]
+mod listening_publish_base;
 // #342 consumes the shared publish/read path. Configuration writes become production-reachable
 // from the Listening settings UX in #346, so keep dead-code allowance scoped to this module until
 // that handoff lands.
