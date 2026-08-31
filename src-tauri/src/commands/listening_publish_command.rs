@@ -28,17 +28,26 @@ fn normalize_extension(value: &str) -> Result<String, String> {
             .chars()
             .all(|character| character.is_ascii_alphanumeric())
     {
-        return Err("Listening destination formats must be simple file extensions such as mp3 or wav".into());
+        return Err(
+            "Listening destination formats must be simple file extensions such as mp3 or wav"
+                .into(),
+        );
     }
     Ok(extension.to_ascii_lowercase())
 }
 
-fn normalize_destination(mut destination: ListeningDestination) -> Result<ListeningDestination, String> {
+fn normalize_destination(
+    mut destination: ListeningDestination,
+) -> Result<ListeningDestination, String> {
     destination.id = destination.id.trim().to_owned();
     if destination.id.is_empty() {
         return Err("Each listening destination requires a stable id".into());
     }
-    if destination.id.chars().any(|character| character.is_control()) {
+    if destination
+        .id
+        .chars()
+        .any(|character| character.is_control())
+    {
         return Err("Listening destination ids cannot contain control characters".into());
     }
 
@@ -102,7 +111,10 @@ fn write_configuration(path: &Path, configuration: &ListeningConfiguration) -> R
         .map_err(|_| "Studio's local configuration directory could not be created".to_owned())?;
     let content = serde_json::to_vec_pretty(configuration)
         .map_err(|_| "Studio's listening configuration could not be encoded".to_owned())?;
-    let temporary = parent.join(format!(".{LISTENING_CONFIG_FILE}.tmp-{}", std::process::id()));
+    let temporary = parent.join(format!(
+        ".{LISTENING_CONFIG_FILE}.tmp-{}",
+        std::process::id()
+    ));
     fs::write(&temporary, content)
         .map_err(|_| "Studio's listening configuration could not be saved".to_owned())?;
     fs::rename(&temporary, path).map_err(|_| {
@@ -148,16 +160,23 @@ fn validate_destination_name(name: &str, required_extension: &str) -> Result<Str
         return Err("Listening destination file names cannot be empty".into());
     }
     let path = Path::new(trimmed);
-    if path.components().count() != 1 || !matches!(path.components().next(), Some(Component::Normal(_))) {
+    if path.components().count() != 1
+        || !matches!(path.components().next(), Some(Component::Normal(_)))
+    {
         return Err("Listening destination file names must be a single portable file name".into());
     }
     if trimmed.chars().any(|character| {
         character.is_control()
-            || matches!(character, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
+            || matches!(
+                character,
+                '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
+            )
     }) || trimmed.ends_with('.')
         || trimmed.ends_with(' ')
     {
-        return Err("The listening destination file name is not portable across macOS and Windows".into());
+        return Err(
+            "The listening destination file name is not portable across macOS and Windows".into(),
+        );
     }
     let extension = path
         .extension()
@@ -208,8 +227,9 @@ fn install_staged_copy(stage: &Path, target: &Path, replace_existing: bool) -> R
         .ok_or("The listening destination has no usable file name")?
         .to_string_lossy();
     let backup = reserve_sibling(parent, &target_name, "backup")?;
-    fs::rename(target, &backup)
-        .map_err(|error| format!("Unable to stage the prior listening copy for replacement: {error}"))?;
+    fs::rename(target, &backup).map_err(|error| {
+        format!("Unable to stage the prior listening copy for replacement: {error}")
+    })?;
     match fs::rename(stage, target) {
         Ok(()) => {
             let _ = fs::remove_file(backup);
@@ -422,9 +442,7 @@ pub(crate) fn publish_listening_copy(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{
-        ListeningArtworkPolicy, ListeningMetadataPolicy, ListeningPublishClass,
-    };
+    use crate::models::{ListeningArtworkPolicy, ListeningMetadataPolicy, ListeningPublishClass};
     use std::time::UNIX_EPOCH;
     use tempfile::tempdir;
 
@@ -448,7 +466,11 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("epoch")
             .as_millis();
-        let file_name = path.file_name().expect("name").to_string_lossy().into_owned();
+        let file_name = path
+            .file_name()
+            .expect("name")
+            .to_string_lossy()
+            .into_owned();
         ListeningSourceSelection {
             path,
             file_name,
