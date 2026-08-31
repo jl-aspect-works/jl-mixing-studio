@@ -221,7 +221,7 @@ fn apply_field(
     let should_write = match policy {
         ListeningMetadataPolicy::Off => false,
         ListeningMetadataPolicy::FillMissing => tag
-            .get_string(&key)
+            .get_string(key.clone())
             .is_none_or(|existing| existing.trim().is_empty()),
         ListeningMetadataPolicy::Replace => true,
     };
@@ -270,8 +270,8 @@ mod tests {
             ListeningMetadataPolicy::Replace,
             &mut unsupported,
         );
-        assert_eq!(tag.get_string(&ItemKey::TrackArtist), Some("Client Name"));
-        assert_eq!(tag.get_string(&ItemKey::AlbumTitle), Some("Song Name"));
+        assert_eq!(tag.get_string(ItemKey::TrackArtist), Some("Client Name"));
+        assert_eq!(tag.get_string(ItemKey::AlbumTitle), Some("Song Name"));
         assert!(unsupported.is_empty());
     }
 
@@ -297,8 +297,11 @@ mod tests {
             ListeningMetadataPolicy::FillMissing,
             &mut unsupported,
         );
-        assert_eq!(tag.get_string(&ItemKey::TrackArtist), Some("Existing Artist"));
-        assert_eq!(tag.get_string(&ItemKey::AlbumTitle), Some("Song Name"));
+        assert_eq!(
+            tag.get_string(ItemKey::TrackArtist),
+            Some("Existing Artist")
+        );
+        assert_eq!(tag.get_string(ItemKey::AlbumTitle), Some("Song Name"));
         assert!(unsupported.is_empty());
     }
 
