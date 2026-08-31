@@ -7,7 +7,7 @@
   border-bottom: 1px solid var(--line);
 }
 
-.settings-tab {
+button.settings-tab {
   position: relative;
   appearance: none;
   min-height: 40px;
@@ -23,19 +23,23 @@
   cursor: pointer;
 }
 
-.settings-tab:hover {
+button.settings-tab:hover:not(:disabled) {
   background: #f3f6fa;
+  border-color: var(--line);
+  border-bottom-color: var(--line);
   color: var(--ink);
 }
 
-.settings-tab:active {
+button.settings-tab:active:not(:disabled) {
   background: #e9eef5;
+  border-color: var(--line);
+  border-bottom-color: var(--line);
   color: var(--ink);
 }
 
-.settings-tab.active,
-.settings-tab.active:hover,
-.settings-tab.active:active {
+button.settings-tab.active,
+button.settings-tab.active:hover:not(:disabled),
+button.settings-tab.active:active:not(:disabled) {
   z-index: 1;
   border-color: var(--line);
   border-bottom-color: #fff;
@@ -43,7 +47,7 @@
   color: var(--ink);
 }
 
-.settings-tab:focus-visible {
+button.settings-tab:focus-visible {
   outline: 2px solid #94a3b8;
   outline-offset: -3px;
 }
@@ -187,7 +191,7 @@
     padding: 0 4px;
   }
 
-  .settings-tab {
+  button.settings-tab {
     flex: 1 1 0;
     padding-inline: 10px;
   }
