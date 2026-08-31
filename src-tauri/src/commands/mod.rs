@@ -17,6 +17,9 @@ mod project_file_summary;
 mod project_files;
 #[path = "project_reference_command.rs"]
 mod project_references;
+// #340 established the deterministic listening selector. Its first production caller arrives in
+// #342/#343, so keep dead-code allowance scoped to this module until that handoff is complete.
+#[allow(dead_code)]
 #[path = "project_revision_file_command.rs"]
 mod project_revision_files;
 #[path = "revision_description_command.rs"]
@@ -52,9 +55,8 @@ pub(super) use project_file_summary::summarize_project_files;
 pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
 pub(super) use project_references::{add_project_reference, delete_project_reference};
 pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
-// Shared Phase 1 source-selection contract. Listening publishing intentionally consumes the
-// selector internally so authoritative revision artifacts remain outside generic UI file APIs.
-pub(crate) use project_revision_files::{select_listening_source, ListeningSourceSelection};
+// Shared Phase 1 source-selection data contract used internally by the publish engine.
+pub(crate) use project_revision_files::ListeningSourceSelection;
 pub(super) use revision_description::update_revision_description;
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
