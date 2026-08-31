@@ -1,20 +1,20 @@
 .settings-tabs {
   display: flex;
-  gap: 4px;
-  margin: 0 0 22px;
-  padding: 4px;
-  width: fit-content;
-  max-width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #f8fafc;
+  align-items: flex-end;
+  gap: 2px;
+  margin: 0;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
 }
 
 .settings-tab {
-  min-height: 38px;
-  padding: 8px 16px;
-  border: 0;
-  border-radius: 7px;
+  position: relative;
+  min-height: 40px;
+  margin-bottom: -1px;
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--line);
+  border-radius: 8px 8px 0 0;
   background: transparent;
   color: var(--muted);
   font: inherit;
@@ -23,19 +23,26 @@
 }
 
 .settings-tab:hover {
-  background: #fff;
+  background: #f8fafc;
   color: var(--ink);
 }
 
 .settings-tab.active {
+  z-index: 1;
+  border-color: var(--line);
+  border-bottom-color: #fff;
   background: #fff;
   color: var(--ink);
-  box-shadow: 0 1px 3px rgb(15 23 42 / 12%);
 }
 
 .settings-tab:focus-visible {
   outline: 2px solid currentColor;
-  outline-offset: 2px;
+  outline-offset: -3px;
+}
+
+.settings-tab-panel {
+  padding: 22px 0 0;
+  background: #fff;
 }
 
 .settings-tab-panel:focus {
@@ -169,11 +176,12 @@
 
 @media (max-width: 720px) {
   .settings-tabs {
-    width: 100%;
+    padding: 0 4px;
   }
 
   .settings-tab {
     flex: 1 1 0;
+    padding-inline: 10px;
   }
 
   .listening-settings-heading {
