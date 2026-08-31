@@ -220,7 +220,7 @@ fn apply_field(
     let should_write = match policy {
         ListeningMetadataPolicy::Off => false,
         ListeningMetadataPolicy::FillMissing => tag
-            .get_string(key.clone())
+            .get_string(key)
             .is_none_or(|existing| existing.trim().is_empty()),
         ListeningMetadataPolicy::Replace => true,
     };
