@@ -53,24 +53,16 @@ pub(crate) fn republish_delivered_listening(
     let project_id = request.project_id.trim();
     let project = super::find_project_summary(&snapshot, client_id, project_id)
         .ok_or_else(|| "The selected project is no longer available".to_owned())?;
-    let delivery = project
-        .delivery
-        .as_ref()
-        .ok_or_else(|| "Create a delivery package before republishing Delivered Listening".to_owned())?;
-    let project_directory = validated_project_directory(
-        &workspace_root,
-        &snapshot,
-        client_id,
-        project_id,
-    )
-    .ok_or_else(|| "The selected project directory could not be resolved safely".to_owned())?;
+    let delivery = project.delivery.as_ref().ok_or_else(|| {
+        "Create a delivery package before republishing Delivered Listening".to_owned()
+    })?;
+    let project_directory =
+        validated_project_directory(&workspace_root, &snapshot, client_id, project_id).ok_or_else(
+            || "The selected project directory could not be resolved safely".to_owned(),
+        )?;
 
-    let results = publish_from_delivery_package(
-        &app,
-        &project_directory,
-        project_id,
-        &delivery.files,
-    );
+    let results =
+        publish_from_delivery_package(&app, &project_directory, project_id, &delivery.files);
     if !results.is_empty() {
         emit_results(
             &app,
@@ -161,11 +153,8 @@ fn publish_from_delivery_package(
     destinations
         .iter()
         .map(|destination| {
-            let selection = select_package_main_mix(
-                &delivery_root,
-                files,
-                &destination.required_extension,
-            );
+            let selection =
+                select_package_main_mix(&delivery_root, files, &destination.required_extension);
             publish_selection_result(selection, destination, project_id)
         })
         .collect()
@@ -236,7 +225,9 @@ fn delivered_target_name(project_id: &str, required_extension: &str) -> Result<S
         || project_id.ends_with('.')
         || project_id.ends_with(' ')
     {
-        return Err("The project id cannot be used as a portable Delivered Listening filename".into());
+        return Err(
+            "The project id cannot be used as a portable Delivered Listening filename".into(),
+        );
     }
     Ok(format!(
         "{project_id}.{}",
@@ -292,7 +283,10 @@ fn select_package_main_mix(
     selection_for_file(source, true).map(Some)
 }
 
-fn resolve_delivery_source_name(revision_root: &Path, source_name: &str) -> Result<PathBuf, String> {
+fn resolve_delivery_source_name(
+    revision_root: &Path,
+    source_name: &str,
+) -> Result<PathBuf, String> {
     let source_name = portable_file_name(source_name)?;
     let root_candidate = revision_root.join(&source_name);
     let variants_candidate = revision_root.join("Variants").join(&source_name);
@@ -464,13 +458,11 @@ mod tests {
     fn successful_preview_never_falls_back_when_required_format_was_not_delivered() {
         let temp = tempdir().expect("tempdir");
         fs::write(temp.path().join("Mix.wav"), b"wave").expect("wave");
-        assert!(select_preview_main_mix(
-            temp.path(),
-            &[planned("Mix.wav", MAIN_MIX_TYPE)],
-            "mp3",
-        )
-        .expect("selection")
-        .is_none());
+        assert!(
+            select_preview_main_mix(temp.path(), &[planned("Mix.wav", MAIN_MIX_TYPE)], "mp3",)
+                .expect("selection")
+                .is_none()
+        );
     }
 
     #[test]
