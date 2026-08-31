@@ -7,7 +7,7 @@ use crate::models::{
 };
 use crate::workspace;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{hash_map::Entry, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -358,21 +358,26 @@ fn observe_candidate(
     if monitor.generation != generation {
         return Ok(false);
     }
-    let observation = monitor
-        .destinations
-        .entry(destination_id.to_owned())
-        .or_insert_with(|| DestinationObservation::candidate(fingerprint.clone()));
 
-    match &observation.source {
-        ObservedSource::Candidate(current) if current == fingerprint => {
-            observation.stable_samples = observation.stable_samples.saturating_add(1);
+    let observation = match monitor.destinations.entry(destination_id.to_owned()) {
+        Entry::Vacant(entry) => {
+            entry.insert(DestinationObservation::candidate(fingerprint.clone()))
         }
-        _ => {
-            let published = observation.published.clone();
-            *observation = DestinationObservation::candidate(fingerprint.clone());
-            observation.published = published;
+        Entry::Occupied(entry) => {
+            let observation = entry.into_mut();
+            match &observation.source {
+                ObservedSource::Candidate(current) if current == fingerprint => {
+                    observation.stable_samples = observation.stable_samples.saturating_add(1);
+                }
+                _ => {
+                    let published = observation.published.clone();
+                    *observation = DestinationObservation::candidate(fingerprint.clone());
+                    observation.published = published;
+                }
+            }
+            observation
         }
-    }
+    };
 
     if observation.stable_samples < STABLE_SAMPLE_COUNT {
         return Ok(false);
