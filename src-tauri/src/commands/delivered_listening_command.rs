@@ -68,7 +68,7 @@ pub(crate) fn republish_delivered_listening(
     let results = publish_from_delivery_package(
         &app,
         &project_directory,
-        delivery.revision,
+        project_id,
         &delivery.files,
     );
     if !results.is_empty() {
@@ -138,7 +138,7 @@ fn publish_from_delivery_preview(
                 &preview.selected,
                 &destination.required_extension,
             );
-            publish_selection_result(selection, destination)
+            publish_selection_result(selection, destination, &preview.project_id)
         })
         .collect()
 }
@@ -146,7 +146,7 @@ fn publish_from_delivery_preview(
 fn publish_from_delivery_package(
     app: &tauri::AppHandle,
     project_directory: &Path,
-    _revision: u32,
+    project_id: &str,
     files: &[crate::models::DeliveryFile],
 ) -> Vec<ListeningPublishResult> {
     let destinations = match delivered_destinations(app) {
@@ -166,7 +166,7 @@ fn publish_from_delivery_package(
                 files,
                 &destination.required_extension,
             );
-            publish_selection_result(selection, destination)
+            publish_selection_result(selection, destination, project_id)
         })
         .collect()
 }
@@ -184,9 +184,35 @@ fn configuration_failure(message: String) -> Vec<ListeningPublishResult> {
 fn publish_selection_result(
     selection: Result<Option<ListeningSourceSelection>, String>,
     destination: &ListeningDestination,
+    project_id: &str,
 ) -> ListeningPublishResult {
     match selection {
-        Ok(selection) => publish_listening_copy(selection.as_ref(), destination, None, true),
+        Ok(selection) => {
+            let target_name = if selection.is_some() {
+                match delivered_target_name(project_id, &destination.required_extension) {
+                    Ok(name) => Some(name),
+                    Err(message) => {
+                        return ListeningPublishResult {
+                            destination_id: destination.id.clone(),
+                            status: ListeningPublishStatus::Failed,
+                            message,
+                            selected_source: selection
+                                .as_ref()
+                                .map(|value| value.path.to_string_lossy().into_owned()),
+                            destination_path: Some(destination.path.clone()),
+                        }
+                    }
+                }
+            } else {
+                None
+            };
+            publish_listening_copy(
+                selection.as_ref(),
+                destination,
+                target_name.as_deref(),
+                true,
+            )
+        }
         Err(message) => ListeningPublishResult {
             destination_id: destination.id.clone(),
             status: ListeningPublishStatus::Failed,
@@ -195,6 +221,27 @@ fn publish_selection_result(
             destination_path: Some(destination.path.clone()),
         },
     }
+}
+
+fn delivered_target_name(project_id: &str, required_extension: &str) -> Result<String, String> {
+    let project_id = project_id.trim();
+    if project_id.is_empty()
+        || project_id.chars().any(|character| {
+            character.is_control()
+                || matches!(
+                    character,
+                    '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
+                )
+        })
+        || project_id.ends_with('.')
+        || project_id.ends_with(' ')
+    {
+        return Err("The project id cannot be used as a portable Delivered Listening filename".into());
+    }
+    Ok(format!(
+        "{project_id}.{}",
+        normalized_extension(required_extension)?
+    ))
 }
 
 fn select_preview_main_mix(
@@ -329,7 +376,10 @@ fn regular_file(path: &Path) -> bool {
         .is_ok_and(|metadata| metadata.is_file() && !metadata.file_type().is_symlink())
 }
 
-fn selection_for_file(path: PathBuf, explicit_override: bool) -> Result<ListeningSourceSelection, String> {
+fn selection_for_file(
+    path: PathBuf,
+    explicit_override: bool,
+) -> Result<ListeningSourceSelection, String> {
     let metadata = fs::symlink_metadata(&path)
         .map_err(|error| format!("Unable to inspect the Delivered Listening source: {error}"))?;
     if metadata.file_type().is_symlink() || !metadata.is_file() {
@@ -457,6 +507,18 @@ mod tests {
         .expect("selection")
         .expect("source");
         assert_eq!(selection.file_name, "Final.mp3");
+    }
+
+    #[test]
+    fn delivered_target_is_stable_across_redelivery_source_names() {
+        assert_eq!(
+            delivered_target_name("blue-sky", "WAV").as_deref(),
+            Ok("blue-sky.wav")
+        );
+        assert_eq!(
+            delivered_target_name("blue-sky", ".wav").as_deref(),
+            Ok("blue-sky.wav")
+        );
     }
 
     #[test]
