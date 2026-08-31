@@ -129,7 +129,7 @@ fn create_project(
     app: tauri::AppHandle,
     request: ProjectCreationRequest,
 ) -> ProjectOperationResult {
-    run_project_operation(&app, request, cli::create_project, true)
+    run_project_operation(&app, request, cli::create_project)
 }
 
 #[tauri::command]
