@@ -1,5 +1,49 @@
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 22px;
+  padding: 4px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.settings-tab {
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-tab:hover {
+  background: #fff;
+  color: var(--ink);
+}
+
+.settings-tab.active {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 12%);
+}
+
+.settings-tab:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.settings-tab-panel:focus {
+  outline: none;
+}
+
 .listening-settings {
-  margin-top: 22px;
+  margin-top: 0;
 }
 
 .listening-settings-heading {
@@ -124,6 +168,14 @@
 }
 
 @media (max-width: 720px) {
+  .settings-tabs {
+    width: 100%;
+  }
+
+  .settings-tab {
+    flex: 1 1 0;
+  }
+
   .listening-settings-heading {
     display: grid;
   }
