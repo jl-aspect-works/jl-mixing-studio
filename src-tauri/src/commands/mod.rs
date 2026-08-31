@@ -2,6 +2,8 @@
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
+#[path = "listening_publish_command.rs"]
+mod listening_publish;
 #[path = "native_audio_preview_command.rs"]
 mod native_audio_preview;
 #[path = "project_file_open_command.rs"]
@@ -12,8 +14,6 @@ mod project_file_summary;
 mod project_files;
 #[path = "project_reference_command.rs"]
 mod project_references;
-// #340 defines the Phase 1 listening selector here; #341 adds its first production caller.
-#[allow(dead_code)]
 #[path = "project_revision_file_command.rs"]
 mod project_revision_files;
 #[path = "revision_description_command.rs"]
@@ -30,6 +30,9 @@ mod workspace_storage_summary;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
+pub(crate) use listening_publish::{
+    listening_configuration, publish_listening_copy, save_listening_configuration,
+};
 pub(super) use native_audio_preview::{
     get_native_project_audio_preview_status, load_native_project_audio_preview,
     pause_native_project_audio_preview, play_native_project_audio_preview,
@@ -43,9 +46,8 @@ pub(super) use project_file_summary::summarize_project_files;
 pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
 pub(super) use project_references::{add_project_reference, delete_project_reference};
 pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
-// Phase 1 source-selection contract. The first production consumer is the publish engine in #341;
-// #340 intentionally exposes no UI or Tauri command for this internal service.
-#[allow(unused_imports)]
+// Shared Phase 1 source-selection contract. Listening publishing intentionally consumes the
+// selector internally so authoritative revision artifacts remain outside generic UI file APIs.
 pub(crate) use project_revision_files::{select_listening_source, ListeningSourceSelection};
 pub(super) use revision_description::update_revision_description;
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
