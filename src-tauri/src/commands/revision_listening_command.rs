@@ -170,7 +170,9 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
         &active.client_id,
         &active.project_id,
     )
-    .ok_or_else(|| "The active Revision Listening project could not be resolved safely".to_owned())?;
+    .ok_or_else(|| {
+        "The active Revision Listening project could not be resolved safely".to_owned()
+    })?;
     let revision_root = project_directory
         .join("04_Revisions")
         .join(format!("Revision_{revision:02}"));
@@ -268,8 +270,7 @@ fn scan_destination(
 
     let Some(selection) = selection else {
         let should_report = observe_missing(state, generation, &destination.id)?;
-        return Ok(should_report
-            .then(|| publish_listening_copy(None, destination, None, true)));
+        return Ok(should_report.then(|| publish_listening_copy(None, destination, None, true)));
     };
 
     let fingerprint = source_fingerprint(&selection.path)?;
@@ -285,7 +286,8 @@ fn scan_destination(
     }
 
     let target_name = revision_target_name(&selection.path, revision);
-    let result = publish_listening_copy(Some(&selection), destination, target_name.as_deref(), true);
+    let result =
+        publish_listening_copy(Some(&selection), destination, target_name.as_deref(), true);
     record_publish_result(
         state,
         generation,
@@ -382,7 +384,8 @@ fn observe_candidate(
         .last_attempt
         .as_ref()
         .is_some_and(|(attempted, attempt_scan)| {
-            attempted == fingerprint && scan_number.saturating_sub(*attempt_scan) < FAILED_RETRY_SCANS
+            attempted == fingerprint
+                && scan_number.saturating_sub(*attempt_scan) < FAILED_RETRY_SCANS
         })
     {
         return Ok(false);
@@ -493,15 +496,8 @@ mod tests {
         for scan in 1..=3 {
             let _ = observe_candidate(&state, 1, scan, "wav", &source).expect("stable");
         }
-        record_publish_result(
-            &state,
-            1,
-            3,
-            "wav",
-            &source,
-            ListeningPublishStatus::Failed,
-        )
-        .expect("failed");
+        record_publish_result(&state, 1, 3, "wav", &source, ListeningPublishStatus::Failed)
+            .expect("failed");
         assert!(!observe_candidate(&state, 1, 4, "wav", &source).expect("backoff"));
         assert!(observe_candidate(&state, 1, 13, "wav", &source).expect("retry"));
     }
