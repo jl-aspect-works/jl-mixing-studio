@@ -48,7 +48,7 @@ export function DeliveryOptionsDialog({
         />
       </label>
       <div id="delivery-note-help" className="delivery-note-help">
-        <span>{deliveryNoteLoading ? "Reading Delivery_Notes.md…" : "Saved to Delivery_Notes.md and included in the generated package."}</span>
+        <span>{deliveryNoteLoading ? "Reading Delivery_Notes.md…" : "Delivery Notes are included automatically. Changes are saved before package creation."}</span>
         {!deliveryNoteLoading && <span className={deliveryNoteTooLarge ? "delivery-note-count delivery-note-count-error" : "delivery-note-count"}>{deliveryNoteBytes.toLocaleString()} / {deliveryNoteMaxBytes.toLocaleString()} bytes</span>}
       </div>
       {deliveryNoteError && <div className="form-error" role="alert">{deliveryNoteError}</div>}
