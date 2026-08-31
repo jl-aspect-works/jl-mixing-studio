@@ -65,9 +65,9 @@ fn metadata_for_source(source: &Path) -> Result<ListeningMetadata, String> {
     let project_path = project_root.join("00_Admin").join("project-manifest.json");
     let project: MetadataProjectDocument = read_json(&project_path, "project")?;
 
-    let projects_root = project_root
-        .parent()
-        .ok_or_else(|| "the source project folder is outside the expected workspace layout".to_owned())?;
+    let projects_root = project_root.parent().ok_or_else(|| {
+        "the source project folder is outside the expected workspace layout".to_owned()
+    })?;
     if projects_root.file_name().and_then(|value| value.to_str()) != Some("Projects") {
         return Err("the source project folder is outside the expected workspace layout".into());
     }
@@ -76,8 +76,7 @@ fn metadata_for_source(source: &Path) -> Result<ListeningMetadata, String> {
         .ok_or_else(|| "the source client folder could not be resolved".to_owned())?;
     let client: MetadataClientDocument = read_json(&client_root.join("client.json"), "client")?;
 
-    let revision = revision_for_source(&project_root, source)
-        .or(project.state.delivered_revision);
+    let revision = revision_for_source(&project_root, source).or(project.state.delivered_revision);
     let title = revision
         .map(|revision| format!("{} - Rev {revision:02}", project.project_name))
         .unwrap_or_else(|| project.project_name.clone());
