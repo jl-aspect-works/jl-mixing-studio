@@ -4,6 +4,8 @@ pub(crate) mod delivered_listening;
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
+#[path = "listening_artwork.rs"]
+mod listening_artwork;
 #[path = "listening_metadata.rs"]
 mod listening_metadata;
 #[path = "listening_publish_command.rs"]
