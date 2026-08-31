@@ -6,6 +6,7 @@ import type { ResourceState } from "../AppViews";
 import { ActionIcon } from "../components/ActionIcon";
 import { copy as productCopy } from "../resources/copy";
 import type { AppPreferences } from "../AppWorkflowModels";
+import { ListeningSettingsPanel } from "./ListeningSettingsPanel";
 import type { WorkspaceConfiguration } from "./models";
 
 interface SettingsRouteProps {
@@ -188,6 +189,8 @@ export function SettingsRoute({
           <p className="health-detail">Workspace validation happens automatically before Studio switches. Individual write operations continue to enforce their own canonical-path, containment, and safe-write rules.</p>
         </section>
       </div>
+
+      <ListeningSettingsPanel />
     </section>
   );
 }
