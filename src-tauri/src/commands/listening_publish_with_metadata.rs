@@ -55,9 +55,7 @@ pub(crate) fn publish_listening_copy(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{
-        ListeningArtworkPolicy, ListeningMetadataPolicy, ListeningPublishClass,
-    };
+    use crate::models::{ListeningArtworkPolicy, ListeningMetadataPolicy, ListeningPublishClass};
     use std::fs;
     use std::path::PathBuf;
     use std::time::UNIX_EPOCH;
