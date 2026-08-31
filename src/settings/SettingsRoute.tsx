@@ -21,6 +21,7 @@ interface SettingsRouteProps {
 }
 
 type WorkspaceAction = "idle" | "changing" | "opening";
+type SettingsTab = "workspace" | "listening";
 
 function errorMessage(error: unknown, fallback: string): string {
   if (typeof error === "string" && error.trim()) return error;
@@ -50,6 +51,7 @@ export function SettingsRoute({
   onCreateWorkspace,
   onRefresh,
 }: SettingsRouteProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>("workspace");
   const [workspaceAction, setWorkspaceAction] = useState<WorkspaceAction>("idle");
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [workspaceNotice, setWorkspaceNotice] = useState<string | null>(null);
@@ -107,6 +109,13 @@ export function SettingsRoute({
     }
   };
 
+  const selectRelativeTab = (direction: -1 | 1) => {
+    const tabs: SettingsTab[] = ["workspace", "listening"];
+    const index = tabs.indexOf(activeTab);
+    const nextIndex = (index + direction + tabs.length) % tabs.length;
+    setActiveTab(tabs[nextIndex]);
+  };
+
   const currentPath = workspaceConfiguration.status === "ready"
     ? workspaceConfiguration.value.workspacePath
     : workspace.status === "ready"
@@ -124,73 +133,138 @@ export function SettingsRoute({
     <section className="planned-route" aria-labelledby="settings-heading">
       <div className="panel-heading">
         <div>
-          <p className="kicker">Settings &gt; Workspace</p>
-          <h2 id="settings-heading">Workspace</h2>
-          <p className="health-detail">Choose where JL Mixing projects live on this computer. Local disks, NAS shares, and OS-mounted cloud folders are supported as ordinary filesystem paths.</p>
+          <p className="kicker">Settings</p>
+          <h2 id="settings-heading">Configuration</h2>
+          <p className="health-detail">Configure this Studio installation and where it publishes listening copies.</p>
         </div>
       </div>
 
-      {workspaceNotice && <section className="notice success" role="status"><strong>Workspace updated</strong><span>{workspaceNotice}</span></section>}
-      {workspaceError && <section className="notice warning" role="alert"><strong>Workspace action failed</strong><span>{workspaceError}</span></section>}
-
-      <div className="project-detail-grid">
-        <section className="panel">
-          <div className="panel-heading">
-            <div><p className="kicker">Configured location</p><h3>{workspaceStatusLabel(workspace)}</h3></div>
-            <span className="planned-pill">{workspaceConfiguration.status === "ready" && workspaceConfiguration.value.configured ? "Configured" : "Default"}</span>
-          </div>
-          <div className="folder-control">
-            <code>{currentPath}</code>
-            <small>{workspaceConfiguration.status === "ready" && workspaceConfiguration.value.configured
-              ? "Saved locally for this Studio installation. Other computers may use a different path to the same shared workspace."
-              : "No explicit workspace has been saved yet; Studio is using the default ~/Music/Mixes location."}</small>
-            <div className="directory-actions">
-              <button type="button" onClick={() => void changeWorkspace()} disabled={workspaceAction !== "idle"} aria-busy={workspaceAction === "changing"}><ActionIcon name="folder" />{workspaceAction === "changing" ? "Changing…" : "Change Workspace…"}</button>
-              <button type="button" className="secondary" onClick={onCreateWorkspace} disabled={workspaceAction !== "idle"}><ActionIcon name="add" />Create New Workspace…</button>
-              <button type="button" className="secondary" onClick={openWorkspace} disabled={!canOpen} aria-busy={workspaceAction === "opening"}><ActionIcon name="folder" />Open Workspace Folder</button>
-              <button type="button" className="secondary" onClick={onRefresh} disabled={workspaceAction !== "idle"}><ActionIcon name="refresh" />Refresh Status</button>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-heading"><div><p className="kicker">Health</p><h3>Workspace status</h3></div></div>
-          <dl className="health-list">
-            <div><dt>Connection</dt><dd><span className={`status-dot${connected ? " good" : ""}`} />{workspaceStatusLabel(workspace)}</dd></div>
-            <div><dt>Last checked</dt><dd>{lastChecked}</dd></div>
-            <div><dt>Workspace folder</dt><dd>{connected ? "Reachable" : "Unavailable"}</dd></div>
-            <div><dt>Project data</dt><dd>{workspace.status === "ready" ? (workspace.value.status === "partial" ? "Accessible with issues" : connected ? "Accessible" : "Unavailable") : "Not checked"}</dd></div>
-            <div><dt>Clients</dt><dd>{workspace.status === "ready" ? workspace.value.counts.clients : "—"}</dd></div>
-            <div><dt>Projects</dt><dd>{workspace.status === "ready" ? workspace.value.counts.projects : "—"}</dd></div>
-            <div><dt>Automation</dt><dd>{version.status === "ready" ? (version.value.supported ? "Compatible" : version.value.available ? "Incompatible" : "Unavailable") : "Not checked"}</dd></div>
-          </dl>
-          <p className="health-detail">If a shared or synchronized workspace disconnects, Studio keeps this configured path and reports it unavailable. Refresh after reconnecting; Studio does not silently fall back to another workspace.</p>
-          {version.status === "ready" && <p className="health-detail">{version.value.message}</p>}
-        </section>
-
-        <section className="panel">
-          <h3>{productCopy.settings.appearance}</h3>
-          <label className="setting-row"><span><strong>{productCopy.settings.compactLayout}</strong><small>{productCopy.settings.compactLayoutHelp}</small></span><input type="checkbox" checked={preferences.compactLayout} onChange={(event) => update({ ...preferences, compactLayout: event.target.checked })} /></label>
-          <label className="setting-row"><span><strong>{productCopy.settings.reduceMotion}</strong><small>{productCopy.settings.reduceMotionHelp}</small></span><input type="checkbox" checked={preferences.reduceMotion} onChange={(event) => update({ ...preferences, reduceMotion: event.target.checked })} /></label>
-        </section>
-
-        <section className="panel" aria-labelledby="settings-about-heading">
-          <div className="panel-heading"><div><p className="kicker">About</p><h3 id="settings-about-heading">JL Mixing Studio</h3></div></div>
-          <dl className="health-list">
-            <div><dt>Studio version</dt><dd>{studioVersion ?? "Checking…"}</dd></div>
-            <div><dt>Automation version</dt><dd>{automationVersion}</dd></div>
-            <div><dt>Automation API</dt><dd>{version.status === "ready" && version.value.available ? "1.0" : "—"}</dd></div>
-          </dl>
-        </section>
-
-        <section className="panel">
-          <h3>Configuration boundary</h3>
-          <p className="health-detail">The workspace path is a machine-local Studio preference. It is not written into shared project metadata and changing it does not move, copy, or migrate projects.</p>
-          <p className="health-detail">Workspace validation happens automatically before Studio switches. Individual write operations continue to enforce their own canonical-path, containment, and safe-write rules.</p>
-        </section>
+      <div className="settings-tabs" role="tablist" aria-label="Settings sections">
+        <button
+          id="settings-workspace-tab"
+          type="button"
+          role="tab"
+          className={`settings-tab${activeTab === "workspace" ? " active" : ""}`}
+          aria-selected={activeTab === "workspace"}
+          aria-controls="settings-workspace-panel"
+          tabIndex={activeTab === "workspace" ? 0 : -1}
+          onClick={() => setActiveTab("workspace")}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+              event.preventDefault();
+              selectRelativeTab(event.key === "ArrowRight" ? 1 : -1);
+            }
+          }}
+        >
+          Workspace
+        </button>
+        <button
+          id="settings-listening-tab"
+          type="button"
+          role="tab"
+          className={`settings-tab${activeTab === "listening" ? " active" : ""}`}
+          aria-selected={activeTab === "listening"}
+          aria-controls="settings-listening-panel"
+          tabIndex={activeTab === "listening" ? 0 : -1}
+          onClick={() => setActiveTab("listening")}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+              event.preventDefault();
+              selectRelativeTab(event.key === "ArrowRight" ? 1 : -1);
+            }
+          }}
+        >
+          Listening
+        </button>
       </div>
 
-      <ListeningSettingsPanel />
+      {activeTab === "workspace" && (
+        <div
+          id="settings-workspace-panel"
+          className="settings-tab-panel"
+          role="tabpanel"
+          aria-labelledby="settings-workspace-tab"
+        >
+          <div className="panel-heading">
+            <div>
+              <p className="kicker">Settings &gt; Workspace</p>
+              <h2>Workspace</h2>
+              <p className="health-detail">Choose where JL Mixing projects live on this computer. Local disks, NAS shares, and OS-mounted cloud folders are supported as ordinary filesystem paths.</p>
+            </div>
+          </div>
+
+          {workspaceNotice && <section className="notice success" role="status"><strong>Workspace updated</strong><span>{workspaceNotice}</span></section>}
+          {workspaceError && <section className="notice warning" role="alert"><strong>Workspace action failed</strong><span>{workspaceError}</span></section>}
+
+          <div className="project-detail-grid">
+            <section className="panel">
+              <div className="panel-heading">
+                <div><p className="kicker">Configured location</p><h3>{workspaceStatusLabel(workspace)}</h3></div>
+                <span className="planned-pill">{workspaceConfiguration.status === "ready" && workspaceConfiguration.value.configured ? "Configured" : "Default"}</span>
+              </div>
+              <div className="folder-control">
+                <code>{currentPath}</code>
+                <small>{workspaceConfiguration.status === "ready" && workspaceConfiguration.value.configured
+                  ? "Saved locally for this Studio installation. Other computers may use a different path to the same shared workspace."
+                  : "No explicit workspace has been saved yet; Studio is using the default ~/Music/Mixes location."}</small>
+                <div className="directory-actions">
+                  <button type="button" onClick={() => void changeWorkspace()} disabled={workspaceAction !== "idle"} aria-busy={workspaceAction === "changing"}><ActionIcon name="folder" />{workspaceAction === "changing" ? "Changing…" : "Change Workspace…"}</button>
+                  <button type="button" className="secondary" onClick={onCreateWorkspace} disabled={workspaceAction !== "idle"}><ActionIcon name="add" />Create New Workspace…</button>
+                  <button type="button" className="secondary" onClick={openWorkspace} disabled={!canOpen} aria-busy={workspaceAction === "opening"}><ActionIcon name="folder" />Open Workspace Folder</button>
+                  <button type="button" className="secondary" onClick={onRefresh} disabled={workspaceAction !== "idle"}><ActionIcon name="refresh" />Refresh Status</button>
+                </div>
+              </div>
+            </section>
+
+            <section className="panel">
+              <div className="panel-heading"><div><p className="kicker">Health</p><h3>Workspace status</h3></div></div>
+              <dl className="health-list">
+                <div><dt>Connection</dt><dd><span className={`status-dot${connected ? " good" : ""}`} />{workspaceStatusLabel(workspace)}</dd></div>
+                <div><dt>Last checked</dt><dd>{lastChecked}</dd></div>
+                <div><dt>Workspace folder</dt><dd>{connected ? "Reachable" : "Unavailable"}</dd></div>
+                <div><dt>Project data</dt><dd>{workspace.status === "ready" ? (workspace.value.status === "partial" ? "Accessible with issues" : connected ? "Accessible" : "Unavailable") : "Not checked"}</dd></div>
+                <div><dt>Clients</dt><dd>{workspace.status === "ready" ? workspace.value.counts.clients : "—"}</dd></div>
+                <div><dt>Projects</dt><dd>{workspace.status === "ready" ? workspace.value.counts.projects : "—"}</dd></div>
+                <div><dt>Automation</dt><dd>{version.status === "ready" ? (version.value.supported ? "Compatible" : version.value.available ? "Incompatible" : "Unavailable") : "Not checked"}</dd></div>
+              </dl>
+              <p className="health-detail">If a shared or synchronized workspace disconnects, Studio keeps this configured path and reports it unavailable. Refresh after reconnecting; Studio does not silently fall back to another workspace.</p>
+              {version.status === "ready" && <p className="health-detail">{version.value.message}</p>}
+            </section>
+
+            <section className="panel">
+              <h3>{productCopy.settings.appearance}</h3>
+              <label className="setting-row"><span><strong>{productCopy.settings.compactLayout}</strong><small>{productCopy.settings.compactLayoutHelp}</small></span><input type="checkbox" checked={preferences.compactLayout} onChange={(event) => update({ ...preferences, compactLayout: event.target.checked })} /></label>
+              <label className="setting-row"><span><strong>{productCopy.settings.reduceMotion}</strong><small>{productCopy.settings.reduceMotionHelp}</small></span><input type="checkbox" checked={preferences.reduceMotion} onChange={(event) => update({ ...preferences, reduceMotion: event.target.checked })} /></label>
+            </section>
+
+            <section className="panel" aria-labelledby="settings-about-heading">
+              <div className="panel-heading"><div><p className="kicker">About</p><h3 id="settings-about-heading">JL Mixing Studio</h3></div></div>
+              <dl className="health-list">
+                <div><dt>Studio version</dt><dd>{studioVersion ?? "Checking…"}</dd></div>
+                <div><dt>Automation version</dt><dd>{automationVersion}</dd></div>
+                <div><dt>Automation API</dt><dd>{version.status === "ready" && version.value.available ? "1.0" : "—"}</dd></div>
+              </dl>
+            </section>
+
+            <section className="panel">
+              <h3>Configuration boundary</h3>
+              <p className="health-detail">The workspace path is a machine-local Studio preference. It is not written into shared project metadata and changing it does not move, copy, or migrate projects.</p>
+              <p className="health-detail">Workspace validation happens automatically before Studio switches. Individual write operations continue to enforce their own canonical-path, containment, and safe-write rules.</p>
+            </section>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "listening" && (
+        <div
+          id="settings-listening-panel"
+          className="settings-tab-panel"
+          role="tabpanel"
+          aria-labelledby="settings-listening-tab"
+        >
+          <ListeningSettingsPanel />
+        </div>
+      )}
     </section>
   );
 }
