@@ -147,9 +147,7 @@ fn update_project(app: tauri::AppHandle, request: ProjectUpdateRequest) -> Proje
 }
 
 #[tauri::command]
-fn get_listening_configuration(
-    app: tauri::AppHandle,
-) -> Result<ListeningConfiguration, String> {
+fn get_listening_configuration(app: tauri::AppHandle) -> Result<ListeningConfiguration, String> {
     commands::listening_configuration(&app)
 }
 
