@@ -2,6 +2,9 @@
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
+// #341 establishes the shared Phase 1 listening configuration/publish engine. Its first
+// production call sites arrive in #342/#343, with settings UX in #346.
+#[allow(dead_code)]
 #[path = "listening_publish_command.rs"]
 mod listening_publish;
 #[path = "native_audio_preview_command.rs"]
@@ -30,6 +33,9 @@ mod workspace_storage_summary;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
+// Keep the Phase 1 engine contract reachable for #342/#343 without registering premature
+// Tauri commands solely to satisfy linting before those production callers land.
+#[allow(unused_imports)]
 pub(crate) use listening_publish::{
     listening_configuration, publish_listening_copy, save_listening_configuration,
 };
