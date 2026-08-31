@@ -12,6 +12,8 @@ mod project_file_summary;
 mod project_files;
 #[path = "project_reference_command.rs"]
 mod project_references;
+// #340 defines the Phase 1 listening selector here; #341 adds its first production caller.
+#[allow(dead_code)]
 #[path = "project_revision_file_command.rs"]
 mod project_revision_files;
 #[path = "revision_description_command.rs"]
