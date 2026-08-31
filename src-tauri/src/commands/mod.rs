@@ -2,8 +2,9 @@
 mod delivery_notes;
 #[path = "folder_command.rs"]
 mod folders;
-// #341 establishes the shared Phase 1 listening configuration/publish engine. Its first
-// production call sites arrive in #342/#343, with settings UX in #346.
+// #342 consumes the shared publish/read path. Configuration writes become production-reachable
+// from the Listening settings UX in #346, so keep dead-code allowance scoped to this module until
+// that handoff lands.
 #[allow(dead_code)]
 #[path = "listening_publish_command.rs"]
 mod listening_publish;
@@ -17,13 +18,12 @@ mod project_file_summary;
 mod project_files;
 #[path = "project_reference_command.rs"]
 mod project_references;
-// #340 established the deterministic listening selector. Its first production caller arrives in
-// #342/#343, so keep dead-code allowance scoped to this module until that handoff is complete.
-#[allow(dead_code)]
 #[path = "project_revision_file_command.rs"]
 mod project_revision_files;
 #[path = "revision_description_command.rs"]
 mod revision_description;
+#[path = "revision_listening_command.rs"]
+pub(crate) mod revision_listening;
 #[path = "revision_notes_command.rs"]
 mod revision_notes;
 #[path = "system_command.rs"]
@@ -36,8 +36,8 @@ mod workspace_storage_summary;
 
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
 pub(super) use folders::{open_folder, resolve_folder};
-// Keep the Phase 1 engine contract reachable for #342/#343 without registering premature
-// Tauri commands solely to satisfy linting before those production callers land.
+// #342 consumes the shared publish engine; configuration writes remain reserved for the settings
+// UX in #346.
 #[allow(unused_imports)]
 pub(crate) use listening_publish::{
     listening_configuration, publish_listening_copy, save_listening_configuration,
@@ -54,10 +54,12 @@ pub(super) use project_file_open::{
 pub(super) use project_file_summary::summarize_project_files;
 pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
 pub(super) use project_references::{add_project_reference, delete_project_reference};
-pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
-// Shared Phase 1 source-selection data contract used internally by the publish engine.
 pub(crate) use project_revision_files::ListeningSourceSelection;
+pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};
 pub(super) use revision_description::update_revision_description;
+pub(super) use revision_listening::{
+    start_revision_listening_monitor, RevisionListeningMonitorState,
+};
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
 pub(super) use workspace_configuration::{

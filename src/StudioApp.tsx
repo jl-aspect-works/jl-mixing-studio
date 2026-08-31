@@ -20,6 +20,7 @@ import { useProjectWorkflow } from "./project";
 import { useIntakeWorkflow } from "./intake";
 import { ValidationProgress } from "./intake/ValidationProgress";
 import { useRevisionWorkflow } from "./revision";
+import { setRevisionListeningProject } from "./revision/revisionListeningService";
 import { useApprovalWorkflow } from "./approval";
 import { useDeliveryWorkflow } from "./delivery";
 import "./App.css";
@@ -83,6 +84,16 @@ export default function StudioApp() {
     if (activeRoute !== "projects" || !selectedProject) return;
     void resources.refreshWorkspace(false);
   }, [activeRoute, selectedProject?.clientId, selectedProject?.projectId, resources.refreshWorkspace]);
+
+  useEffect(() => {
+    const monitoredProject = activeRoute === "projects" && selectedProject
+      ? { clientId: selectedProject.clientId, projectId: selectedProject.projectId }
+      : null;
+    void setRevisionListeningProject(monitoredProject).catch(() => undefined);
+    return () => {
+      if (monitoredProject) void setRevisionListeningProject(null).catch(() => undefined);
+    };
+  }, [activeRoute, selectedProject?.clientId, selectedProject?.projectId]);
 
   const openClientWorkflow = () => { if (!availability.clientCreationAvailable) return; projects.setState({ status: "closed" }); clients.open(); };
   const openRevisions = () => { if (!route.resolvedProjectClient || !route.resolvedProject) return; setProjectView("revisions"); intake.reset(); };
