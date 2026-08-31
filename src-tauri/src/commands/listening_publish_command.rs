@@ -24,9 +24,7 @@ fn normalize_extension(value: &str) -> Result<String, String> {
     if extension.is_empty()
         || extension.contains('/')
         || extension.contains('\\')
-        || !extension
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric())
+        || !extension.chars().all(|character| character.is_ascii_alphanumeric())
     {
         return Err(
             "Listening destination formats must be simple file extensions such as mp3 or wav"
@@ -43,11 +41,7 @@ fn normalize_destination(
     if destination.id.is_empty() {
         return Err("Each listening destination requires a stable id".into());
     }
-    if destination
-        .id
-        .chars()
-        .any(|character| character.is_control())
-    {
+    if destination.id.chars().any(|character| character.is_control()) {
         return Err("Listening destination ids cannot contain control characters".into());
     }
 
@@ -92,6 +86,67 @@ fn normalize_configuration(
     })
 }
 
+fn reserve_sibling(parent: &Path, target_name: &str, role: &str) -> Result<PathBuf, String> {
+    for attempt in 1..=100_u32 {
+        let candidate = parent.join(format!(
+            ".{target_name}.jl-listening-{role}-{}-{attempt}",
+            std::process::id()
+        ));
+        if !candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+    Err(format!(
+        "Unable to reserve a temporary file for '{target_name}'"
+    ))
+}
+
+fn install_staged_file(
+    stage: &Path,
+    target: &Path,
+    replace_existing: bool,
+    description: &str,
+) -> Result<(), String> {
+    if !target.exists() {
+        return fs::rename(stage, target)
+            .map_err(|error| format!("Unable to install {description}: {error}"));
+    }
+
+    let metadata = fs::symlink_metadata(target)
+        .map_err(|error| format!("Unable to inspect existing {description}: {error}"))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err(format!(
+            "The {description} destination is occupied by a non-regular file"
+        ));
+    }
+    if !replace_existing {
+        return Err(format!("A {description} already exists at the destination"));
+    }
+
+    let parent = target
+        .parent()
+        .ok_or_else(|| format!("The {description} destination has no parent folder"))?;
+    let target_name = target
+        .file_name()
+        .ok_or_else(|| format!("The {description} destination has no usable file name"))?
+        .to_string_lossy()
+        .into_owned();
+    let backup = reserve_sibling(parent, &target_name, "backup")?;
+    fs::rename(target, &backup)
+        .map_err(|error| format!("Unable to stage the prior {description}: {error}"))?;
+
+    match fs::rename(stage, target) {
+        Ok(()) => {
+            let _ = fs::remove_file(backup);
+            Ok(())
+        }
+        Err(error) => {
+            let _ = fs::rename(&backup, target);
+            Err(format!("Unable to replace {description}: {error}"))
+        }
+    }
+}
+
 fn read_configuration(path: &Path) -> Result<ListeningConfiguration, String> {
     if !path.exists() {
         return Ok(ListeningConfiguration::default());
@@ -111,16 +166,14 @@ fn write_configuration(path: &Path, configuration: &ListeningConfiguration) -> R
         .map_err(|_| "Studio's local configuration directory could not be created".to_owned())?;
     let content = serde_json::to_vec_pretty(configuration)
         .map_err(|_| "Studio's listening configuration could not be encoded".to_owned())?;
-    let temporary = parent.join(format!(
-        ".{LISTENING_CONFIG_FILE}.tmp-{}",
-        std::process::id()
-    ));
+    let temporary = reserve_sibling(parent, LISTENING_CONFIG_FILE, "config-stage")?;
     fs::write(&temporary, content)
         .map_err(|_| "Studio's listening configuration could not be saved".to_owned())?;
-    fs::rename(&temporary, path).map_err(|_| {
+    if let Err(error) = install_staged_file(&temporary, path, true, "listening configuration") {
         let _ = fs::remove_file(&temporary);
-        "Studio's listening configuration could not be installed".to_owned()
-    })
+        return Err(error);
+    }
+    Ok(())
 }
 
 pub(crate) fn listening_configuration(
@@ -190,58 +243,6 @@ fn validate_destination_name(name: &str, required_extension: &str) -> Result<Str
     Ok(trimmed.to_owned())
 }
 
-fn reserve_sibling(parent: &Path, target_name: &str, role: &str) -> Result<PathBuf, String> {
-    for attempt in 1..=100_u32 {
-        let candidate = parent.join(format!(
-            ".{target_name}.jl-listening-{role}-{}-{attempt}",
-            std::process::id()
-        ));
-        if !candidate.exists() {
-            return Ok(candidate);
-        }
-    }
-    Err(format!(
-        "Unable to reserve a temporary file while publishing '{target_name}'"
-    ))
-}
-
-fn install_staged_copy(stage: &Path, target: &Path, replace_existing: bool) -> Result<(), String> {
-    if !target.exists() {
-        return fs::rename(stage, target)
-            .map_err(|error| format!("Unable to install listening copy: {error}"));
-    }
-    let metadata = fs::symlink_metadata(target)
-        .map_err(|error| format!("Unable to inspect existing listening copy: {error}"))?;
-    if metadata.file_type().is_symlink() || !metadata.is_file() {
-        return Err("The listening destination is occupied by a non-regular file".into());
-    }
-    if !replace_existing {
-        return Err("A listening copy already exists at the destination".into());
-    }
-
-    let parent = target
-        .parent()
-        .ok_or("The listening destination has no parent folder")?;
-    let target_name = target
-        .file_name()
-        .ok_or("The listening destination has no usable file name")?
-        .to_string_lossy();
-    let backup = reserve_sibling(parent, &target_name, "backup")?;
-    fs::rename(target, &backup).map_err(|error| {
-        format!("Unable to stage the prior listening copy for replacement: {error}")
-    })?;
-    match fs::rename(stage, target) {
-        Ok(()) => {
-            let _ = fs::remove_file(backup);
-            Ok(())
-        }
-        Err(error) => {
-            let _ = fs::rename(&backup, target);
-            Err(format!("Unable to replace the listening copy: {error}"))
-        }
-    }
-}
-
 pub(crate) fn publish_listening_copy(
     selection: Option<&ListeningSourceSelection>,
     destination: &ListeningDestination,
@@ -278,20 +279,19 @@ pub(crate) fn publish_listening_copy(
             None,
         );
     };
+
     let source = selection.path.as_path();
-    let source_metadata = match fs::symlink_metadata(source) {
-        Ok(metadata) if !metadata.file_type().is_symlink() && metadata.is_file() => metadata,
-        _ => {
-            return result(
-                &normalized,
-                ListeningPublishStatus::Failed,
-                "The selected listening source is unavailable or unsafe",
-                Some(source),
-                None,
-            )
-        }
-    };
-    let _ = source_metadata;
+    if !fs::symlink_metadata(source)
+        .is_ok_and(|metadata| metadata.is_file() && !metadata.file_type().is_symlink())
+    {
+        return result(
+            &normalized,
+            ListeningPublishStatus::Failed,
+            "The selected listening source is unavailable or unsafe",
+            Some(source),
+            None,
+        );
+    }
     let source_extension = source
         .extension()
         .map(|value| value.to_string_lossy().into_owned())
@@ -307,19 +307,15 @@ pub(crate) fn publish_listening_copy(
     }
 
     let destination_root = PathBuf::from(&normalized.path);
-    let destination_metadata = match fs::metadata(&destination_root) {
-        Ok(metadata) if metadata.is_dir() => metadata,
-        _ => {
-            return result(
-                &normalized,
-                ListeningPublishStatus::Failed,
-                "The listening destination folder is unavailable or inaccessible",
-                Some(source),
-                None,
-            )
-        }
-    };
-    let _ = destination_metadata;
+    if !fs::metadata(&destination_root).is_ok_and(|metadata| metadata.is_dir()) {
+        return result(
+            &normalized,
+            ListeningPublishStatus::Failed,
+            "The listening destination folder is unavailable or inaccessible",
+            Some(source),
+            None,
+        );
+    }
     let canonical_destination = match destination_root.canonicalize() {
         Ok(path) => path,
         Err(error) => {
@@ -365,7 +361,12 @@ pub(crate) fn publish_listening_copy(
             )
         }
     };
-    if canonical_source == target {
+    if canonical_source == target
+        || (target.exists()
+            && target
+                .canonicalize()
+                .is_ok_and(|canonical_target| canonical_target == canonical_source))
+    {
         return result(
             &normalized,
             ListeningPublishStatus::Failed,
@@ -373,19 +374,6 @@ pub(crate) fn publish_listening_copy(
             Some(source),
             Some(&target),
         );
-    }
-    if target.exists() {
-        if let Ok(canonical_target) = target.canonicalize() {
-            if canonical_target == canonical_source {
-                return result(
-                    &normalized,
-                    ListeningPublishStatus::Failed,
-                    "The listening destination cannot replace the authoritative source artifact",
-                    Some(source),
-                    Some(&target),
-                );
-            }
-        }
     }
 
     if target.exists() && !replace_existing {
@@ -419,7 +407,7 @@ pub(crate) fn publish_listening_copy(
             Some(&target),
         );
     }
-    if let Err(message) = install_staged_copy(&stage, &target, replace_existing) {
+    if let Err(message) = install_staged_file(&stage, &target, replace_existing, "listening copy") {
         let _ = fs::remove_file(&stage);
         return result(
             &normalized,
@@ -510,6 +498,28 @@ mod tests {
     }
 
     #[test]
+    fn configuration_can_replace_existing_saved_settings() {
+        let temp = tempdir().expect("tempdir");
+        let config_path = temp.path().join(LISTENING_CONFIG_FILE);
+        let first = normalize_configuration(ListeningConfiguration {
+            version: 1,
+            destinations: vec![destination(temp.path(), "mp3")],
+        })
+        .expect("first normalize");
+        write_configuration(&config_path, &first).expect("first write");
+
+        let second = normalize_configuration(ListeningConfiguration {
+            version: 1,
+            destinations: vec![destination(temp.path(), "wav")],
+        })
+        .expect("second normalize");
+        write_configuration(&config_path, &second).expect("second write");
+
+        let loaded = read_configuration(&config_path).expect("read replacement");
+        assert_eq!(loaded.destinations[0].required_extension, "wav");
+    }
+
+    #[test]
     fn configuration_rejects_relative_paths_and_duplicate_ids() {
         let temp = tempdir().expect("tempdir");
         let mut invalid = destination(temp.path(), "mp3");
@@ -562,10 +572,12 @@ mod tests {
             false,
         );
         assert_eq!(result.status, ListeningPublishStatus::Skipped);
-        assert!(fs::read_dir(destination_dir.path())
-            .expect("read destination")
-            .next()
-            .is_none());
+        assert!(
+            fs::read_dir(destination_dir.path())
+                .expect("read destination")
+                .next()
+                .is_none()
+        );
     }
 
     #[test]
