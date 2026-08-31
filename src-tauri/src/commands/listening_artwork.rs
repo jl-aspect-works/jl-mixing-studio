@@ -70,7 +70,9 @@ fn write_embedded_artwork(path: &Path) -> Result<(), String> {
 }
 
 fn replace_tag_artwork(tag: &mut Tag) {
-    tag.remove_pictures();
+    while !tag.pictures().is_empty() {
+        tag.remove_picture(0);
+    }
     tag.push_picture(studio_picture());
 }
 
