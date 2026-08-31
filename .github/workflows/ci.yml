@@ -51,6 +51,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Install Tauri Linux dependencies
         run: |
           sudo apt-get update
@@ -77,6 +79,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: true
       - uses: dtolnay/rust-toolchain@stable
       - name: Check desktop compile
         run: cargo check --manifest-path src-tauri/Cargo.toml --all-features

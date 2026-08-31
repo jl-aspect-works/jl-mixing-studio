@@ -1,0 +1,3 @@
+[submodule "vendor/jl-brand"]
+	path = vendor/jl-brand
+	url = https://github.com/jl-aspect-works/jl-brand.git

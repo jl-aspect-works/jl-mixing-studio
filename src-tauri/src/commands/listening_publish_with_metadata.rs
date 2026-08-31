@@ -4,6 +4,7 @@ use crate::models::{
     ListeningConfiguration, ListeningDestination, ListeningPublishResult, ListeningPublishStatus,
 };
 
+use super::listening_artwork::apply_listening_artwork;
 use super::listening_metadata::apply_listening_metadata;
 use super::{listening_publish_base as base, ListeningSourceSelection};
 
@@ -49,6 +50,11 @@ pub(crate) fn publish_listening_copy(
     ) {
         result.message = format!("{}; {metadata_message}", result.message);
     }
+    if let Some(artwork_message) =
+        apply_listening_artwork(Path::new(target), destination.artwork_policy)
+    {
+        result.message = format!("{}; {artwork_message}", result.message);
+    }
     result
 }
 
@@ -61,15 +67,19 @@ mod tests {
     use std::time::UNIX_EPOCH;
     use tempfile::tempdir;
 
-    fn destination(path: &Path, policy: ListeningMetadataPolicy) -> ListeningDestination {
+    fn destination(
+        path: &Path,
+        metadata_policy: ListeningMetadataPolicy,
+        artwork_policy: ListeningArtworkPolicy,
+    ) -> ListeningDestination {
         ListeningDestination {
             id: "revision-wav".into(),
             enabled: true,
             publish_class: ListeningPublishClass::RevisionListening,
             path: path.to_string_lossy().into_owned(),
             required_extension: "wav".into(),
-            metadata_policy: policy,
-            artwork_policy: ListeningArtworkPolicy::Off,
+            metadata_policy,
+            artwork_policy,
         }
     }
 
@@ -120,7 +130,11 @@ mod tests {
 
         let result = publish_listening_copy(
             Some(&selection(source.clone())),
-            &destination(&destination_root, ListeningMetadataPolicy::Replace),
+            &destination(
+                &destination_root,
+                ListeningMetadataPolicy::Replace,
+                ListeningArtworkPolicy::Off,
+            ),
             None,
             true,
         );
@@ -133,7 +147,7 @@ mod tests {
     }
 
     #[test]
-    fn metadata_off_preserves_exact_copy_without_metadata_message() {
+    fn presentation_off_preserves_exact_copy_without_presentation_messages() {
         let temp = tempdir().expect("tempdir");
         let destination_root = temp.path().join("listening");
         fs::create_dir_all(&destination_root).expect("destination");
@@ -142,7 +156,11 @@ mod tests {
 
         let result = publish_listening_copy(
             Some(&selection(source.clone())),
-            &destination(&destination_root, ListeningMetadataPolicy::Off),
+            &destination(
+                &destination_root,
+                ListeningMetadataPolicy::Off,
+                ListeningArtworkPolicy::Off,
+            ),
             None,
             true,
         );
@@ -152,5 +170,36 @@ mod tests {
         assert_eq!(fs::read(&source).expect("source read"), b"copy-only");
         let target = PathBuf::from(result.destination_path.expect("target"));
         assert_eq!(fs::read(target).expect("target read"), b"copy-only");
+    }
+
+    #[test]
+    fn wav_replace_writes_companion_cover_without_touching_source_audio() {
+        let temp = tempdir().expect("tempdir");
+        let destination_root = temp.path().join("listening");
+        fs::create_dir_all(&destination_root).expect("destination");
+        let source = temp.path().join("mix.wav");
+        let original = b"copy-only-wave";
+        fs::write(&source, original).expect("source");
+
+        let result = publish_listening_copy(
+            Some(&selection(source.clone())),
+            &destination(
+                &destination_root,
+                ListeningMetadataPolicy::Off,
+                ListeningArtworkPolicy::ReplaceWithStudioArtwork,
+            ),
+            None,
+            true,
+        );
+
+        assert_eq!(result.status, ListeningPublishStatus::Published);
+        assert!(result.message.contains("WAV compatibility"));
+        assert_eq!(fs::read(&source).expect("source read"), original);
+        let target = PathBuf::from(result.destination_path.expect("target"));
+        assert_eq!(fs::read(target).expect("target read"), original);
+        assert_eq!(
+            fs::read(destination_root.join("cover.png")).expect("cover read"),
+            super::super::listening_artwork::STUDIO_ARTWORK_BYTES
+        );
     }
 }
