@@ -5,10 +5,7 @@ use crate::models::{
 };
 
 use super::listening_metadata::apply_listening_metadata;
-pub(crate) use super::ListeningSourceSelection;
-
-#[path = "listening_publish_command.rs"]
-mod base;
+use super::{listening_publish_base as base, ListeningSourceSelection};
 
 pub(crate) fn listening_configuration(
     app: &tauri::AppHandle,
