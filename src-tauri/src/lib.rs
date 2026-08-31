@@ -120,7 +120,7 @@ fn preflight_project_creation(
     app: tauri::AppHandle,
     request: ProjectCreationRequest,
 ) -> ProjectOperationResult {
-    run_project_operation(&app, request, cli::preflight_project_creation, false)
+    run_project_operation(&app, request, cli::preflight_project_creation)
 }
 
 #[tauri::command]
@@ -128,7 +128,7 @@ fn create_project(
     app: tauri::AppHandle,
     request: ProjectCreationRequest,
 ) -> ProjectOperationResult {
-    run_project_operation(&app, request, cli::create_project, true)
+    run_project_operation(&app, request, cli::create_project)
 }
 
 #[tauri::command]
@@ -441,7 +441,7 @@ pub fn run() {
             get_revision_notes,
             update_revision_notes,
             update_revision_description,
-            commands::set_revision_listening_project,
+            commands::revision_listening::set_revision_listening_project,
             get_delivery_notes,
             update_delivery_notes,
             preflight_studio_creation,
