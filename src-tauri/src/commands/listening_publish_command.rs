@@ -24,7 +24,9 @@ fn normalize_extension(value: &str) -> Result<String, String> {
     if extension.is_empty()
         || extension.contains('/')
         || extension.contains('\\')
-        || !extension.chars().all(|character| character.is_ascii_alphanumeric())
+        || !extension
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric())
     {
         return Err(
             "Listening destination formats must be simple file extensions such as mp3 or wav"
@@ -41,7 +43,11 @@ fn normalize_destination(
     if destination.id.is_empty() {
         return Err("Each listening destination requires a stable id".into());
     }
-    if destination.id.chars().any(|character| character.is_control()) {
+    if destination
+        .id
+        .chars()
+        .any(|character| character.is_control())
+    {
         return Err("Listening destination ids cannot contain control characters".into());
     }
 
@@ -572,12 +578,10 @@ mod tests {
             false,
         );
         assert_eq!(result.status, ListeningPublishStatus::Skipped);
-        assert!(
-            fs::read_dir(destination_dir.path())
-                .expect("read destination")
-                .next()
-                .is_none()
-        );
+        assert!(fs::read_dir(destination_dir.path())
+            .expect("read destination")
+            .next()
+            .is_none());
     }
 
     #[test]
