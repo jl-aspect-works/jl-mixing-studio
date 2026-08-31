@@ -42,6 +42,8 @@ pub(crate) fn publish_after_delivery_creation(
     }
 }
 
+// Registered through Tauri's generated command handler. #346 adds the user-visible recovery action.
+#[allow(dead_code)]
 #[tauri::command]
 pub(crate) fn republish_delivered_listening(
     app: tauri::AppHandle,
@@ -135,6 +137,8 @@ fn publish_from_delivery_preview(
         .collect()
 }
 
+// This is reachable through the Tauri republish command above; #346 adds its UI caller.
+#[allow(dead_code)]
 fn publish_from_delivery_package(
     app: &tauri::AppHandle,
     project_directory: &Path,
