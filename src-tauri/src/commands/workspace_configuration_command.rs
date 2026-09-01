@@ -1,7 +1,9 @@
 use std::fs;
+use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use tauri::Manager;
@@ -98,6 +100,39 @@ fn candidate_workspace(path: &str) -> Result<(PathBuf, WorkspaceSnapshot), Strin
     Ok((canonical, snapshot))
 }
 
+fn candidate_listening_destination(path: &str) -> Result<PathBuf, String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("Choose a destination folder".to_owned());
+    }
+    let candidate = PathBuf::from(trimmed);
+    if !candidate.is_absolute() {
+        return Err("Listening destination paths must be absolute".to_owned());
+    }
+    let canonical = candidate
+        .canonicalize()
+        .map_err(|_| "The Listening destination is unavailable or cannot be accessed".to_owned())?;
+    if !canonical.is_dir() {
+        return Err("The Listening destination path is not a folder".to_owned());
+    }
+    fs::read_dir(&canonical)
+        .map_err(|_| "The Listening destination cannot be read with the current permissions".to_owned())?;
+
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_nanos())
+        .unwrap_or_default();
+    let probe = canonical.join(format!(".jl-mixing-write-test-{}-{stamp}", std::process::id()));
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe)
+        .map_err(|_| "The Listening destination is not writable with the current permissions".to_owned())?;
+    fs::remove_file(&probe)
+        .map_err(|_| "Studio could write to the Listening destination but could not remove its validation file".to_owned())?;
+    Ok(canonical)
+}
+
 fn write_configuration(path: &Path, workspace_path: &Path) -> Result<(), String> {
     let parent = path
         .parent()
@@ -121,7 +156,14 @@ pub(crate) fn get_workspace_configuration(
 }
 
 #[tauri::command]
-pub(crate) fn validate_workspace_root(path: String) -> Result<WorkspaceSnapshot, String> {
+pub(crate) fn validate_workspace_root(
+    path: String,
+    purpose: Option<String>,
+) -> Result<WorkspaceSnapshot, String> {
+    if purpose.as_deref() == Some("listeningDestination") {
+        let canonical = candidate_listening_destination(&path)?;
+        return Ok(workspace::discover_workspace_at(&canonical));
+    }
     candidate_workspace(&path).map(|(_, snapshot)| snapshot)
 }
 
@@ -214,5 +256,20 @@ mod tests {
     fn candidate_workspace_rejects_non_absolute_paths() {
         let error = candidate_workspace("Music/Mixes").expect_err("relative path must fail");
         assert_eq!(error, "Workspace paths must be absolute");
+    }
+
+    #[test]
+    fn listening_destination_requires_absolute_path() {
+        let error = candidate_listening_destination("Listening").expect_err("relative path must fail");
+        assert_eq!(error, "Listening destination paths must be absolute");
+    }
+
+    #[test]
+    fn listening_destination_accepts_writable_folder_and_cleans_probe() {
+        let temp = tempdir().expect("tempdir");
+        let canonical = candidate_listening_destination(temp.path().to_str().expect("path"))
+            .expect("writable destination");
+        assert_eq!(canonical, temp.path().canonicalize().expect("canonical"));
+        assert_eq!(fs::read_dir(temp.path()).expect("read dir").count(), 0);
     }
 }
