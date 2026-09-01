@@ -6,6 +6,7 @@ import "./ListeningSettingsPanel.css";
 type ListeningPublishClass = "revisionListening" | "deliveredListening";
 type ListeningMetadataPolicy = "off" | "fillMissing" | "replace";
 type ListeningArtworkPolicy = "off" | "preserveExisting" | "replaceWithStudioArtwork";
+type DestinationValidationState = "idle" | "checking" | "valid" | "invalid";
 
 interface ListeningDestination {
   id: string;
@@ -27,6 +28,11 @@ interface ListeningClassDefinition {
   title: string;
   description: string;
   addLabel: string;
+}
+
+interface DestinationValidation {
+  state: DestinationValidationState;
+  message: string;
 }
 
 const CLASS_DEFINITIONS: ListeningClassDefinition[] = [
@@ -89,6 +95,28 @@ export function ListeningSettingsPanel() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [validation, setValidation] = useState<Record<string, DestinationValidation>>({});
+
+  const validateDestination = async (destination: ListeningDestination) => {
+    if (!destination.enabled) {
+      setValidation((current) => ({ ...current, [destination.id]: { state: "idle", message: "Validation is paused while this destination is disabled." } }));
+      return;
+    }
+    if (!destination.path.trim()) {
+      setValidation((current) => ({ ...current, [destination.id]: { state: "invalid", message: "Choose a destination folder before publishing is enabled." } }));
+      return;
+    }
+    setValidation((current) => ({ ...current, [destination.id]: { state: "checking", message: "Checking destination access…" } }));
+    try {
+      await invoke("validate_workspace_root", { path: destination.path, purpose: "listeningDestination" });
+      setValidation((current) => ({ ...current, [destination.id]: { state: "valid", message: "Destination is available and writable." } }));
+    } catch (error: unknown) {
+      setValidation((current) => ({
+        ...current,
+        [destination.id]: { state: "invalid", message: errorMessage(error, "This destination is unavailable or not writable.") },
+      }));
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -97,6 +125,7 @@ export function ListeningSettingsPanel() {
         if (!active) return;
         setConfiguration(value);
         setLoadError(null);
+        value.destinations.forEach((destination) => { void validateDestination(destination); });
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -122,14 +151,19 @@ export function ListeningSettingsPanel() {
     setDirty(true);
     setNotice(null);
     setSaveError(null);
+    if (Object.hasOwn(update, "path")) {
+      setValidation((current) => ({ ...current, [id]: { state: "idle", message: "Destination changed; validation will run when you leave the field." } }));
+    }
   };
 
   const addDestination = (publishClass: ListeningPublishClass) => {
     if (!configuration) return;
+    const destination = newDestination(publishClass, configuration.destinations);
     setConfiguration({
       ...configuration,
-      destinations: [...configuration.destinations, newDestination(publishClass, configuration.destinations)],
+      destinations: [...configuration.destinations, destination],
     });
+    setValidation((current) => ({ ...current, [destination.id]: { state: "invalid", message: "Choose a destination folder before publishing is enabled." } }));
     setDirty(true);
     setNotice(null);
   };
@@ -140,17 +174,30 @@ export function ListeningSettingsPanel() {
       ...configuration,
       destinations: configuration.destinations.filter((destination) => destination.id !== id),
     });
+    setValidation((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
     setDirty(true);
     setNotice(null);
   };
 
-  const chooseFolder = async (id: string) => {
+  const chooseFolder = async (destination: ListeningDestination) => {
     try {
       const selected = await invoke<string | null>("choose_workspace_folder");
-      if (selected) replaceDestination(id, { path: selected });
+      if (selected) {
+        replaceDestination(destination.id, { path: selected });
+        await validateDestination({ ...destination, path: selected });
+      }
     } catch (error: unknown) {
       setSaveError(errorMessage(error, "The destination folder picker could not be opened."));
     }
+  };
+
+  const setEnabled = (destination: ListeningDestination, enabled: boolean) => {
+    replaceDestination(destination.id, { enabled });
+    void validateDestination({ ...destination, enabled });
   };
 
   const save = async () => {
@@ -163,6 +210,7 @@ export function ListeningSettingsPanel() {
       setConfiguration(saved);
       setDirty(false);
       setNotice("Listening destinations saved.");
+      saved.destinations.forEach((destination) => { void validateDestination(destination); });
     } catch (error: unknown) {
       setSaveError(errorMessage(error, "Listening settings could not be saved."));
     } finally {
@@ -211,49 +259,67 @@ export function ListeningSettingsPanel() {
                 )}
 
                 <div className="listening-destination-list">
-                  {destinations.map((destination) => (
-                    <article className="listening-destination" key={destination.id}>
-                      <div className="listening-destination-header">
-                        <label className="setting-row listening-enable-row">
-                          <span><strong>{destination.requiredExtension.toUpperCase()} destination</strong><small>{destination.enabled ? "Enabled" : "Disabled"}</small></span>
-                          <input type="checkbox" checked={destination.enabled} onChange={(event) => replaceDestination(destination.id, { enabled: event.target.checked })} />
-                        </label>
-                        <button type="button" className="secondary listening-remove" onClick={() => removeDestination(destination.id)}>Remove</button>
-                      </div>
-
-                      <label className="listening-field listening-path-field">
-                        <span>Destination folder</span>
-                        <div className="listening-path-control">
-                          <input type="text" value={destination.path} placeholder="Choose a folder…" onChange={(event) => replaceDestination(destination.id, { path: event.target.value })} />
-                          <button type="button" className="secondary" onClick={() => void chooseFolder(destination.id)}><ActionIcon name="folder" />Choose…</button>
+                  {destinations.map((destination) => {
+                    const validationResult = validation[destination.id] ?? { state: "idle" as const, message: destination.enabled ? "Destination has not been checked yet." : "Validation is paused while this destination is disabled." };
+                    return (
+                      <article className={`listening-destination validation-${validationResult.state}`} key={destination.id}>
+                        <div className="listening-destination-header">
+                          <label className="setting-row listening-enable-row">
+                            <span><strong>{destination.requiredExtension.toUpperCase()} destination</strong><small>{destination.enabled ? "Enabled" : "Disabled"}</small></span>
+                            <input type="checkbox" checked={destination.enabled} onChange={(event) => setEnabled(destination, event.target.checked)} />
+                          </label>
+                          <button type="button" className="secondary listening-remove" onClick={() => removeDestination(destination.id)}>Remove</button>
                         </div>
-                      </label>
 
-                      <div className="listening-policy-grid">
-                        <label className="listening-field">
-                          <span>Required format</span>
-                          <select value={destination.requiredExtension} onChange={(event) => replaceDestination(destination.id, { requiredExtension: event.target.value })}>
-                            <option value="mp3">MP3</option>
-                            <option value="wav">WAV</option>
-                            <option value="flac">FLAC</option>
-                            <option value="m4a">M4A</option>
-                          </select>
+                        <label className="listening-field listening-path-field">
+                          <span>Destination folder</span>
+                          <div className="listening-path-control">
+                            <input
+                              type="text"
+                              value={destination.path}
+                              placeholder="Choose a folder…"
+                              aria-invalid={destination.enabled && validationResult.state === "invalid"}
+                              onChange={(event) => replaceDestination(destination.id, { path: event.target.value })}
+                              onBlur={() => void validateDestination(destination)}
+                            />
+                            <button type="button" className="secondary" onClick={() => void chooseFolder(destination)}><ActionIcon name="folder" />Choose…</button>
+                          </div>
                         </label>
-                        <label className="listening-field">
-                          <span>Metadata</span>
-                          <select value={destination.metadataPolicy} onChange={(event) => replaceDestination(destination.id, { metadataPolicy: event.target.value as ListeningMetadataPolicy })}>
-                            {(["off", "fillMissing", "replace"] as ListeningMetadataPolicy[]).map((value) => <option value={value} key={value}>{policyLabel(value)}</option>)}
-                          </select>
-                        </label>
-                        <label className="listening-field">
-                          <span>Artwork</span>
-                          <select value={destination.artworkPolicy} onChange={(event) => replaceDestination(destination.id, { artworkPolicy: event.target.value as ListeningArtworkPolicy })}>
-                            {(["off", "preserveExisting", "replaceWithStudioArtwork"] as ListeningArtworkPolicy[]).map((value) => <option value={value} key={value}>{policyLabel(value)}</option>)}
-                          </select>
-                        </label>
-                      </div>
-                    </article>
-                  ))}
+
+                        <div className={`listening-validation listening-validation-${validationResult.state}`} role={validationResult.state === "invalid" ? "alert" : "status"}>
+                          <strong>{validationResult.state === "valid" ? "Available" : validationResult.state === "invalid" ? "Needs attention" : validationResult.state === "checking" ? "Checking" : "Not checked"}</strong>
+                          <span>{validationResult.message}</span>
+                          {destination.enabled && validationResult.state !== "checking" && destination.path.trim() && (
+                            <button type="button" className="secondary" onClick={() => void validateDestination(destination)}>Check again</button>
+                          )}
+                        </div>
+
+                        <div className="listening-policy-grid">
+                          <label className="listening-field">
+                            <span>Required format</span>
+                            <select value={destination.requiredExtension} onChange={(event) => replaceDestination(destination.id, { requiredExtension: event.target.value })}>
+                              <option value="mp3">MP3</option>
+                              <option value="wav">WAV</option>
+                              <option value="flac">FLAC</option>
+                              <option value="m4a">M4A</option>
+                            </select>
+                          </label>
+                          <label className="listening-field">
+                            <span>Metadata</span>
+                            <select value={destination.metadataPolicy} onChange={(event) => replaceDestination(destination.id, { metadataPolicy: event.target.value as ListeningMetadataPolicy })}>
+                              {(["off", "fillMissing", "replace"] as ListeningMetadataPolicy[]).map((value) => <option value={value} key={value}>{policyLabel(value)}</option>)}
+                            </select>
+                          </label>
+                          <label className="listening-field">
+                            <span>Artwork</span>
+                            <select value={destination.artworkPolicy} onChange={(event) => replaceDestination(destination.id, { artworkPolicy: event.target.value as ListeningArtworkPolicy })}>
+                              {(["off", "preserveExisting", "replaceWithStudioArtwork"] as ListeningArtworkPolicy[]).map((value) => <option value={value} key={value}>{policyLabel(value)}</option>)}
+                            </select>
+                          </label>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
 
                 <button type="button" className="secondary listening-add" onClick={() => addDestination(definition.publishClass)}><ActionIcon name="add" />{definition.addLabel}</button>
