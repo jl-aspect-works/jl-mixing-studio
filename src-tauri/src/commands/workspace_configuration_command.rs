@@ -115,21 +115,29 @@ fn candidate_listening_destination(path: &str) -> Result<PathBuf, String> {
     if !canonical.is_dir() {
         return Err("The Listening destination path is not a folder".to_owned());
     }
-    fs::read_dir(&canonical)
-        .map_err(|_| "The Listening destination cannot be read with the current permissions".to_owned())?;
+    fs::read_dir(&canonical).map_err(|_| {
+        "The Listening destination cannot be read with the current permissions".to_owned()
+    })?;
 
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|value| value.as_nanos())
         .unwrap_or_default();
-    let probe = canonical.join(format!(".jl-mixing-write-test-{}-{stamp}", std::process::id()));
+    let probe = canonical.join(format!(
+        ".jl-mixing-write-test-{}-{stamp}",
+        std::process::id()
+    ));
     OpenOptions::new()
         .write(true)
         .create_new(true)
         .open(&probe)
-        .map_err(|_| "The Listening destination is not writable with the current permissions".to_owned())?;
-    fs::remove_file(&probe)
-        .map_err(|_| "Studio could write to the Listening destination but could not remove its validation file".to_owned())?;
+        .map_err(|_| {
+            "The Listening destination is not writable with the current permissions".to_owned()
+        })?;
+    fs::remove_file(&probe).map_err(|_| {
+        "Studio could write to the Listening destination but could not remove its validation file"
+            .to_owned()
+    })?;
     Ok(canonical)
 }
 
@@ -260,7 +268,8 @@ mod tests {
 
     #[test]
     fn listening_destination_requires_absolute_path() {
-        let error = candidate_listening_destination("Listening").expect_err("relative path must fail");
+        let error = candidate_listening_destination("Listening")
+            .expect_err("relative path must fail");
         assert_eq!(error, "Listening destination paths must be absolute");
     }
 
@@ -269,7 +278,10 @@ mod tests {
         let temp = tempdir().expect("tempdir");
         let canonical = candidate_listening_destination(temp.path().to_str().expect("path"))
             .expect("writable destination");
-        assert_eq!(canonical, temp.path().canonicalize().expect("canonical"));
+        assert_eq!(
+            canonical,
+            temp.path().canonicalize().expect("canonical")
+        );
         assert_eq!(fs::read_dir(temp.path()).expect("read dir").count(), 0);
     }
 }
