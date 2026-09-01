@@ -1,3 +1,4 @@
+use super::listening_artwork::ensure_artist_artwork_sidecars;
 use super::{
     find_project_summary, listening_configuration, publish_listening_copy, resolve_workspace_root,
     validated_project_directory,
@@ -286,6 +287,7 @@ fn scan_destination(
         &fingerprint,
     )?;
     if !should_publish {
+        let _ = client_scoped_destination(destination, context.client_id);
         return Ok(None);
     }
 
@@ -507,6 +509,8 @@ fn client_scoped_destination(
     let client_root = PathBuf::from(&destination.path).join(client_id);
     fs::create_dir_all(&client_root)
         .map_err(|error| format!("Unable to create the Listening client folder: {error}"))?;
+    ensure_artist_artwork_sidecars(&client_root, destination.artwork_policy)
+        .map_err(|error| format!("Unable to reconcile Listening artist artwork: {error}"))?;
     let mut scoped = destination.clone();
     scoped.path = client_root.to_string_lossy().into_owned();
     Ok(scoped)
@@ -655,6 +659,8 @@ mod tests {
             client_scoped_destination(&destination(temp.path()), "client-a").expect("scoped");
         assert_eq!(PathBuf::from(&scoped.path), temp.path().join("client-a"));
         assert!(temp.path().join("client-a").is_dir());
+        assert!(temp.path().join("client-a").join("artist.png").is_file());
+        assert!(temp.path().join("client-a").join("folder.png").is_file());
     }
 
     #[test]
