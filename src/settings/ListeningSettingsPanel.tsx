@@ -10,6 +10,7 @@ type DestinationValidationState = "idle" | "checking" | "valid" | "invalid";
 
 interface ListeningDestination {
   id: string;
+  name: string;
   enabled: boolean;
   publishClass: ListeningPublishClass;
   path: string;
@@ -34,8 +35,6 @@ interface DestinationValidation {
   state: DestinationValidationState;
   message: string;
 }
-
-const DESTINATION_NAME_STORAGE_KEY = "jl-mixing-listening-destination-names-v1";
 
 const CLASS_DEFINITIONS: ListeningClassDefinition[] = [
   {
@@ -71,6 +70,7 @@ function nextDestinationId(publishClass: ListeningPublishClass, destinations: Li
 function newDestination(publishClass: ListeningPublishClass, destinations: ListeningDestination[]): ListeningDestination {
   return {
     id: nextDestinationId(publishClass, destinations),
+    name: "MP3 Destination",
     enabled: true,
     publishClass,
     path: "",
@@ -94,24 +94,6 @@ function defaultDestinationName(destination: ListeningDestination): string {
   return `${destination.requiredExtension.toUpperCase()} Destination`;
 }
 
-function loadDestinationNames(): Record<string, string> {
-  try {
-    const value = window.localStorage.getItem(DESTINATION_NAME_STORAGE_KEY);
-    if (!value) return {};
-    const parsed = JSON.parse(value) as unknown;
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-    return Object.fromEntries(
-      Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
-    );
-  } catch {
-    return {};
-  }
-}
-
-function persistDestinationNames(names: Record<string, string>) {
-  window.localStorage.setItem(DESTINATION_NAME_STORAGE_KEY, JSON.stringify(names));
-}
-
 export function ListeningSettingsPanel() {
   const [configuration, setConfiguration] = useState<ListeningConfiguration | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -120,7 +102,6 @@ export function ListeningSettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [validation, setValidation] = useState<Record<string, DestinationValidation>>({});
-  const [destinationNames, setDestinationNames] = useState<Record<string, string>>(() => loadDestinationNames());
 
   const validateDestination = useCallback(async (destination: ListeningDestination) => {
     if (!destination.enabled) {
@@ -181,25 +162,12 @@ export function ListeningSettingsPanel() {
     }
   };
 
-  const renameDestination = (destination: ListeningDestination, value: string) => {
-    setDestinationNames((current) => {
-      const next = { ...current, [destination.id]: value };
-      persistDestinationNames(next);
-      return next;
-    });
-  };
-
   const addDestination = (publishClass: ListeningPublishClass) => {
     if (!configuration) return;
     const destination = newDestination(publishClass, configuration.destinations);
     setConfiguration({
       ...configuration,
       destinations: [...configuration.destinations, destination],
-    });
-    setDestinationNames((current) => {
-      const next = { ...current, [destination.id]: defaultDestinationName(destination) };
-      persistDestinationNames(next);
-      return next;
     });
     setValidation((current) => ({ ...current, [destination.id]: { state: "invalid", message: "Choose a destination folder before publishing is enabled." } }));
     setDirty(true);
@@ -211,12 +179,6 @@ export function ListeningSettingsPanel() {
     setConfiguration({
       ...configuration,
       destinations: configuration.destinations.filter((destination) => destination.id !== id),
-    });
-    setDestinationNames((current) => {
-      const next = { ...current };
-      delete next[id];
-      persistDestinationNames(next);
-      return next;
     });
     setValidation((current) => {
       const next = { ...current };
@@ -305,7 +267,7 @@ export function ListeningSettingsPanel() {
                 <div className="listening-destination-list">
                   {destinations.map((destination) => {
                     const validationResult = validation[destination.id] ?? { state: "idle" as const, message: destination.enabled ? "Destination has not been checked yet." : "Validation is paused while this destination is disabled." };
-                    const destinationName = destinationNames[destination.id]?.trim() || defaultDestinationName(destination);
+                    const destinationName = destination.name.trim() || defaultDestinationName(destination);
                     return (
                       <article className={`listening-destination validation-${validationResult.state}`} key={destination.id}>
                         <div className="listening-destination-header">
@@ -320,9 +282,9 @@ export function ListeningSettingsPanel() {
                           <span>Destination name</span>
                           <input
                             type="text"
-                            value={destinationNames[destination.id] ?? defaultDestinationName(destination)}
+                            value={destination.name}
                             placeholder="Plex Media Server"
-                            onChange={(event) => renameDestination(destination, event.target.value)}
+                            onChange={(event) => replaceDestination(destination.id, { name: event.target.value })}
                           />
                         </label>
 
