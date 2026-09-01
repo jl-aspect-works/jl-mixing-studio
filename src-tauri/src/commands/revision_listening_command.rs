@@ -4,7 +4,8 @@ use super::{
     validated_project_directory,
 };
 use crate::models::{
-    ListeningDestination, ListeningPublishClass, ListeningPublishResult, ListeningPublishStatus,
+    DeliveryStatusRequest, ListeningDestination, ListeningPublishClass, ListeningPublishResult,
+    ListeningPublishStatus,
 };
 use crate::workspace;
 use serde::{Deserialize, Serialize};
@@ -130,13 +131,16 @@ pub(crate) fn set_revision_listening_project(
 }
 
 pub(crate) fn start_revision_listening_monitor(app: tauri::AppHandle) {
+    // The historical command/state names are retained for bridge compatibility, but this is now
+    // the project-scoped Listening reconciler. Each scan checks both Revision and Delivered
+    // Listening for the active project.
     thread::spawn(move || loop {
         thread::sleep(SCAN_INTERVAL);
-        let _ = scan_active_revision(&app);
+        let _ = scan_active_project(&app);
     });
 }
 
-fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
+fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<RevisionListeningMonitorState>();
     let (active, generation, scan_number) = {
         let mut monitor = state
@@ -159,15 +163,11 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
                 && destination.publish_class == ListeningPublishClass::RevisionListening
         })
         .collect::<Vec<_>>();
-    if destinations.is_empty() {
-        clear_stale_destinations(&state, generation, &[])?;
-        return Ok(());
-    }
 
     let workspace_root = resolve_workspace_root(app)?;
     let snapshot = workspace::discover_workspace_at(&workspace_root);
     let project = find_project_summary(&snapshot, &active.client_id, &active.project_id)
-        .ok_or_else(|| "The active Revision Listening project is no longer available".to_owned())?;
+        .ok_or_else(|| "The active Listening project is no longer available".to_owned())?;
     let revision = project.current_revision;
     let project_directory = validated_project_directory(
         &workspace_root,
@@ -175,9 +175,7 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
         &active.client_id,
         &active.project_id,
     )
-    .ok_or_else(|| {
-        "The active Revision Listening project could not be resolved safely".to_owned()
-    })?;
+    .ok_or_else(|| "The active Listening project could not be resolved safely".to_owned())?;
     let revision_root = project_directory
         .join("04_Revisions")
         .join(format!("Revision_{revision:02}"));
@@ -210,10 +208,20 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
         let _ = app.emit(
             PUBLISH_EVENT,
             RevisionListeningPublishEvent {
-                client_id: active.client_id,
-                project_id: active.project_id,
+                client_id: active.client_id.clone(),
+                project_id: active.project_id.clone(),
                 revision,
                 results,
+            },
+        );
+    }
+
+    if generation_is_current(&state, generation)? {
+        let _ = super::delivered_listening_command::republish_delivered_listening(
+            app.clone(),
+            DeliveryStatusRequest {
+                client_id: active.client_id,
+                project_id: active.project_id,
             },
         );
     }
@@ -279,18 +287,6 @@ fn scan_destination(
     };
 
     let fingerprint = source_fingerprint(&selection.path)?;
-    let should_publish = observe_candidate(
-        state,
-        generation,
-        scan_number,
-        &destination.id,
-        &fingerprint,
-    )?;
-    if !should_publish {
-        let _ = client_scoped_destination(destination, context.client_id);
-        return Ok(None);
-    }
-
     let scoped_destination = match client_scoped_destination(destination, context.client_id) {
         Ok(destination) => destination,
         Err(message) => {
@@ -342,6 +338,48 @@ fn scan_destination(
             return Ok(Some(result));
         }
     };
+    let target_current = match revision_target_is_current(
+        &selection.path,
+        &scoped_destination,
+        &target_name,
+    ) {
+        Ok(current) => current,
+        Err(message) => {
+            let result = ListeningPublishResult {
+                destination_id: destination.id.clone(),
+                status: ListeningPublishStatus::Failed,
+                message,
+                selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                destination_path: Some(
+                    PathBuf::from(&scoped_destination.path)
+                        .join(&target_name)
+                        .to_string_lossy()
+                        .into_owned(),
+                ),
+            };
+            record_publish_result(
+                state,
+                generation,
+                scan_number,
+                &destination.id,
+                &fingerprint,
+                result.status,
+            )?;
+            return Ok(Some(result));
+        }
+    };
+    let should_publish = observe_candidate(
+        state,
+        generation,
+        scan_number,
+        &destination.id,
+        &fingerprint,
+        target_current,
+    )?;
+    if !should_publish {
+        return Ok(None);
+    }
+
     let result = publish_listening_copy(
         Some(&selection),
         &scoped_destination,
@@ -378,6 +416,40 @@ fn source_fingerprint(path: &Path) -> Result<SourceFingerprint, String> {
     })
 }
 
+fn revision_target_is_current(
+    source: &Path,
+    destination: &ListeningDestination,
+    target_name: &str,
+) -> Result<bool, String> {
+    let target = PathBuf::from(&destination.path).join(target_name);
+    let target_metadata = match fs::symlink_metadata(&target) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => {
+            return Err(format!(
+                "Unable to inspect the Revision Listening destination: {error}"
+            ))
+        }
+    };
+    if target_metadata.file_type().is_symlink() || !target_metadata.is_file() {
+        return Ok(false);
+    }
+
+    let source_metadata = fs::symlink_metadata(source)
+        .map_err(|error| format!("Unable to inspect the Revision Listening source: {error}"))?;
+    if source_metadata.file_type().is_symlink() || !source_metadata.is_file() {
+        return Err("Revision Listening source must be a regular file".into());
+    }
+
+    let source_modified = source_metadata.modified().map_err(|error| {
+        format!("Unable to read the Revision Listening source timestamp: {error}")
+    })?;
+    let target_modified = target_metadata.modified().map_err(|error| {
+        format!("Unable to read the Revision Listening destination timestamp: {error}")
+    })?;
+    Ok(target_modified >= source_modified)
+}
+
 fn observe_missing(
     state: &RevisionListeningMonitorState,
     generation: u64,
@@ -406,6 +478,7 @@ fn observe_candidate(
     scan_number: u64,
     destination_id: &str,
     fingerprint: &SourceFingerprint,
+    target_current: bool,
 ) -> Result<bool, String> {
     let mut monitor = state
         .inner
@@ -438,7 +511,9 @@ fn observe_candidate(
     if observation.stable_samples < STABLE_SAMPLE_COUNT {
         return Ok(false);
     }
-    if observation.published.as_ref() == Some(fingerprint) {
+    if target_current {
+        observation.published = Some(fingerprint.clone());
+        observation.last_attempt = None;
         return Ok(false);
     }
     if observation
@@ -472,9 +547,11 @@ fn record_publish_result(
     let Some(observation) = monitor.destinations.get_mut(destination_id) else {
         return Ok(());
     };
-    observation.last_attempt = Some((fingerprint.clone(), scan_number));
     if status == ListeningPublishStatus::Published {
         observation.published = Some(fingerprint.clone());
+        observation.last_attempt = None;
+    } else if status == ListeningPublishStatus::Failed {
+        observation.last_attempt = Some((fingerprint.clone(), scan_number));
     }
     Ok(())
 }
@@ -582,21 +659,21 @@ mod tests {
     fn candidate_requires_three_unchanged_samples() {
         let state = state_with_project();
         let source = fingerprint(Path::new("mix.wav"), 10, 100);
-        assert!(!observe_candidate(&state, 1, 1, "wav", &source).expect("sample 1"));
-        assert!(!observe_candidate(&state, 1, 2, "wav", &source).expect("sample 2"));
-        assert!(observe_candidate(&state, 1, 3, "wav", &source).expect("sample 3"));
+        assert!(!observe_candidate(&state, 1, 1, "wav", &source, false).expect("sample 1"));
+        assert!(!observe_candidate(&state, 1, 2, "wav", &source, false).expect("sample 2"));
+        assert!(observe_candidate(&state, 1, 3, "wav", &source, false).expect("sample 3"));
     }
 
     #[test]
-    fn changed_file_resets_stability_and_published_state_suppresses_duplicates() {
+    fn changed_file_resets_stability_and_current_target_suppresses_duplicates() {
         let state = state_with_project();
         let first = fingerprint(Path::new("mix.wav"), 10, 100);
         let growing = fingerprint(Path::new("mix.wav"), 20, 101);
-        assert!(!observe_candidate(&state, 1, 1, "wav", &first).expect("first"));
-        assert!(!observe_candidate(&state, 1, 2, "wav", &first).expect("second"));
-        assert!(!observe_candidate(&state, 1, 3, "wav", &growing).expect("changed"));
-        assert!(!observe_candidate(&state, 1, 4, "wav", &growing).expect("stable 2"));
-        assert!(observe_candidate(&state, 1, 5, "wav", &growing).expect("stable 3"));
+        assert!(!observe_candidate(&state, 1, 1, "wav", &first, false).expect("first"));
+        assert!(!observe_candidate(&state, 1, 2, "wav", &first, false).expect("second"));
+        assert!(!observe_candidate(&state, 1, 3, "wav", &growing, false).expect("changed"));
+        assert!(!observe_candidate(&state, 1, 4, "wav", &growing, false).expect("stable 2"));
+        assert!(observe_candidate(&state, 1, 5, "wav", &growing, false).expect("stable 3"));
         record_publish_result(
             &state,
             1,
@@ -606,7 +683,26 @@ mod tests {
             ListeningPublishStatus::Published,
         )
         .expect("published");
-        assert!(!observe_candidate(&state, 1, 6, "wav", &growing).expect("duplicate"));
+        assert!(!observe_candidate(&state, 1, 6, "wav", &growing, true).expect("current"));
+    }
+
+    #[test]
+    fn missing_target_republishes_stable_source_after_success() {
+        let state = state_with_project();
+        let source = fingerprint(Path::new("mix.wav"), 10, 100);
+        for scan in 1..=3 {
+            let _ = observe_candidate(&state, 1, scan, "wav", &source, false).expect("stable");
+        }
+        record_publish_result(
+            &state,
+            1,
+            3,
+            "wav",
+            &source,
+            ListeningPublishStatus::Published,
+        )
+        .expect("published");
+        assert!(observe_candidate(&state, 1, 4, "wav", &source, false).expect("repair"));
     }
 
     #[test]
@@ -614,12 +710,12 @@ mod tests {
         let state = state_with_project();
         let source = fingerprint(Path::new("mix.wav"), 10, 100);
         for scan in 1..=3 {
-            let _ = observe_candidate(&state, 1, scan, "wav", &source).expect("stable");
+            let _ = observe_candidate(&state, 1, scan, "wav", &source, false).expect("stable");
         }
         record_publish_result(&state, 1, 3, "wav", &source, ListeningPublishStatus::Failed)
             .expect("failed");
-        assert!(!observe_candidate(&state, 1, 4, "wav", &source).expect("backoff"));
-        assert!(observe_candidate(&state, 1, 13, "wav", &source).expect("retry"));
+        assert!(!observe_candidate(&state, 1, 4, "wav", &source, false).expect("backoff"));
+        assert!(observe_candidate(&state, 1, 13, "wav", &source, false).expect("retry"));
     }
 
     #[test]
@@ -627,7 +723,7 @@ mod tests {
         let state = state_with_project();
         let source = fingerprint(Path::new("mix.mp3"), 10, 100);
         for scan in 1..=3 {
-            let _ = observe_candidate(&state, 1, scan, "mp3", &source).expect("stable");
+            let _ = observe_candidate(&state, 1, scan, "mp3", &source, false).expect("stable");
         }
         record_publish_result(
             &state,
@@ -639,9 +735,26 @@ mod tests {
         )
         .expect("published");
         observe_missing(&state, 1, "mp3").expect("missing");
-        assert!(!observe_candidate(&state, 1, 4, "mp3", &source).expect("candidate 1"));
-        assert!(!observe_candidate(&state, 1, 5, "mp3", &source).expect("candidate 2"));
-        assert!(observe_candidate(&state, 1, 6, "mp3", &source).expect("candidate 3"));
+        assert!(!observe_candidate(&state, 1, 4, "mp3", &source, false).expect("candidate 1"));
+        assert!(!observe_candidate(&state, 1, 5, "mp3", &source, false).expect("candidate 2"));
+        assert!(observe_candidate(&state, 1, 6, "mp3", &source, false).expect("candidate 3"));
+    }
+
+    #[test]
+    fn target_current_check_detects_missing_and_current_files() {
+        let temp = tempdir().expect("tempdir");
+        let source = temp.path().join("source.mp3");
+        fs::write(&source, b"source").expect("source");
+        let destination_root = temp.path().join("listening");
+        fs::create_dir_all(&destination_root).expect("destination");
+        let scoped = destination(&destination_root);
+        assert!(!revision_target_is_current(&source, &scoped, "project-rev-01.mp3")
+            .expect("missing target"));
+
+        thread::sleep(Duration::from_millis(5));
+        fs::write(destination_root.join("project-rev-01.mp3"), b"published").expect("target");
+        assert!(revision_target_is_current(&source, &scoped, "project-rev-01.mp3")
+            .expect("current target"));
     }
 
     #[test]
