@@ -1,78 +1,31 @@
-import { useEffect, useState } from "react";
-import { listen } from "@tauri-apps/api/event";
+import type { ListeningPublishEvent } from "./listeningPublishEvents";
 import "./ListeningPublishStatus.css";
-
-export type ListeningPublishStatusValue = "published" | "skipped" | "failed";
-
-export interface ListeningPublishResult {
-  destinationId: string;
-  status: ListeningPublishStatusValue;
-  message: string;
-  selectedSource: string | null;
-  destinationPath: string | null;
-}
-
-export interface ListeningPublishEvent {
-  clientId: string;
-  projectId: string;
-  revision: number;
-  results: ListeningPublishResult[];
-}
 
 const sourceName = (path: string | null) => {
   if (!path) return null;
   const normalized = path.replace(/\\/g, "/");
-  return normalized.split("/").filter(Boolean).at(-1) ?? path;
+  const parts = normalized.split("/").filter(Boolean);
+  return parts.length > 0 ? parts[parts.length - 1] : path;
 };
-
-export function useListeningPublishEvent(
-  eventName: "revision-listening-publish-results" | "delivered-listening-publish-results",
-  clientId: string,
-  projectId: string,
-) {
-  const [event, setEvent] = useState<ListeningPublishEvent | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    let unlisten: (() => void) | null = null;
-    void listen<ListeningPublishEvent>(eventName, (message) => {
-      if (!active) return;
-      if (message.payload.clientId !== clientId || message.payload.projectId !== projectId) return;
-      setEvent(message.payload);
-    }).then((value) => {
-      if (active) unlisten = value;
-      else value();
-    });
-    return () => {
-      active = false;
-      unlisten?.();
-    };
-  }, [clientId, eventName, projectId]);
-
-  return { event, setEvent };
-}
 
 export function ListeningPublishStatus({
   title,
   event,
   emptyMessage,
-  actions,
 }: {
   title: string;
   event: ListeningPublishEvent | null;
   emptyMessage: string;
-  actions?: React.ReactNode;
 }) {
   return <section className="panel listening-publish-status" aria-label={title}>
     <div className="panel-heading listening-publish-heading">
       <div>
-        <p className="kicker">Listening</p>
-        <h2>{title}</h2>
+        <p className="kicker">Listening activity</p>
+        <h3>{title}</h3>
       </div>
-      {actions && <div className="listening-publish-actions">{actions}</div>}
     </div>
     {!event ? <p className="health-detail">{emptyMessage}</p> : <>
-      <p className="health-detail">Latest result for Revision {event.revision.toString().padStart(2, "0")}.</p>
+      <p className="health-detail">{event.clientId} / {event.projectId} · Revision {event.revision.toString().padStart(2, "0")}</p>
       <div className="listening-publish-results">
         {event.results.map((result) => <div className="listening-publish-result" key={`${result.destinationId}-${result.destinationPath ?? "none"}`}>
           <div className="listening-publish-result-heading">
