@@ -8,11 +8,12 @@ const sourceName = (path: string | null) => {
   return parts.length > 0 ? parts[parts.length - 1] : path;
 };
 
+function isMissingSource(result: ListeningPublishResult): boolean {
+  return result.status === "skipped"
+    && /^No \.[A-Za-z0-9]+ source is available$/i.test(result.message.trim());
+}
+
 function resultMessage(result: ListeningPublishResult): string {
-  const missingFormat = /^No \.([A-Za-z0-9]+) source is available$/i.exec(result.message.trim());
-  if (result.status === "skipped" && missingFormat) {
-    return `Required ${missingFormat[1].toUpperCase()} source not found.`;
-  }
   return result.message;
 }
 
@@ -31,6 +32,9 @@ export function ListeningPublishStatus({
   destinationNames?: Record<string, string>;
   actions?: React.ReactNode;
 }) {
+  const visibleResults = event?.results.filter((result) => !isMissingSource(result)) ?? [];
+  const visibleEvent = event && visibleResults.length > 0 ? { ...event, results: visibleResults } : null;
+
   return <section className="panel listening-publish-status" aria-label={title}>
     <div className="panel-heading listening-publish-heading">
       <div>
@@ -39,13 +43,13 @@ export function ListeningPublishStatus({
       </div>
       {actions && <div className="listening-publish-actions">{actions}</div>}
     </div>
-    {!event ? <div className="listening-publish-empty">
+    {!visibleEvent ? <div className="listening-publish-empty">
       <strong>{emptyTitle}</strong>
       <span>{emptyMessage}</span>
     </div> : <>
-      <p className="health-detail listening-publish-context">{event.clientId} / {event.projectId} · Revision {event.revision.toString().padStart(2, "0")}</p>
+      <p className="health-detail listening-publish-context">{visibleEvent.clientId} / {visibleEvent.projectId} · Revision {visibleEvent.revision.toString().padStart(2, "0")}</p>
       <div className="listening-publish-results">
-        {event.results.map((result) => {
+        {visibleEvent.results.map((result) => {
           const destinationName = destinationNames[result.destinationId]?.trim() || result.destinationId;
           return <div className={`listening-publish-result result-${result.status}`} key={`${result.destinationId}-${result.destinationPath ?? "none"}`}>
             <div className="listening-publish-result-heading">
