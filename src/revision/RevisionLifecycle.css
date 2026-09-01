@@ -127,7 +127,9 @@
   line-height: 1.5;
 }
 
-@media (max-width: 700px) {
+/* The detail pane becomes constrained by the history column well before the overall
+   viewport reaches mobile width. Reflow actions at that point instead of clipping them. */
+@media (max-width: 1000px) {
   .revision-detail-heading {
     flex-wrap: wrap;
   }
@@ -135,14 +137,34 @@
   .revision-detail-heading-actions {
     width: 100%;
     min-width: 0;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
   }
 
   .revision-detail-heading-actions > .revision-badges {
-    justify-self: start;
+    flex: 1 0 100%;
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .revision-detail-heading-actions > button {
+    flex: 0 0 auto;
   }
 
   .revision-delivered-approval-note {
     text-align: left;
+  }
+}
+
+@media (max-width: 700px) {
+  .revision-detail-heading-actions {
+    justify-content: flex-start;
+  }
+
+  .revision-detail-heading-actions > button {
+    flex: 1 1 180px;
   }
 }
