@@ -151,7 +151,7 @@ export function ListeningSettingsPanel() {
     setDirty(true);
     setNotice(null);
     setSaveError(null);
-    if (Object.hasOwn(update, "path")) {
+    if (Object.prototype.hasOwnProperty.call(update, "path")) {
       setValidation((current) => ({ ...current, [id]: { state: "idle", message: "Destination changed; validation will run when you leave the field." } }));
     }
   };
