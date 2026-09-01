@@ -10,7 +10,7 @@ import { AppRoutes } from "./app/AppRoutes";
 import { AppDialogs } from "./app/AppDialogs";
 import { RouteHeader } from "./components/RouteHeader";
 import { rememberRecentProject } from "./dashboard/recentProject";
-import { ListeningActivityPanel } from "./listening/ListeningActivityPanel";
+import { startListeningPublishCapture } from "./listening/listeningPublishEvents";
 import { ProjectBreadcrumbs } from "./project/ProjectBreadcrumbs";
 import { ProjectOverviewHeader } from "./project/ProjectOverviewHeader";
 import type { PrimaryRoute } from "./ui/routes";
@@ -70,6 +70,19 @@ export default function StudioApp() {
   const delivery = useDeliveryWorkflow({ creationAvailable: route.deliveryCreationAvailable, clientId: route.resolvedProjectClient?.clientId ?? null, project: route.resolvedProject, setWorkspace: resources.setWorkspace });
 
   useEffect(() => {
+    let active = true;
+    let stop: (() => void) | null = null;
+    void startListeningPublishCapture().then((cleanup) => {
+      if (active) stop = cleanup;
+      else cleanup();
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+      stop?.();
+    };
+  }, []);
+
+  useEffect(() => {
     if (resources.workspace.status !== "ready") return;
     if (resources.workspace.value.status === "unavailable" || resources.workspace.value.status === "invalid") return;
     if (selectedProject) {
@@ -108,9 +121,6 @@ export default function StudioApp() {
   const workspacePath = resources.workspace.status === "ready" ? resources.workspace.value.workspacePath : "";
   const projectOpen = projectHeaderProject !== null;
   const showOverviewToolbar = projectOpen && projectView === "overview";
-  const showListeningActivity = projectHeaderClient !== null
-    && projectHeaderProject !== null
-    && (projectView === "revisions" || projectView === "delivery");
   const configuredWorkspacePath = resources.workspaceConfiguration.status === "ready" ? resources.workspaceConfiguration.value.workspacePath : workspacePath;
 
   return <div className={`app-shell${preferences.compactLayout ? " compact-layout" : ""}${preferences.reduceMotion ? " reduce-motion" : ""}`}>
@@ -123,12 +133,6 @@ export default function StudioApp() {
       {configuredUnavailable && <section className="notice warning workspace-unavailable-notice" role="alert"><strong>Workspace unavailable</strong><span>{configuredWorkspacePath}</span><p>Reconnect the configured drive, NAS share, or cloud-mounted folder, then retry. Studio will keep this workspace configured and will not switch to the default workspace.</p><button type="button" className="secondary" onClick={() => void resources.refreshWorkspace()} disabled={resources.loading}>{resources.loading ? "Retrying…" : "Retry workspace"}</button></section>}
       {!configuredUnavailable && resources.workspace.status === "ready" && resources.workspaceRefreshError && <section className="notice warning workspace-refresh-error" role="alert"><strong>Workspace refresh failed</strong><span>{resources.workspaceRefreshError}</span><p>The last successfully loaded workspace remains in view. Check the mounted storage connection and retry.</p><button type="button" className="secondary" onClick={() => void resources.refreshWorkspace()} disabled={resources.loading}>{resources.loading ? "Retrying…" : "Retry workspace"}</button></section>}
       <AppNotices routeNotice={routeNotice} studioNotice={studio.studioNotice} clientNotice={clientNotice} projectNotice={projectNotice} intakeNotice={intake.notice} revisionNotice={revision.notice} approvalNotice={approval.notice} deliveryNotice={delivery.notice} />
-      {showListeningActivity && projectHeaderClient && projectHeaderProject && <ListeningActivityPanel
-        clientId={projectHeaderClient.clientId}
-        projectId={projectHeaderProject.projectId}
-        deliveredRevision={projectHeaderProject.deliveredRevision}
-        mode={projectView === "delivery" ? "delivery" : "revisions"}
-      />}
       <AppRoutes activeRoute={activeRoute} workspace={resources.workspace} workspaceStorage={workspaceStorage.state} workspaceConfiguration={resources.workspaceConfiguration} version={resources.version} loading={resources.loading} availability={availability} route={route} projectView={projectView} selectedProject={selectedProject !== null} preferences={preferences} setPreferences={setPreferences} studioCreationAvailable={studioSetupAvailable} studioCreationHelp={studioCreationHelp} studio={studio} projects={projects} intake={intake} revision={revision} approval={approval} delivery={delivery} onRefresh={resources.refresh} onWorkspaceConfigurationReload={resources.reloadWorkspaceConfiguration} onNewClient={openClientWorkflow} onClientSaveSuccess={setClientNotice} onNavigate={navigate} onOpenDerivedProject={openProject} onSelectClient={(clientId) => { setSelectedClientId(clientId); setRouteNotice(null); }} onOpenClientProject={openClientProject} onProjects={leaveProject} onSelectProjectView={selectProjectView} onOpenRevisions={openRevisions} />
     </main>
     <AppDialogs workspace={resources.workspace} project={route.resolvedProject} studio={studio} clients={clients} projects={projects} intake={intake} revision={revision} approval={approval} delivery={delivery} onRefresh={resources.refresh} />
