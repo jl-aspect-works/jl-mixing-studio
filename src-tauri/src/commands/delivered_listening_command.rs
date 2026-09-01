@@ -337,11 +337,7 @@ fn select_revision_primary(
     revision_root: &Path,
     required_extension: &str,
 ) -> Result<Option<ListeningSourceSelection>, String> {
-    super::project_revision_files::select_listening_source(
-        revision_root,
-        required_extension,
-        None,
-    )
+    super::project_revision_files::select_listening_source(revision_root, required_extension, None)
 }
 
 fn select_preview_main_mix(
@@ -403,9 +399,7 @@ fn select_package_main_mix(
                 continue;
             };
             let source_path = validate_source_path(source_path)?;
-            if source_path == primary.file_name
-                && extension_matches(&file.path, required_extension)
-            {
+            if source_path == primary.file_name && extension_matches(&file.path, required_extension) {
                 candidates.push(file);
             }
         }
