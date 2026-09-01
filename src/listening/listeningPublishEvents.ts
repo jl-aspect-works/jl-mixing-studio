@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 
 export type ListeningPublishStatusValue = "published" | "skipped" | "failed";
+export type ListeningPublishEventName = "revision-listening-publish-results" | "delivered-listening-publish-results";
 
 export interface ListeningPublishResult {
   destinationId: string;
@@ -18,29 +19,51 @@ export interface ListeningPublishEvent {
   results: ListeningPublishResult[];
 }
 
-export function useListeningPublishEvent(
-  eventName: "revision-listening-publish-results" | "delivered-listening-publish-results",
-  clientId: string,
-  projectId: string,
-) {
-  const [event, setEvent] = useState<ListeningPublishEvent | null>(null);
+type ListeningActivitySnapshot = Partial<Record<ListeningPublishEventName, ListeningPublishEvent>>;
+
+const STORAGE_KEY = "jl-mixing-listening-activity-v1";
+const ACTIVITY_EVENT = "jl-mixing-listening-activity-updated";
+
+function readSnapshot(): ListeningActivitySnapshot {
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) as ListeningActivitySnapshot : {};
+  } catch {
+    return {};
+  }
+}
+
+function recordEvent(eventName: ListeningPublishEventName, event: ListeningPublishEvent) {
+  const next = { ...readSnapshot(), [eventName]: event };
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // Session persistence is best-effort; the in-app update still fires.
+  }
+  window.dispatchEvent(new CustomEvent(ACTIVITY_EVENT, { detail: next }));
+}
+
+export async function startListeningPublishCapture(): Promise<() => void> {
+  const eventNames: ListeningPublishEventName[] = [
+    "revision-listening-publish-results",
+    "delivered-listening-publish-results",
+  ];
+  const unlisteners = await Promise.all(eventNames.map((eventName) =>
+    listen<ListeningPublishEvent>(eventName, (message) => recordEvent(eventName, message.payload))));
+  return () => unlisteners.forEach((unlisten) => unlisten());
+}
+
+export function useLatestListeningPublishEvent(eventName: ListeningPublishEventName) {
+  const [event, setEvent] = useState<ListeningPublishEvent | null>(() => readSnapshot()[eventName] ?? null);
 
   useEffect(() => {
-    let active = true;
-    let unlisten: (() => void) | null = null;
-    void listen<ListeningPublishEvent>(eventName, (message) => {
-      if (!active) return;
-      if (message.payload.clientId !== clientId || message.payload.projectId !== projectId) return;
-      setEvent(message.payload);
-    }).then((value) => {
-      if (active) unlisten = value;
-      else value();
-    });
-    return () => {
-      active = false;
-      unlisten?.();
+    const onUpdate = (message: Event) => {
+      const snapshot = (message as CustomEvent<ListeningActivitySnapshot>).detail;
+      setEvent(snapshot[eventName] ?? null);
     };
-  }, [clientId, eventName, projectId]);
+    window.addEventListener(ACTIVITY_EVENT, onUpdate);
+    return () => window.removeEventListener(ACTIVITY_EVENT, onUpdate);
+  }, [eventName]);
 
-  return { event, setEvent };
+  return event;
 }
