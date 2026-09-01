@@ -27,8 +27,6 @@ pub enum ListeningArtworkPolicy {
 #[serde(rename_all = "camelCase")]
 pub struct ListeningDestination {
     pub id: String,
-    #[serde(default)]
-    pub name: String,
     pub enabled: bool,
     pub publish_class: ListeningPublishClass,
     pub path: String,
