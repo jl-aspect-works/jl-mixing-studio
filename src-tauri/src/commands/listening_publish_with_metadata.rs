@@ -4,7 +4,7 @@ use crate::models::{
     ListeningConfiguration, ListeningDestination, ListeningPublishResult, ListeningPublishStatus,
 };
 
-use super::listening_artwork::apply_listening_artwork;
+use super::listening_artwork::{apply_listening_artwork, ensure_artist_artwork_sidecars};
 use super::listening_metadata::apply_listening_metadata;
 use super::{listening_publish_base as base, ListeningSourceSelection};
 
@@ -54,6 +54,15 @@ pub(crate) fn publish_listening_copy(
         apply_listening_artwork(Path::new(target), destination.artwork_policy)
     {
         result.message = format!("{}; {artwork_message}", result.message);
+    }
+    match ensure_artist_artwork_sidecars(Path::new(&destination.path), destination.artwork_policy) {
+        Ok(true) => {
+            result.message = format!("{}; artist artwork sidecars updated", result.message);
+        }
+        Ok(false) => {}
+        Err(message) => {
+            result.message = format!("{}; artist artwork not applied: {message}", result.message);
+        }
     }
     result
 }
@@ -145,6 +154,8 @@ mod tests {
         assert_eq!(fs::read(&source).expect("source read"), original);
         let target = PathBuf::from(result.destination_path.expect("target"));
         assert_eq!(fs::read(target).expect("target read"), original);
+        assert!(!destination_root.join("artist.png").exists());
+        assert!(!destination_root.join("folder.png").exists());
     }
 
     #[test]
@@ -174,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn wav_replace_writes_companion_cover_without_touching_source_audio() {
+    fn wav_replace_writes_companion_and_artist_artwork_without_touching_source_audio() {
         let temp = tempdir().expect("tempdir");
         let destination_root = temp.path().join("listening");
         fs::create_dir_all(&destination_root).expect("destination");
@@ -195,12 +206,15 @@ mod tests {
 
         assert_eq!(result.status, ListeningPublishStatus::Published);
         assert!(result.message.contains("WAV compatibility"));
+        assert!(result.message.contains("artist artwork sidecars updated"));
         assert_eq!(fs::read(&source).expect("source read"), original);
         let target = PathBuf::from(result.destination_path.expect("target"));
         assert_eq!(fs::read(target).expect("target read"), original);
-        assert_eq!(
-            fs::read(destination_root.join("cover.png")).expect("cover read"),
-            super::super::listening_artwork::STUDIO_ARTWORK_BYTES
-        );
+        for name in ["cover.png", "artist.png", "folder.png"] {
+            assert_eq!(
+                fs::read(destination_root.join(name)).expect("artwork read"),
+                super::super::listening_artwork::STUDIO_ARTWORK_BYTES
+            );
+        }
     }
 }
