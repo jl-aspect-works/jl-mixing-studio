@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ActionIcon } from "../components/ActionIcon";
-import { ListeningSettingsActivity } from "../listening/ListeningSettingsActivity";
 import "./ListeningSettingsPanel.css";
 
 type ListeningPublishClass = "revisionListening" | "deliveredListening";
@@ -263,8 +262,6 @@ export function ListeningSettingsPanel() {
           })}
         </div>
       )}
-
-      <ListeningSettingsActivity />
     </section>
   );
 }
