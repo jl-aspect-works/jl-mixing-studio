@@ -268,8 +268,8 @@ mod tests {
 
     #[test]
     fn listening_destination_requires_absolute_path() {
-        let error = candidate_listening_destination("Listening")
-            .expect_err("relative path must fail");
+        let error =
+            candidate_listening_destination("Listening").expect_err("relative path must fail");
         assert_eq!(error, "Listening destination paths must be absolute");
     }
 
@@ -278,10 +278,7 @@ mod tests {
         let temp = tempdir().expect("tempdir");
         let canonical = candidate_listening_destination(temp.path().to_str().expect("path"))
             .expect("writable destination");
-        assert_eq!(
-            canonical,
-            temp.path().canonicalize().expect("canonical")
-        );
+        assert_eq!(canonical, temp.path().canonicalize().expect("canonical"));
         assert_eq!(fs::read_dir(temp.path()).expect("read dir").count(), 0);
     }
 }
