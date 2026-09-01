@@ -373,9 +373,8 @@ fn select_package_main_mix(
             let Some(source_path) = file.source_path.as_deref() else {
                 continue;
             };
-            if source_path_is_primary(source_path)?
-                && extension_matches(&file.path, required_extension)
-            {
+            let is_primary = source_path_is_primary(source_path)?;
+            if is_primary && extension_matches(&file.path, required_extension) {
                 candidates.push(file);
             }
         }
