@@ -126,6 +126,7 @@ fn project_after_delivery_creation() -> ProjectSummary {
         approved_by: project.revisions[0].approved_by.clone().unwrap(),
         files: vec![DeliveryFile {
             path: "Blue Sky Main Mix.wav".into(),
+            source_path: None,
             deliverable_type: "main_mix".into(),
             size_bytes: 12,
             sha256: "0".repeat(64),
@@ -331,6 +332,7 @@ fn accepts_preserved_delivery_files_not_selected_by_the_current_revision() {
     let mut after = project_after_delivery_creation();
     after.delivery.as_mut().unwrap().files.push(DeliveryFile {
         path: "client-reference.pdf".into(),
+        source_path: None,
         deliverable_type: "attachment".into(),
         size_bytes: 24,
         sha256: "1".repeat(64),
