@@ -351,22 +351,39 @@ fn select_package_main_mix(
     files: &[crate::models::DeliveryFile],
     required_extension: &str,
 ) -> Result<Option<ListeningSourceSelection>, String> {
-    let candidates = files
+    let classified = files
         .iter()
         .filter(|file| file.deliverable_type == MAIN_MIX_TYPE)
         .filter(|file| extension_matches(&file.path, required_extension))
         .collect::<Vec<_>>();
-    if candidates.is_empty() {
-        return Ok(None);
-    }
-    if candidates.len() > 1 {
+    if classified.len() > 1 {
         return Err(format!(
             "The current delivery contains multiple main-mix .{} files; Delivered Listening will not guess",
             normalized_extension(required_extension)?
         ));
     }
 
-    let source = safe_relative_file(delivery_root, &candidates[0].path)?;
+    let candidate = if let Some(candidate) = classified.first() {
+        *candidate
+    } else {
+        let top_level = files
+            .iter()
+            .filter(|file| !file.path.contains('/') && !file.path.contains('\\'))
+            .filter(|file| extension_matches(&file.path, required_extension))
+            .collect::<Vec<_>>();
+        if top_level.is_empty() {
+            return Ok(None);
+        }
+        if top_level.len() > 1 {
+            return Err(format!(
+                "The current delivery contains multiple top-level .{} files without a main-mix classification; Delivered Listening will not guess",
+                normalized_extension(required_extension)?
+            ));
+        }
+        top_level[0]
+    };
+
+    let source = safe_relative_file(delivery_root, &candidate.path)?;
     selection_for_file(source, true).map(Some)
 }
 
@@ -600,6 +617,42 @@ mod tests {
         .expect("selection")
         .expect("source");
         assert_eq!(selection.file_name, "Final.mp3");
+    }
+
+    #[test]
+    fn recovery_uses_single_unclassified_top_level_file() {
+        let temp = tempdir().expect("tempdir");
+        fs::create_dir_all(temp.path().join("Stems")).expect("stems");
+        fs::write(temp.path().join("Final.mp3"), b"final").expect("final");
+        fs::write(temp.path().join("Stems/Vocal.mp3"), b"stem").expect("stem");
+        let selection = select_package_main_mix(
+            temp.path(),
+            &[
+                delivered("Final.mp3", "unclassified"),
+                delivered("Stems/Vocal.mp3", "unclassified"),
+            ],
+            "mp3",
+        )
+        .expect("selection")
+        .expect("source");
+        assert_eq!(selection.file_name, "Final.mp3");
+    }
+
+    #[test]
+    fn recovery_does_not_guess_between_unclassified_top_level_files() {
+        let temp = tempdir().expect("tempdir");
+        fs::write(temp.path().join("Mix A.mp3"), b"a").expect("a");
+        fs::write(temp.path().join("Mix B.mp3"), b"b").expect("b");
+        let error = select_package_main_mix(
+            temp.path(),
+            &[
+                delivered("Mix A.mp3", "unclassified"),
+                delivered("Mix B.mp3", "unclassified"),
+            ],
+            "mp3",
+        )
+        .expect_err("ambiguous");
+        assert!(error.contains("multiple top-level"));
     }
 
     #[test]
