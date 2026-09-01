@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ActionIcon } from "../components/ActionIcon";
+import { ListeningSettingsActivity } from "../listening/ListeningSettingsActivity";
 import "./ListeningSettingsPanel.css";
 
 type ListeningPublishClass = "revisionListening" | "deliveredListening";
@@ -63,7 +64,7 @@ function nextDestinationId(publishClass: ListeningPublishClass, destinations: Li
 function newDestination(publishClass: ListeningPublishClass, destinations: ListeningDestination[]): ListeningDestination {
   return {
     id: nextDestinationId(publishClass, destinations),
-    enabled: false,
+    enabled: true,
     publishClass,
     path: "",
     requiredExtension: "mp3",
@@ -262,6 +263,8 @@ export function ListeningSettingsPanel() {
           })}
         </div>
       )}
+
+      <ListeningSettingsActivity />
     </section>
   );
 }
