@@ -63,8 +63,13 @@ pub(crate) fn republish_delivered_listening(
             || "The selected project directory could not be resolved safely".to_owned(),
         )?;
 
-    let results =
-        reconcile_from_delivery_package(&app, &project_directory, project_id, &delivery.files);
+    let results = reconcile_from_delivery_package(
+        &app,
+        &project_directory,
+        project_id,
+        delivery.revision,
+        &delivery.files,
+    );
     if !results.is_empty() {
         emit_results(
             &app,
@@ -141,6 +146,7 @@ fn reconcile_from_delivery_package(
     app: &tauri::AppHandle,
     project_directory: &Path,
     project_id: &str,
+    revision: u32,
     files: &[crate::models::DeliveryFile],
 ) -> Vec<ListeningPublishResult> {
     let destinations = match delivered_destinations(app) {
@@ -151,12 +157,19 @@ fn reconcile_from_delivery_package(
         return Vec::new();
     }
 
+    let revision_root = project_directory
+        .join("04_Revisions")
+        .join(format!("Revision_{revision:02}"));
     let delivery_root = project_directory.join("05_Final_Delivery");
     destinations
         .iter()
         .filter_map(|destination| {
-            let selection =
-                select_package_main_mix(&delivery_root, files, &destination.required_extension);
+            let selection = select_package_main_mix(
+                &revision_root,
+                &delivery_root,
+                files,
+                &destination.required_extension,
+            );
             reconcile_selection_result(selection, destination, project_id)
         })
         .collect()
@@ -320,61 +333,79 @@ fn delivered_target_name(project_id: &str, required_extension: &str) -> Result<S
     ))
 }
 
+fn select_revision_primary(
+    revision_root: &Path,
+    required_extension: &str,
+) -> Result<Option<ListeningSourceSelection>, String> {
+    super::project_revision_files::select_listening_source(
+        revision_root,
+        required_extension,
+        None,
+    )
+}
+
 fn select_preview_main_mix(
     revision_root: &Path,
     selected: &[PlannedDeliveryFile],
     required_extension: &str,
 ) -> Result<Option<ListeningSourceSelection>, String> {
-    let candidates = selected
+    let Some(primary) = select_revision_primary(revision_root, required_extension)? else {
+        return Ok(None);
+    };
+
+    let packaged = selected
         .iter()
-        .filter(|file| file.deliverable_type == MAIN_MIX_TYPE)
         .filter(|file| extension_matches(&file.source_name, required_extension))
-        .collect::<Vec<_>>();
-    if candidates.is_empty() {
+        .filter(|file| file.source_name == primary.file_name)
+        .count();
+    if packaged == 0 {
         return Ok(None);
     }
-    if candidates.len() > 1 {
+    if packaged > 1 {
         return Err(format!(
-            "The successful delivery selected multiple main-mix .{} sources; Delivered Listening will not guess",
+            "The successful delivery selected the primary .{} source more than once; Delivered Listening will not guess",
             normalized_extension(required_extension)?
         ));
     }
-
-    let source = resolve_delivery_source_name(revision_root, &candidates[0].source_name)?;
-    selection_for_file(source, true).map(Some)
+    Ok(Some(primary))
 }
 
-fn source_path_is_primary(source_path: &str) -> Result<bool, String> {
+fn validate_source_path(source_path: &str) -> Result<&str, String> {
     let value = source_path.trim();
     if value.is_empty() || value.starts_with('/') || value.contains('\\') {
         return Err("The delivery manifest contains an unsafe revision source path".into());
     }
-    let parts = value.split('/').collect::<Vec<_>>();
-    if parts
-        .iter()
-        .any(|component| component.is_empty() || *component == "." || *component == "..")
+    if value
+        .split('/')
+        .any(|component| component.is_empty() || component == "." || component == "..")
     {
         return Err("The delivery manifest contains an unsafe revision source path".into());
     }
-    Ok(parts.len() == 1)
+    Ok(value)
 }
 
 fn select_package_main_mix(
+    revision_root: &Path,
     delivery_root: &Path,
     files: &[crate::models::DeliveryFile],
     required_extension: &str,
 ) -> Result<Option<ListeningSourceSelection>, String> {
-    // New delivery manifests persist the exact revision-relative source path for every file.
-    // A source at the revision root is authoritative primary-mix provenance; Variants are not.
-    // If any provenance is present, use it instead of filename classification or delivery layout.
+    // New delivery manifests map every packaged file back to its immutable revision source.
+    // Determine the primary source with the same selector used by Revision Listening, then map
+    // that exact source through the manifest to the packaged delivery copy.
     if files.iter().any(|file| file.source_path.is_some()) {
+        let Some(primary) = select_revision_primary(revision_root, required_extension)? else {
+            return Ok(None);
+        };
         let mut candidates = Vec::new();
         for file in files {
             let Some(source_path) = file.source_path.as_deref() else {
                 continue;
             };
-            let is_primary = source_path_is_primary(source_path)?;
-            if is_primary && extension_matches(&file.path, required_extension) {
+            let source_path = validate_source_path(source_path)?;
+            if source_path == primary.file_name
+                && extension_matches(&file.path, required_extension)
+            {
                 candidates.push(file);
             }
         }
@@ -383,7 +414,7 @@ fn select_package_main_mix(
         }
         if candidates.len() > 1 {
             return Err(format!(
-                "The delivered revision contains multiple primary .{} files; Delivered Listening will not guess",
+                "The current delivery contains the selected primary .{} source more than once; Delivered Listening will not guess",
                 normalized_extension(required_extension)?
             ));
         }
@@ -596,37 +627,23 @@ mod tests {
     }
 
     #[test]
-    fn successful_preview_uses_exact_selected_main_mix() {
+    fn successful_preview_uses_revision_primary_when_it_was_packaged() {
         let temp = tempdir().expect("tempdir");
         fs::write(temp.path().join("Selected.wav"), b"selected").expect("selected");
-        fs::write(temp.path().join("Newer.wav"), b"newer").expect("newer");
+        fs::write(temp.path().join("Z-Newer.wav"), b"newer").expect("newer");
 
         let selection = select_preview_main_mix(
             temp.path(),
-            &[planned("Selected.wav", MAIN_MIX_TYPE)],
+            &[
+                planned("Selected.wav", "unclassified"),
+                planned("Z-Newer.wav", "unclassified"),
+            ],
             "wav",
         )
         .expect("selection")
         .expect("source");
-        assert_eq!(selection.file_name, "Selected.wav");
-        assert!(selection.explicit_override);
-    }
-
-    #[test]
-    fn successful_preview_can_reuse_explicit_variant_selected_by_delivery() {
-        let temp = tempdir().expect("tempdir");
-        let variants = temp.path().join("Variants");
-        fs::create_dir(&variants).expect("variants");
-        fs::write(variants.join("Instrumental.mp3"), b"variant").expect("variant");
-
-        let selection = select_preview_main_mix(
-            temp.path(),
-            &[planned("Instrumental.mp3", MAIN_MIX_TYPE)],
-            "mp3",
-        )
-        .expect("selection")
-        .expect("source");
-        assert_eq!(selection.path, variants.join("Instrumental.mp3"));
+        assert_eq!(selection.file_name, "Z-Newer.wav");
+        assert!(!selection.explicit_override);
     }
 
     #[test]
@@ -641,55 +658,50 @@ mod tests {
     }
 
     #[test]
-    fn ambiguous_selected_main_mix_fails_instead_of_guessing() {
-        let temp = tempdir().expect("tempdir");
-        fs::write(temp.path().join("Mix A.wav"), b"a").expect("a");
-        fs::write(temp.path().join("Mix B.wav"), b"b").expect("b");
-        let error = select_preview_main_mix(
-            temp.path(),
-            &[
-                planned("Mix A.wav", MAIN_MIX_TYPE),
-                planned("Mix B.wav", MAIN_MIX_TYPE),
-            ],
-            "wav",
-        )
-        .expect_err("ambiguous");
-        assert!(error.contains("multiple main-mix"));
-    }
+    fn recovery_maps_deterministic_revision_primary_through_provenance() {
+        let project = tempdir().expect("project");
+        let revision = project.path().join("Revision_01");
+        let delivery = project.path().join("Delivery");
+        fs::create_dir(&revision).expect("revision");
+        fs::create_dir(&delivery).expect("delivery");
+        fs::write(revision.join("A.mp3"), b"a").expect("a revision");
+        fs::write(revision.join("Z.mp3"), b"z").expect("z revision");
+        fs::write(delivery.join("A.mp3"), b"a").expect("a delivery");
+        fs::write(delivery.join("Z.mp3"), b"z").expect("z delivery");
 
-    #[test]
-    fn recovery_uses_authoritative_revision_source_provenance() {
-        let temp = tempdir().expect("tempdir");
-        fs::write(temp.path().join("Primary.mp3"), b"primary").expect("primary");
-        fs::write(temp.path().join("Alt.mp3"), b"variant").expect("variant");
         let selection = select_package_main_mix(
-            temp.path(),
+            &revision,
+            &delivery,
             &[
-                delivered_with_source("Primary.mp3", "Primary.mp3", "unclassified"),
-                delivered_with_source("Alt.mp3", "Variants/Alt.mp3", MAIN_MIX_TYPE),
+                delivered_with_source("A.mp3", "A.mp3", "unclassified"),
+                delivered_with_source("Z.mp3", "Z.mp3", "unclassified"),
             ],
             "mp3",
         )
         .expect("selection")
         .expect("source");
-        assert_eq!(selection.file_name, "Primary.mp3");
+        assert_eq!(selection.file_name, "Z.mp3");
     }
 
     #[test]
-    fn recovery_rejects_multiple_primary_sources_for_one_format() {
-        let temp = tempdir().expect("tempdir");
-        fs::write(temp.path().join("Mix A.mp3"), b"a").expect("a");
-        fs::write(temp.path().join("Mix B.mp3"), b"b").expect("b");
-        let error = select_package_main_mix(
-            temp.path(),
-            &[
-                delivered_with_source("Mix A.mp3", "Mix A.mp3", "unclassified"),
-                delivered_with_source("Mix B.mp3", "Mix B.mp3", "unclassified"),
-            ],
+    fn recovery_is_quiet_when_revision_primary_was_not_packaged() {
+        let project = tempdir().expect("project");
+        let revision = project.path().join("Revision_01");
+        let delivery = project.path().join("Delivery");
+        fs::create_dir(&revision).expect("revision");
+        fs::create_dir(&delivery).expect("delivery");
+        fs::write(revision.join("A.mp3"), b"a").expect("a revision");
+        fs::write(revision.join("Z.mp3"), b"z").expect("z revision");
+        fs::write(delivery.join("A.mp3"), b"a").expect("a delivery");
+
+        assert!(select_package_main_mix(
+            &revision,
+            &delivery,
+            &[delivered_with_source("A.mp3", "A.mp3", "unclassified")],
             "mp3",
         )
-        .expect_err("ambiguous");
-        assert!(error.contains("multiple primary"));
+        .expect("selection")
+        .is_none());
     }
 
     #[test]
@@ -699,6 +711,7 @@ mod tests {
         fs::write(temp.path().join("Final.mp3"), b"final").expect("final");
         fs::write(temp.path().join("Stems/Vocal.mp3"), b"stem").expect("stem");
         let selection = select_package_main_mix(
+            temp.path(),
             temp.path(),
             &[
                 delivered("Final.mp3", MAIN_MIX_TYPE),
@@ -719,6 +732,7 @@ mod tests {
         fs::write(temp.path().join("Stems/Vocal.mp3"), b"stem").expect("stem");
         let selection = select_package_main_mix(
             temp.path(),
+            temp.path(),
             &[
                 delivered("Final.mp3", "unclassified"),
                 delivered("Stems/Vocal.mp3", "unclassified"),
@@ -736,6 +750,7 @@ mod tests {
         fs::write(temp.path().join("Mix A.mp3"), b"a").expect("a");
         fs::write(temp.path().join("Mix B.mp3"), b"b").expect("b");
         let error = select_package_main_mix(
+            temp.path(),
             temp.path(),
             &[
                 delivered("Mix A.mp3", "unclassified"),
