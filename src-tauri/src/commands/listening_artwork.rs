@@ -48,10 +48,7 @@ pub(crate) fn ensure_artist_artwork_sidecars(
     Ok(changed)
 }
 
-fn ensure_artist_sidecar(
-    path: &Path,
-    policy: ListeningArtworkPolicy,
-) -> Result<bool, String> {
+fn ensure_artist_sidecar(path: &Path, policy: ListeningArtworkPolicy) -> Result<bool, String> {
     match fs::symlink_metadata(path) {
         Ok(metadata) => {
             if metadata.file_type().is_symlink() || !metadata.is_file() {
@@ -239,8 +236,9 @@ mod tests {
     #[test]
     fn off_policy_does_not_create_artist_sidecars() {
         let temp = tempdir().expect("tempdir");
-        assert!(!ensure_artist_artwork_sidecars(temp.path(), ListeningArtworkPolicy::Off)
-            .expect("off"));
+        assert!(
+            !ensure_artist_artwork_sidecars(temp.path(), ListeningArtworkPolicy::Off).expect("off")
+        );
         for name in ARTIST_ARTWORK_FILE_NAMES {
             assert!(!temp.path().join(name).exists());
         }
