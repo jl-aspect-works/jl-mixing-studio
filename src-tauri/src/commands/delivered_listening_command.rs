@@ -42,8 +42,8 @@ pub(crate) fn publish_after_delivery_creation(
     }
 }
 
-// Registered through Tauri's generated command handler. #346 adds the user-visible recovery action.
-#[allow(dead_code)]
+// Kept as the Tauri command name for compatibility with the current frontend bridge.
+// The operation is reconciliation: current Listening copies are left untouched.
 #[tauri::command]
 pub(crate) fn republish_delivered_listening(
     app: tauri::AppHandle,
@@ -55,16 +55,20 @@ pub(crate) fn republish_delivered_listening(
     let project_id = request.project_id.trim();
     let project = super::find_project_summary(&snapshot, client_id, project_id)
         .ok_or_else(|| "The selected project is no longer available".to_owned())?;
-    let delivery = project.delivery.as_ref().ok_or_else(|| {
-        "Create a delivery package before republishing Delivered Listening".to_owned()
-    })?;
+    let Some(delivery) = project.delivery.as_ref() else {
+        return Ok(Vec::new());
+    };
     let project_directory =
         validated_project_directory(&workspace_root, &snapshot, client_id, project_id).ok_or_else(
             || "The selected project directory could not be resolved safely".to_owned(),
         )?;
 
-    let results =
-        publish_from_delivery_package(&app, &project_directory, project_id, &delivery.files);
+    let results = reconcile_from_delivery_package(
+        &app,
+        &project_directory,
+        project_id,
+        &delivery.files,
+    );
     if !results.is_empty() {
         emit_results(
             &app,
@@ -126,7 +130,7 @@ fn publish_from_delivery_preview(
         .join(format!("Revision_{:02}", preview.approved_revision));
     destinations
         .iter()
-        .map(|destination| {
+        .filter_map(|destination| {
             let selection = select_preview_main_mix(
                 &revision_root,
                 &preview.selected,
@@ -137,9 +141,7 @@ fn publish_from_delivery_preview(
         .collect()
 }
 
-// This is reachable through the Tauri republish command above; #346 adds its UI caller.
-#[allow(dead_code)]
-fn publish_from_delivery_package(
+fn reconcile_from_delivery_package(
     app: &tauri::AppHandle,
     project_directory: &Path,
     project_id: &str,
@@ -156,10 +158,10 @@ fn publish_from_delivery_package(
     let delivery_root = project_directory.join("05_Final_Delivery");
     destinations
         .iter()
-        .map(|destination| {
+        .filter_map(|destination| {
             let selection =
                 select_package_main_mix(&delivery_root, files, &destination.required_extension);
-            publish_selection_result(selection, destination, project_id)
+            reconcile_selection_result(selection, destination, project_id)
         })
         .collect()
 }
@@ -178,42 +180,123 @@ fn publish_selection_result(
     selection: Result<Option<ListeningSourceSelection>, String>,
     destination: &ListeningDestination,
     project_id: &str,
-) -> ListeningPublishResult {
+) -> Option<ListeningPublishResult> {
     match selection {
-        Ok(selection) => {
-            let target_name = if selection.is_some() {
-                match delivered_target_name(project_id, &destination.required_extension) {
-                    Ok(name) => Some(name),
-                    Err(message) => {
-                        return ListeningPublishResult {
-                            destination_id: destination.id.clone(),
-                            status: ListeningPublishStatus::Failed,
-                            message,
-                            selected_source: selection
-                                .as_ref()
-                                .map(|value| value.path.to_string_lossy().into_owned()),
-                            destination_path: Some(destination.path.clone()),
-                        }
-                    }
+        Ok(None) => None,
+        Ok(Some(selection)) => {
+            let target_name = match delivered_target_name(project_id, &destination.required_extension) {
+                Ok(name) => name,
+                Err(message) => {
+                    return Some(ListeningPublishResult {
+                        destination_id: destination.id.clone(),
+                        status: ListeningPublishStatus::Failed,
+                        message,
+                        selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                        destination_path: Some(destination.path.clone()),
+                    })
                 }
-            } else {
-                None
             };
-            publish_listening_copy(
-                selection.as_ref(),
+            Some(publish_listening_copy(
+                Some(&selection),
                 destination,
-                target_name.as_deref(),
+                Some(&target_name),
                 true,
-            )
+            ))
         }
-        Err(message) => ListeningPublishResult {
+        Err(message) => Some(ListeningPublishResult {
             destination_id: destination.id.clone(),
             status: ListeningPublishStatus::Failed,
             message,
             selected_source: None,
             destination_path: Some(destination.path.clone()),
-        },
+        }),
     }
+}
+
+fn reconcile_selection_result(
+    selection: Result<Option<ListeningSourceSelection>, String>,
+    destination: &ListeningDestination,
+    project_id: &str,
+) -> Option<ListeningPublishResult> {
+    match selection {
+        Ok(None) => None,
+        Ok(Some(selection)) => {
+            let target_name = match delivered_target_name(project_id, &destination.required_extension) {
+                Ok(name) => name,
+                Err(message) => {
+                    return Some(ListeningPublishResult {
+                        destination_id: destination.id.clone(),
+                        status: ListeningPublishStatus::Failed,
+                        message,
+                        selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                        destination_path: Some(destination.path.clone()),
+                    })
+                }
+            };
+            match listening_target_is_current(&selection, destination, &target_name) {
+                Ok(true) => None,
+                Ok(false) => Some(publish_listening_copy(
+                    Some(&selection),
+                    destination,
+                    Some(&target_name),
+                    true,
+                )),
+                Err(message) => Some(ListeningPublishResult {
+                    destination_id: destination.id.clone(),
+                    status: ListeningPublishStatus::Failed,
+                    message,
+                    selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                    destination_path: Some(
+                        PathBuf::from(&destination.path)
+                            .join(&target_name)
+                            .to_string_lossy()
+                            .into_owned(),
+                    ),
+                }),
+            }
+        }
+        Err(message) => Some(ListeningPublishResult {
+            destination_id: destination.id.clone(),
+            status: ListeningPublishStatus::Failed,
+            message,
+            selected_source: None,
+            destination_path: Some(destination.path.clone()),
+        }),
+    }
+}
+
+fn listening_target_is_current(
+    selection: &ListeningSourceSelection,
+    destination: &ListeningDestination,
+    target_name: &str,
+) -> Result<bool, String> {
+    let target = PathBuf::from(&destination.path).join(target_name);
+    let target_metadata = match fs::symlink_metadata(&target) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => {
+            return Err(format!(
+                "Unable to inspect the Delivered Listening destination: {error}"
+            ))
+        }
+    };
+    if target_metadata.file_type().is_symlink() || !target_metadata.is_file() {
+        return Ok(false);
+    }
+
+    let source_metadata = fs::symlink_metadata(&selection.path)
+        .map_err(|error| format!("Unable to inspect the Delivered Listening source: {error}"))?;
+    if source_metadata.file_type().is_symlink() || !source_metadata.is_file() {
+        return Err("Delivered Listening source must be a regular file".into());
+    }
+
+    let source_modified = source_metadata
+        .modified()
+        .map_err(|error| format!("Unable to read the Delivered Listening source timestamp: {error}"))?;
+    let target_modified = target_metadata.modified().map_err(|error| {
+        format!("Unable to read the Delivered Listening destination timestamp: {error}")
+    })?;
+    Ok(target_modified >= source_modified)
 }
 
 fn delivered_target_name(project_id: &str, required_extension: &str) -> Result<String, String> {
@@ -405,6 +488,7 @@ fn selection_for_file(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{ListeningArtworkPolicy, ListeningMetadataPolicy};
     use tempfile::tempdir;
 
     fn planned(source_name: &str, deliverable_type: &str) -> PlannedDeliveryFile {
@@ -421,6 +505,19 @@ mod tests {
             deliverable_type: deliverable_type.into(),
             size_bytes: 1,
             sha256: "hash".into(),
+        }
+    }
+
+    fn destination(path: &Path, extension: &str) -> ListeningDestination {
+        ListeningDestination {
+            id: "delivered-test".into(),
+            name: "Delivered Test".into(),
+            enabled: true,
+            publish_class: ListeningPublishClass::DeliveredListening,
+            path: path.to_string_lossy().into_owned(),
+            required_extension: extension.into(),
+            metadata_policy: ListeningMetadataPolicy::Replace,
+            artwork_policy: ListeningArtworkPolicy::ReplaceWithStudioArtwork,
         }
     }
 
@@ -459,11 +556,11 @@ mod tests {
     }
 
     #[test]
-    fn successful_preview_never_falls_back_when_required_format_was_not_delivered() {
+    fn missing_required_format_is_quiet() {
         let temp = tempdir().expect("tempdir");
         fs::write(temp.path().join("Mix.wav"), b"wave").expect("wave");
         assert!(
-            select_preview_main_mix(temp.path(), &[planned("Mix.wav", MAIN_MIX_TYPE)], "mp3",)
+            select_preview_main_mix(temp.path(), &[planned("Mix.wav", MAIN_MIX_TYPE)], "mp3")
                 .expect("selection")
                 .is_none()
         );
@@ -487,7 +584,7 @@ mod tests {
     }
 
     #[test]
-    fn manual_republish_uses_current_delivery_main_mix() {
+    fn recovery_uses_current_delivery_main_mix() {
         let temp = tempdir().expect("tempdir");
         fs::create_dir_all(temp.path().join("Stems")).expect("stems");
         fs::write(temp.path().join("Final.mp3"), b"final").expect("final");
@@ -515,6 +612,30 @@ mod tests {
             delivered_target_name("blue-sky", ".wav").as_deref(),
             Ok("blue-sky.wav")
         );
+    }
+
+    #[test]
+    fn current_target_is_left_untouched() {
+        let temp = tempdir().expect("tempdir");
+        let source = temp.path().join("source.mp3");
+        fs::write(&source, b"source").expect("source");
+        let target = temp.path().join("blue-sky.mp3");
+        fs::write(&target, b"target").expect("target");
+        let selection = selection_for_file(source, true).expect("selection");
+        let destination = destination(temp.path(), "mp3");
+        assert!(listening_target_is_current(&selection, &destination, "blue-sky.mp3")
+            .expect("current"));
+    }
+
+    #[test]
+    fn missing_target_requires_reconciliation() {
+        let temp = tempdir().expect("tempdir");
+        let source = temp.path().join("source.mp3");
+        fs::write(&source, b"source").expect("source");
+        let selection = selection_for_file(source, true).expect("selection");
+        let destination = destination(temp.path(), "mp3");
+        assert!(!listening_target_is_current(&selection, &destination, "blue-sky.mp3")
+            .expect("missing"));
     }
 
     #[test]
