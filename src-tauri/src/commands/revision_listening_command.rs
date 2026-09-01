@@ -198,13 +198,9 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
         if !generation_is_current(&state, generation)? {
             return Ok(());
         }
-        if let Some(result) = scan_destination(
-            &state,
-            generation,
-            scan_number,
-            &context,
-            &destination,
-        )? {
+        if let Some(result) =
+            scan_destination(&state, generation, scan_number, &context, &destination)?
+        {
             results.push(result);
         }
     }

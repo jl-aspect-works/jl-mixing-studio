@@ -399,7 +399,8 @@ fn select_package_main_mix(
                 continue;
             };
             let source_path = validate_source_path(source_path)?;
-            if source_path == primary.file_name && extension_matches(&file.path, required_extension) {
+            if source_path == primary.file_name && extension_matches(&file.path, required_extension)
+            {
                 candidates.push(file);
             }
         }
