@@ -98,13 +98,15 @@ export function RevisionListeningDetails({ summary }: { summary: RevisionListeni
             {result.status === "published" ? "Published" : result.status === "failed" ? "Failed" : "Skipped"}
           </span>
         </div>
-        {result.destinationPath && <div className="revision-listening-detail-row">
-          <span>Published file</span>
-          <code title={result.destinationPath}>{result.destinationPath}</code>
-        </div>}
-        {result.selectedSource && <div className="revision-listening-detail-row">
-          <span>Source</span>
-          <code title={result.selectedSource}>{filename(result.selectedSource)}</code>
+        {(result.destinationPath || result.selectedSource) && <div className="revision-listening-file-summary">
+          {result.destinationPath && <span className="revision-listening-file-item" title={result.destinationPath}>
+            <span className="revision-listening-file-label">Published</span>
+            <span>{filename(result.destinationPath)}</span>
+          </span>}
+          {result.selectedSource && <span className="revision-listening-file-item" title={result.selectedSource}>
+            <span className="revision-listening-file-label">Source</span>
+            <span>{filename(result.selectedSource)}</span>
+          </span>}
         </div>}
         {result.status !== "published" && result.message && <div
           className={`inline-notice ${result.status === "failed" ? "error" : "warning"}`}
