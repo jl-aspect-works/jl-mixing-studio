@@ -42,6 +42,13 @@ struct ActiveProject {
     project_id: String,
 }
 
+struct RevisionPublishContext<'a> {
+    client_id: &'a str,
+    project_id: &'a str,
+    revision: u32,
+    revision_root: &'a Path,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct SourceFingerprint {
     path: PathBuf,
@@ -61,7 +68,6 @@ struct DestinationObservation {
     stable_samples: u8,
     published: Option<SourceFingerprint>,
     last_attempt: Option<(SourceFingerprint, u64)>,
-    missing_reported: bool,
 }
 
 impl DestinationObservation {
@@ -71,7 +77,6 @@ impl DestinationObservation {
             stable_samples: 0,
             published: None,
             last_attempt: None,
-            missing_reported: false,
         }
     }
 
@@ -81,7 +86,6 @@ impl DestinationObservation {
             stable_samples: 1,
             published: None,
             last_attempt: None,
-            missing_reported: false,
         }
     }
 }
@@ -176,6 +180,12 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
     let revision_root = project_directory
         .join("04_Revisions")
         .join(format!("Revision_{revision:02}"));
+    let context = RevisionPublishContext {
+        client_id: &active.client_id,
+        project_id: &active.project_id,
+        revision,
+        revision_root: &revision_root,
+    };
 
     let destination_ids = destinations
         .iter()
@@ -192,10 +202,7 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
             &state,
             generation,
             scan_number,
-            &active.client_id,
-            &active.project_id,
-            revision,
-            &revision_root,
+            &context,
             &destination,
         )? {
             results.push(result);
@@ -249,14 +256,11 @@ fn scan_destination(
     state: &RevisionListeningMonitorState,
     generation: u64,
     scan_number: u64,
-    client_id: &str,
-    project_id: &str,
-    revision: u32,
-    revision_root: &Path,
+    context: &RevisionPublishContext<'_>,
     destination: &ListeningDestination,
 ) -> Result<Option<ListeningPublishResult>, String> {
     let selection = match super::project_revision_files::select_listening_source(
-        revision_root,
+        context.revision_root,
         &destination.required_extension,
         None,
     ) {
@@ -273,8 +277,8 @@ fn scan_destination(
     };
 
     let Some(selection) = selection else {
-        let should_report = observe_missing(state, generation, &destination.id)?;
-        return Ok(should_report.then(|| publish_listening_copy(None, destination, None, true)));
+        observe_missing(state, generation, &destination.id)?;
+        return Ok(None);
     };
 
     let fingerprint = source_fingerprint(&selection.path)?;
@@ -289,7 +293,7 @@ fn scan_destination(
         return Ok(None);
     }
 
-    let scoped_destination = match client_scoped_destination(destination, client_id) {
+    let scoped_destination = match client_scoped_destination(destination, context.client_id) {
         Ok(destination) => destination,
         Err(message) => {
             let result = ListeningPublishResult {
@@ -299,7 +303,7 @@ fn scan_destination(
                 selected_source: Some(selection.path.to_string_lossy().into_owned()),
                 destination_path: Some(
                     PathBuf::from(&destination.path)
-                        .join(client_id)
+                        .join(context.client_id)
                         .to_string_lossy()
                         .into_owned(),
                 ),
@@ -315,28 +319,31 @@ fn scan_destination(
             return Ok(Some(result));
         }
     };
-    let target_name =
-        match revision_target_name(project_id, revision, &destination.required_extension) {
-            Ok(name) => name,
-            Err(message) => {
-                let result = ListeningPublishResult {
-                    destination_id: destination.id.clone(),
-                    status: ListeningPublishStatus::Failed,
-                    message,
-                    selected_source: Some(selection.path.to_string_lossy().into_owned()),
-                    destination_path: Some(scoped_destination.path.clone()),
-                };
-                record_publish_result(
-                    state,
-                    generation,
-                    scan_number,
-                    &destination.id,
-                    &fingerprint,
-                    result.status,
-                )?;
-                return Ok(Some(result));
-            }
-        };
+    let target_name = match revision_target_name(
+        context.project_id,
+        context.revision,
+        &destination.required_extension,
+    ) {
+        Ok(name) => name,
+        Err(message) => {
+            let result = ListeningPublishResult {
+                destination_id: destination.id.clone(),
+                status: ListeningPublishStatus::Failed,
+                message,
+                selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                destination_path: Some(scoped_destination.path.clone()),
+            };
+            record_publish_result(
+                state,
+                generation,
+                scan_number,
+                &destination.id,
+                &fingerprint,
+                result.status,
+            )?;
+            return Ok(Some(result));
+        }
+    };
     let result = publish_listening_copy(
         Some(&selection),
         &scoped_destination,
@@ -377,13 +384,13 @@ fn observe_missing(
     state: &RevisionListeningMonitorState,
     generation: u64,
     destination_id: &str,
-) -> Result<bool, String> {
+) -> Result<(), String> {
     let mut monitor = state
         .inner
         .lock()
         .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
     if monitor.generation != generation {
-        return Ok(false);
+        return Ok(());
     }
     let observation = monitor
         .destinations
@@ -392,11 +399,7 @@ fn observe_missing(
     if !matches!(observation.source, ObservedSource::Missing) {
         *observation = DestinationObservation::missing();
     }
-    if observation.missing_reported {
-        return Ok(false);
-    }
-    observation.missing_reported = true;
-    Ok(true)
+    Ok(())
 }
 
 fn observe_candidate(
@@ -620,17 +623,25 @@ mod tests {
     }
 
     #[test]
-    fn missing_source_is_reported_once_until_a_candidate_appears() {
+    fn missing_source_resets_observation_without_a_publish_result() {
         let state = state_with_project();
-        assert!(observe_missing(&state, 1, "mp3").expect("first missing"));
-        assert!(!observe_missing(&state, 1, "mp3").expect("duplicate missing"));
         let source = fingerprint(Path::new("mix.mp3"), 10, 100);
-        assert!(!observe_candidate(&state, 1, 2, "mp3", &source).expect("candidate"));
-        {
-            let mut monitor = state.inner.lock().expect("state");
-            monitor.destinations.remove("mp3");
+        for scan in 1..=3 {
+            let _ = observe_candidate(&state, 1, scan, "mp3", &source).expect("stable");
         }
-        assert!(observe_missing(&state, 1, "mp3").expect("missing again"));
+        record_publish_result(
+            &state,
+            1,
+            3,
+            "mp3",
+            &source,
+            ListeningPublishStatus::Published,
+        )
+        .expect("published");
+        observe_missing(&state, 1, "mp3").expect("missing");
+        assert!(!observe_candidate(&state, 1, 4, "mp3", &source).expect("candidate 1"));
+        assert!(!observe_candidate(&state, 1, 5, "mp3", &source).expect("candidate 2"));
+        assert!(observe_candidate(&state, 1, 6, "mp3", &source).expect("candidate 3"));
     }
 
     #[test]
