@@ -72,7 +72,8 @@ button.settings-tab:focus-visible {
 
 .listening-settings-heading > button,
 .listening-path-control button,
-.listening-add {
+.listening-add,
+.listening-validation button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -122,6 +123,14 @@ button.settings-tab:focus-visible {
   background: #f8fafc;
 }
 
+.listening-destination.validation-invalid {
+  border-color: #d8a5a5;
+}
+
+.listening-destination.validation-valid {
+  border-color: #b8cfbf;
+}
+
 .listening-destination-header {
   display: flex;
   align-items: center;
@@ -163,10 +172,48 @@ button.settings-tab:focus-visible {
   font: inherit;
 }
 
+.listening-field input[aria-invalid="true"] {
+  border-color: #b86464;
+}
+
 .listening-path-control {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+}
+
+.listening-validation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.listening-validation strong {
+  color: var(--ink);
+}
+
+.listening-validation-valid {
+  background: #edf7f0;
+}
+
+.listening-validation-invalid {
+  background: #fbefef;
+}
+
+.listening-validation-checking {
+  background: #f3f6fa;
+}
+
+.listening-validation button {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: .75rem;
 }
 
 .listening-policy-grid {
@@ -205,11 +252,16 @@ button.settings-tab:focus-visible {
   }
 
   .listening-policy-grid,
-  .listening-path-control {
+  .listening-path-control,
+  .listening-validation {
     grid-template-columns: 1fr;
   }
 
   .listening-destination-header {
     align-items: flex-end;
+  }
+
+  .listening-validation button {
+    justify-self: start;
   }
 }
