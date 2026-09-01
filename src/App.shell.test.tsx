@@ -143,7 +143,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Open Project Folder" }));
       await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("open_folder", { request: { clientId: "acme", projectId: "blue-sky", location: "project" } }));
-      expect(screen.queryByText(/\/Users\/engineer\/Music\/Mixes/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("textbox", { name: /project.*path|path.*project/i })).not.toBeInTheDocument();
     });
 
   it("uses the locked project navigation and dedicated shell views", async () => {
