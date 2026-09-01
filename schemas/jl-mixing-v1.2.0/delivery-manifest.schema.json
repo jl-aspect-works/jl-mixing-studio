@@ -69,6 +69,8 @@
         "required": ["path", "deliverable_type", "size_bytes", "sha256"],
         "properties": {
           "path": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//).+$"},
+          "source_path": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//).+$"},
+          "is_primary_mix": {"type": "boolean"},
           "deliverable_type": {"type": "string", "enum": ["stems", "instrumental", "acapella", "tv_mix", "performance_mix", "master", "main_mix", "unclassified"]},
           "size_bytes": {"type": "integer", "minimum": 0},
           "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
