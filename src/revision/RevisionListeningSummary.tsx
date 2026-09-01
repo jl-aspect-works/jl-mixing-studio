@@ -27,6 +27,11 @@ function overallStatus(results: ListeningPublishResult[]): ListeningPublishStatu
   return "skipped";
 }
 
+function isMissingSource(result: ListeningPublishResult): boolean {
+  return result.status === "skipped"
+    && /^No \.[A-Za-z0-9]+ source is available$/i.test(result.message.trim());
+}
+
 function filename(path: string): string {
   const parts = path.split(/[\\/]/);
   return parts[parts.length - 1] || path;
@@ -62,9 +67,12 @@ export function useRevisionListeningSummary(
       || latest.revision !== revision
       || latest.results.length === 0) return null;
 
+    const visibleResults = latest.results.filter((result) => !isMissingSource(result));
+    if (visibleResults.length === 0) return null;
+
     return {
-      status: overallStatus(latest.results),
-      results: latest.results.map((result) => ({
+      status: overallStatus(visibleResults),
+      results: visibleResults.map((result) => ({
         ...result,
         destinationName: destinationNames[result.destinationId] || result.destinationId,
       })),
