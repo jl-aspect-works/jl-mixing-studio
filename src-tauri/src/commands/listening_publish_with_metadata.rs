@@ -74,6 +74,7 @@ mod tests {
     ) -> ListeningDestination {
         ListeningDestination {
             id: "revision-wav".into(),
+            name: "Test WAV Destination".into(),
             enabled: true,
             publish_class: ListeningPublishClass::RevisionListening,
             path: path.to_string_lossy().into_owned(),
