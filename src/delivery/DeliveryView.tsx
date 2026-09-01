@@ -12,6 +12,11 @@ import { ActionIcon } from "../components/ActionIcon";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
+import {
+  DeliveredListeningBadge,
+  DeliveredListeningDetails,
+  useDeliveredListeningSummary,
+} from "./DeliveredListeningSummary";
 import { DeliveryFilesList } from "./DeliveryFilesList";
 import {
   cacheDeliveryNotes,
@@ -84,6 +89,11 @@ export function DeliveryView({
   onSelectView: (view: ProjectShellView) => void;
 }) {
   const delivery = project.delivery;
+  const listeningSummary = useDeliveredListeningSummary(
+    clientId,
+    project.projectId,
+    project.deliveredRevision,
+  );
   const deliveryDocumentId = delivery?.documentId;
   const initialNotes = deliveryDocumentId ? cachedDeliveryNotes(clientId, project.projectId) : null;
   const initialStatus = cachedDeliveryStatus(clientId, project.projectId);
@@ -231,10 +241,11 @@ export function DeliveryView({
           <h2 id="delivery-heading">Delivery</h2>
           <p className="delivery-heading-copy">Prepare, verify, document and package the approved mix.</p>
         </div>
-        {!delivery && <div className="delivery-heading-actions">
-          <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
+        {(delivery || !delivery) && <div className="delivery-heading-actions">
+          <DeliveredListeningBadge summary={listeningSummary} />
+          {!delivery && <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
             <ActionIcon name="add" />{loading ? "Checking…" : "Create Delivery"}
-          </button>
+          </button>}
         </div>}
       </div>
 
@@ -335,6 +346,7 @@ export function DeliveryView({
           </div>
         </div>}
         {activePackage?.issues.length ? <ul className="delivery-package-issues">{activePackage.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul> : null}
+        <DeliveredListeningDetails summary={listeningSummary} />
       </section>
     </div>
 
