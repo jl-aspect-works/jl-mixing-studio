@@ -55,9 +55,9 @@
   background: #fafbfc;
 }
 
-/* Keep lifecycle buttons in a stable right-hand column while the status badges use the
-   remaining width and wrap independently. Two compact badge rows fit within the height
-   already established by the common two-button Delivered/Approved state. */
+/* Keep lifecycle buttons in a compact right-hand column while the status badges use the
+   remaining space and wrap independently. The detail card now owns the responsive split,
+   so this block must not reserve the old 500px header width. */
 .revision-detail-heading-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -65,7 +65,8 @@
   align-items: start;
   justify-content: end;
   gap: 8px;
-  min-width: min(100%, 500px);
+  width: min(330px, 100%);
+  min-width: 0;
 }
 
 .revision-detail-heading-actions > .revision-badges {
@@ -73,7 +74,7 @@
   grid-row: 1 / -1;
   align-self: start;
   justify-self: end;
-  max-width: 310px;
+  max-width: 210px;
   row-gap: 4px;
 }
 
