@@ -455,27 +455,6 @@ fn select_package_main_mix(
     selection_for_file(source, true).map(Some)
 }
 
-fn resolve_delivery_source_name(
-    revision_root: &Path,
-    source_name: &str,
-) -> Result<PathBuf, String> {
-    let source_name = portable_file_name(source_name)?;
-    let root_candidate = revision_root.join(&source_name);
-    let variants_candidate = revision_root.join("Variants").join(&source_name);
-    let root_exists = regular_file(&root_candidate);
-    let variants_exists = regular_file(&variants_candidate);
-    match (root_exists, variants_exists) {
-        (true, false) => Ok(root_candidate),
-        (false, true) => Ok(variants_candidate),
-        (true, true) => Err(format!(
-            "The delivered source '{source_name}' exists in both the revision root and Variants; Delivered Listening will not guess"
-        )),
-        (false, false) => Err(format!(
-            "The main-mix source selected by the successful delivery is no longer available: {source_name}"
-        )),
-    }
-}
-
 fn safe_relative_file(root: &Path, relative: &str) -> Result<PathBuf, String> {
     let value = relative.trim();
     if value.is_empty() || value.starts_with('/') || value.contains('\\') {
@@ -501,18 +480,6 @@ fn safe_relative_file(root: &Path, relative: &str) -> Result<PathBuf, String> {
         return Err("The delivered main-mix file resolves outside the delivery folder".into());
     }
     Ok(canonical)
-}
-
-fn portable_file_name(value: &str) -> Result<String, String> {
-    let name = value.trim();
-    if name.is_empty()
-        || Path::new(name).components().count() != 1
-        || name.contains('/')
-        || name.contains('\\')
-    {
-        return Err("The successful delivery returned an unsafe main-mix source name".into());
-    }
-    Ok(name.to_owned())
 }
 
 fn normalized_extension(value: &str) -> Result<String, String> {
@@ -794,15 +761,5 @@ mod tests {
             !listening_target_is_current(&selection, &destination, "blue-sky.mp3")
                 .expect("missing")
         );
-    }
-
-    #[test]
-    fn source_name_resolution_rejects_root_variant_ambiguity() {
-        let temp = tempdir().expect("tempdir");
-        let variants = temp.path().join("Variants");
-        fs::create_dir(&variants).expect("variants");
-        fs::write(temp.path().join("Mix.wav"), b"root").expect("root");
-        fs::write(variants.join("Mix.wav"), b"variant").expect("variant");
-        assert!(resolve_delivery_source_name(temp.path(), "Mix.wav").is_err());
     }
 }
