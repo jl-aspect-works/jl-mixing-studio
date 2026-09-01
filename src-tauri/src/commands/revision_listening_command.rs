@@ -192,6 +192,8 @@ fn scan_active_revision(app: &tauri::AppHandle) -> Result<(), String> {
             &state,
             generation,
             scan_number,
+            &active.client_id,
+            &active.project_id,
             revision,
             &revision_root,
             &destination,
@@ -247,6 +249,8 @@ fn scan_destination(
     state: &RevisionListeningMonitorState,
     generation: u64,
     scan_number: u64,
+    client_id: &str,
+    project_id: &str,
     revision: u32,
     revision_root: &Path,
     destination: &ListeningDestination,
@@ -285,9 +289,63 @@ fn scan_destination(
         return Ok(None);
     }
 
-    let target_name = revision_target_name(&selection.path, revision);
-    let result =
-        publish_listening_copy(Some(&selection), destination, target_name.as_deref(), true);
+    let scoped_destination = match client_scoped_destination(destination, client_id) {
+        Ok(destination) => destination,
+        Err(message) => {
+            let result = ListeningPublishResult {
+                destination_id: destination.id.clone(),
+                status: ListeningPublishStatus::Failed,
+                message,
+                selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                destination_path: Some(
+                    PathBuf::from(&destination.path)
+                        .join(client_id)
+                        .to_string_lossy()
+                        .into_owned(),
+                ),
+            };
+            record_publish_result(
+                state,
+                generation,
+                scan_number,
+                &destination.id,
+                &fingerprint,
+                result.status,
+            )?;
+            return Ok(Some(result));
+        }
+    };
+    let target_name = match revision_target_name(
+        project_id,
+        revision,
+        &destination.required_extension,
+    ) {
+        Ok(name) => name,
+        Err(message) => {
+            let result = ListeningPublishResult {
+                destination_id: destination.id.clone(),
+                status: ListeningPublishStatus::Failed,
+                message,
+                selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                destination_path: Some(scoped_destination.path.clone()),
+            };
+            record_publish_result(
+                state,
+                generation,
+                scan_number,
+                &destination.id,
+                &fingerprint,
+                result.status,
+            )?;
+            return Ok(Some(result));
+        }
+    };
+    let result = publish_listening_copy(
+        Some(&selection),
+        &scoped_destination,
+        Some(&target_name),
+        true,
+    );
     record_publish_result(
         state,
         generation,
@@ -423,23 +481,67 @@ fn record_publish_result(
     Ok(())
 }
 
-fn revision_target_name(source: &Path, revision: u32) -> Option<String> {
-    let stem = source.file_stem()?.to_str()?;
-    let extension = source.extension()?.to_str()?;
-    let marker = format!("R{revision:02}");
-    let normalized_stem = stem.trim_end();
-    if normalized_stem
-        .to_ascii_lowercase()
-        .ends_with(&marker.to_ascii_lowercase())
+fn portable_component(value: &str, label: &str) -> Result<String, String> {
+    let value = value.trim();
+    if value.is_empty()
+        || value == "."
+        || value == ".."
+        || value.chars().any(|character| {
+            character.is_control()
+                || matches!(
+                    character,
+                    '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
+                )
+        })
+        || value.ends_with('.')
+        || value.ends_with(' ')
     {
-        return Some(format!("{normalized_stem}.{extension}"));
+        return Err(format!(
+            "The {label} cannot be used as a portable Listening folder or filename"
+        ));
     }
-    Some(format!("{normalized_stem} - {marker}.{extension}"))
+    Ok(value.to_owned())
+}
+
+fn client_scoped_destination(
+    destination: &ListeningDestination,
+    client_id: &str,
+) -> Result<ListeningDestination, String> {
+    let client_id = portable_component(client_id, "client id")?;
+    let client_root = PathBuf::from(&destination.path).join(client_id);
+    fs::create_dir_all(&client_root)
+        .map_err(|error| format!("Unable to create the Listening client folder: {error}"))?;
+    let mut scoped = destination.clone();
+    scoped.path = client_root.to_string_lossy().into_owned();
+    Ok(scoped)
+}
+
+fn revision_target_name(
+    project_id: &str,
+    revision: u32,
+    required_extension: &str,
+) -> Result<String, String> {
+    let project_id = portable_component(project_id, "project id")?;
+    let extension = required_extension.trim().trim_start_matches('.');
+    if extension.is_empty()
+        || extension.contains('/')
+        || extension.contains('\\')
+        || !extension
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric())
+    {
+        return Err("The Revision Listening format cannot be used in a filename".into());
+    }
+    Ok(format!(
+        "{project_id}-rev-{revision:02}.{}",
+        extension.to_ascii_lowercase()
+    ))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{ListeningArtworkPolicy, ListeningMetadataPolicy};
     use tempfile::tempdir;
 
     fn state_with_project() -> RevisionListeningMonitorState {
@@ -460,6 +562,19 @@ mod tests {
             path: path.to_path_buf(),
             size,
             modified_at_ms,
+        }
+    }
+
+    fn destination(path: &Path) -> ListeningDestination {
+        ListeningDestination {
+            id: "revision-listening-1".into(),
+            name: "Plex Media Server".into(),
+            enabled: true,
+            publish_class: ListeningPublishClass::RevisionListening,
+            path: path.to_string_lossy().into_owned(),
+            required_extension: "mp3".into(),
+            metadata_policy: ListeningMetadataPolicy::Replace,
+            artwork_policy: ListeningArtworkPolicy::ReplaceWithStudioArtwork,
         }
     }
 
@@ -522,15 +637,20 @@ mod tests {
     }
 
     #[test]
-    fn target_name_preserves_existing_revision_marker_or_adds_one() {
+    fn target_name_uses_project_and_revision_not_source_filename() {
         assert_eq!(
-            revision_target_name(Path::new("Artist - Song.wav"), 4).as_deref(),
-            Some("Artist - Song - R04.wav")
+            revision_target_name("project-a", 4, ".MP3").as_deref(),
+            Ok("project-a-rev-04.mp3")
         );
-        assert_eq!(
-            revision_target_name(Path::new("Artist - Song - R04.wav"), 4).as_deref(),
-            Some("Artist - Song - R04.wav")
-        );
+    }
+
+    #[test]
+    fn client_scoped_destination_creates_client_folder() {
+        let temp = tempdir().expect("tempdir");
+        let scoped =
+            client_scoped_destination(&destination(temp.path()), "client-a").expect("scoped");
+        assert_eq!(PathBuf::from(&scoped.path), temp.path().join("client-a"));
+        assert!(temp.path().join("client-a").is_dir());
     }
 
     #[test]
