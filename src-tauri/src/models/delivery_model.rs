@@ -56,6 +56,8 @@ pub struct DeliveredApproval {
 #[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct DeliveryFile {
     pub path: String,
+    #[serde(default)]
+    pub source_path: Option<String>,
     pub deliverable_type: String,
     pub size_bytes: u64,
     pub sha256: String,
