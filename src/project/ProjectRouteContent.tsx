@@ -6,6 +6,7 @@ import { AudioPrepView } from "../audioPrep/AudioPrepView";
 import { ReferencesView } from "../references/ReferencesView";
 import { RevisionsView } from "../revision/RevisionViews";
 import { DeliveryView } from "../delivery/DeliveryView";
+import { ListeningProjectActivity } from "../listening/ListeningProjectActivity";
 import { ProjectFilesShellView } from "./ProjectFilesShellView";
 import { ProjectOverviewShell } from "./ProjectOverviewShell";
 import type { ProjectShellView } from "./ProjectView";
@@ -31,10 +32,16 @@ export function ProjectRouteContent(p: ProjectRouteContentProps) {
     return <ReferencesView client={p.client} project={p.project} {...common} />;
   }
   if (p.view === "revisions") {
-    return <RevisionsView client={p.client} project={p.project} loading={p.loading} actionError={p.revisionActionError} creationAvailable={p.revisionCreationAvailable} creationHelp={p.revisionCreationHelp} approvalAvailable={p.revisionApprovalAvailable} approvalHelp={p.revisionApprovalHelp} deliveryAvailable={p.deliveryCreationAvailable} deliveryHelp={p.deliveryCreationHelp} onRefresh={p.onRefresh} onNewRevision={p.onNewRevision} onApprove={p.onApproveRevision} onCreateDelivery={() => { p.onSelectView("delivery"); p.onCreateDelivery(); }} {...common} />;
+    return <>
+      <RevisionsView client={p.client} project={p.project} loading={p.loading} actionError={p.revisionActionError} creationAvailable={p.revisionCreationAvailable} creationHelp={p.revisionCreationHelp} approvalAvailable={p.revisionApprovalAvailable} approvalHelp={p.revisionApprovalHelp} deliveryAvailable={p.deliveryCreationAvailable} deliveryHelp={p.deliveryCreationHelp} onRefresh={p.onRefresh} onNewRevision={p.onNewRevision} onApprove={p.onApproveRevision} onCreateDelivery={() => { p.onSelectView("delivery"); p.onCreateDelivery(); }} {...common} />
+      <ListeningProjectActivity clientId={p.client.clientId} projectId={p.project.projectId} deliveredRevision={p.project.deliveredRevision} mode="revisions" />
+    </>;
   }
   if (p.view === "delivery") {
-    return <DeliveryView clientId={p.client.clientId} project={p.project} loading={p.deliveryLoading} actionError={p.deliveryActionError} creationAvailable={p.deliveryCreationAvailable} creationHelp={p.deliveryCreationHelp} onCreate={p.onCreateDelivery} onRefresh={p.onRefresh} {...common} />;
+    return <>
+      <DeliveryView clientId={p.client.clientId} project={p.project} loading={p.deliveryLoading} actionError={p.deliveryActionError} creationAvailable={p.deliveryCreationAvailable} creationHelp={p.deliveryCreationHelp} onCreate={p.onCreateDelivery} onRefresh={p.onRefresh} {...common} />
+      <ListeningProjectActivity clientId={p.client.clientId} projectId={p.project.projectId} deliveredRevision={p.project.deliveredRevision} mode="delivery" />
+    </>;
   }
   if (p.view === "files") {
     return <ProjectFilesShellView client={p.client} project={p.project} {...common} />;
