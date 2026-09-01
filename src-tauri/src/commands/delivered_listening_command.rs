@@ -1,3 +1,4 @@
+use super::listening_artwork::ensure_artist_artwork_sidecars;
 use super::{
     listening_configuration, publish_listening_copy, resolve_workspace_root,
     validated_project_directory, ListeningSourceSelection,
@@ -349,6 +350,8 @@ fn client_scoped_destination(
     let client_root = PathBuf::from(&destination.path).join(client_id);
     fs::create_dir_all(&client_root)
         .map_err(|error| format!("Unable to create the Listening client folder: {error}"))?;
+    ensure_artist_artwork_sidecars(&client_root, destination.artwork_policy)
+        .map_err(|error| format!("Unable to reconcile Listening artist artwork: {error}"))?;
     let mut scoped = destination.clone();
     scoped.path = client_root.to_string_lossy().into_owned();
     Ok(scoped)
@@ -796,6 +799,8 @@ mod tests {
             .join(delivered_target_name("7-feel", "mp3").expect("target"));
         assert_eq!(target, temp.path().join("roman-styx").join("7-feel.mp3"));
         assert!(!target.to_string_lossy().contains("-rev-"));
+        assert!(temp.path().join("roman-styx").join("artist.png").is_file());
+        assert!(temp.path().join("roman-styx").join("folder.png").is_file());
     }
 
     #[test]
