@@ -5,7 +5,10 @@ import App from "./App";
 
 afterEach(cleanup);
 
-const waitForDashboardReady = () => screen.findByText("JL Mixing Automation 1.3.1 detected");
+const waitForDashboardReady = async () => {
+  await screen.findByText("JL Mixing Automation 1.3.1 detected");
+  await screen.findByRole("button", { name: "New Project" });
+};
 
 describe("JL Mixing Studio — shell and routes", () => {
   beforeEach(() => {
