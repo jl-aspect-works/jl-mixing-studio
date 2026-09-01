@@ -12,10 +12,12 @@ export function ListeningPublishStatus({
   title,
   event,
   emptyMessage,
+  actions,
 }: {
   title: string;
   event: ListeningPublishEvent | null;
   emptyMessage: string;
+  actions?: React.ReactNode;
 }) {
   return <section className="panel listening-publish-status" aria-label={title}>
     <div className="panel-heading listening-publish-heading">
@@ -23,6 +25,7 @@ export function ListeningPublishStatus({
         <p className="kicker">Listening activity</p>
         <h3>{title}</h3>
       </div>
+      {actions && <div className="listening-publish-actions">{actions}</div>}
     </div>
     {!event ? <p className="health-detail">{emptyMessage}</p> : <>
       <p className="health-detail">{event.clientId} / {event.projectId} · Revision {event.revision.toString().padStart(2, "0")}</p>
