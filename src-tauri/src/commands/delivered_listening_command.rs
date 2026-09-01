@@ -63,12 +63,8 @@ pub(crate) fn republish_delivered_listening(
             || "The selected project directory could not be resolved safely".to_owned(),
         )?;
 
-    let results = reconcile_from_delivery_package(
-        &app,
-        &project_directory,
-        project_id,
-        &delivery.files,
-    );
+    let results =
+        reconcile_from_delivery_package(&app, &project_directory, project_id, &delivery.files);
     if !results.is_empty() {
         emit_results(
             &app,
@@ -184,18 +180,19 @@ fn publish_selection_result(
     match selection {
         Ok(None) => None,
         Ok(Some(selection)) => {
-            let target_name = match delivered_target_name(project_id, &destination.required_extension) {
-                Ok(name) => name,
-                Err(message) => {
-                    return Some(ListeningPublishResult {
-                        destination_id: destination.id.clone(),
-                        status: ListeningPublishStatus::Failed,
-                        message,
-                        selected_source: Some(selection.path.to_string_lossy().into_owned()),
-                        destination_path: Some(destination.path.clone()),
-                    })
-                }
-            };
+            let target_name =
+                match delivered_target_name(project_id, &destination.required_extension) {
+                    Ok(name) => name,
+                    Err(message) => {
+                        return Some(ListeningPublishResult {
+                            destination_id: destination.id.clone(),
+                            status: ListeningPublishStatus::Failed,
+                            message,
+                            selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                            destination_path: Some(destination.path.clone()),
+                        })
+                    }
+                };
             Some(publish_listening_copy(
                 Some(&selection),
                 destination,
@@ -221,18 +218,19 @@ fn reconcile_selection_result(
     match selection {
         Ok(None) => None,
         Ok(Some(selection)) => {
-            let target_name = match delivered_target_name(project_id, &destination.required_extension) {
-                Ok(name) => name,
-                Err(message) => {
-                    return Some(ListeningPublishResult {
-                        destination_id: destination.id.clone(),
-                        status: ListeningPublishStatus::Failed,
-                        message,
-                        selected_source: Some(selection.path.to_string_lossy().into_owned()),
-                        destination_path: Some(destination.path.clone()),
-                    })
-                }
-            };
+            let target_name =
+                match delivered_target_name(project_id, &destination.required_extension) {
+                    Ok(name) => name,
+                    Err(message) => {
+                        return Some(ListeningPublishResult {
+                            destination_id: destination.id.clone(),
+                            status: ListeningPublishStatus::Failed,
+                            message,
+                            selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                            destination_path: Some(destination.path.clone()),
+                        })
+                    }
+                };
             match listening_target_is_current(&selection, destination, &target_name) {
                 Ok(true) => None,
                 Ok(false) => Some(publish_listening_copy(
@@ -290,9 +288,9 @@ fn listening_target_is_current(
         return Err("Delivered Listening source must be a regular file".into());
     }
 
-    let source_modified = source_metadata
-        .modified()
-        .map_err(|error| format!("Unable to read the Delivered Listening source timestamp: {error}"))?;
+    let source_modified = source_metadata.modified().map_err(|error| {
+        format!("Unable to read the Delivered Listening source timestamp: {error}")
+    })?;
     let target_modified = target_metadata.modified().map_err(|error| {
         format!("Unable to read the Delivered Listening destination timestamp: {error}")
     })?;
@@ -771,8 +769,9 @@ mod tests {
         fs::write(&target, b"target").expect("target");
         let selection = selection_for_file(source, true).expect("selection");
         let destination = destination(temp.path(), "mp3");
-        assert!(listening_target_is_current(&selection, &destination, "blue-sky.mp3")
-            .expect("current"));
+        assert!(
+            listening_target_is_current(&selection, &destination, "blue-sky.mp3").expect("current")
+        );
     }
 
     #[test]
@@ -782,8 +781,10 @@ mod tests {
         fs::write(&source, b"source").expect("source");
         let selection = selection_for_file(source, true).expect("selection");
         let destination = destination(temp.path(), "mp3");
-        assert!(!listening_target_is_current(&selection, &destination, "blue-sky.mp3")
-            .expect("missing"));
+        assert!(
+            !listening_target_is_current(&selection, &destination, "blue-sky.mp3")
+                .expect("missing")
+        );
     }
 
     #[test]
