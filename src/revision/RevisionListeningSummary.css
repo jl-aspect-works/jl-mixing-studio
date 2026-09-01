@@ -1,0 +1,90 @@
+.revision-badge.listening.published {
+  border-color: color-mix(in srgb, var(--success, #2f7d4a) 55%, transparent);
+  background: color-mix(in srgb, var(--success, #2f7d4a) 14%, transparent);
+}
+
+.revision-badge.listening.failed {
+  border-color: color-mix(in srgb, var(--danger, #b43b3b) 60%, transparent);
+  background: color-mix(in srgb, var(--danger, #b43b3b) 14%, transparent);
+}
+
+.revision-badge.listening.skipped {
+  border-color: color-mix(in srgb, var(--warning, #9b6b13) 55%, transparent);
+  background: color-mix(in srgb, var(--warning, #9b6b13) 12%, transparent);
+}
+
+.revision-listening-details {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, rgba(127, 127, 127, 0.24));
+}
+
+.revision-listening-details h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+}
+
+.revision-listening-destinations {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.revision-listening-destination {
+  display: grid;
+  gap: 0.45rem;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--border-color, rgba(127, 127, 127, 0.28));
+}
+
+.revision-listening-destination.published {
+  border-left-color: var(--success, #2f7d4a);
+}
+
+.revision-listening-destination.failed {
+  border-left-color: var(--danger, #b43b3b);
+}
+
+.revision-listening-destination.skipped {
+  border-left-color: var(--warning, #9b6b13);
+}
+
+.revision-listening-destination-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.revision-listening-result {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.revision-listening-detail-row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.84rem;
+}
+
+.revision-listening-detail-row > span {
+  color: var(--text-muted, currentColor);
+}
+
+.revision-listening-detail-row code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+@media (max-width: 700px) {
+  .revision-listening-destination-heading,
+  .revision-listening-detail-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}
