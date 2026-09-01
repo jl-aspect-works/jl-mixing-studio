@@ -636,8 +636,8 @@ mod tests {
     #[test]
     fn target_name_uses_project_and_revision_not_source_filename() {
         assert_eq!(
-            revision_target_name("project-a", 4, ".MP3").as_deref(),
-            Ok("project-a-rev-04.mp3")
+            revision_target_name("project-a", 4, ".MP3").expect("target name"),
+            "project-a-rev-04.mp3"
         );
     }
 
