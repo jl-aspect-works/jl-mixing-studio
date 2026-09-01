@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mockedInvoke, version, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
+import { mockedInvoke, healthyWorkspace, respondWith, resetAppTestState } from "./App.testSupport";
 import App from "./App";
 
 afterEach(cleanup);
