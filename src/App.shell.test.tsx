@@ -96,7 +96,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       respondWith(snapshot); render(<App />); await waitForDashboardReady();
       fireEvent.click(screen.getByRole("button", { name: "Activities" }));
       expect(screen.getByRole("heading", { name: "1 event" })).toBeInTheDocument();
-      expect(screen.getByText("Client created")).toBeInTheDocument();
+      expect(screen.getByRole("cell", { name: "Client created" })).toBeInTheDocument();
     });
 
   it("shows honest empty derived-route states", async () => {
@@ -142,7 +142,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Open Project Folder" }));
-      await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("open_folder", { clientId: "acme", projectId: "blue-sky", kind: "project", revision: null }));
+      await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("open_folder", { request: { clientId: "acme", projectId: "blue-sky", location: "project" } }));
       expect(screen.queryByText(/\/Users\/engineer\/Music\/Mixes/)).not.toBeInTheDocument();
     });
 
