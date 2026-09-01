@@ -9,6 +9,7 @@ use lofty::tag::Tag;
 use crate::models::ListeningArtworkPolicy;
 
 const STUDIO_ARTWORK_FILE_NAME: &str = "cover.png";
+const ARTIST_ARTWORK_FILE_NAMES: [&str; 2] = ["artist.png", "folder.png"];
 pub(crate) const STUDIO_ARTWORK_BYTES: &[u8] =
     include_bytes!("../../../vendor/jl-brand/listening-cover-dark-1200.png");
 
@@ -22,6 +23,66 @@ pub(crate) fn apply_listening_artwork(
         ListeningArtworkPolicy::ReplaceWithStudioArtwork => {
             Some(replace_with_studio_artwork(published_copy))
         }
+    }
+}
+
+pub(crate) fn ensure_artist_artwork_sidecars(
+    destination_folder: &Path,
+    policy: ListeningArtworkPolicy,
+) -> Result<bool, String> {
+    if policy == ListeningArtworkPolicy::Off {
+        return Ok(false);
+    }
+    let metadata = fs::symlink_metadata(destination_folder).map_err(|error| {
+        format!("the Listening artist artwork folder could not be inspected: {error}")
+    })?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err("the Listening artist artwork folder is unavailable or unsafe".into());
+    }
+
+    let mut changed = false;
+    for file_name in ARTIST_ARTWORK_FILE_NAMES {
+        let path = destination_folder.join(file_name);
+        changed |= ensure_artist_sidecar(&path, policy)?;
+    }
+    Ok(changed)
+}
+
+fn ensure_artist_sidecar(
+    path: &Path,
+    policy: ListeningArtworkPolicy,
+) -> Result<bool, String> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            if metadata.file_type().is_symlink() || !metadata.is_file() {
+                return Err(format!(
+                    "the Listening artist artwork path '{}' is occupied by a non-regular file",
+                    path.display()
+                ));
+            }
+            if policy == ListeningArtworkPolicy::PreserveExisting {
+                return Ok(false);
+            }
+            let existing = fs::read(path).map_err(|error| {
+                format!("the Listening artist artwork could not be read: {error}")
+            })?;
+            if existing == STUDIO_ARTWORK_BYTES {
+                return Ok(false);
+            }
+            fs::write(path, STUDIO_ARTWORK_BYTES).map_err(|error| {
+                format!("the Listening artist artwork could not be updated: {error}")
+            })?;
+            Ok(true)
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            fs::write(path, STUDIO_ARTWORK_BYTES).map_err(|write_error| {
+                format!("the Listening artist artwork could not be written: {write_error}")
+            })?;
+            Ok(true)
+        }
+        Err(error) => Err(format!(
+            "the Listening artist artwork path could not be inspected: {error}"
+        )),
     }
 }
 
@@ -104,6 +165,7 @@ fn is_wav(path: &Path) -> bool {
 mod tests {
     use super::*;
     use lofty::tag::TagType;
+    use tempfile::tempdir;
 
     fn existing_picture(data: &[u8]) -> Picture {
         Picture::unchecked(data.to_vec())
@@ -156,6 +218,51 @@ mod tests {
         assert_eq!(message, None);
         assert_eq!(tag.pictures().len(), 1);
         assert_eq!(tag.pictures()[0].data(), before);
+    }
+
+    #[test]
+    fn non_off_policy_creates_neutral_artist_sidecars() {
+        let temp = tempdir().expect("tempdir");
+        assert!(ensure_artist_artwork_sidecars(
+            temp.path(),
+            ListeningArtworkPolicy::ReplaceWithStudioArtwork,
+        )
+        .expect("sidecars"));
+        for name in ARTIST_ARTWORK_FILE_NAMES {
+            assert_eq!(
+                fs::read(temp.path().join(name)).expect("sidecar"),
+                STUDIO_ARTWORK_BYTES
+            );
+        }
+    }
+
+    #[test]
+    fn off_policy_does_not_create_artist_sidecars() {
+        let temp = tempdir().expect("tempdir");
+        assert!(!ensure_artist_artwork_sidecars(temp.path(), ListeningArtworkPolicy::Off)
+            .expect("off"));
+        for name in ARTIST_ARTWORK_FILE_NAMES {
+            assert!(!temp.path().join(name).exists());
+        }
+    }
+
+    #[test]
+    fn preserve_policy_keeps_existing_artist_sidecar_and_fills_missing_one() {
+        let temp = tempdir().expect("tempdir");
+        fs::write(temp.path().join("artist.png"), b"custom").expect("custom");
+        assert!(ensure_artist_artwork_sidecars(
+            temp.path(),
+            ListeningArtworkPolicy::PreserveExisting,
+        )
+        .expect("preserve"));
+        assert_eq!(
+            fs::read(temp.path().join("artist.png")).expect("artist"),
+            b"custom"
+        );
+        assert_eq!(
+            fs::read(temp.path().join("folder.png")).expect("folder"),
+            STUDIO_ARTWORK_BYTES
+        );
     }
 
     fn apply_tag_policy(tag: &mut Tag, policy: ListeningArtworkPolicy) -> Option<String> {
