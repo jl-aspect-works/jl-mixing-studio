@@ -315,31 +315,28 @@ fn scan_destination(
             return Ok(Some(result));
         }
     };
-    let target_name = match revision_target_name(
-        project_id,
-        revision,
-        &destination.required_extension,
-    ) {
-        Ok(name) => name,
-        Err(message) => {
-            let result = ListeningPublishResult {
-                destination_id: destination.id.clone(),
-                status: ListeningPublishStatus::Failed,
-                message,
-                selected_source: Some(selection.path.to_string_lossy().into_owned()),
-                destination_path: Some(scoped_destination.path.clone()),
-            };
-            record_publish_result(
-                state,
-                generation,
-                scan_number,
-                &destination.id,
-                &fingerprint,
-                result.status,
-            )?;
-            return Ok(Some(result));
-        }
-    };
+    let target_name =
+        match revision_target_name(project_id, revision, &destination.required_extension) {
+            Ok(name) => name,
+            Err(message) => {
+                let result = ListeningPublishResult {
+                    destination_id: destination.id.clone(),
+                    status: ListeningPublishStatus::Failed,
+                    message,
+                    selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                    destination_path: Some(scoped_destination.path.clone()),
+                };
+                record_publish_result(
+                    state,
+                    generation,
+                    scan_number,
+                    &destination.id,
+                    &fingerprint,
+                    result.status,
+                )?;
+                return Ok(Some(result));
+            }
+        };
     let result = publish_listening_copy(
         Some(&selection),
         &scoped_destination,
