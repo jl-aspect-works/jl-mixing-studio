@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ActionIcon } from "../components/ActionIcon";
 import "./ListeningSettingsPanel.css";
@@ -97,7 +97,7 @@ export function ListeningSettingsPanel() {
   const [dirty, setDirty] = useState(false);
   const [validation, setValidation] = useState<Record<string, DestinationValidation>>({});
 
-  const validateDestination = async (destination: ListeningDestination) => {
+  const validateDestination = useCallback(async (destination: ListeningDestination) => {
     if (!destination.enabled) {
       setValidation((current) => ({ ...current, [destination.id]: { state: "idle", message: "Validation is paused while this destination is disabled." } }));
       return;
@@ -116,7 +116,7 @@ export function ListeningSettingsPanel() {
         [destination.id]: { state: "invalid", message: errorMessage(error, "This destination is unavailable or not writable.") },
       }));
     }
-  };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -132,7 +132,7 @@ export function ListeningSettingsPanel() {
         setLoadError(errorMessage(error, "Listening settings could not be loaded."));
       });
     return () => { active = false; };
-  }, []);
+  }, [validateDestination]);
 
   const destinationCounts = useMemo(() => {
     const counts: Record<ListeningPublishClass, number> = { revisionListening: 0, deliveredListening: 0 };
