@@ -66,6 +66,7 @@ pub(crate) fn republish_delivered_listening(
     let results = reconcile_from_delivery_package(
         &app,
         &project_directory,
+        client_id,
         project_id,
         delivery.revision,
         &delivery.files,
@@ -137,7 +138,12 @@ fn publish_from_delivery_preview(
                 &preview.selected,
                 &destination.required_extension,
             );
-            publish_selection_result(selection, destination, &preview.project_id)
+            publish_selection_result(
+                selection,
+                destination,
+                &preview.client_id,
+                &preview.project_id,
+            )
         })
         .collect()
 }
@@ -145,6 +151,7 @@ fn publish_from_delivery_preview(
 fn reconcile_from_delivery_package(
     app: &tauri::AppHandle,
     project_directory: &Path,
+    client_id: &str,
     project_id: &str,
     revision: u32,
     files: &[crate::models::DeliveryFile],
@@ -170,7 +177,7 @@ fn reconcile_from_delivery_package(
                 files,
                 &destination.required_extension,
             );
-            reconcile_selection_result(selection, destination, project_id)
+            reconcile_selection_result(selection, destination, client_id, project_id)
         })
         .collect()
 }
@@ -188,11 +195,29 @@ fn configuration_failure(message: String) -> Vec<ListeningPublishResult> {
 fn publish_selection_result(
     selection: Result<Option<ListeningSourceSelection>, String>,
     destination: &ListeningDestination,
+    client_id: &str,
     project_id: &str,
 ) -> Option<ListeningPublishResult> {
     match selection {
         Ok(None) => None,
         Ok(Some(selection)) => {
+            let scoped_destination = match client_scoped_destination(destination, client_id) {
+                Ok(destination) => destination,
+                Err(message) => {
+                    return Some(ListeningPublishResult {
+                        destination_id: destination.id.clone(),
+                        status: ListeningPublishStatus::Failed,
+                        message,
+                        selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                        destination_path: Some(
+                            PathBuf::from(&destination.path)
+                                .join(client_id)
+                                .to_string_lossy()
+                                .into_owned(),
+                        ),
+                    })
+                }
+            };
             let target_name =
                 match delivered_target_name(project_id, &destination.required_extension) {
                     Ok(name) => name,
@@ -202,13 +227,13 @@ fn publish_selection_result(
                             status: ListeningPublishStatus::Failed,
                             message,
                             selected_source: Some(selection.path.to_string_lossy().into_owned()),
-                            destination_path: Some(destination.path.clone()),
+                            destination_path: Some(scoped_destination.path.clone()),
                         })
                     }
                 };
             Some(publish_listening_copy(
                 Some(&selection),
-                destination,
+                &scoped_destination,
                 Some(&target_name),
                 true,
             ))
@@ -226,11 +251,29 @@ fn publish_selection_result(
 fn reconcile_selection_result(
     selection: Result<Option<ListeningSourceSelection>, String>,
     destination: &ListeningDestination,
+    client_id: &str,
     project_id: &str,
 ) -> Option<ListeningPublishResult> {
     match selection {
         Ok(None) => None,
         Ok(Some(selection)) => {
+            let scoped_destination = match client_scoped_destination(destination, client_id) {
+                Ok(destination) => destination,
+                Err(message) => {
+                    return Some(ListeningPublishResult {
+                        destination_id: destination.id.clone(),
+                        status: ListeningPublishStatus::Failed,
+                        message,
+                        selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                        destination_path: Some(
+                            PathBuf::from(&destination.path)
+                                .join(client_id)
+                                .to_string_lossy()
+                                .into_owned(),
+                        ),
+                    })
+                }
+            };
             let target_name =
                 match delivered_target_name(project_id, &destination.required_extension) {
                     Ok(name) => name,
@@ -240,15 +283,15 @@ fn reconcile_selection_result(
                             status: ListeningPublishStatus::Failed,
                             message,
                             selected_source: Some(selection.path.to_string_lossy().into_owned()),
-                            destination_path: Some(destination.path.clone()),
+                            destination_path: Some(scoped_destination.path.clone()),
                         })
                     }
                 };
-            match listening_target_is_current(&selection, destination, &target_name) {
+            match listening_target_is_current(&selection, &scoped_destination, &target_name) {
                 Ok(true) => None,
                 Ok(false) => Some(publish_listening_copy(
                     Some(&selection),
-                    destination,
+                    &scoped_destination,
                     Some(&target_name),
                     true,
                 )),
@@ -258,7 +301,7 @@ fn reconcile_selection_result(
                     message,
                     selected_source: Some(selection.path.to_string_lossy().into_owned()),
                     destination_path: Some(
-                        PathBuf::from(&destination.path)
+                        PathBuf::from(&scoped_destination.path)
                             .join(&target_name)
                             .to_string_lossy()
                             .into_owned(),
@@ -274,6 +317,41 @@ fn reconcile_selection_result(
             destination_path: Some(destination.path.clone()),
         }),
     }
+}
+
+fn portable_component(value: &str, label: &str) -> Result<String, String> {
+    let value = value.trim();
+    if value.is_empty()
+        || value == "."
+        || value == ".."
+        || value.chars().any(|character| {
+            character.is_control()
+                || matches!(
+                    character,
+                    '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
+                )
+        })
+        || value.ends_with('.')
+        || value.ends_with(' ')
+    {
+        return Err(format!(
+            "The {label} cannot be used as a portable Listening folder or filename"
+        ));
+    }
+    Ok(value.to_owned())
+}
+
+fn client_scoped_destination(
+    destination: &ListeningDestination,
+    client_id: &str,
+) -> Result<ListeningDestination, String> {
+    let client_id = portable_component(client_id, "client id")?;
+    let client_root = PathBuf::from(&destination.path).join(client_id);
+    fs::create_dir_all(&client_root)
+        .map_err(|error| format!("Unable to create the Listening client folder: {error}"))?;
+    let mut scoped = destination.clone();
+    scoped.path = client_root.to_string_lossy().into_owned();
+    Ok(scoped)
 }
 
 fn listening_target_is_current(
@@ -311,22 +389,7 @@ fn listening_target_is_current(
 }
 
 fn delivered_target_name(project_id: &str, required_extension: &str) -> Result<String, String> {
-    let project_id = project_id.trim();
-    if project_id.is_empty()
-        || project_id.chars().any(|character| {
-            character.is_control()
-                || matches!(
-                    character,
-                    '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*'
-                )
-        })
-        || project_id.ends_with('.')
-        || project_id.ends_with(' ')
-    {
-        return Err(
-            "The project id cannot be used as a portable Delivered Listening filename".into(),
-        );
-    }
+    let project_id = portable_component(project_id, "project id")?;
     Ok(format!(
         "{project_id}.{}",
         normalized_extension(required_extension)?
@@ -722,6 +785,17 @@ mod tests {
         )
         .expect_err("ambiguous");
         assert!(error.contains("multiple top-level"));
+    }
+
+    #[test]
+    fn delivered_target_uses_client_folder_and_omits_revision_suffix() {
+        let temp = tempdir().expect("tempdir");
+        let destination = destination(temp.path(), "mp3");
+        let scoped = client_scoped_destination(&destination, "roman-styx").expect("scope");
+        let target = PathBuf::from(&scoped.path)
+            .join(delivered_target_name("7-feel", "mp3").expect("target"));
+        assert_eq!(target, temp.path().join("roman-styx").join("7-feel.mp3"));
+        assert!(!target.to_string_lossy().contains("-rev-"));
     }
 
     #[test]
