@@ -55,12 +55,31 @@
   background: #fafbfc;
 }
 
+/* Keep lifecycle buttons in a stable right-hand column while the status badges use the
+   remaining width and wrap independently. Two compact badge rows fit within the height
+   already established by the common two-button Delivered/Approved state. */
 .revision-detail-heading-actions {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-auto-rows: min-content;
+  align-items: start;
+  justify-content: end;
   gap: 8px;
-  flex-wrap: wrap;
+  min-width: min(100%, 500px);
+}
+
+.revision-detail-heading-actions > .revision-badges {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: start;
+  justify-self: end;
+  max-width: 310px;
+  row-gap: 4px;
+}
+
+.revision-detail-heading-actions > button {
+  grid-column: 2;
+  justify-self: end;
 }
 
 .revision-lifecycle-action {
@@ -115,8 +134,12 @@
 
   .revision-detail-heading-actions {
     width: 100%;
-    justify-content: space-between;
-    align-items: center;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .revision-detail-heading-actions > .revision-badges {
+    justify-self: start;
   }
 
   .revision-delivered-approval-note {
