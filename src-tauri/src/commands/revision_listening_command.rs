@@ -217,7 +217,7 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
     }
 
     if generation_is_current(&state, generation)? {
-        let _ = super::delivered_listening_command::republish_delivered_listening(
+        let _ = super::delivered_listening::republish_delivered_listening(
             app.clone(),
             DeliveryStatusRequest {
                 client_id: active.client_id,
@@ -338,36 +338,33 @@ fn scan_destination(
             return Ok(Some(result));
         }
     };
-    let target_current = match revision_target_is_current(
-        &selection.path,
-        &scoped_destination,
-        &target_name,
-    ) {
-        Ok(current) => current,
-        Err(message) => {
-            let result = ListeningPublishResult {
-                destination_id: destination.id.clone(),
-                status: ListeningPublishStatus::Failed,
-                message,
-                selected_source: Some(selection.path.to_string_lossy().into_owned()),
-                destination_path: Some(
-                    PathBuf::from(&scoped_destination.path)
-                        .join(&target_name)
-                        .to_string_lossy()
-                        .into_owned(),
-                ),
-            };
-            record_publish_result(
-                state,
-                generation,
-                scan_number,
-                &destination.id,
-                &fingerprint,
-                result.status,
-            )?;
-            return Ok(Some(result));
-        }
-    };
+    let target_current =
+        match revision_target_is_current(&selection.path, &scoped_destination, &target_name) {
+            Ok(current) => current,
+            Err(message) => {
+                let result = ListeningPublishResult {
+                    destination_id: destination.id.clone(),
+                    status: ListeningPublishStatus::Failed,
+                    message,
+                    selected_source: Some(selection.path.to_string_lossy().into_owned()),
+                    destination_path: Some(
+                        PathBuf::from(&scoped_destination.path)
+                            .join(&target_name)
+                            .to_string_lossy()
+                            .into_owned(),
+                    ),
+                };
+                record_publish_result(
+                    state,
+                    generation,
+                    scan_number,
+                    &destination.id,
+                    &fingerprint,
+                    result.status,
+                )?;
+                return Ok(Some(result));
+            }
+        };
     let should_publish = observe_candidate(
         state,
         generation,
@@ -748,13 +745,17 @@ mod tests {
         let destination_root = temp.path().join("listening");
         fs::create_dir_all(&destination_root).expect("destination");
         let scoped = destination(&destination_root);
-        assert!(!revision_target_is_current(&source, &scoped, "project-rev-01.mp3")
-            .expect("missing target"));
+        assert!(
+            !revision_target_is_current(&source, &scoped, "project-rev-01.mp3")
+                .expect("missing target")
+        );
 
         thread::sleep(Duration::from_millis(5));
         fs::write(destination_root.join("project-rev-01.mp3"), b"published").expect("target");
-        assert!(revision_target_is_current(&source, &scoped, "project-rev-01.mp3")
-            .expect("current target"));
+        assert!(
+            revision_target_is_current(&source, &scoped, "project-rev-01.mp3")
+                .expect("current target")
+        );
     }
 
     #[test]
