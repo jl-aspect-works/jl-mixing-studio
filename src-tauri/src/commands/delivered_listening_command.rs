@@ -346,11 +346,56 @@ fn select_preview_main_mix(
     selection_for_file(source, true).map(Some)
 }
 
+fn source_path_is_primary(source_path: &str) -> Result<bool, String> {
+    let value = source_path.trim();
+    if value.is_empty() || value.starts_with('/') || value.contains('\\') {
+        return Err("The delivery manifest contains an unsafe revision source path".into());
+    }
+    let parts = value.split('/').collect::<Vec<_>>();
+    if parts
+        .iter()
+        .any(|component| component.is_empty() || *component == "." || *component == "..")
+    {
+        return Err("The delivery manifest contains an unsafe revision source path".into());
+    }
+    Ok(parts.len() == 1)
+}
+
 fn select_package_main_mix(
     delivery_root: &Path,
     files: &[crate::models::DeliveryFile],
     required_extension: &str,
 ) -> Result<Option<ListeningSourceSelection>, String> {
+    // New delivery manifests persist the exact revision-relative source path for every file.
+    // A source at the revision root is authoritative primary-mix provenance; Variants are not.
+    // If any provenance is present, use it instead of filename classification or delivery layout.
+    if files.iter().any(|file| file.source_path.is_some()) {
+        let mut candidates = Vec::new();
+        for file in files {
+            let Some(source_path) = file.source_path.as_deref() else {
+                continue;
+            };
+            if source_path_is_primary(source_path)?
+                && extension_matches(&file.path, required_extension)
+            {
+                candidates.push(file);
+            }
+        }
+        if candidates.is_empty() {
+            return Ok(None);
+        }
+        if candidates.len() > 1 {
+            return Err(format!(
+                "The delivered revision contains multiple primary .{} files; Delivered Listening will not guess",
+                normalized_extension(required_extension)?
+            ));
+        }
+        let source = safe_relative_file(delivery_root, &candidates[0].path)?;
+        return selection_for_file(source, true).map(Some);
+    }
+
+    // Legacy delivery manifests do not contain source provenance. Prefer their historical
+    // main_mix classification, then conservatively fall back to one top-level matching file.
     let classified = files
         .iter()
         .filter(|file| file.deliverable_type == MAIN_MIX_TYPE)
@@ -376,7 +421,7 @@ fn select_package_main_mix(
         }
         if top_level.len() > 1 {
             return Err(format!(
-                "The current delivery contains multiple top-level .{} files without a main-mix classification; Delivered Listening will not guess",
+                "The current delivery contains multiple top-level .{} files without source provenance; Delivered Listening will not guess",
                 normalized_extension(required_extension)?
             ));
         }
@@ -519,6 +564,21 @@ mod tests {
     fn delivered(path: &str, deliverable_type: &str) -> crate::models::DeliveryFile {
         crate::models::DeliveryFile {
             path: path.into(),
+            source_path: None,
+            deliverable_type: deliverable_type.into(),
+            size_bytes: 1,
+            sha256: "hash".into(),
+        }
+    }
+
+    fn delivered_with_source(
+        path: &str,
+        source_path: &str,
+        deliverable_type: &str,
+    ) -> crate::models::DeliveryFile {
+        crate::models::DeliveryFile {
+            path: path.into(),
+            source_path: Some(source_path.into()),
             deliverable_type: deliverable_type.into(),
             size_bytes: 1,
             sha256: "hash".into(),
@@ -601,7 +661,42 @@ mod tests {
     }
 
     #[test]
-    fn recovery_uses_current_delivery_main_mix() {
+    fn recovery_uses_authoritative_revision_source_provenance() {
+        let temp = tempdir().expect("tempdir");
+        fs::write(temp.path().join("Primary.mp3"), b"primary").expect("primary");
+        fs::write(temp.path().join("Alt.mp3"), b"variant").expect("variant");
+        let selection = select_package_main_mix(
+            temp.path(),
+            &[
+                delivered_with_source("Primary.mp3", "Primary.mp3", "unclassified"),
+                delivered_with_source("Alt.mp3", "Variants/Alt.mp3", MAIN_MIX_TYPE),
+            ],
+            "mp3",
+        )
+        .expect("selection")
+        .expect("source");
+        assert_eq!(selection.file_name, "Primary.mp3");
+    }
+
+    #[test]
+    fn recovery_rejects_multiple_primary_sources_for_one_format() {
+        let temp = tempdir().expect("tempdir");
+        fs::write(temp.path().join("Mix A.mp3"), b"a").expect("a");
+        fs::write(temp.path().join("Mix B.mp3"), b"b").expect("b");
+        let error = select_package_main_mix(
+            temp.path(),
+            &[
+                delivered_with_source("Mix A.mp3", "Mix A.mp3", "unclassified"),
+                delivered_with_source("Mix B.mp3", "Mix B.mp3", "unclassified"),
+            ],
+            "mp3",
+        )
+        .expect_err("ambiguous");
+        assert!(error.contains("multiple primary"));
+    }
+
+    #[test]
+    fn recovery_uses_current_delivery_main_mix_for_legacy_manifest() {
         let temp = tempdir().expect("tempdir");
         fs::create_dir_all(temp.path().join("Stems")).expect("stems");
         fs::write(temp.path().join("Final.mp3"), b"final").expect("final");
@@ -620,7 +715,7 @@ mod tests {
     }
 
     #[test]
-    fn recovery_uses_single_unclassified_top_level_file() {
+    fn recovery_uses_single_unclassified_top_level_file_for_legacy_manifest() {
         let temp = tempdir().expect("tempdir");
         fs::create_dir_all(temp.path().join("Stems")).expect("stems");
         fs::write(temp.path().join("Final.mp3"), b"final").expect("final");
@@ -639,7 +734,7 @@ mod tests {
     }
 
     #[test]
-    fn recovery_does_not_guess_between_unclassified_top_level_files() {
+    fn recovery_does_not_guess_between_unclassified_legacy_files() {
         let temp = tempdir().expect("tempdir");
         fs::write(temp.path().join("Mix A.mp3"), b"a").expect("a");
         fs::write(temp.path().join("Mix B.mp3"), b"b").expect("b");
