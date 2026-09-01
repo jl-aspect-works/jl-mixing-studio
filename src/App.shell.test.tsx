@@ -96,7 +96,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       respondWith(snapshot); render(<App />); await waitForDashboardReady();
       fireEvent.click(screen.getByRole("button", { name: "Activities" }));
       expect(screen.getByRole("heading", { name: "1 event" })).toBeInTheDocument();
-      expect(screen.getByText("Client added")).toBeInTheDocument();
+      expect(screen.getByText("Client created")).toBeInTheDocument();
     });
 
   it("shows honest empty derived-route states", async () => {
@@ -105,9 +105,9 @@ describe("JL Mixing Studio — shell and routes", () => {
       snapshot.activity = [];
       respondWith(snapshot); render(<App />); await waitForDashboardReady();
       fireEvent.click(screen.getByRole("button", { name: "Tasks" }));
-      expect(screen.getByText("No tasks right now.")).toBeInTheDocument();
+      expect(screen.getByText("Nothing needs your attention")).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Activities" }));
-      expect(screen.getByText("No persisted activity yet.")).toBeInTheDocument();
+      expect(screen.getByText("No recent activity yet")).toBeInTheDocument();
     });
 
   it("navigates to the functional project directory with a programmatic active state", async () => {
@@ -115,7 +115,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
       expect(screen.getByRole("button", { name: "Projects" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("heading", { name: "Projects", level: 1 })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Blue Sky" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Blue Sky" })).toBeInTheDocument();
     });
 
   it("keeps guided client creation available from the Clients directory", async () => {
@@ -123,7 +123,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(screen.getByRole("button", { name: "Clients" }));
       expect(screen.getByRole("button", { name: "Clients" })).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("heading", { name: "Clients", level: 1 })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "New Client" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "New client" })).toBeEnabled();
     });
 
   it("opens Client Details and the shared Project Overview from Clients", async () => {
@@ -133,13 +133,14 @@ describe("JL Mixing Studio — shell and routes", () => {
       expect(screen.getByRole("heading", { name: "Acme Records", level: 1 })).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
       expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+      const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+      expect(within(projectNavigation).getByText("Overview").closest('[aria-current="page"]')).toBeInTheDocument();
     });
 
   it("opens the validated project folder from the Overview without exposing path controls", async () => {
       render(<App />); await waitForDashboardReady();
       fireEvent.click(screen.getByRole("button", { name: "Projects" }));
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       fireEvent.click(screen.getByRole("button", { name: "Open Project Folder" }));
       await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("open_folder", { clientId: "acme", projectId: "blue-sky", kind: "project", revision: null }));
       expect(screen.queryByText(/\/Users\/engineer\/Music\/Mixes/)).not.toBeInTheDocument();
@@ -147,12 +148,16 @@ describe("JL Mixing Studio — shell and routes", () => {
 
   it("uses the locked project navigation and dedicated shell views", async () => {
       render(<App />); await waitForDashboardReady();
-      fireEvent.click(screen.getByRole("button", { name: "Projects" })); fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
-      const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
-      expect(within(projectNavigation).getAllByRole("button").map((button) => button.textContent)).toEqual(["Overview", "Client Files", "Audio Prep", "Revisions", "References", "Files", "Delivery"]);
-      for (const name of ["Client Files", "Audio Prep", "Revisions", "References", "Files", "Delivery"]) {
+      fireEvent.click(screen.getByRole("button", { name: "Projects" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
+      let projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+      expect(within(projectNavigation).getByText("Overview").closest('[aria-current="page"]')).toBeInTheDocument();
+      for (const name of ["Client Files", "Audio Prep", "References", "Revisions", "Delivery", "Files"]) {
         fireEvent.click(within(projectNavigation).getByRole("button", { name }));
-        expect(within(projectNavigation).getByRole("button", { name })).toHaveAttribute("aria-current", "page");
+        await waitFor(() => {
+          projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
+          expect(within(projectNavigation).getByText(name).closest('[aria-current="page"]')).toBeInTheDocument();
+        });
       }
     });
 });
