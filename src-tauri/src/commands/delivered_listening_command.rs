@@ -1,4 +1,5 @@
 use super::listening_artwork::ensure_artist_artwork_sidecars;
+use super::listening_metadata::listening_metadata_is_current;
 use super::{
     listening_configuration, publish_listening_copy, resolve_workspace_root,
     validated_project_directory, ListeningSourceSelection,
@@ -543,7 +544,10 @@ fn listening_target_is_current(
     let target_modified = target_metadata.modified().map_err(|error| {
         format!("Unable to read the Delivered Listening destination timestamp: {error}")
     })?;
-    Ok(target_modified >= source_modified)
+    if target_modified < source_modified {
+        return Ok(false);
+    }
+    listening_metadata_is_current(&target, &selection.path, destination.metadata_policy)
 }
 
 fn delivered_target_name(project_id: &str, required_extension: &str) -> Result<String, String> {
@@ -978,7 +982,8 @@ mod tests {
         let target = temp.path().join("blue-sky.mp3");
         fs::write(&target, b"target").expect("target");
         let selection = selection_for_file(source, true).expect("selection");
-        let destination = destination(temp.path(), "mp3");
+        let mut destination = destination(temp.path(), "mp3");
+        destination.metadata_policy = ListeningMetadataPolicy::Off;
         assert!(
             listening_target_is_current(&selection, &destination, "blue-sky.mp3").expect("current")
         );

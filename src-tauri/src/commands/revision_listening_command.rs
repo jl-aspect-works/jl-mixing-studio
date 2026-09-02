@@ -1,4 +1,5 @@
 use super::listening_artwork::ensure_artist_artwork_sidecars;
+use super::listening_metadata::listening_metadata_is_current;
 use super::{
     find_project_summary, listening_configuration, publish_listening_copy, resolve_workspace_root,
     validated_project_directory,
@@ -750,7 +751,10 @@ fn revision_target_is_current(
     let target_modified = target_metadata.modified().map_err(|error| {
         format!("Unable to read the Revision Listening destination timestamp: {error}")
     })?;
-    Ok(target_modified >= source_modified)
+    if target_modified < source_modified {
+        return Ok(false);
+    }
+    listening_metadata_is_current(&target, source, destination.metadata_policy)
 }
 
 fn observe_missing(
@@ -1108,7 +1112,8 @@ mod tests {
         fs::write(&source, b"source").expect("source");
         let destination_root = temp.path().join("listening");
         fs::create_dir_all(&destination_root).expect("destination");
-        let scoped = destination(&destination_root);
+        let mut scoped = destination(&destination_root);
+        scoped.metadata_policy = ListeningMetadataPolicy::Off;
         assert!(
             !revision_target_is_current(&source, &scoped, "project-rev-01.mp3")
                 .expect("missing target")
