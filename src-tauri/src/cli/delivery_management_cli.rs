@@ -47,7 +47,10 @@ fn log_delivery_status(project_directory: &Path, result: &DeliveryStatusResult) 
         ("package_issue_codes", json!(package_issue_codes)),
         (
             "current_package",
-            json!(delivery.current_package.as_ref().map(|package| &package.name)),
+            json!(delivery
+                .current_package
+                .as_ref()
+                .map(|package| &package.name)),
         ),
     ];
     if delivery.state == "ready" && delivery.package_state == "current" {
