@@ -72,15 +72,13 @@ pub(crate) fn republish_delivered_listening(
         delivery.revision,
         &delivery.files,
     );
-    if !results.is_empty() {
-        emit_results(
-            &app,
-            client_id,
-            project_id,
-            delivery.revision,
-            results.clone(),
-        );
-    }
+    emit_results(
+        &app,
+        client_id,
+        project_id,
+        delivery.revision,
+        results.clone(),
+    );
     Ok(results)
 }
 
