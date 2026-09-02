@@ -1,3 +1,4 @@
+use super::os_metadata::is_ignored_os_metadata_path;
 use super::resolve_workspace_root;
 use crate::models::{
     ProjectFileArea, ProjectFileEntry, ProjectFileEntryType, ProjectFileListRequest,
@@ -66,6 +67,10 @@ pub(crate) fn list_project_directory(
 
     let entries = fs::read_dir(&directory)
         .map_err(|error| filesystem_error("read this project folder", error))?
+        .filter_map(|entry| match entry {
+            Ok(entry) if is_ignored_os_metadata_path(&entry.path()) => None,
+            other => Some(other),
+        })
         .map(|entry| {
             entry
                 .map_err(|error| filesystem_error("read a project folder entry", error))
@@ -556,6 +561,30 @@ mod tests {
         assert_eq!(audio.size_bytes, Some(5));
         assert!(!audio.permissions.can_rename);
         assert!(!audio.permissions.can_delete);
+    }
+
+    #[test]
+    fn listing_ignores_os_metadata_but_keeps_other_dotfiles() {
+        let project = TestDirectory::new();
+        let revision = project.0.join("04_Revisions/Revision_01");
+        fs::create_dir_all(&revision).expect("create revision");
+        fs::write(revision.join("mix.wav"), b"audio").expect("write mix");
+        fs::write(revision.join(".DS_Store"), b"ignored").expect("write metadata");
+        fs::write(revision.join("._mix.wav"), b"ignored").expect("write metadata");
+        fs::write(revision.join("Thumbs.db"), b"ignored").expect("write metadata");
+        fs::write(revision.join("desktop.ini"), b"ignored").expect("write metadata");
+        fs::write(revision.join(".mix-note"), b"note").expect("write dotfile");
+
+        let listing = list_project_directory(&project.0, "04_Revisions/Revision_01")
+            .expect("list revision");
+        let names = listing
+            .entries
+            .iter()
+            .map(|entry| entry.display_name.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(names.len(), 2);
+        assert!(names.contains(&"mix.wav"));
+        assert!(names.contains(&".mix-note"));
     }
 
     #[test]
