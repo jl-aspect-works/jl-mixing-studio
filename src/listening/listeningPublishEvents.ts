@@ -19,7 +19,7 @@ export interface ListeningPublishEvent {
   results: ListeningPublishResult[];
 }
 
-type ListeningActivitySnapshot = Partial<Record<ListeningPublishEventName, ListeningPublishEvent>>;
+export type ListeningActivitySnapshot = Partial<Record<ListeningPublishEventName, ListeningPublishEvent>>;
 
 const STORAGE_KEY = "jl-mixing-listening-activity-v1";
 const ACTIVITY_EVENT = "jl-mixing-listening-activity-updated";
@@ -33,8 +33,35 @@ function readSnapshot(): ListeningActivitySnapshot {
   }
 }
 
+function samePublishContext(left: ListeningPublishEvent, right: ListeningPublishEvent): boolean {
+  return left.clientId === right.clientId
+    && left.projectId === right.projectId
+    && left.revision === right.revision;
+}
+
+export function applyListeningPublishEvent(
+  snapshot: ListeningActivitySnapshot,
+  eventName: ListeningPublishEventName,
+  event: ListeningPublishEvent,
+): ListeningActivitySnapshot {
+  if (event.results.length > 0) {
+    return { ...snapshot, [eventName]: event };
+  }
+
+  const previous = snapshot[eventName];
+  if (!previous
+    || !samePublishContext(previous, event)
+    || !previous.results.some((result) => result.status === "failed")) {
+    return snapshot;
+  }
+
+  const next = { ...snapshot };
+  delete next[eventName];
+  return next;
+}
+
 function recordEvent(eventName: ListeningPublishEventName, event: ListeningPublishEvent) {
-  const next = { ...readSnapshot(), [eventName]: event };
+  const next = applyListeningPublishEvent(readSnapshot(), eventName, event);
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
