@@ -159,7 +159,10 @@ fn log_direct_results(
             ("status", json!(result.status)),
             ("message", json!(result.message.as_str())),
             ("selected_source", json!(result.selected_source.as_deref())),
-            ("destination_path", json!(result.destination_path.as_deref())),
+            (
+                "destination_path",
+                json!(result.destination_path.as_deref()),
+            ),
         ];
         if result.status == ListeningPublishStatus::Failed {
             diagnostic_log::error("listening_reconciliation_result", &fields);
@@ -305,13 +308,7 @@ fn reconcile_from_delivery_package(
                     ],
                 ),
             }
-            reconcile_selection_result(
-                selection,
-                destination,
-                client_id,
-                project_id,
-                trigger,
-            )
+            reconcile_selection_result(selection, destination, client_id, project_id, trigger)
         })
         .collect()
 }

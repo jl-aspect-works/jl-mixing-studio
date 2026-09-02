@@ -184,7 +184,10 @@ fn record_scan_failure(app: &tauri::AppHandle, message: &str) {
     let Ok(mut monitor) = state.inner.lock() else {
         diagnostic_log::error(
             "listening_monitor_scan_failed",
-            &[("message", json!(message)), ("state_available", json!(false))],
+            &[
+                ("message", json!(message)),
+                ("state_available", json!(false)),
+            ],
         );
         return;
     };
@@ -347,14 +350,7 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
             },
         );
     }
-    record_reconciliation_diagnostics(
-        &state,
-        generation,
-        "revision",
-        &active,
-        revision,
-        &results,
-    )?;
+    record_reconciliation_diagnostics(&state, generation, "revision", &active, revision, &results)?;
 
     if generation_is_current(&state, generation)? {
         let delivered_results = super::delivered_listening::reconcile_delivered_listening(
@@ -370,7 +366,10 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
             generation,
             "delivered",
             &active,
-            project.delivery.as_ref().map_or(revision, |delivery| delivery.revision),
+            project
+                .delivery
+                .as_ref()
+                .map_or(revision, |delivery| delivery.revision),
             &delivered_results,
         )?;
     }
@@ -450,7 +449,10 @@ fn record_reconciliation_diagnostics(
             ("status", json!(result.status)),
             ("message", json!(result.message.as_str())),
             ("selected_source", json!(result.selected_source.as_deref())),
-            ("destination_path", json!(result.destination_path.as_deref())),
+            (
+                "destination_path",
+                json!(result.destination_path.as_deref()),
+            ),
         ];
         if result.status == ListeningPublishStatus::Failed {
             diagnostic_log::error("listening_reconciliation_result", &fields);
@@ -556,7 +558,10 @@ fn scan_destination(
                 ("revision", json!(context.revision)),
                 ("destination_id", json!(destination.id)),
                 ("required_extension", json!(destination.required_extension)),
-                ("revision_path", json!(context.revision_root.to_string_lossy())),
+                (
+                    "revision_path",
+                    json!(context.revision_root.to_string_lossy()),
+                ),
             ],
         );
         observe_missing(state, generation, &destination.id)?;
