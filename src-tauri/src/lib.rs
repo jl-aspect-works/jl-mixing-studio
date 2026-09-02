@@ -4,6 +4,7 @@ mod cli;
 mod client_edit;
 mod commands;
 mod derived;
+mod diagnostic_log;
 mod intake;
 mod managed_client_files;
 mod models;

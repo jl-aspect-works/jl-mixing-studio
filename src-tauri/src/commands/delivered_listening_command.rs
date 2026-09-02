@@ -3,12 +3,14 @@ use super::{
     listening_configuration, publish_listening_copy, resolve_workspace_root,
     validated_project_directory, ListeningSourceSelection,
 };
+use crate::diagnostic_log;
 use crate::models::{
     DeliveryCreationPreview, DeliveryStatusRequest, ListeningDestination, ListeningPublishClass,
     ListeningPublishResult, ListeningPublishStatus, PlannedDeliveryFile,
 };
 use crate::workspace;
 use serde::Serialize;
+use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
@@ -32,6 +34,13 @@ pub(crate) fn publish_after_delivery_creation(
     preview: &DeliveryCreationPreview,
 ) {
     let results = publish_from_delivery_preview(app, project_directory, preview);
+    log_direct_results(
+        "delivery_creation",
+        &preview.client_id,
+        &preview.project_id,
+        preview.approved_revision,
+        &results,
+    );
     if !results.is_empty() {
         emit_results(
             app,
@@ -50,13 +59,59 @@ pub(crate) fn republish_delivered_listening(
     app: tauri::AppHandle,
     request: DeliveryStatusRequest,
 ) -> Result<Vec<ListeningPublishResult>, String> {
-    let workspace_root = resolve_workspace_root(&app)?;
+    let client_id = request.client_id.trim().to_owned();
+    let project_id = request.project_id.trim().to_owned();
+    match reconcile_delivered_listening(&app, request, "manual") {
+        Ok(results) => Ok(results),
+        Err(message) => {
+            diagnostic_log::error(
+                "delivered_listening_reconciliation_failed",
+                &[
+                    ("trigger", json!("manual")),
+                    ("client_id", json!(client_id)),
+                    ("project_id", json!(project_id)),
+                    ("message", json!(message.as_str())),
+                ],
+            );
+            Err(message)
+        }
+    }
+}
+
+pub(crate) fn reconcile_delivered_listening(
+    app: &tauri::AppHandle,
+    request: DeliveryStatusRequest,
+    trigger: &str,
+) -> Result<Vec<ListeningPublishResult>, String> {
+    let workspace_root = resolve_workspace_root(app)?;
     let snapshot = workspace::discover_workspace_at(&workspace_root);
     let client_id = request.client_id.trim();
     let project_id = request.project_id.trim();
+    diagnostic_log::debug(
+        "delivered_listening_workspace_discovered",
+        &[
+            ("trigger", json!(trigger)),
+            ("client_id", json!(client_id)),
+            ("project_id", json!(project_id)),
+            ("workspace_path", json!(workspace_root.to_string_lossy())),
+            ("workspace_status", json!(snapshot.status)),
+            ("project_count", json!(snapshot.counts.projects)),
+            ("issue_count", json!(snapshot.issues.len())),
+            ("issues", json!(&snapshot.issues)),
+        ],
+    );
     let project = super::find_project_summary(&snapshot, client_id, project_id)
         .ok_or_else(|| "The selected project is no longer available".to_owned())?;
     let Some(delivery) = project.delivery.as_ref() else {
+        diagnostic_log::debug(
+            "delivered_listening_delivery_missing",
+            &[
+                ("trigger", json!(trigger)),
+                ("client_id", json!(client_id)),
+                ("project_id", json!(project_id)),
+                ("delivered_revision", json!(project.delivered_revision)),
+            ],
+        );
         return Ok(Vec::new());
     };
     let project_directory =
@@ -65,21 +120,53 @@ pub(crate) fn republish_delivered_listening(
         )?;
 
     let results = reconcile_from_delivery_package(
-        &app,
+        app,
         &project_directory,
         client_id,
         project_id,
         delivery.revision,
         &delivery.files,
+        trigger,
     );
+    if trigger != "monitor" {
+        log_direct_results(trigger, client_id, project_id, delivery.revision, &results);
+    }
     emit_results(
-        &app,
+        app,
         client_id,
         project_id,
         delivery.revision,
         results.clone(),
     );
     Ok(results)
+}
+
+fn log_direct_results(
+    trigger: &str,
+    client_id: &str,
+    project_id: &str,
+    revision: u32,
+    results: &[ListeningPublishResult],
+) {
+    for result in results {
+        let fields = [
+            ("trigger", json!(trigger)),
+            ("publish_class", json!("delivered")),
+            ("client_id", json!(client_id)),
+            ("project_id", json!(project_id)),
+            ("revision", json!(revision)),
+            ("destination_id", json!(result.destination_id.as_str())),
+            ("status", json!(result.status)),
+            ("message", json!(result.message.as_str())),
+            ("selected_source", json!(result.selected_source.as_deref())),
+            ("destination_path", json!(result.destination_path.as_deref())),
+        ];
+        if result.status == ListeningPublishStatus::Failed {
+            diagnostic_log::error("listening_reconciliation_result", &fields);
+        } else {
+            diagnostic_log::info("listening_reconciliation_result", &fields);
+        }
+    }
 }
 
 fn emit_results(
@@ -154,6 +241,7 @@ fn reconcile_from_delivery_package(
     project_id: &str,
     revision: u32,
     files: &[crate::models::DeliveryFile],
+    trigger: &str,
 ) -> Vec<ListeningPublishResult> {
     let destinations = match delivered_destinations(app) {
         Ok(destinations) => destinations,
@@ -176,7 +264,54 @@ fn reconcile_from_delivery_package(
                 files,
                 &destination.required_extension,
             );
-            reconcile_selection_result(selection, destination, client_id, project_id)
+            match &selection {
+                Ok(Some(source)) => diagnostic_log::debug(
+                    "delivered_listening_source_selected",
+                    &[
+                        ("trigger", json!(trigger)),
+                        ("client_id", json!(client_id)),
+                        ("project_id", json!(project_id)),
+                        ("revision", json!(revision)),
+                        ("destination_id", json!(destination.id)),
+                        ("required_extension", json!(destination.required_extension)),
+                        ("source_path", json!(source.path.to_string_lossy())),
+                        ("delivery_file_count", json!(files.len())),
+                    ],
+                ),
+                Ok(None) => diagnostic_log::debug(
+                    "delivered_listening_source_missing",
+                    &[
+                        ("trigger", json!(trigger)),
+                        ("client_id", json!(client_id)),
+                        ("project_id", json!(project_id)),
+                        ("revision", json!(revision)),
+                        ("destination_id", json!(destination.id)),
+                        ("required_extension", json!(destination.required_extension)),
+                        ("revision_path", json!(revision_root.to_string_lossy())),
+                        ("delivery_path", json!(delivery_root.to_string_lossy())),
+                        ("delivery_file_count", json!(files.len())),
+                    ],
+                ),
+                Err(message) => diagnostic_log::debug(
+                    "delivered_listening_source_selection_failed",
+                    &[
+                        ("trigger", json!(trigger)),
+                        ("client_id", json!(client_id)),
+                        ("project_id", json!(project_id)),
+                        ("revision", json!(revision)),
+                        ("destination_id", json!(destination.id)),
+                        ("required_extension", json!(destination.required_extension)),
+                        ("message", json!(message)),
+                    ],
+                ),
+            }
+            reconcile_selection_result(
+                selection,
+                destination,
+                client_id,
+                project_id,
+                trigger,
+            )
         })
         .collect()
 }
@@ -252,6 +387,7 @@ fn reconcile_selection_result(
     destination: &ListeningDestination,
     client_id: &str,
     project_id: &str,
+    trigger: &str,
 ) -> Option<ListeningPublishResult> {
     match selection {
         Ok(None) => None,
@@ -287,13 +423,37 @@ fn reconcile_selection_result(
                     }
                 };
             match listening_target_is_current(&selection, &scoped_destination, &target_name) {
-                Ok(true) => None,
-                Ok(false) => Some(publish_listening_copy(
-                    Some(&selection),
-                    &scoped_destination,
-                    Some(&target_name),
-                    true,
-                )),
+                Ok(true) => {
+                    diagnostic_log::debug(
+                        "delivered_listening_freshness_checked",
+                        &[
+                            ("trigger", json!(trigger)),
+                            ("client_id", json!(client_id)),
+                            ("project_id", json!(project_id)),
+                            ("destination_id", json!(destination.id)),
+                            ("target_current", json!(true)),
+                        ],
+                    );
+                    None
+                }
+                Ok(false) => {
+                    diagnostic_log::debug(
+                        "delivered_listening_freshness_checked",
+                        &[
+                            ("trigger", json!(trigger)),
+                            ("client_id", json!(client_id)),
+                            ("project_id", json!(project_id)),
+                            ("destination_id", json!(destination.id)),
+                            ("target_current", json!(false)),
+                        ],
+                    );
+                    Some(publish_listening_copy(
+                        Some(&selection),
+                        &scoped_destination,
+                        Some(&target_name),
+                        true,
+                    ))
+                }
                 Err(message) => Some(ListeningPublishResult {
                     destination_id: destination.id.clone(),
                     status: ListeningPublishStatus::Failed,

@@ -11,13 +11,11 @@ use std::os::windows::process::CommandExt;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-#[path = "diagnostic_log.rs"]
-mod diagnostic_log;
-
 use crate::automation_api::{
     automation_subprocess_path, resolve_command, ApiCallError, ApiError, ApiStatus,
     AUTOMATION_EXECUTABLE,
 };
+use crate::diagnostic_log;
 
 const SUPPORTED_API_VERSION: &str = "1.0";
 const PROGRESS_PREFIX: &str = "JL_PROGRESS ";

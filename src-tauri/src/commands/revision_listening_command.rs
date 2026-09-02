@@ -3,12 +3,14 @@ use super::{
     find_project_summary, listening_configuration, publish_listening_copy, resolve_workspace_root,
     validated_project_directory,
 };
+use crate::diagnostic_log;
 use crate::models::{
     DeliveryStatusRequest, ListeningDestination, ListeningPublishClass, ListeningPublishResult,
     ListeningPublishStatus,
 };
 use crate::workspace;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::{hash_map::Entry, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -98,6 +100,22 @@ struct MonitorData {
     generation: u64,
     scan_number: u64,
     destinations: HashMap<String, DestinationObservation>,
+    last_scan_error: Option<String>,
+    revision_diagnostic: Option<DiagnosticOutcome>,
+    delivered_diagnostic: Option<DiagnosticOutcome>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DiagnosticOutcome {
+    signature: String,
+    failed: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DiagnosticTransition {
+    Unchanged,
+    Changed,
+    Recovered,
 }
 
 #[derive(Default)]
@@ -122,10 +140,28 @@ pub(crate) fn set_revision_listening_project(
         .lock()
         .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
     if monitor.active_project != next {
-        monitor.active_project = next;
+        monitor.active_project = next.clone();
         monitor.generation = monitor.generation.wrapping_add(1);
         monitor.scan_number = 0;
         monitor.destinations.clear();
+        monitor.last_scan_error = None;
+        monitor.revision_diagnostic = None;
+        monitor.delivered_diagnostic = None;
+        diagnostic_log::info(
+            "listening_monitor_project_changed",
+            &[
+                ("active", json!(next.is_some())),
+                (
+                    "client_id",
+                    json!(next.as_ref().map(|project| project.client_id.as_str())),
+                ),
+                (
+                    "project_id",
+                    json!(next.as_ref().map(|project| project.project_id.as_str())),
+                ),
+                ("generation", json!(monitor.generation)),
+            ],
+        );
     }
     Ok(())
 }
@@ -136,8 +172,69 @@ pub(crate) fn start_revision_listening_monitor(app: tauri::AppHandle) {
     // Listening for the active project.
     thread::spawn(move || loop {
         thread::sleep(SCAN_INTERVAL);
-        let _ = scan_active_project(&app);
+        match scan_active_project(&app) {
+            Ok(()) => record_scan_recovery(&app),
+            Err(message) => record_scan_failure(&app, &message),
+        }
     });
+}
+
+fn record_scan_failure(app: &tauri::AppHandle, message: &str) {
+    let state = app.state::<RevisionListeningMonitorState>();
+    let Ok(mut monitor) = state.inner.lock() else {
+        diagnostic_log::error(
+            "listening_monitor_scan_failed",
+            &[("message", json!(message)), ("state_available", json!(false))],
+        );
+        return;
+    };
+    if monitor.last_scan_error.as_deref() == Some(message) {
+        return;
+    }
+    monitor.last_scan_error = Some(message.to_owned());
+    let active = monitor.active_project.clone();
+    diagnostic_log::error(
+        "listening_monitor_scan_failed",
+        &[
+            ("message", json!(message)),
+            ("state_available", json!(true)),
+            (
+                "client_id",
+                json!(active.as_ref().map(|project| project.client_id.as_str())),
+            ),
+            (
+                "project_id",
+                json!(active.as_ref().map(|project| project.project_id.as_str())),
+            ),
+            ("scan_number", json!(monitor.scan_number)),
+        ],
+    );
+}
+
+fn record_scan_recovery(app: &tauri::AppHandle) {
+    let state = app.state::<RevisionListeningMonitorState>();
+    let Ok(mut monitor) = state.inner.lock() else {
+        return;
+    };
+    let Some(previous_error) = monitor.last_scan_error.take() else {
+        return;
+    };
+    let active = monitor.active_project.clone();
+    diagnostic_log::info(
+        "listening_monitor_scan_recovered",
+        &[
+            ("previous_error", json!(previous_error)),
+            (
+                "client_id",
+                json!(active.as_ref().map(|project| project.client_id.as_str())),
+            ),
+            (
+                "project_id",
+                json!(active.as_ref().map(|project| project.project_id.as_str())),
+            ),
+            ("scan_number", json!(monitor.scan_number)),
+        ],
+    );
 }
 
 fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
@@ -154,7 +251,8 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         (active, monitor.generation, monitor.scan_number)
     };
 
-    let configuration = listening_configuration(app)?;
+    let configuration = listening_configuration(app)
+        .map_err(|message| format!("Listening configuration could not be loaded: {message}"))?;
     let destinations = configuration
         .destinations
         .into_iter()
@@ -164,10 +262,29 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         })
         .collect::<Vec<_>>();
 
-    let workspace_root = resolve_workspace_root(app)?;
+    let workspace_root = resolve_workspace_root(app)
+        .map_err(|message| format!("Listening workspace could not be resolved: {message}"))?;
     let snapshot = workspace::discover_workspace_at(&workspace_root);
+    diagnostic_log::debug(
+        "listening_monitor_workspace_discovered",
+        &[
+            ("client_id", json!(active.client_id.as_str())),
+            ("project_id", json!(active.project_id.as_str())),
+            ("scan_number", json!(scan_number)),
+            ("workspace_path", json!(workspace_root.to_string_lossy())),
+            ("workspace_status", json!(snapshot.status)),
+            ("project_count", json!(snapshot.counts.projects)),
+            ("issue_count", json!(snapshot.issues.len())),
+            ("issues", json!(&snapshot.issues)),
+        ],
+    );
     let project = find_project_summary(&snapshot, &active.client_id, &active.project_id)
-        .ok_or_else(|| "The active Listening project is no longer available".to_owned())?;
+        .ok_or_else(|| {
+            format!(
+                "The active Listening project is unavailable after workspace discovery (issues: {})",
+                snapshot.issues.len()
+            )
+        })?;
     let revision = project.current_revision;
     let project_directory = validated_project_directory(
         &workspace_root,
@@ -185,6 +302,19 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         revision,
         revision_root: &revision_root,
     };
+    diagnostic_log::debug(
+        "listening_monitor_project_resolved",
+        &[
+            ("client_id", json!(active.client_id.as_str())),
+            ("project_id", json!(active.project_id.as_str())),
+            ("scan_number", json!(scan_number)),
+            ("revision", json!(revision)),
+            ("delivered_revision", json!(project.delivered_revision)),
+            ("delivery_present", json!(project.delivery.is_some())),
+            ("revision_path", json!(revision_root.to_string_lossy())),
+            ("revision_destination_count", json!(destinations.len())),
+        ],
+    );
 
     let destination_ids = destinations
         .iter()
@@ -213,19 +343,120 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
                 client_id: active.client_id.clone(),
                 project_id: active.project_id.clone(),
                 revision,
-                results,
+                results: results.clone(),
             },
         );
     }
+    record_reconciliation_diagnostics(
+        &state,
+        generation,
+        "revision",
+        &active,
+        revision,
+        &results,
+    )?;
 
     if generation_is_current(&state, generation)? {
-        let _ = super::delivered_listening::republish_delivered_listening(
-            app.clone(),
+        let delivered_results = super::delivered_listening::reconcile_delivered_listening(
+            app,
             DeliveryStatusRequest {
-                client_id: active.client_id,
-                project_id: active.project_id,
+                client_id: active.client_id.clone(),
+                project_id: active.project_id.clone(),
             },
+            "monitor",
+        )?;
+        record_reconciliation_diagnostics(
+            &state,
+            generation,
+            "delivered",
+            &active,
+            project.delivery.as_ref().map_or(revision, |delivery| delivery.revision),
+            &delivered_results,
+        )?;
+    }
+    Ok(())
+}
+
+fn diagnostic_signature(results: &[ListeningPublishResult]) -> String {
+    serde_json::to_string(results).unwrap_or_else(|_| format!("{}-results", results.len()))
+}
+
+fn update_diagnostic_outcome(
+    previous: &mut Option<DiagnosticOutcome>,
+    results: &[ListeningPublishResult],
+) -> DiagnosticTransition {
+    let next = DiagnosticOutcome {
+        signature: diagnostic_signature(results),
+        failed: results
+            .iter()
+            .any(|result| result.status == ListeningPublishStatus::Failed),
+    };
+    if previous.as_ref() == Some(&next) {
+        return DiagnosticTransition::Unchanged;
+    }
+    let recovered = previous.as_ref().is_some_and(|outcome| outcome.failed) && !next.failed;
+    *previous = Some(next);
+    if recovered {
+        DiagnosticTransition::Recovered
+    } else {
+        DiagnosticTransition::Changed
+    }
+}
+
+fn record_reconciliation_diagnostics(
+    state: &RevisionListeningMonitorState,
+    generation: u64,
+    publish_class: &str,
+    active: &ActiveProject,
+    revision: u32,
+    results: &[ListeningPublishResult],
+) -> Result<(), String> {
+    let transition = {
+        let mut monitor = state
+            .inner
+            .lock()
+            .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
+        if monitor.generation != generation {
+            return Ok(());
+        }
+        let previous = if publish_class == "revision" {
+            &mut monitor.revision_diagnostic
+        } else {
+            &mut monitor.delivered_diagnostic
+        };
+        update_diagnostic_outcome(previous, results)
+    };
+    if transition == DiagnosticTransition::Unchanged {
+        return Ok(());
+    }
+    if transition == DiagnosticTransition::Recovered {
+        diagnostic_log::info(
+            "listening_reconciliation_recovered",
+            &[
+                ("publish_class", json!(publish_class)),
+                ("client_id", json!(active.client_id.as_str())),
+                ("project_id", json!(active.project_id.as_str())),
+                ("revision", json!(revision)),
+            ],
         );
+    }
+    for result in results {
+        let fields = [
+            ("publish_class", json!(publish_class)),
+            ("client_id", json!(active.client_id.as_str())),
+            ("project_id", json!(active.project_id.as_str())),
+            ("revision", json!(revision)),
+            ("destination_id", json!(result.destination_id.as_str())),
+            ("status", json!(result.status)),
+            ("message", json!(result.message.as_str())),
+            ("selected_source", json!(result.selected_source.as_deref())),
+            ("destination_path", json!(result.destination_path.as_deref())),
+        ];
+        if result.status == ListeningPublishStatus::Failed {
+            diagnostic_log::error("listening_reconciliation_result", &fields);
+        } else {
+            diagnostic_log::info("listening_reconciliation_result", &fields);
+        }
     }
     Ok(())
 }
@@ -317,11 +548,35 @@ fn scan_destination(
     };
 
     let Some(selection) = selection else {
+        diagnostic_log::debug(
+            "revision_listening_source_missing",
+            &[
+                ("client_id", json!(context.client_id)),
+                ("project_id", json!(context.project_id)),
+                ("revision", json!(context.revision)),
+                ("destination_id", json!(destination.id)),
+                ("required_extension", json!(destination.required_extension)),
+                ("revision_path", json!(context.revision_root.to_string_lossy())),
+            ],
+        );
         observe_missing(state, generation, &destination.id)?;
         return Ok(None);
     };
 
     let fingerprint = source_fingerprint(&selection.path)?;
+    diagnostic_log::debug(
+        "revision_listening_source_selected",
+        &[
+            ("client_id", json!(context.client_id)),
+            ("project_id", json!(context.project_id)),
+            ("revision", json!(context.revision)),
+            ("destination_id", json!(destination.id)),
+            ("required_extension", json!(destination.required_extension)),
+            ("source_path", json!(selection.path.to_string_lossy())),
+            ("source_size", json!(fingerprint.size)),
+            ("source_modified_at_ms", json!(fingerprint.modified_at_ms)),
+        ],
+    );
     let scoped_destination = match client_scoped_destination(destination, context.client_id) {
         Ok(destination) => destination,
         Err(message) => {
@@ -408,6 +663,17 @@ fn scan_destination(
         &fingerprint,
         target_current,
     )?;
+    diagnostic_log::debug(
+        "revision_listening_freshness_checked",
+        &[
+            ("client_id", json!(context.client_id)),
+            ("project_id", json!(context.project_id)),
+            ("revision", json!(context.revision)),
+            ("destination_id", json!(destination.id)),
+            ("target_current", json!(target_current)),
+            ("publish_ready", json!(should_publish)),
+        ],
+    );
     if !should_publish {
         return Ok(None);
     }
@@ -685,6 +951,64 @@ mod tests {
             metadata_policy: ListeningMetadataPolicy::Replace,
             artwork_policy: ListeningArtworkPolicy::ReplaceWithStudioArtwork,
         }
+    }
+
+    fn diagnostic_result(status: ListeningPublishStatus, message: &str) -> ListeningPublishResult {
+        ListeningPublishResult {
+            destination_id: "diagnostic-destination".into(),
+            status,
+            message: message.into(),
+            selected_source: Some("source.mp3".into()),
+            destination_path: Some("listening/project.mp3".into()),
+        }
+    }
+
+    #[test]
+    fn diagnostic_outcomes_suppress_repeated_failures_and_report_recovery() {
+        let failure = vec![diagnostic_result(
+            ListeningPublishStatus::Failed,
+            "destination unavailable",
+        )];
+        let mut previous = None;
+
+        assert_eq!(
+            update_diagnostic_outcome(&mut previous, &failure),
+            DiagnosticTransition::Changed
+        );
+        assert_eq!(
+            update_diagnostic_outcome(&mut previous, &failure),
+            DiagnosticTransition::Unchanged
+        );
+        assert_eq!(
+            update_diagnostic_outcome(&mut previous, &[]),
+            DiagnosticTransition::Recovered
+        );
+        assert_eq!(
+            update_diagnostic_outcome(&mut previous, &[]),
+            DiagnosticTransition::Unchanged
+        );
+    }
+
+    #[test]
+    fn changed_diagnostic_failure_is_recorded_without_waiting_for_recovery() {
+        let first = vec![diagnostic_result(
+            ListeningPublishStatus::Failed,
+            "destination unavailable",
+        )];
+        let second = vec![diagnostic_result(
+            ListeningPublishStatus::Failed,
+            "source unavailable",
+        )];
+        let mut previous = None;
+
+        assert_eq!(
+            update_diagnostic_outcome(&mut previous, &first),
+            DiagnosticTransition::Changed
+        );
+        assert_eq!(
+            update_diagnostic_outcome(&mut previous, &second),
+            DiagnosticTransition::Changed
+        );
     }
 
     #[test]
