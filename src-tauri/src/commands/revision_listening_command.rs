@@ -204,8 +204,8 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         }
     }
 
-    let quiet_reconciliation = results.is_empty()
-        && revision_reconciliation_is_quiet(&context, &destinations);
+    let quiet_reconciliation =
+        results.is_empty() && revision_reconciliation_is_quiet(&context, &destinations);
     if (!results.is_empty() || quiet_reconciliation) && generation_is_current(&state, generation)? {
         let _ = app.emit(
             PUBLISH_EVENT,
