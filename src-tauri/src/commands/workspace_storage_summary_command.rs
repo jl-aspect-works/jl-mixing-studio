@@ -1,3 +1,4 @@
+use super::os_metadata::is_ignored_os_metadata_path;
 use super::resolve_workspace_root;
 use crate::models::WorkspaceStorageSummary;
 use std::fs;
@@ -64,6 +65,9 @@ fn walk_workspace_directory(
             }
         };
         let path = entry.path();
+        if is_ignored_os_metadata_path(&path) {
+            continue;
+        }
         let metadata = match fs::symlink_metadata(&path) {
             Ok(metadata) => metadata,
             Err(_) => {
@@ -126,6 +130,28 @@ mod tests {
         assert_eq!(summary.file_count, 2);
         assert_eq!(summary.size_bytes, 10);
         assert!(summary.failed_paths.is_empty());
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn summary_ignores_os_metadata_but_keeps_legitimate_dotfiles() {
+        let root = std::env::temp_dir().join(format!(
+            "jl-studio-workspace-storage-os-metadata-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("mix.wav"), b"1234").unwrap();
+        fs::write(root.join(".DS_Store"), b"ignored").unwrap();
+        fs::write(root.join("._mix.wav"), b"ignored").unwrap();
+        fs::write(root.join("Thumbs.db"), b"ignored").unwrap();
+        fs::write(root.join("desktop.ini"), b"ignored").unwrap();
+        fs::write(root.join(".studio-note"), b"12").unwrap();
+
+        let summary = summarize_workspace_directory(&root).unwrap();
+        assert_eq!(summary.file_count, 2);
+        assert_eq!(summary.size_bytes, 6);
 
         let _ = fs::remove_dir_all(&root);
     }

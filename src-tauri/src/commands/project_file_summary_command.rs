@@ -1,3 +1,4 @@
+use super::os_metadata::is_ignored_os_metadata_path;
 use super::resolve_workspace_root;
 use crate::models::{ProjectFileFolderSummary, ProjectFileListRequest, ProjectFileSummary};
 use crate::workspace;
@@ -171,6 +172,9 @@ fn walk_project_directory(
             }
         };
         let path = entry.path();
+        if is_ignored_os_metadata_path(&path) {
+            continue;
+        }
         let metadata = match fs::symlink_metadata(&path) {
             Ok(metadata) => metadata,
             Err(_) => {
@@ -295,6 +299,29 @@ mod tests {
         assert_eq!(summary.revisions.size_bytes, 3);
         assert_eq!(summary.final_delivery.file_count, 1);
         assert_eq!(summary.final_delivery.size_bytes, 5);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn summary_ignores_os_metadata_but_preserves_other_dotfiles() {
+        let root = std::env::temp_dir().join(format!(
+            "jl-studio-project-summary-os-metadata-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        let revision = root.join("04_Revisions/Revision_01");
+        fs::create_dir_all(&revision).unwrap();
+        fs::write(revision.join("mix.wav"), b"1234").unwrap();
+        fs::write(revision.join(".DS_Store"), b"ignored").unwrap();
+        fs::write(revision.join("._mix.wav"), b"ignored").unwrap();
+        fs::write(revision.join("Thumbs.db"), b"ignored").unwrap();
+        fs::write(revision.join("desktop.ini"), b"ignored").unwrap();
+        fs::write(revision.join(".mix-notes"), b"12").unwrap();
+
+        let summary = summarize_project_directory(&root).unwrap();
+        assert_eq!(summary.revisions.file_count, 2);
+        assert_eq!(summary.revisions.size_bytes, 6);
 
         let _ = fs::remove_dir_all(&root);
     }
