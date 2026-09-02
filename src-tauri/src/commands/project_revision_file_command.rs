@@ -504,9 +504,11 @@ mod tests {
         let override_path = revision.0.join("._Primary.mp3");
         fs::write(&override_path, b"metadata").expect("write AppleDouble");
 
-        assert!(select_listening_source(&revision.0, "mp3", Some(&override_path))
-            .expect("select")
-            .is_none());
+        assert!(
+            select_listening_source(&revision.0, "mp3", Some(&override_path))
+                .expect("select")
+                .is_none()
+        );
     }
 
     #[test]
