@@ -65,7 +65,7 @@ jobs:
       - run: cargo test --manifest-path src-tauri/Cargo.toml --all-features
 
   desktop-check:
-    name: ${{ matrix.name }} compile check
+    name: ${{ matrix.name }} compile and Listening tests
     strategy:
       fail-fast: false
       matrix:
@@ -84,6 +84,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Check desktop compile
         run: cargo check --manifest-path src-tauri/Cargo.toml --all-features
+      - name: Run Listening filesystem regression tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml --all-features --lib listening
 
   macos-audio-preview-spike:
     name: ${{ matrix.name }} WKWebView audio preview spike

@@ -1,12 +1,63 @@
 use std::path::Path;
 
+use serde_json::json;
+
 use crate::automation_api::{
     invoke_api, ApiCallError, ApiStatus, ProcessRunner, SystemProcessRunner,
 };
+use crate::diagnostic_log;
 use crate::models::{DeliveryStatusResult, ManagedDeliveryStatus};
 
 pub fn get_delivery_status(home: &Path, project_directory: &Path) -> DeliveryStatusResult {
-    get_delivery_status_with_runner(home, project_directory, &SystemProcessRunner)
+    let result = get_delivery_status_with_runner(home, project_directory, &SystemProcessRunner);
+    log_delivery_status(project_directory, &result);
+    result
+}
+
+fn log_delivery_status(project_directory: &Path, result: &DeliveryStatusResult) {
+    let Some(delivery) = result.delivery.as_ref() else {
+        diagnostic_log::error(
+            "delivery_status_reconciliation",
+            &[
+                ("project_path", json!(project_directory)),
+                ("ok", json!(result.ok)),
+                ("message", json!(&result.message)),
+            ],
+        );
+        return;
+    };
+    let issue_codes: Vec<&str> = delivery
+        .issues
+        .iter()
+        .map(|issue| issue.code.as_str())
+        .collect();
+    let package_issue_codes: Vec<&str> = delivery
+        .packages
+        .iter()
+        .flat_map(|package| package.issues.iter())
+        .map(|issue| issue.code.as_str())
+        .collect();
+    let fields = [
+        ("project_path", json!(project_directory)),
+        ("state", json!(&delivery.state)),
+        ("package_state", json!(&delivery.package_state)),
+        ("deliverable_count", json!(delivery.deliverable_count)),
+        ("untracked_count", json!(delivery.untracked.len())),
+        ("issue_codes", json!(issue_codes)),
+        ("package_issue_codes", json!(package_issue_codes)),
+        (
+            "current_package",
+            json!(delivery
+                .current_package
+                .as_ref()
+                .map(|package| &package.name)),
+        ),
+    ];
+    if delivery.state == "ready" && delivery.package_state == "current" {
+        diagnostic_log::debug("delivery_status_reconciliation", &fields);
+    } else {
+        diagnostic_log::info("delivery_status_reconciliation", &fields);
+    }
 }
 
 pub fn delete_delivery_package(

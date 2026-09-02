@@ -4,6 +4,7 @@ mod cli;
 mod client_edit;
 mod commands;
 mod derived;
+mod diagnostic_log;
 mod intake;
 mod managed_client_files;
 mod models;
@@ -37,10 +38,11 @@ use models::{
     ApprovalOperationResult, ClientCreationRequest, ClientEditInfo, ClientOperationResult,
     ClientUpdateRequest, ClientUpdateResult, DeliveryCreationRequest, DeliveryOperationResult,
     DeliveryPackageDeleteRequest, DeliveryStatusRequest, DeliveryStatusResult,
-    IntakeOperationResult, IntakeRequest, ProjectCreationRequest, ProjectEditInfo,
-    ProjectOperationResult, ProjectUpdateRequest, ProjectUpdateResult, RevisionApprovalRequest,
-    RevisionCreationRequest, RevisionOperationResult, StudioCreationRequest, StudioEditInfo,
-    StudioOperationResult, StudioUpdateRequest, StudioUpdateResult,
+    IntakeOperationResult, IntakeRequest, ListeningConfiguration, ProjectCreationRequest,
+    ProjectEditInfo, ProjectOperationResult, ProjectUpdateRequest, ProjectUpdateResult,
+    RevisionApprovalRequest, RevisionCreationRequest, RevisionOperationResult,
+    StudioCreationRequest, StudioEditInfo, StudioOperationResult, StudioUpdateRequest,
+    StudioUpdateResult,
 };
 #[cfg(test)]
 use models::{
@@ -143,6 +145,19 @@ fn get_project_edit_info(
 #[tauri::command]
 fn update_project(app: tauri::AppHandle, request: ProjectUpdateRequest) -> ProjectUpdateResult {
     project_edit::update_project(&app, request)
+}
+
+#[tauri::command]
+fn get_listening_configuration(app: tauri::AppHandle) -> Result<ListeningConfiguration, String> {
+    commands::listening_configuration(&app)
+}
+
+#[tauri::command]
+fn save_listening_configuration(
+    app: tauri::AppHandle,
+    configuration: ListeningConfiguration,
+) -> Result<ListeningConfiguration, String> {
+    commands::save_listening_configuration(&app, configuration)
 }
 
 #[tauri::command]
@@ -413,6 +428,8 @@ pub fn run() {
             get_system_info,
             get_jl_mixing_version,
             get_workspace_configuration,
+            get_listening_configuration,
+            save_listening_configuration,
             choose_workspace_folder,
             validate_workspace_root,
             set_workspace_root,

@@ -55,12 +55,32 @@
   background: #fafbfc;
 }
 
+/* Keep lifecycle buttons in a compact right-hand column while the status badges use the
+   remaining space and wrap independently. The detail card now owns the responsive split,
+   so this block must not reserve the old 500px header width. */
 .revision-detail-heading-actions {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-auto-rows: min-content;
+  align-items: start;
+  justify-content: end;
   gap: 8px;
-  flex-wrap: wrap;
+  width: min(330px, 100%);
+  min-width: 0;
+}
+
+.revision-detail-heading-actions > .revision-badges {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: start;
+  justify-self: end;
+  max-width: 210px;
+  row-gap: 4px;
+}
+
+.revision-detail-heading-actions > button {
+  grid-column: 2;
+  justify-self: end;
 }
 
 .revision-lifecycle-action {
@@ -108,18 +128,44 @@
   line-height: 1.5;
 }
 
-@media (max-width: 700px) {
+/* The detail pane becomes constrained by the history column well before the overall
+   viewport reaches mobile width. Reflow actions at that point instead of clipping them. */
+@media (max-width: 1000px) {
   .revision-detail-heading {
     flex-wrap: wrap;
   }
 
   .revision-detail-heading-actions {
     width: 100%;
-    justify-content: space-between;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .revision-detail-heading-actions > .revision-badges {
+    flex: 1 0 100%;
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .revision-detail-heading-actions > button {
+    flex: 0 0 auto;
   }
 
   .revision-delivered-approval-note {
     text-align: left;
+  }
+}
+
+@media (max-width: 700px) {
+  .revision-detail-heading-actions {
+    justify-content: flex-start;
+  }
+
+  .revision-detail-heading-actions > button {
+    flex: 1 1 180px;
   }
 }

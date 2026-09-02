@@ -60,6 +60,20 @@ fn normalize_destination(
     }
     destination.path = path.to_string_lossy().into_owned();
     destination.required_extension = normalize_extension(&destination.required_extension)?;
+    destination.name = destination.name.trim().to_owned();
+    if destination.name.is_empty() {
+        destination.name = format!(
+            "{} Destination",
+            destination.required_extension.to_ascii_uppercase()
+        );
+    }
+    if destination
+        .name
+        .chars()
+        .any(|character| character.is_control())
+    {
+        return Err("Listening destination names cannot contain control characters".into());
+    }
     Ok(destination)
 }
 
@@ -443,6 +457,7 @@ mod tests {
     fn destination(path: &Path, extension: &str) -> ListeningDestination {
         ListeningDestination {
             id: "revision-mp3".into(),
+            name: "Test Destination".into(),
             enabled: true,
             publish_class: ListeningPublishClass::RevisionListening,
             path: path.to_string_lossy().into_owned(),
@@ -501,6 +516,15 @@ mod tests {
             loaded.destinations[0].publish_class,
             loaded.destinations[1].publish_class
         );
+    }
+
+    #[test]
+    fn configuration_defaults_missing_destination_name() {
+        let temp = tempdir().expect("tempdir");
+        let mut unnamed = destination(temp.path(), "mp3");
+        unnamed.name.clear();
+        let normalized = normalize_destination(unnamed).expect("normalize");
+        assert_eq!(normalized.name, "MP3 Destination");
     }
 
     #[test]

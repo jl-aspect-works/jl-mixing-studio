@@ -10,6 +10,7 @@ import { AppRoutes } from "./app/AppRoutes";
 import { AppDialogs } from "./app/AppDialogs";
 import { RouteHeader } from "./components/RouteHeader";
 import { rememberRecentProject } from "./dashboard/recentProject";
+import { startListeningPublishCapture } from "./listening/listeningPublishEvents";
 import { ProjectBreadcrumbs } from "./project/ProjectBreadcrumbs";
 import { ProjectOverviewHeader } from "./project/ProjectOverviewHeader";
 import type { PrimaryRoute } from "./ui/routes";
@@ -67,6 +68,19 @@ export default function StudioApp() {
   const revision = useRevisionWorkflow({ creationAvailable: availability.revisionCreationAvailable, clientId: route.resolvedProjectClient?.clientId ?? null, project: route.resolvedProject, setWorkspace: resources.setWorkspace, onOpen: () => { intake.reset(); approval.reset(); }, onCreated: () => setProjectView("revisions") });
   const approval = useApprovalWorkflow({ approvalAvailable: availability.revisionApprovalAvailable, clientId: route.resolvedProjectClient?.clientId ?? null, project: route.resolvedProject, setWorkspace: resources.setWorkspace, onOpen: () => revision.reset() });
   const delivery = useDeliveryWorkflow({ creationAvailable: route.deliveryCreationAvailable, clientId: route.resolvedProjectClient?.clientId ?? null, project: route.resolvedProject, setWorkspace: resources.setWorkspace });
+
+  useEffect(() => {
+    let active = true;
+    let stop: (() => void) | null = null;
+    void startListeningPublishCapture().then((cleanup) => {
+      if (active) stop = cleanup;
+      else cleanup();
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+      stop?.();
+    };
+  }, []);
 
   useEffect(() => {
     if (resources.workspace.status !== "ready") return;

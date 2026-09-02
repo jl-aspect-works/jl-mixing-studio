@@ -1,0 +1,79 @@
+.delivery-listening-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: .58rem;
+  font-weight: 600;
+  opacity: .7;
+}
+.delivery-listening-badge.published { background: #edf7f1; color: #4c745d; }
+.delivery-listening-badge.skipped { background: #f3f5f8; color: #6f7988; }
+.delivery-listening-badge.failed { background: #fff0ee; color: #98473c; opacity: 1; }
+
+.delivery-listening-details {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid #edf0f4;
+  opacity: .76;
+}
+.delivery-listening-details.failed { opacity: 1; }
+.delivery-listening-details h3 {
+  margin: 0 0 3px;
+  color: #778294;
+  font-size: .62rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+.delivery-listening-destinations { display: grid; gap: 3px; }
+.delivery-listening-destination { min-width: 0; }
+.delivery-listening-destination-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  color: #59667a;
+  font-size: .64rem;
+  line-height: 1.15;
+}
+.delivery-listening-destination-heading strong {
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.delivery-listening-result {
+  flex: 0 0 auto;
+  font-size: .56rem;
+  font-weight: 500;
+}
+.delivery-listening-result.published { color: #4f765f; }
+.delivery-listening-result.skipped { color: #7d8795; }
+.delivery-listening-result.failed { color: #98473c; font-weight: 700; }
+.delivery-listening-file-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 1px;
+  color: #7d8796;
+  font-size: .58rem;
+  line-height: 1.15;
+}
+.delivery-listening-file-item {
+  display: inline-flex;
+  min-width: 0;
+  gap: 4px;
+}
+.delivery-listening-file-item > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.delivery-listening-file-label { font-weight: 500; }
+.delivery-listening-details .inline-notice {
+  margin: 4px 0 0;
+  padding: 5px 7px;
+  font-size: .61rem;
+}

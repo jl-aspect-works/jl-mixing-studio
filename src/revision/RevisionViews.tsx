@@ -15,6 +15,11 @@ import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
 import { RevisionFileBrowser } from "./RevisionFileBrowser";
 import {
+  RevisionListeningBadge,
+  RevisionListeningDetails,
+  useRevisionListeningSummary,
+} from "./RevisionListeningSummary";
+import {
   getRevisionNotes,
   updateRevisionDescription,
   updateRevisionNotes,
@@ -119,6 +124,11 @@ export function RevisionsView({
   const initialSelectedNumber = project.currentRevision || revisions[0]?.number || 0;
   const [selectedNumber, setSelectedNumber] = useState(initialSelectedNumber);
   const selected = revisions.find((revision) => revision.number === selectedNumber) ?? revisions[0] ?? null;
+  const listeningSummary = useRevisionListeningSummary(
+    client.clientId,
+    project.projectId,
+    selected?.number ?? 0,
+  );
   const [descriptionDraft, setDescriptionDraft] = useState(selected?.description ?? "");
   const [descriptionEditing, setDescriptionEditing] = useState(false);
   const [descriptionBusy, setDescriptionBusy] = useState(false);
@@ -367,7 +377,10 @@ export function RevisionsView({
                 <small>Created {formatRevisionTimestamp(selected.createdAt)}</small>
               </div>
               <div className="revision-detail-heading-actions">
-                <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} />
+                <span className="revision-badges">
+                  <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} />
+                  <RevisionListeningBadge summary={listeningSummary} />
+                </span>
                 {(!selectedApproved || !selectedDelivered) && <button
                   type="button"
                   className="secondary revision-lifecycle-action"
@@ -426,6 +439,7 @@ export function RevisionsView({
               {descriptionBusy && <span className="revision-description-saving">Saving…</span>}
             </div>
             {descriptionError && <div className="inline-notice error" role="alert">{descriptionError}</div>}
+            <RevisionListeningDetails summary={listeningSummary} />
           </section>
 
           <section className="panel revision-notes-panel" aria-labelledby="revision-notes-heading">
@@ -468,7 +482,7 @@ export function RevisionsView({
         {mutationError && <div className="inline-notice error" role="alert">{mutationError}</div>}
         <div className="client-dialog-actions">
           <button type="button" className="secondary" disabled={mutationBusy} onClick={() => { setPendingMutation(null); setMutationError(null); }}>Cancel</button>
-          <button type="button" disabled={mutationBusy} aria-busy={mutationBusy} onClick={() => void confirmMutation()}>{
+          <button type="button" disabled={mutationBusy} aria-busy={mutationBusy} onClick={() => void confirmMutation()}> {
             mutationBusy ? "Updating…" : pendingMutation.action === "close" ? "Close Revision" : pendingMutation.action === "reopen" ? "Reopen Revision" : "Unapprove Revision"
           }</button>
         </div>

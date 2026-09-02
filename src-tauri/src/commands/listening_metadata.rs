@@ -28,12 +28,6 @@ struct MetadataClientDocument {
 #[derive(Debug, Deserialize)]
 struct MetadataProjectDocument {
     project_name: String,
-    state: MetadataProjectState,
-}
-
-#[derive(Debug, Deserialize)]
-struct MetadataProjectState {
-    delivered_revision: Option<u32>,
 }
 
 pub(crate) fn apply_listening_metadata(
@@ -76,7 +70,7 @@ fn metadata_for_source(source: &Path) -> Result<ListeningMetadata, String> {
         .ok_or_else(|| "the source client folder could not be resolved".to_owned())?;
     let client: MetadataClientDocument = read_json(&client_root.join("client.json"), "client")?;
 
-    let revision = revision_for_source(&project_root, source).or(project.state.delivered_revision);
+    let revision = revision_for_source(&project_root, source);
     let title = revision
         .map(|revision| format!("{} - Rev {revision:02}", project.project_name))
         .unwrap_or_else(|| project.project_name.clone());
@@ -95,6 +89,60 @@ fn metadata_for_source(source: &Path) -> Result<ListeningMetadata, String> {
         title,
         genre: DEFAULT_LISTENING_GENRE.into(),
         comment,
+    })
+}
+
+pub(crate) fn listening_metadata_is_current(
+    published_copy: &Path,
+    authoritative_source: &Path,
+    policy: ListeningMetadataPolicy,
+) -> Result<bool, String> {
+    if policy == ListeningMetadataPolicy::Off {
+        return Ok(true);
+    }
+    let expected = metadata_for_source(authoritative_source)?;
+    let tagged_file = match lofty::read_from_path(published_copy) {
+        Ok(tagged_file) => tagged_file,
+        Err(_) => return Ok(false),
+    };
+    let Some(tag) = tagged_file.primary_tag() else {
+        return Ok(false);
+    };
+    Ok(metadata_matches(tag, policy, &expected))
+}
+
+fn metadata_matches(
+    tag: &Tag,
+    policy: ListeningMetadataPolicy,
+    expected: &ListeningMetadata,
+) -> bool {
+    let fields = [
+        (ItemKey::TrackArtist, expected.artist.as_str()),
+        (ItemKey::AlbumArtist, expected.album_artist.as_str()),
+        (ItemKey::AlbumTitle, expected.album.as_str()),
+        (ItemKey::TrackTitle, expected.title.as_str()),
+        (ItemKey::Genre, expected.genre.as_str()),
+    ];
+    fields.into_iter().all(|(key, value)| {
+        let current = tag
+            .get_string(key)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        match policy {
+            ListeningMetadataPolicy::Off => true,
+            ListeningMetadataPolicy::FillMissing => current.is_some(),
+            ListeningMetadataPolicy::Replace => current == Some(value.trim()),
+        }
+    }) && expected.comment.as_deref().is_none_or(|comment| {
+        let current = tag
+            .get_string(ItemKey::Comment)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        match policy {
+            ListeningMetadataPolicy::Off => true,
+            ListeningMetadataPolicy::FillMissing => current.is_some(),
+            ListeningMetadataPolicy::Replace => current == Some(comment.trim()),
+        }
     })
 }
 
@@ -335,7 +383,7 @@ mod tests {
     }
 
     #[test]
-    fn delivered_source_uses_delivered_revision_and_current_copy_comment() {
+    fn delivered_source_uses_project_title_and_current_copy_comment() {
         let temp = tempdir().expect("tempdir");
         let client = temp.path().join("Clients").join("client-a");
         let project = client.join("Projects").join("song-a");
@@ -356,7 +404,36 @@ mod tests {
         fs::write(&source, b"source").expect("source");
 
         let values = metadata_for_source(&source).expect("metadata");
-        assert_eq!(values.title, "Song Name - Rev 05");
+        assert_eq!(values.title, "Song Name");
         assert_eq!(values.comment.as_deref(), Some("Current Listening Copy"));
+    }
+
+    #[test]
+    fn delivered_replace_metadata_rejects_revision_title_as_stale() {
+        let mut tag = Tag::new(TagType::Id3v2);
+        let mut values = metadata();
+        values.title = "Song Name".into();
+        for (key, value) in [
+            (ItemKey::TrackArtist, values.artist.as_str()),
+            (ItemKey::AlbumArtist, values.album_artist.as_str()),
+            (ItemKey::AlbumTitle, values.album.as_str()),
+            (ItemKey::TrackTitle, "Song Name - Rev 05"),
+            (ItemKey::Genre, values.genre.as_str()),
+            (ItemKey::Comment, values.comment.as_deref().unwrap()),
+        ] {
+            tag.insert_text(key, value.to_owned());
+        }
+
+        assert!(!metadata_matches(
+            &tag,
+            ListeningMetadataPolicy::Replace,
+            &values
+        ));
+        tag.insert_text(ItemKey::TrackTitle, values.title.clone());
+        assert!(metadata_matches(
+            &tag,
+            ListeningMetadataPolicy::Replace,
+            &values
+        ));
     }
 }

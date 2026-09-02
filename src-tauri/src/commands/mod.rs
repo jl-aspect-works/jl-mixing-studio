@@ -18,6 +18,7 @@ mod listening_publish_base;
 mod listening_publish;
 #[path = "native_audio_preview_command.rs"]
 mod native_audio_preview;
+mod os_metadata;
 #[path = "project_file_open_command.rs"]
 mod project_file_open;
 #[path = "project_file_summary_command.rs"]
