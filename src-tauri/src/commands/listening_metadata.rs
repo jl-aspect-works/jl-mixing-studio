@@ -124,7 +124,10 @@ fn metadata_matches(
         (ItemKey::Genre, expected.genre.as_str()),
     ];
     fields.into_iter().all(|(key, value)| {
-        let current = tag.get_string(key).map(str::trim).filter(|value| !value.is_empty());
+        let current = tag
+            .get_string(key)
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
         match policy {
             ListeningMetadataPolicy::Off => true,
             ListeningMetadataPolicy::FillMissing => current.is_some(),
