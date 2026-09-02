@@ -1,3 +1,4 @@
+use super::os_metadata::is_ignored_os_metadata_path;
 use super::resolve_workspace_root;
 use super::workspace_command_support::validated_project_directory;
 use crate::models::{
@@ -345,7 +346,9 @@ pub(crate) fn select_listening_source(
     let extension = normalize_listening_extension(required_extension)?;
 
     if let Some(override_path) = explicit_override {
-        if !listening_extension_matches(override_path, &extension) {
+        if is_ignored_os_metadata_path(override_path)
+            || !listening_extension_matches(override_path, &extension)
+        {
             return Ok(None);
         }
         return listening_selection_for_file(override_path.to_path_buf(), true).map(Some);
@@ -364,7 +367,7 @@ pub(crate) fn select_listening_source(
         let entry =
             entry.map_err(|error| filesystem_error("read a revision folder entry", error))?;
         let path = entry.path();
-        if !listening_extension_matches(&path, &extension) {
+        if is_ignored_os_metadata_path(&path) || !listening_extension_matches(&path, &extension) {
             continue;
         }
         let entry_type = entry
@@ -480,6 +483,30 @@ mod tests {
             .expect("select")
             .expect("matching source");
         assert_eq!(selected.file_name, "Newer.WAV");
+    }
+
+    #[test]
+    fn listening_selection_ignores_appledouble_candidates() {
+        let revision = TestDirectory::new();
+        fs::write(revision.0.join("Primary.mp3"), b"primary").expect("write primary");
+        thread::sleep(Duration::from_millis(20));
+        fs::write(revision.0.join("._Primary.mp3"), b"metadata").expect("write AppleDouble");
+
+        let selected = select_listening_source(&revision.0, "mp3", None)
+            .expect("select")
+            .expect("matching source");
+        assert_eq!(selected.file_name, "Primary.mp3");
+    }
+
+    #[test]
+    fn listening_selection_rejects_os_metadata_override() {
+        let revision = TestDirectory::new();
+        let override_path = revision.0.join("._Primary.mp3");
+        fs::write(&override_path, b"metadata").expect("write AppleDouble");
+
+        assert!(select_listening_source(&revision.0, "mp3", Some(&override_path))
+            .expect("select")
+            .is_none());
     }
 
     #[test]
