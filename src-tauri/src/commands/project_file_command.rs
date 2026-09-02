@@ -575,8 +575,8 @@ mod tests {
         fs::write(revision.join("desktop.ini"), b"ignored").expect("write metadata");
         fs::write(revision.join(".mix-note"), b"note").expect("write dotfile");
 
-        let listing = list_project_directory(&project.0, "04_Revisions/Revision_01")
-            .expect("list revision");
+        let listing =
+            list_project_directory(&project.0, "04_Revisions/Revision_01").expect("list revision");
         let names = listing
             .entries
             .iter()
