@@ -193,18 +193,20 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
     clear_stale_destinations(&state, generation, &destination_ids)?;
 
     let mut results = Vec::new();
-    for destination in destinations {
+    for destination in &destinations {
         if !generation_is_current(&state, generation)? {
             return Ok(());
         }
         if let Some(result) =
-            scan_destination(&state, generation, scan_number, &context, &destination)?
+            scan_destination(&state, generation, scan_number, &context, destination)?
         {
             results.push(result);
         }
     }
 
-    if !results.is_empty() && generation_is_current(&state, generation)? {
+    let quiet_reconciliation = results.is_empty()
+        && revision_reconciliation_is_quiet(&context, &destinations);
+    if (!results.is_empty() || quiet_reconciliation) && generation_is_current(&state, generation)? {
         let _ = app.emit(
             PUBLISH_EVENT,
             RevisionListeningPublishEvent {
@@ -226,6 +228,39 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         );
     }
     Ok(())
+}
+
+fn revision_reconciliation_is_quiet(
+    context: &RevisionPublishContext<'_>,
+    destinations: &[ListeningDestination],
+) -> bool {
+    destinations.iter().all(|destination| {
+        let selection = match super::project_revision_files::select_listening_source(
+            context.revision_root,
+            &destination.required_extension,
+            None,
+        ) {
+            Ok(selection) => selection,
+            Err(_) => return false,
+        };
+        let Some(selection) = selection else {
+            return true;
+        };
+        let scoped_destination = match client_scoped_destination(destination, context.client_id) {
+            Ok(destination) => destination,
+            Err(_) => return false,
+        };
+        let target_name = match revision_target_name(
+            context.project_id,
+            context.revision,
+            &destination.required_extension,
+        ) {
+            Ok(name) => name,
+            Err(_) => return false,
+        };
+        revision_target_is_current(&selection.path, &scoped_destination, &target_name)
+            .unwrap_or(false)
+    })
 }
 
 fn clear_stale_destinations(
