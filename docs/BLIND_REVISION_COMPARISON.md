@@ -18,7 +18,7 @@ This feature evaluates revisions; it does not replace revision approval, deliver
 2. **Blind by default** — revision number, filename, date, approval state, delivery state, and other identity clues stay hidden until results are explicitly revealed.
 3. **Region-centric evaluation** — every result belongs to a defined song region. The default Full Song region provides the normal overall preference.
 4. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
-5. **Simple cumulative ranking** — cumulative standings should be understandable without a complex statistical model. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
+5. **Simple cumulative ranking** — cumulative standings use straightforward placement averaging. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
 6. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
 7. **Non-destructive to audio** — comparison never alters revision source audio.
 8. **Persistent history until cleared** — individual comparison sessions are historical records and are not overwritten by later comparisons or cumulative calculations, but a deliberate project-level clear action removes the ranking history.
@@ -88,22 +88,25 @@ Comparison rankings are cumulative across applicable completed sessions.
 
 Baseline behavior:
 
-- each completed applicable session contributes the placement recorded for each participating revision;
-- Studio combines those placements into a cumulative placement for each revision using a straightforward arithmetic approach such as average placement across the sessions in which that revision participated;
+- each completed applicable session contributes the numeric placement recorded for each participating revision;
+- a revision's cumulative placement is the **arithmetic mean of its recorded placements across the applicable completed sessions in which that revision participated**;
 - lower/better cumulative placement ranks ahead of higher/worse cumulative placement;
 - when cumulative placements are equal, the **higher revision number wins the tie** because it is the more recent revision;
 - revision number is only a deterministic tiebreaker and otherwise adds no weighting;
 - individual session results remain preserved and inspectable until the user explicitly clears project ranking history;
 - cumulative standings are derived/recomputable from preserved sessions;
 - cumulative Full Song standings are required;
-- equivalent timestamped regions may also have cumulative standings;
+- equivalent timestamped regions may also have cumulative standings using the same arithmetic rule;
 - the UI should expose the number of contributing sessions so evidence strength is visible.
 
 Example:
 
 ```text
-R05 cumulative placement: 1.7
-R06 cumulative placement: 1.7
+Session 1: R05 = #1, R06 = #2
+Session 2: R05 = #2, R06 = #1
+
+R05 cumulative placement = (1 + 2) / 2 = 1.5
+R06 cumulative placement = (2 + 1) / 2 = 1.5
 
 1. R06   <- higher revision number wins tie
 2. R05
@@ -123,7 +126,7 @@ This is not merely clearing a cache or hiding the derived standings. It is a pro
 
 Locked behavior:
 
-- provide a project-level action such as **Clear Comparison Rankings** / **Clear Ranking History**;
+- provide a project-level action such as **Clear Ranking History**;
 - clearing removes all stored blind-comparison ranking/session history for that project that contributes to comparison results;
 - cumulative Full Song standings are removed;
 - cumulative regional standings are removed;
@@ -237,8 +240,8 @@ The current baseline includes:
 - per-region ranking, ties, no preference, optional notes;
 - explicit Reveal Results;
 - persistent comparison-session history;
-- cumulative Full Song standings;
-- simple cumulative placement aggregation with higher revision number as tiebreaker;
+- cumulative Full Song standings using arithmetic mean placement;
+- higher revision number as cumulative-placement tiebreaker;
 - cumulative regional standings where equivalent regions can be identified;
 - evidence/provenance and contributing-session counts;
 - Revision History cumulative TOP indicator;
