@@ -27,7 +27,7 @@
 
 ## Acceptance
 
-For the 2.1 release, use [`RELEASE_ACCEPTANCE_V2.1.md`](RELEASE_ACCEPTANCE_V2.1.md) as the high-level packaged sanity acceptance matrix and final qualification record.
+For the active 2.2 release, use [`RELEASE_ACCEPTANCE_V2.2.md`](RELEASE_ACCEPTANCE_V2.2.md) as the packaged acceptance matrix and qualification source of truth. Preserve [`RELEASE_ACCEPTANCE_V2.1.md`](RELEASE_ACCEPTANCE_V2.1.md) as the historical 2.1 qualification record.
 
 - [ ] Install the published package on Windows and perform the release acceptance pass.
 - [ ] Install the appropriate published package on macOS and perform the release acceptance pass.
