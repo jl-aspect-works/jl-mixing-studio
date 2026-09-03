@@ -475,28 +475,16 @@ fn filesystem_error(action: &str, error: std::io::Error) -> String {
 mod tests {
     use super::*;
     use std::io::Write;
-    use std::time::{SystemTime, UNIX_EPOCH};
 
-    struct TestDirectory(PathBuf);
+    struct TestDirectory(tempfile::TempDir);
 
     impl TestDirectory {
         fn new() -> Self {
-            let unique = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos();
-            let path = std::env::temp_dir().join(format!(
-                "jl-mixing-studio-project-files-{}-{unique}",
-                std::process::id()
-            ));
-            fs::create_dir_all(&path).expect("create test directory");
-            Self(path)
+            Self(tempfile::tempdir().expect("create test directory"))
         }
-    }
 
-    impl Drop for TestDirectory {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
+        fn path(&self) -> &Path {
+            self.0.path()
         }
     }
 
@@ -539,13 +527,13 @@ mod tests {
     #[test]
     fn lists_normalized_entries_without_mutating_the_project() {
         let project = TestDirectory::new();
-        let original = project.0.join("01_Client_Files/Original_Delivery");
+        let original = project.path().join("01_Client_Files/Original_Delivery");
         fs::create_dir_all(&original).expect("create original delivery");
         let mut file = fs::File::create(original.join("Lead Vocal.WAV")).expect("create audio");
         file.write_all(b"audio").expect("write audio");
         fs::create_dir(original.join("Session Notes")).expect("create folder");
 
-        let listing = list_project_directory(&project.0, "01_Client_Files/Original_Delivery")
+        let listing = list_project_directory(project.path(), "01_Client_Files/Original_Delivery")
             .expect("list project files");
 
         assert_eq!(listing.area, ProjectFileArea::ClientOriginalDelivery);
@@ -566,7 +554,7 @@ mod tests {
     #[test]
     fn listing_ignores_os_metadata_but_keeps_other_dotfiles() {
         let project = TestDirectory::new();
-        let revision = project.0.join("04_Revisions/Revision_01");
+        let revision = project.path().join("04_Revisions/Revision_01");
         fs::create_dir_all(&revision).expect("create revision");
         fs::write(revision.join("mix.wav"), b"audio").expect("write mix");
         fs::write(revision.join(".DS_Store"), b"ignored").expect("write metadata");
@@ -575,8 +563,8 @@ mod tests {
         fs::write(revision.join("desktop.ini"), b"ignored").expect("write metadata");
         fs::write(revision.join(".mix-note"), b"note").expect("write dotfile");
 
-        let listing =
-            list_project_directory(&project.0, "04_Revisions/Revision_01").expect("list revision");
+        let listing = list_project_directory(project.path(), "04_Revisions/Revision_01")
+            .expect("list revision");
         let names = listing
             .entries
             .iter()
@@ -601,12 +589,12 @@ mod tests {
     #[test]
     fn renames_only_audio_preparation_regular_files_and_preserves_extension() {
         let project = TestDirectory::new();
-        let prep = project.0.join("02_Audio_Preparation/Working_Audio");
+        let prep = project.path().join("02_Audio_Preparation/Working_Audio");
         fs::create_dir_all(&prep).expect("create prep");
         fs::write(prep.join("Lead Vocal.WAV"), b"audio").expect("write prep audio");
 
         let result = rename_audio_preparation_file(
-            &project.0,
+            project.path(),
             "02_Audio_Preparation/Working_Audio/Lead Vocal.WAV",
             "Lead Vocal Clean",
         )
@@ -619,7 +607,7 @@ mod tests {
         assert!(!prep.join("Lead Vocal.WAV").exists());
         assert!(prep.join("Lead Vocal Clean.WAV").is_file());
         assert!(rename_audio_preparation_file(
-            &project.0,
+            project.path(),
             "01_Client_Files/Original_Delivery/Lead Vocal.WAV",
             "Unsafe",
         )
@@ -629,19 +617,19 @@ mod tests {
     #[test]
     fn refuses_rename_collisions_and_nonportable_names() {
         let project = TestDirectory::new();
-        let prep = project.0.join("02_Audio_Preparation/Working_Audio");
+        let prep = project.path().join("02_Audio_Preparation/Working_Audio");
         fs::create_dir_all(&prep).expect("create prep");
         fs::write(prep.join("Lead.wav"), b"lead").expect("write lead");
         fs::write(prep.join("Vocal.wav"), b"vocal").expect("write vocal");
 
         assert!(rename_audio_preparation_file(
-            &project.0,
+            project.path(),
             "02_Audio_Preparation/Working_Audio/Lead.wav",
             "vOcAl",
         )
         .is_err());
         assert!(rename_audio_preparation_file(
-            &project.0,
+            project.path(),
             "02_Audio_Preparation/Working_Audio/Lead.wav",
             "bad:name",
         )
@@ -651,23 +639,23 @@ mod tests {
     #[test]
     fn deletes_only_audio_preparation_regular_files() {
         let project = TestDirectory::new();
-        let prep = project.0.join("02_Audio_Preparation/Rejected_Files");
+        let prep = project.path().join("02_Audio_Preparation/Rejected_Files");
         fs::create_dir_all(&prep).expect("create rejected files");
         fs::write(prep.join("bad.wav"), b"bad").expect("write rejected file");
 
         let result = delete_audio_preparation_file(
-            &project.0,
+            project.path(),
             "02_Audio_Preparation/Rejected_Files/bad.wav",
         )
         .expect("delete prep file");
         assert_eq!(result, "02_Audio_Preparation/Rejected_Files/bad.wav");
         assert!(!prep.join("bad.wav").exists());
 
-        let original = project.0.join("01_Client_Files/Original_Delivery");
+        let original = project.path().join("01_Client_Files/Original_Delivery");
         fs::create_dir_all(&original).expect("create original delivery");
         fs::write(original.join("source.wav"), b"source").expect("write source");
         assert!(delete_audio_preparation_file(
-            &project.0,
+            project.path(),
             "01_Client_Files/Original_Delivery/source.wav",
         )
         .is_err());
@@ -681,11 +669,14 @@ mod tests {
 
         let project = TestDirectory::new();
         let outside = TestDirectory::new();
-        fs::create_dir_all(project.0.join("02_Audio_Preparation")).expect("create prep");
-        symlink(&outside.0, project.0.join("02_Audio_Preparation/Outside"))
-            .expect("create symlink");
+        fs::create_dir_all(project.path().join("02_Audio_Preparation")).expect("create prep");
+        symlink(
+            outside.path(),
+            project.path().join("02_Audio_Preparation/Outside"),
+        )
+        .expect("create symlink");
 
-        let error = list_project_directory(&project.0, "02_Audio_Preparation/Outside")
+        let error = list_project_directory(project.path(), "02_Audio_Preparation/Outside")
             .expect_err("symlink traversal must fail");
         assert!(error.contains("Symbolic-link"));
     }

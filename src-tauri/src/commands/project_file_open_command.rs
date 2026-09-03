@@ -198,51 +198,39 @@ fn filesystem_error(action: &str, error: std::io::Error) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
 
-    struct TestDirectory(PathBuf);
+    struct TestDirectory(tempfile::TempDir);
 
     impl TestDirectory {
         fn new() -> Self {
-            let unique = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos();
-            let path = std::env::temp_dir().join(format!(
-                "jl-mixing-studio-project-open-{}-{unique}",
-                std::process::id()
-            ));
-            fs::create_dir_all(&path).expect("create test directory");
-            Self(path)
+            Self(tempfile::tempdir().expect("create test directory"))
         }
-    }
 
-    impl Drop for TestDirectory {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
+        fn path(&self) -> &Path {
+            self.0.path()
         }
     }
 
     #[test]
     fn resolves_regular_project_entries_but_rejects_traversal() {
         let project = TestDirectory::new();
-        let folder = project.0.join("01_Client_Files/References");
+        let folder = project.path().join("01_Client_Files/References");
         fs::create_dir_all(&folder).expect("create folder");
         fs::write(folder.join("reference.wav"), b"audio").expect("create file");
 
         let (resolved, relative) =
-            resolve_project_entry(&project.0, "01_Client_Files/References/reference.wav")
+            resolve_project_entry(project.path(), "01_Client_Files/References/reference.wav")
                 .expect("resolve project file");
         assert!(resolved.is_file());
         assert_eq!(relative, "01_Client_Files/References/reference.wav");
-        assert!(resolve_project_entry(&project.0, "../outside.wav").is_err());
-        assert!(resolve_project_entry(&project.0, "/absolute.wav").is_err());
+        assert!(resolve_project_entry(project.path(), "../outside.wav").is_err());
+        assert!(resolve_project_entry(project.path(), "/absolute.wav").is_err());
     }
 
     #[test]
     fn preview_resolution_does_not_filter_regular_files_by_extension() {
         let project = TestDirectory::new();
-        let folder = project.0.join("01_Client_Files/References");
+        let folder = project.path().join("01_Client_Files/References");
         fs::create_dir_all(&folder).expect("create folder");
         fs::write(folder.join("reference.m4a"), b"audio").expect("create m4a");
         fs::write(folder.join("reference.ogg"), b"audio").expect("create ogg");
@@ -251,7 +239,7 @@ mod tests {
             "01_Client_Files/References/reference.m4a",
             "01_Client_Files/References/reference.ogg",
         ] {
-            let (resolved, _) = resolve_project_entry(&project.0, relative_path)
+            let (resolved, _) = resolve_project_entry(project.path(), relative_path)
                 .expect("preview candidate should resolve independently of extension");
             assert!(resolved.is_file());
         }
@@ -264,15 +252,17 @@ mod tests {
 
         let project = TestDirectory::new();
         let outside = TestDirectory::new();
-        fs::create_dir_all(project.0.join("01_Client_Files/References"))
+        fs::create_dir_all(project.path().join("01_Client_Files/References"))
             .expect("create references");
-        fs::write(outside.0.join("outside.wav"), b"audio").expect("create outside file");
+        fs::write(outside.path().join("outside.wav"), b"audio").expect("create outside file");
         symlink(
-            outside.0.join("outside.wav"),
-            project.0.join("01_Client_Files/References/link.wav"),
+            outside.path().join("outside.wav"),
+            project.path().join("01_Client_Files/References/link.wav"),
         )
         .expect("create symlink");
 
-        assert!(resolve_project_entry(&project.0, "01_Client_Files/References/link.wav",).is_err());
+        assert!(
+            resolve_project_entry(project.path(), "01_Client_Files/References/link.wav",).is_err()
+        );
     }
 }

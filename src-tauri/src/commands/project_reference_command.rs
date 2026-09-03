@@ -224,28 +224,18 @@ fn filesystem_error(action: &str, error: std::io::Error) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
 
-    struct TestDirectory(PathBuf);
+    struct TestDirectory(tempfile::TempDir);
 
     impl TestDirectory {
         fn new() -> Self {
-            let unique = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos();
-            let path = std::env::temp_dir().join(format!(
-                "jl-mixing-studio-references-{}-{unique}",
-                std::process::id()
-            ));
-            fs::create_dir_all(path.join(REFERENCES_PATH)).expect("create references");
-            Self(path)
+            let directory = tempfile::tempdir().expect("create test directory");
+            fs::create_dir_all(directory.path().join(REFERENCES_PATH)).expect("create references");
+            Self(directory)
         }
-    }
 
-    impl Drop for TestDirectory {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
+        fn path(&self) -> &Path {
+            self.0.path()
         }
     }
 
@@ -253,14 +243,14 @@ mod tests {
     fn copies_supported_reference_without_touching_source() {
         let project = TestDirectory::new();
         let source_root = TestDirectory::new();
-        let source = source_root.0.join("Reference.mp4");
+        let source = source_root.path().join("Reference.mp4");
         fs::write(&source, b"audio").expect("write source");
 
-        let result = copy_reference_into_project(&project.0, &source).expect("copy reference");
+        let result = copy_reference_into_project(project.path(), &source).expect("copy reference");
         assert_eq!(result, "01_Client_Files/References/Reference.mp4");
         assert_eq!(fs::read(&source).expect("read source"), b"audio");
         assert_eq!(
-            fs::read(project.0.join(&result)).expect("read copied reference"),
+            fs::read(project.path().join(&result)).expect("read copied reference"),
             b"audio"
         );
     }
@@ -269,32 +259,34 @@ mod tests {
     fn rejects_duplicate_and_non_audio_reference_imports() {
         let project = TestDirectory::new();
         let source_root = TestDirectory::new();
-        let source = source_root.0.join("Reference.wav");
+        let source = source_root.path().join("Reference.wav");
         fs::write(&source, b"audio").expect("write source");
         fs::write(
-            project.0.join(REFERENCES_PATH).join("reference.WAV"),
+            project.path().join(REFERENCES_PATH).join("reference.WAV"),
             b"old",
         )
         .expect("write existing reference");
-        assert!(copy_reference_into_project(&project.0, &source).is_err());
+        assert!(copy_reference_into_project(project.path(), &source).is_err());
 
-        let text = source_root.0.join("notes.txt");
+        let text = source_root.path().join("notes.txt");
         fs::write(&text, b"notes").expect("write text");
-        assert!(copy_reference_into_project(&project.0, &text).is_err());
+        assert!(copy_reference_into_project(project.path(), &text).is_err());
     }
 
     #[test]
     fn deletes_only_managed_reference_files() {
         let project = TestDirectory::new();
-        let reference = project.0.join(REFERENCES_PATH).join("Reference.wav");
+        let reference = project.path().join(REFERENCES_PATH).join("Reference.wav");
         fs::write(&reference, b"audio").expect("write reference");
-        let result =
-            delete_reference_from_project(&project.0, "01_Client_Files/References/Reference.wav")
-                .expect("delete reference");
+        let result = delete_reference_from_project(
+            project.path(),
+            "01_Client_Files/References/Reference.wav",
+        )
+        .expect("delete reference");
         assert_eq!(result, "01_Client_Files/References/Reference.wav");
         assert!(!reference.exists());
         assert!(delete_reference_from_project(
-            &project.0,
+            project.path(),
             "01_Client_Files/Original_Delivery/source.wav",
         )
         .is_err());
