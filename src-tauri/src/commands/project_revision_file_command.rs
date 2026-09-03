@@ -549,8 +549,11 @@ mod tests {
         let revision = project.path().join("04_Revisions/Revision_01");
         fs::create_dir_all(&revision).expect("create revision");
         fs::write(outside.path().join("outside.wav"), b"audio").expect("write outside");
-        symlink(outside.path().join("outside.wav"), revision.join("link.wav"))
-            .expect("create symlink");
+        symlink(
+            outside.path().join("outside.wav"),
+            revision.join("link.wav"),
+        )
+        .expect("create symlink");
 
         assert!(
             resolve_revision_regular_file(project.path(), "04_Revisions/Revision_01/link.wav",)

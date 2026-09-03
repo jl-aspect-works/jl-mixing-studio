@@ -563,9 +563,8 @@ mod tests {
         fs::write(revision.join("desktop.ini"), b"ignored").expect("write metadata");
         fs::write(revision.join(".mix-note"), b"note").expect("write dotfile");
 
-        let listing =
-            list_project_directory(project.path(), "04_Revisions/Revision_01")
-                .expect("list revision");
+        let listing = list_project_directory(project.path(), "04_Revisions/Revision_01")
+            .expect("list revision");
         let names = listing
             .entries
             .iter()
@@ -675,7 +674,7 @@ mod tests {
             outside.path(),
             project.path().join("02_Audio_Preparation/Outside"),
         )
-            .expect("create symlink");
+        .expect("create symlink");
 
         let error = list_project_directory(project.path(), "02_Audio_Preparation/Outside")
             .expect_err("symlink traversal must fail");

@@ -278,9 +278,11 @@ mod tests {
         let project = TestDirectory::new();
         let reference = project.path().join(REFERENCES_PATH).join("Reference.wav");
         fs::write(&reference, b"audio").expect("write reference");
-        let result =
-            delete_reference_from_project(project.path(), "01_Client_Files/References/Reference.wav")
-                .expect("delete reference");
+        let result = delete_reference_from_project(
+            project.path(),
+            "01_Client_Files/References/Reference.wav",
+        )
+        .expect("delete reference");
         assert_eq!(result, "01_Client_Files/References/Reference.wav");
         assert!(!reference.exists());
         assert!(delete_reference_from_project(
