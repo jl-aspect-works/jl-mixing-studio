@@ -408,8 +408,8 @@ fn scoped_project_discovery_ignores_unrelated_invalid_siblings() {
     fs::create_dir_all(&invalid).expect("invalid sibling directory");
     fs::write(invalid.join("project-manifest.json"), "{").expect("invalid sibling manifest");
 
-    let (path, project) = discover_project_at(&root, "target-client", "target-project")
-        .expect("scoped project");
+    let (path, project) =
+        discover_project_at(&root, "target-client", "target-project").expect("scoped project");
 
     assert_eq!(
         path,

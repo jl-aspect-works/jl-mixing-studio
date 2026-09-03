@@ -1,8 +1,6 @@
 use super::listening_artwork::ensure_artist_artwork_sidecars;
 use super::listening_metadata::listening_metadata_is_current;
-use super::{
-    listening_configuration, publish_listening_copy, resolve_workspace_root,
-};
+use super::{listening_configuration, publish_listening_copy, resolve_workspace_root};
 use crate::diagnostic_log;
 use crate::models::{
     ListeningDestination, ListeningPublishClass, ListeningPublishResult, ListeningPublishStatus,
@@ -317,12 +315,9 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
     let workspace_root = resolve_workspace_root(app)
         .map_err(|message| format!("Listening workspace could not be resolved: {message}"))?;
     let project_discovery_started = Instant::now();
-    let (project_directory, project) = workspace::discover_project_at(
-        &workspace_root,
-        &active.client_id,
-        &active.project_id,
-    )
-    .ok_or_else(|| "The active Listening project is unavailable or invalid".to_owned())?;
+    let (project_directory, project) =
+        workspace::discover_project_at(&workspace_root, &active.client_id, &active.project_id)
+            .ok_or_else(|| "The active Listening project is unavailable or invalid".to_owned())?;
     let project_discovery_duration_ms = project_discovery_started.elapsed().as_millis() as u64;
     diagnostic_log::debug(
         "listening_monitor_project_discovered",

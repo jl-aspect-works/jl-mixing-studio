@@ -352,10 +352,7 @@ pub fn find_validated_project_path(
     find_validated_project_path_in_client(&client_path, project_id)
 }
 
-fn find_validated_project_path_in_client(
-    client_path: &Path,
-    project_id: &str,
-) -> Option<PathBuf> {
+fn find_validated_project_path_in_client(client_path: &Path, project_id: &str) -> Option<PathBuf> {
     let mut matches = directory_entries(&client_path.join("Projects"))
         .ok()?
         .into_iter()
