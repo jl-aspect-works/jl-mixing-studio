@@ -92,15 +92,6 @@ Because regions belong to the project, repeated comparison sessions reuse the sa
 
 **Regions may overlap.** Overlap is valid and should not be treated as a conflict.
 
-This supports both broad and focused evaluations, for example:
-
-```text
-Chorus        0:58-1:29
-Vocal Entry   1:04-1:14
-```
-
-The smaller Vocal Entry region is intentionally contained within the larger Chorus region and can have its own ranking.
-
 ### Region equivalence across sessions
 
 Because regions are project-level definitions, a reused project region is automatically the same region for cumulative ranking across sessions. Studio does not need fuzzy matching by region name or timestamps.
@@ -115,7 +106,7 @@ Playback controls should make rapid N-way switching first-class. Switching candi
 
 Blind comparison uses the existing Studio playback support matrix. Any audio format Studio supports for revision playback is eligible.
 
-If Studio cannot play the audio selected for a revision, that revision is not eligible for the comparison and must be excluded before the blind session begins. The session should not knowingly begin with an unplayable candidate.
+If Studio cannot play the audio selected for a revision, that revision is not eligible for the comparison and must be excluded before the blind session begins.
 
 ### Region looping — baseline requirement
 
@@ -156,11 +147,7 @@ Competition ranking preserves the actual ordinal positions occupied by tied cand
 
 ### Notes
 
-Notes are **per candidate within a region**.
-
-For example, the Chorus region can contain separate notes for A, B, C, and D. This lets the user preserve why a candidate was ranked where it was instead of reducing the whole regional judgment to one shared note.
-
-Notes remain optional. Before reveal they are associated with the blind identity; after reveal they remain attached to the mapped revision in the historical session.
+Notes are **per candidate within a region** and remain optional.
 
 ### Completed ranking immutability and deletion
 
@@ -169,8 +156,6 @@ Once a comparison ranking is completed, its ranking values cannot be edited.
 If the user changes their mind or wants to re-evaluate the revisions, they create a **new blind comparison session**. That new session contributes independently to the cumulative ranking.
 
 A completed comparison/session may be **deleted explicitly**. Deleting it removes that session's rankings and notes from history and immediately recomputes cumulative standings without that session.
-
-This is different from **Clear Ranking History**, which deletes all comparison sessions for the project.
 
 ## Cumulative ranking
 
@@ -189,21 +174,6 @@ Baseline behavior:
 - the UI should expose the number of contributing sessions so evidence strength is visible;
 - deleting one completed session recomputes cumulative standings without that session.
 
-Example:
-
-```text
-Session 1: R05 = #1, R06 = #2
-Session 2: R05 = #2, R06 = #1
-
-R05 cumulative placement = (1 + 2) / 2 = 1.5
-R06 cumulative placement = (2 + 1) / 2 = 1.5
-
-1. R06   <- higher revision number wins tie
-2. R05
-```
-
-A sophisticated Elo/pairwise/statistical ranking model is explicitly unnecessary unless future use demonstrates a concrete need.
-
 ### Full Song as overall preference
 
 Within a session, Full Song is the session's overall result. Across sessions, cumulative Full Song ranking is the project's aggregate overall comparison result. Regional rankings do not get averaged into a replacement Full Song winner.
@@ -216,7 +186,7 @@ Locked behavior:
 
 - provide a project-level **Clear Ranking History** action;
 - clearing removes all saved Blind Revision Comparison sessions/results for that project, including Full Song rankings, regional rankings, blind mappings, and comparison notes associated with those sessions;
-- project region definitions themselves are not ranking history and therefore do not need to be deleted simply because rankings are cleared;
+- project region definitions themselves are not ranking history and are not deleted simply because rankings are cleared;
 - cumulative Full Song standings are removed;
 - cumulative regional standings are removed;
 - the Revision History `TOP` indicator disappears;
@@ -244,13 +214,9 @@ Locked behavior:
 - unfinished work does not affect cumulative Full Song or regional standings;
 - only a completed session is persisted as comparison history and contributes to cumulative results.
 
-This avoids a separate draft/in-progress session lifecycle and keeps comparison history limited to completed blind evaluations.
-
 ## Comparison history
 
-Completed comparison sessions are historical records and do not overwrite one another during normal use. History preserves date/time, candidates, blind mapping, Full Song result, regional results, per-candidate notes, and relevant state.
-
-Studio exposes cumulative standings with drill-down to contributing sessions.
+Completed comparison sessions are historical records and do not overwrite one another during normal use. History preserves date/time, candidates, blind mapping, Full Song result, regional results, and per-candidate notes.
 
 Individual completed sessions can be explicitly deleted. **Clear Ranking History** deletes all of them at once.
 
@@ -277,7 +243,7 @@ Locked behavior:
 
 Revision History provides one dedicated **Comparison Results** action/entry point in addition to the clickable TOP pill.
 
-The Comparison Results view is the full project comparison surface and should include:
+The Comparison Results view includes:
 
 - cumulative Full Song standings for all ranked revisions;
 - each revision's cumulative Full Song average placement;
@@ -288,53 +254,62 @@ The Comparison Results view is the full project comparison surface and should in
 - per-session candidates, region rankings, and per-candidate notes;
 - delete action for an individual completed comparison session.
 
-The default Revision History intentionally does **not** show cumulative rank numbers on every revision row. Detailed comparison information stays one click away so lifecycle/status information remains easy to scan.
+The default Revision History intentionally does **not** show cumulative rank numbers on every revision row.
 
 ## Regional result visualization
 
 Studio should provide summary, timeline/ranking-strip, and exact table views using the **project timeline**. Visual encoding must not rely solely on color.
 
-The timeline is not based on whichever revision happens to be playing. Revisions are candidates interpreted against the project's common comparison timeline.
-
 For compatible revisions with small differences such as fade length or trailing silence, the project timeline remains authoritative. A revision that is too short to support a required project region is not compatible for that comparison and should be excluded rather than silently clipping or remapping the region.
 
 ## Approval and lifecycle separation
 
-Comparison is an evaluation tool, not an automatic project-state transition. A first-place session result or cumulative TOP result never automatically approves a revision. Explicit actions may offer Done, Open preferred revision, or Approve preferred revision.
+Comparison is an evaluation tool, not an automatic project-state transition. A first-place session result or cumulative TOP result never automatically approves a revision.
 
 ## Persistence model
 
-The persistence model should support project-level regions, N-way ranking, immutable completed sessions, deletion, and cumulative aggregation without redesign.
+Blind Revision Comparison data is **project-owned Studio metadata** stored alongside the project, not in workspace-global `Studio/studio.json` and not in OS/global application storage.
+
+Locked behavior:
+
+- use a dedicated project-local JSON document for comparison metadata, for example `Studio/comparison.json` under the project; if implementation identifies an existing project-local Studio metadata directory convention, use that convention while keeping comparison data in its own document;
+- the document has its own explicit schema/version, beginning with a version such as `1.0`;
+- persist project region definitions, stable region IDs, completed comparison sessions, stable session IDs, candidate revision references, blind mappings, region rankings, per-candidate notes, and completion timestamps;
+- use Studio's stable revision identifiers/references rather than filenames as the primary candidate identity;
+- use stable UUID-style IDs for project regions and completed sessions so renaming a region does not break historical references;
+- do **not** persist cumulative standings as authoritative state;
+- cumulative Full Song and regional standings are always derived from completed sessions when loaded/recomputed;
+- deleting one session or clearing ranking history deterministically changes derived standings without synchronizing duplicate aggregate state;
+- schema upgrades are migrated forward by Studio;
+- unsupported/newer schemas fail safely without modifying revision audio, Automation metadata, or unrelated project state;
+- because the metadata is project-local, comparison history travels with the project when the project/workspace is moved, copied, restored, or opened on another Studio machine.
 
 Conceptual shape:
 
 ```text
-Project Comparison Data
+Project Comparison Document
+  Schema Version
   Regions
-    Full Song
-    Named/Timestamped Regions
+    Stable ID
+    Name
+    Start / End
 
   Completed Comparison Sessions
-    Candidates (normal revision references)
+    Stable ID
+    Candidates (stable normal revision references)
     Blind Mapping
     Region Results
-      Project Region reference
+      Project Region ID
       Rankings
       Per-candidate Notes
-    Completed timestamp
+    Completed Timestamp
 
-Derived Cumulative Standings
-  Full Song
-    Revision standings
-    Contributing session references
-  Project Regions
-    Revision standings
-    Contributing session references
+Derived at runtime
+  Cumulative Full Song Standings
+  Cumulative Project-Region Standings
 ```
 
-Derived standings should be rebuildable from persisted completed sessions. Deleting a session or clearing history therefore deterministically changes the derived standings.
-
-Comparison data must not interfere with Automation revision/source-audio behavior; it is Studio-managed evaluation metadata unless a later cross-product requirement is established.
+Comparison data remains Studio-managed evaluation metadata and must not interfere with Automation revision/source-audio behavior.
 
 ## Baseline feature scope
 
@@ -369,6 +344,7 @@ The current baseline includes:
 - lightweight Revision History TOP pill only on the cumulative leader;
 - dedicated Comparison Results view with full standings/history/session drill-down;
 - project-timeline regional summary/timeline/table visualization;
+- **project-local versioned comparison JSON with derived-only cumulative standings**;
 - project-level destructive **Clear Ranking History** action that deletes all comparison history for the project;
 - no automatic approval;
 - no source-audio modification.
@@ -379,8 +355,7 @@ Potential follow-ons include level matching, formal ABX statistical testing, wav
 
 ## Open decisions before implementation
 
-1. **Persistence schema/location** — concrete storage format, location, migration, and versioning.
-2. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
+1. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
 
 ## Relationship to existing Studio functionality
 
