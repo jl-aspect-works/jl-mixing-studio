@@ -35,7 +35,7 @@ Studio is currently unsigned. After verifying the checksum, use **More info → 
 
 ### Automation requirement
 
-JL Mixing Automation is installed separately. The 2.2 acceptance record must identify the exact Automation build used. Full Delivered Listening provenance acceptance requires a compatible Automation build containing the delivery `source_path` provenance support tracked by `jl-aspect-works/jl-mixing-automation#190`. Existing delivery manifests without that field remain supported through Studio's conservative legacy fallback.
+JL Mixing Automation is installed separately. Studio `2.2.0-rc.1` is coordinated with Automation `2.2.0-rc.1`; the acceptance record must still identify the exact installed Automation build. Full Delivered Listening provenance acceptance requires the delivery `source_path` support tracked by `jl-aspect-works/jl-mixing-automation#190`. Existing delivery manifests without that field remain supported through Studio's conservative legacy fallback.
 
 ## Highlights
 

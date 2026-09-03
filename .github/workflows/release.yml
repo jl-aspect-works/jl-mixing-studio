@@ -148,10 +148,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s docs/RELEASE_NOTES_V2.1.md
-          grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.1.md
-          grep -q 'More info' docs/RELEASE_NOTES_V2.1.md
-          grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.1.md
+          test -s docs/RELEASE_NOTES_V2.2.md
+          grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.2.md
+          grep -q 'More info' docs/RELEASE_NOTES_V2.2.md
+          grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.2.md
       - name: Create release tag
         shell: bash
         run: |
@@ -185,7 +185,7 @@ jobs:
             gh release create "$RELEASE_TAG" \
               --verify-tag \
               --title "JL Mixing Studio $RELEASE_TAG" \
-              --notes-file docs/RELEASE_NOTES_V2.1.md \
+              --notes-file docs/RELEASE_NOTES_V2.2.md \
               "${prerelease[@]}" \
               release-assets/*
           fi
