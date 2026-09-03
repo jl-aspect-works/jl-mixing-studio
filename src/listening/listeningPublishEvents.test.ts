@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyListeningPublishEvent,
+  recordListeningPublishEvent,
   type ListeningActivitySnapshot,
   type ListeningPublishEvent,
 } from "./listeningPublishEvents";
@@ -55,11 +56,12 @@ describe("Listening publish activity reconciliation", () => {
       "delivered-listening-publish-results": published,
     };
 
-    expect(applyListeningPublishEvent(
+    const next = applyListeningPublishEvent(
       snapshot,
       "delivered-listening-publish-results",
       quiet,
-    )).toEqual(snapshot);
+    );
+    expect(next).toBe(snapshot);
   });
 
   it("does not clear a failure belonging to another project or revision", () => {
@@ -85,5 +87,23 @@ describe("Listening publish activity reconciliation", () => {
       "delivered-listening-publish-results",
       published,
     )).toEqual({ "delivered-listening-publish-results": published });
+  });
+
+  it("does not persist or notify when a quiet event leaves activity unchanged", () => {
+    const storageKey = "jl-mixing-listening-activity-v1";
+    const activityEvent = "jl-mixing-listening-activity-updated";
+    const snapshot: ListeningActivitySnapshot = {
+      "delivered-listening-publish-results": published,
+    };
+    window.sessionStorage.setItem(storageKey, JSON.stringify(snapshot));
+    let notifications = 0;
+    const onUpdate = () => { notifications += 1; };
+    window.addEventListener(activityEvent, onUpdate);
+
+    recordListeningPublishEvent("delivered-listening-publish-results", quiet);
+
+    expect(JSON.parse(window.sessionStorage.getItem(storageKey) ?? "{}")).toEqual(snapshot);
+    expect(notifications).toBe(0);
+    window.removeEventListener(activityEvent, onUpdate);
   });
 });

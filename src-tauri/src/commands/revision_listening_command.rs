@@ -6,8 +6,7 @@ use super::{
 };
 use crate::diagnostic_log;
 use crate::models::{
-    DeliveryStatusRequest, ListeningDestination, ListeningPublishClass, ListeningPublishResult,
-    ListeningPublishStatus,
+    ListeningDestination, ListeningPublishClass, ListeningPublishResult, ListeningPublishStatus,
 };
 use crate::workspace;
 use serde::{Deserialize, Serialize};
@@ -24,6 +23,7 @@ const SCAN_INTERVAL: Duration = Duration::from_secs(1);
 const STABLE_SAMPLE_COUNT: u8 = 3;
 const FAILED_RETRY_SCANS: u64 = 10;
 const PUBLISH_EVENT: &str = "revision-listening-publish-results";
+const DELIVERY_IDENTITY_CHANGED_EVENT: &str = "project-delivery-identity-changed";
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -39,6 +39,13 @@ struct RevisionListeningPublishEvent {
     project_id: String,
     revision: u32,
     results: Vec<ListeningPublishResult>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProjectDeliveryIdentityChangedEvent {
+    client_id: String,
+    project_id: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -104,12 +111,20 @@ struct MonitorData {
     last_scan_error: Option<String>,
     revision_diagnostic: Option<DiagnosticOutcome>,
     delivered_diagnostic: Option<DiagnosticOutcome>,
+    delivery_identity: Option<Option<DeliveryIdentity>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct DiagnosticOutcome {
     signature: String,
     failed: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DeliveryIdentity {
+    document_id: String,
+    created_at: String,
+    revision: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -148,6 +163,7 @@ pub(crate) fn set_revision_listening_project(
         monitor.last_scan_error = None;
         monitor.revision_diagnostic = None;
         monitor.delivered_diagnostic = None;
+        monitor.delivery_identity = None;
         diagnostic_log::info(
             "listening_monitor_project_changed",
             &[
@@ -354,12 +370,21 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
     record_reconciliation_diagnostics(&state, generation, "revision", &active, revision, &results)?;
 
     if generation_is_current(&state, generation)? {
-        let delivered_results = super::delivered_listening::reconcile_delivered_listening(
+        let delivery_identity_changed = observe_delivery_identity(
+            &state,
+            generation,
+            project.delivery.as_ref().map(|delivery| DeliveryIdentity {
+                document_id: delivery.document_id.clone(),
+                created_at: delivery.created_at.clone(),
+                revision: delivery.revision,
+            }),
+        )?;
+        let delivered_results = super::delivered_listening::reconcile_resolved_project(
             app,
-            DeliveryStatusRequest {
-                client_id: active.client_id.clone(),
-                project_id: active.project_id.clone(),
-            },
+            &project_directory,
+            &active.client_id,
+            &active.project_id,
+            project.delivery.as_ref(),
             "monitor",
         )?;
         record_reconciliation_diagnostics(
@@ -373,8 +398,40 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
                 .map_or(revision, |delivery| delivery.revision),
             &delivered_results,
         )?;
+        if delivery_identity_changed && generation_is_current(&state, generation)? {
+            let _ = app.emit(
+                DELIVERY_IDENTITY_CHANGED_EVENT,
+                ProjectDeliveryIdentityChangedEvent {
+                    client_id: active.client_id,
+                    project_id: active.project_id,
+                },
+            );
+        }
     }
     Ok(())
+}
+
+fn observe_delivery_identity(
+    state: &RevisionListeningMonitorState,
+    generation: u64,
+    next: Option<DeliveryIdentity>,
+) -> Result<bool, String> {
+    let mut monitor = state
+        .inner
+        .lock()
+        .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
+    if monitor.generation != generation {
+        return Ok(false);
+    }
+    let Some(previous) = monitor.delivery_identity.as_ref() else {
+        monitor.delivery_identity = Some(next);
+        return Ok(false);
+    };
+    if previous == &next {
+        return Ok(false);
+    }
+    monitor.delivery_identity = Some(next);
+    Ok(true)
 }
 
 fn diagnostic_signature(results: &[ListeningPublishResult]) -> String {
@@ -996,6 +1053,27 @@ mod tests {
             update_diagnostic_outcome(&mut previous, &[]),
             DiagnosticTransition::Unchanged
         );
+    }
+
+    #[test]
+    fn delivery_identity_refreshes_only_after_the_observed_identity_changes() {
+        let state = state_with_project();
+        let first = DeliveryIdentity {
+            document_id: "delivery-1".into(),
+            created_at: "2026-09-03T10:00:00Z".into(),
+            revision: 1,
+        };
+        let second = DeliveryIdentity {
+            document_id: "delivery-2".into(),
+            created_at: "2026-09-03T11:00:00Z".into(),
+            revision: 2,
+        };
+
+        assert!(!observe_delivery_identity(&state, 1, Some(first.clone())).expect("baseline"));
+        assert!(!observe_delivery_identity(&state, 1, Some(first)).expect("unchanged"));
+        assert!(observe_delivery_identity(&state, 1, Some(second)).expect("changed"));
+        assert!(observe_delivery_identity(&state, 1, None).expect("removed"));
+        assert!(!observe_delivery_identity(&state, 1, None).expect("still absent"));
     }
 
     #[test]

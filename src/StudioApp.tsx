@@ -11,6 +11,7 @@ import { AppDialogs } from "./app/AppDialogs";
 import { RouteHeader } from "./components/RouteHeader";
 import { rememberRecentProject } from "./dashboard/recentProject";
 import { startListeningPublishCapture } from "./listening/listeningPublishEvents";
+import { startDeliveryIdentityChangeCapture } from "./listening/deliveryIdentityEvents";
 import { ProjectBreadcrumbs } from "./project/ProjectBreadcrumbs";
 import { ProjectOverviewHeader } from "./project/ProjectOverviewHeader";
 import type { PrimaryRoute } from "./ui/routes";
@@ -81,6 +82,21 @@ export default function StudioApp() {
       stop?.();
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    let stop: (() => void) | null = null;
+    void startDeliveryIdentityChangeCapture(() => {
+      void resources.refreshWorkspace(false);
+    }).then((cleanup) => {
+      if (active) stop = cleanup;
+      else cleanup();
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+      stop?.();
+    };
+  }, [resources.refreshWorkspace]);
 
   useEffect(() => {
     if (resources.workspace.status !== "ready") return;

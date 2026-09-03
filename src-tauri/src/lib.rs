@@ -419,6 +419,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(audio_preview::NativeAudioPreviewState::default())
         .manage(commands::RevisionListeningMonitorState::default())
+        .manage(commands::DeliveredListeningReconciliationState::default())
         .setup(|app| {
             commands::start_revision_listening_monitor(app.handle().clone());
             Ok(())
