@@ -99,6 +99,52 @@ Because regions are project-level definitions, a reused project region is automa
 
 If song structure changes enough that a project region no longer refers to the same musical material in a revision, that revision is incompatible with that comparison and should be excluded rather than trying to translate the region.
 
+## Comparison setup and workspace UI
+
+Blind Revision Comparison uses a two-step UI flow:
+
+1. **New Comparison setup** from Revision History.
+2. **Dedicated full-screen Comparison workspace** for listening, looping, switching, ranking, notes, and completion.
+
+### New Comparison setup
+
+Before the blind session begins, the setup flow:
+
+- lets the user select 2+ eligible normal revisions;
+- checks playback eligibility and timeline compatibility constraints that Studio can validate;
+- performs loudness analysis when Loudness Match is enabled;
+- allows the user to use existing project regions and optionally define/edit project regions;
+- shows Loudness Match as `On` by default;
+- excludes candidates that cannot be played or analyzed when loudness matching is required, unless the user deliberately disables Loudness Match for the entire session;
+- freezes the candidate set when the comparison starts.
+
+Once the comparison begins, candidates cannot be added or removed. Blind identities are randomized once and remain stable for the session.
+
+### Comparison workspace
+
+The comparison itself is a dedicated full-screen workspace rather than a modal.
+
+The workspace contains, from top to bottom:
+
+- session header with candidate count, active region, Loudness Match state, and Cancel;
+- project region strip/tabs, including immutable Full Song plus custom regions and Add/Edit Region controls;
+- active-region bounds and Loop control;
+- central playback transport and seek/progress control;
+- large blind candidate switching controls (`A`, `B`, `C`, `D`, ...), with keyboard shortcuts where practical;
+- a clear neutral indication of the currently playing blind candidate;
+- per-region ranking editor for all blind candidates;
+- optional per-candidate notes directly associated with each ranked blind candidate;
+- region-completion status showing which required regions are complete;
+- a single terminal **Reveal & Complete Comparison** action.
+
+The screen must not expose revision identity clues while blind, including filenames, revision numbers, dates, lifecycle state, LUFS measurements, or applied gains.
+
+Candidate switching is one of the primary interactions and should be visually prominent. Switching candidates preserves playback position within the active project region as closely as practical.
+
+The workspace should use the same project region identities throughout the session. Selecting a region immediately updates the playback/loop bounds.
+
+If the user cancels/exits after entering ranking work, Studio warns that unfinished rankings and notes will be discarded. Nothing is persisted unless the session is completed.
+
 ## Playback behavior
 
 Playback controls should make rapid N-way switching first-class. Switching candidates should preserve approximately the same playback position within the active project region. Sample-accurate DAW switching is not required.
@@ -173,6 +219,14 @@ Competition ranking preserves the actual ordinal positions occupied by tied cand
 
 Notes are **per candidate within a region** and remain optional.
 
+### Ranking interaction
+
+The comparison workspace should present ranking as an ordered candidate list rather than requiring users to type numeric ranks directly.
+
+The preferred interaction is sortable/drag-and-drop ordering with explicit tie controls. Studio derives competition-rank numbers from the resulting order/tie structure, so users do not need to manually construct sequences such as `1, 2, 2, 4`.
+
+An explicit region-level **No Preference** action is available and means all candidates are tied for that region. This still produces a complete explicit ranking for every candidate.
+
 ### Completed ranking immutability and deletion
 
 Once a comparison ranking is completed, its ranking values cannot be edited.
@@ -239,9 +293,32 @@ will not be changed.
 
 Individual completed-session Delete actions remain with the corresponding session and are distinct from clearing all ranking history.
 
-## Reveal workflow
+## Reveal workflow and results screen
 
-Blind identities remain hidden until **Reveal Results**. Reveal maps blind identities to revisions and preserves the original mapping in history.
+Blind identities remain hidden until **Reveal & Complete Comparison**. Reveal is the completion transition: the session is finalized/persisted, then blind identities are mapped back to real revisions.
+
+The reveal/results screen replaces the blind workspace with a dedicated results state rather than appearing as a temporary modal.
+
+The results screen shows:
+
+- completed-session timestamp, candidate count, and Loudness Match state;
+- **Revealed Identities** mapping each blind identity to its real revision;
+- Full Song ranking for the completed session;
+- clear distinction between the **session winner** and the **cumulative Full Song leader/TOP**;
+- contributing completed-comparison count for cumulative standings;
+- regional result tabs using the same project-region identities/order used during comparison;
+- each region's revealed ranking and the per-candidate notes entered while blind;
+- post-reveal loudness-analysis details when Loudness Match was enabled, including measured integrated loudness and applied fixed gain;
+- cumulative regional standings/evidence where available;
+- explicit navigation/actions such as Back to Revision History, Open preferred revision, and Approve preferred revision.
+
+The reveal screen must preserve the original blind identity alongside the real revision, for example `Revision 06 (B)`, so the user can connect the revealed revision to what they heard during the comparison.
+
+Session-level and cumulative results must never be conflated. A revision may win the just-completed session without being the cumulative TOP revision.
+
+Ranking values are read-only on the reveal screen. If the user wants to re-evaluate after reveal, they create a new comparison session.
+
+The same results component should be reusable when opening a completed historical comparison from Comparison Results; historical sessions are displayed read-only.
 
 A completed/revealed ranking is immutable. Any subsequent re-evaluation is a new blind session rather than an edit to the revealed result.
 
@@ -253,6 +330,8 @@ Locked behavior:
 
 - an unfinished comparison is not persisted for later resume;
 - the user must complete all required region rankings before the session can be finalized;
+- **Reveal & Complete Comparison** remains disabled until every required region has a complete explicit ranking;
+- completing the comparison warns that the ranking will be finalized and revision identities revealed;
 - if the user cancels, leaves the comparison, closes Studio, or otherwise exits before completion, the unfinished ranking work is discarded;
 - unfinished work does not appear in comparison history;
 - unfinished work does not affect cumulative Full Song or regional standings;
@@ -294,7 +373,7 @@ The Comparison Results view includes:
 - contributing completed-comparison count/evidence context;
 - cumulative standings for each project region;
 - completed comparison-session history;
-- drill-down into an individual completed session;
+- drill-down into an individual completed session using the same read-only results component as the reveal screen;
 - per-session candidates, region rankings, and per-candidate notes;
 - post-reveal loudness-match details for the session when applicable;
 - delete action for an individual completed comparison session;
@@ -374,19 +453,27 @@ The current baseline includes:
 - automatic Full Song region;
 - timestamped custom regions;
 - overlapping regions;
-- **playback-only Full Song integrated-loudness matching enabled by default**;
-- **quietest candidate as attenuation-only loudness reference**;
-- **one fixed loudness-match gain per candidate across every region**;
+- dedicated New Comparison setup plus full-screen blind Comparison workspace;
+- frozen candidate set once the blind session starts;
+- playback-only Full Song integrated-loudness matching enabled by default;
+- quietest candidate as attenuation-only loudness reference;
+- one fixed loudness-match gain per candidate across every region;
 - no limiting, compression, gain boosting, normalized render, or source-audio modification for loudness matching;
 - day-1 active-region looping;
 - randomized fixed blind mapping;
 - identity-safe blind playback;
 - fast position-synchronized N-way switching;
+- large A/B/C/... candidate switching controls with keyboard shortcuts where practical;
 - complete per-region ranking of every candidate;
+- sortable ranking interaction with explicit tie controls;
 - competition ranking for ties (`1, 2, 2, 4`);
-- ties and explicit no-preference outcomes;
+- region-level No Preference as an explicit all-candidates-tied outcome;
 - per-candidate notes within each region;
-- explicit Reveal Results;
+- region-completion status;
+- explicit Reveal & Complete Comparison terminal action;
+- dedicated reveal/results screen showing real revision plus original blind identity;
+- explicit separation of session winner from cumulative TOP;
+- reusable read-only results component for historical completed sessions;
 - single-session completion; unfinished comparisons are not saved or resumable;
 - immutable completed rankings;
 - new session for any re-ranking/re-evaluation;
