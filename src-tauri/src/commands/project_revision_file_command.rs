@@ -396,28 +396,17 @@ fn filesystem_error(action: &str, error: std::io::Error) -> String {
 mod tests {
     use super::*;
     use std::thread;
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use std::time::Duration;
 
-    struct TestDirectory(PathBuf);
+    struct TestDirectory(tempfile::TempDir);
 
     impl TestDirectory {
         fn new() -> Self {
-            let unique = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("clock")
-                .as_nanos();
-            let path = std::env::temp_dir().join(format!(
-                "jl-mixing-studio-revision-files-{}-{unique}",
-                std::process::id()
-            ));
-            fs::create_dir_all(&path).expect("create test directory");
-            Self(path)
+            Self(tempfile::tempdir().expect("create test directory"))
         }
-    }
 
-    impl Drop for TestDirectory {
-        fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
+        fn path(&self) -> &Path {
+            self.0.path()
         }
     }
 
@@ -436,13 +425,13 @@ mod tests {
     #[test]
     fn renames_and_deletes_regular_revision_files_without_touching_notes() {
         let project = TestDirectory::new();
-        let revision = project.0.join("04_Revisions/Revision_01");
+        let revision = project.path().join("04_Revisions/Revision_01");
         fs::create_dir_all(&revision).expect("create revision");
         fs::write(revision.join("Revision_Notes.md"), b"notes").expect("write notes");
         fs::write(revision.join("Mix.WAV"), b"audio").expect("write mix");
 
         let renamed = rename_managed_revision_file(
-            &project.0,
+            project.path(),
             "04_Revisions/Revision_01/Mix.WAV",
             "Mix Print",
         )
@@ -451,7 +440,7 @@ mod tests {
         assert!(revision.join("Mix Print.WAV").is_file());
 
         let deleted =
-            delete_managed_revision_file(&project.0, &renamed).expect("delete revision file");
+            delete_managed_revision_file(project.path(), &renamed).expect("delete revision file");
         assert_eq!(deleted, renamed);
         assert!(!revision.join("Mix Print.WAV").exists());
         assert!(revision.join("Revision_Notes.md").is_file());
@@ -460,12 +449,12 @@ mod tests {
     #[test]
     fn listening_selection_ignores_variants_and_matches_extension_case_insensitively() {
         let revision = TestDirectory::new();
-        fs::write(revision.0.join("Primary.MP3"), b"primary").expect("write primary");
-        let variants = revision.0.join("Variants");
+        fs::write(revision.path().join("Primary.MP3"), b"primary").expect("write primary");
+        let variants = revision.path().join("Variants");
         fs::create_dir(&variants).expect("create variants");
         fs::write(variants.join("Instrumental.mp3"), b"variant").expect("write variant");
 
-        let selected = select_listening_source(&revision.0, ".mp3", None)
+        let selected = select_listening_source(revision.path(), ".mp3", None)
             .expect("select")
             .expect("matching source");
         assert_eq!(selected.file_name, "Primary.MP3");
@@ -475,11 +464,11 @@ mod tests {
     #[test]
     fn listening_selection_chooses_newest_root_level_candidate() {
         let revision = TestDirectory::new();
-        fs::write(revision.0.join("Older.wav"), b"old").expect("write older");
+        fs::write(revision.path().join("Older.wav"), b"old").expect("write older");
         thread::sleep(Duration::from_millis(20));
-        fs::write(revision.0.join("Newer.WAV"), b"new").expect("write newer");
+        fs::write(revision.path().join("Newer.WAV"), b"new").expect("write newer");
 
-        let selected = select_listening_source(&revision.0, "wav", None)
+        let selected = select_listening_source(revision.path(), "wav", None)
             .expect("select")
             .expect("matching source");
         assert_eq!(selected.file_name, "Newer.WAV");
@@ -488,11 +477,11 @@ mod tests {
     #[test]
     fn listening_selection_ignores_appledouble_candidates() {
         let revision = TestDirectory::new();
-        fs::write(revision.0.join("Primary.mp3"), b"primary").expect("write primary");
+        fs::write(revision.path().join("Primary.mp3"), b"primary").expect("write primary");
         thread::sleep(Duration::from_millis(20));
-        fs::write(revision.0.join("._Primary.mp3"), b"metadata").expect("write AppleDouble");
+        fs::write(revision.path().join("._Primary.mp3"), b"metadata").expect("write AppleDouble");
 
-        let selected = select_listening_source(&revision.0, "mp3", None)
+        let selected = select_listening_source(revision.path(), "mp3", None)
             .expect("select")
             .expect("matching source");
         assert_eq!(selected.file_name, "Primary.mp3");
@@ -501,11 +490,11 @@ mod tests {
     #[test]
     fn listening_selection_rejects_os_metadata_override() {
         let revision = TestDirectory::new();
-        let override_path = revision.0.join("._Primary.mp3");
+        let override_path = revision.path().join("._Primary.mp3");
         fs::write(&override_path, b"metadata").expect("write AppleDouble");
 
         assert!(
-            select_listening_source(&revision.0, "mp3", Some(&override_path))
+            select_listening_source(revision.path(), "mp3", Some(&override_path))
                 .expect("select")
                 .is_none()
         );
@@ -514,8 +503,8 @@ mod tests {
     #[test]
     fn listening_selection_returns_none_when_format_is_missing() {
         let revision = TestDirectory::new();
-        fs::write(revision.0.join("Primary.wav"), b"primary").expect("write primary");
-        assert!(select_listening_source(&revision.0, "mp3", None)
+        fs::write(revision.path().join("Primary.wav"), b"primary").expect("write primary");
+        assert!(select_listening_source(revision.path(), "mp3", None)
             .expect("select")
             .is_none());
     }
@@ -523,13 +512,13 @@ mod tests {
     #[test]
     fn listening_selection_honors_explicit_variant_override() {
         let revision = TestDirectory::new();
-        fs::write(revision.0.join("Primary.mp3"), b"primary").expect("write primary");
-        let variants = revision.0.join("Variants");
+        fs::write(revision.path().join("Primary.mp3"), b"primary").expect("write primary");
+        let variants = revision.path().join("Variants");
         fs::create_dir(&variants).expect("create variants");
         let override_path = variants.join("Instrumental.mp3");
         fs::write(&override_path, b"variant").expect("write variant");
 
-        let selected = select_listening_source(&revision.0, "mp3", Some(&override_path))
+        let selected = select_listening_source(revision.path(), "mp3", Some(&override_path))
             .expect("select")
             .expect("override source");
         assert_eq!(selected.path, override_path);
@@ -539,12 +528,12 @@ mod tests {
     #[test]
     fn listening_override_format_mismatch_never_falls_back() {
         let revision = TestDirectory::new();
-        fs::write(revision.0.join("Primary.mp3"), b"primary").expect("write primary");
-        let override_path = revision.0.join("Primary.wav");
+        fs::write(revision.path().join("Primary.mp3"), b"primary").expect("write primary");
+        let override_path = revision.path().join("Primary.wav");
         fs::write(&override_path, b"wave").expect("write override");
 
         assert!(
-            select_listening_source(&revision.0, "mp3", Some(&override_path))
+            select_listening_source(revision.path(), "mp3", Some(&override_path))
                 .expect("select")
                 .is_none()
         );
@@ -557,13 +546,14 @@ mod tests {
 
         let project = TestDirectory::new();
         let outside = TestDirectory::new();
-        let revision = project.0.join("04_Revisions/Revision_01");
+        let revision = project.path().join("04_Revisions/Revision_01");
         fs::create_dir_all(&revision).expect("create revision");
-        fs::write(outside.0.join("outside.wav"), b"audio").expect("write outside");
-        symlink(outside.0.join("outside.wav"), revision.join("link.wav")).expect("create symlink");
+        fs::write(outside.path().join("outside.wav"), b"audio").expect("write outside");
+        symlink(outside.path().join("outside.wav"), revision.join("link.wav"))
+            .expect("create symlink");
 
         assert!(
-            resolve_revision_regular_file(&project.0, "04_Revisions/Revision_01/link.wav",)
+            resolve_revision_regular_file(project.path(), "04_Revisions/Revision_01/link.wav",)
                 .is_err()
         );
     }
