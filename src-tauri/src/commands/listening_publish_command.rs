@@ -519,6 +519,34 @@ mod tests {
     }
 
     #[test]
+    fn missing_configuration_defaults_to_disabled_listening_for_existing_studios() {
+        let temp = tempdir().expect("tempdir");
+        let loaded = read_configuration(&temp.path().join(LISTENING_CONFIG_FILE))
+            .expect("missing configuration");
+        assert_eq!(loaded, ListeningConfiguration::default());
+        assert!(loaded.destinations.is_empty());
+    }
+
+    #[test]
+    fn configuration_without_destination_names_remains_compatible() {
+        let temp = tempdir().expect("tempdir");
+        let config_path = temp.path().join(LISTENING_CONFIG_FILE);
+        let destination_path = temp.path().join("listening");
+        fs::write(
+            &config_path,
+            format!(
+                r#"{{"version":1,"destinations":[{{"id":"legacy","enabled":true,"publishClass":"revisionListening","path":{},"requiredExtension":"MP3","metadataPolicy":"off","artworkPolicy":"off"}}]}}"#,
+                serde_json::to_string(&destination_path.to_string_lossy()).expect("path")
+            ),
+        )
+        .expect("legacy configuration");
+
+        let loaded = read_configuration(&config_path).expect("compatible configuration");
+        assert_eq!(loaded.destinations[0].name, "MP3 Destination");
+        assert_eq!(loaded.destinations[0].required_extension, "mp3");
+    }
+
+    #[test]
     fn configuration_defaults_missing_destination_name() {
         let temp = tempdir().expect("tempdir");
         let mut unnamed = destination(temp.path(), "mp3");

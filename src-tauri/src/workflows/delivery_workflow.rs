@@ -166,7 +166,7 @@ pub(crate) fn run_delivery_operation(
             };
         }
     }
-    if !verify_after_creation || !result.ok || result.code != DeliveryOperationCode::Created {
+    if !delivery_result_allows_listening_publish(verify_after_creation, &result) {
         return result;
     }
     let Some(expected) = result.delivery.as_ref() else {
@@ -187,6 +187,13 @@ pub(crate) fn run_delivery_operation(
     // listening results event and must never turn a successful delivery package into a failure.
     publish_after_delivery_creation(app, &project_directory, expected);
     result
+}
+
+fn delivery_result_allows_listening_publish(
+    verify_after_creation: bool,
+    result: &DeliveryOperationResult,
+) -> bool {
+    verify_after_creation && result.ok && result.code == DeliveryOperationCode::Created
 }
 
 pub(crate) fn verify_delivery_artifacts(

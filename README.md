@@ -78,6 +78,7 @@ Existing valid v1.1+ workspaces remain compatible with Studio 2.1. No workspace 
 
 ## Project documents
 
+- [Listening Phase 1 configuration and behavior](docs/LISTENING.md)
 - [Studio 2.1 release notes and installation](docs/RELEASE_NOTES_V2.1.md)
 - [Development status](docs/development-status.md)
 - [Studio 2.0 / Automation 2.0 coordinated acceptance](docs/v2.0-coordinated-acceptance.md)
