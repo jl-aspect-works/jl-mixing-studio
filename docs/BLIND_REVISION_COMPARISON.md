@@ -149,9 +149,10 @@ Locked behavior:
 - no candidate may remain unranked in a completed region;
 - ties are allowed and count as explicit rankings for every tied candidate;
 - if the user has no preference between candidates, that outcome must still be represented explicitly rather than by leaving candidates unranked;
-- a comparison session cannot be completed while any required region contains an unranked candidate.
+- a comparison session cannot be completed while any required region contains an unranked candidate;
+- ties use **competition ranking**: for example `1, 2, 2, 4`, not dense ranking such as `1, 2, 2, 3`.
 
-The exact numeric rank sequence used after a tie (for example competition vs dense ranking) remains an implementation detail, but it must produce deterministic numeric placements suitable for cumulative arithmetic-mean calculation.
+Competition ranking preserves the actual ordinal positions occupied by tied candidates and avoids artificially improving the numeric placement of candidates below a tie. Those numeric placements are the values used by the cumulative arithmetic-mean calculation.
 
 ### Notes
 
@@ -344,6 +345,7 @@ The current baseline includes:
 - identity-safe blind playback;
 - fast position-synchronized N-way switching;
 - complete per-region ranking of every candidate;
+- **competition ranking for ties (`1, 2, 2, 4`)**;
 - ties and explicit no-preference outcomes;
 - **per-candidate notes within each region**;
 - explicit Reveal Results;
@@ -368,10 +370,9 @@ Potential follow-ons include level matching, formal ABX statistical testing, wav
 
 ## Open decisions before implementation
 
-1. **Tie rank numbering** — exact numeric placement convention after ties, which must remain deterministic for cumulative averaging.
-2. **Revision History detail density** — exact TOP and comparison-results overlay interactions/layout.
-3. **Persistence schema/location** — concrete storage format, location, migration, and versioning.
-4. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
+1. **Revision History detail density** — exact TOP and comparison-results overlay interactions/layout.
+2. **Persistence schema/location** — concrete storage format, location, migration, and versioning.
+3. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
 
 ## Relationship to existing Studio functionality
 
