@@ -1,6 +1,6 @@
 # Blind Revision Comparison
 
-Status: Design locked for issue #370, with open implementation decisions called out explicitly below.
+Status: Design locked for issue #370.
 
 ## Purpose
 
@@ -24,16 +24,17 @@ This feature evaluates revisions; it does not replace revision approval, deliver
 8. **Immutable completed rankings** — once completed, ranking results are not edited. A changed judgment is represented by a new blind comparison; an obsolete ranking/session may be explicitly deleted.
 9. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
 10. **Simple cumulative ranking** — cumulative standings use straightforward placement averaging. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
-11. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
-12. **Non-destructive to audio** — comparison never alters revision source audio.
-13. **Approval remains explicit** — ranking a revision first never automatically approves it.
-14. **Revision History remains useful at a glance** — the normal history shows only a compact cumulative TOP signal, with full comparison details available on demand.
+11. **Loudness-bias reduction** — blind comparison uses playback-only loudness matching by default so louder revisions do not receive an unfair perceptual advantage.
+12. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
+13. **Non-destructive to audio** — comparison never alters revision source audio.
+14. **Approval remains explicit** — ranking a revision first never automatically approves it.
+15. **Revision History remains useful at a glance** — the normal history shows only a compact cumulative TOP signal, with full comparison details available on demand.
 
 ## Comparison Session
 
 A Comparison Session is one blind evaluation exercise for one project.
 
-A session contains two or more candidate revisions, a stable blind identity mapping such as A/B/C/D, one or more project evaluation regions, ranking results for each region, optional per-candidate notes, timestamps, and the original blind mapping after results are revealed.
+A session contains two or more candidate revisions, a stable blind identity mapping such as A/B/C/D, one or more project evaluation regions, ranking results for each region, optional per-candidate notes, timestamps, the session loudness-match setting, measured candidate loudness/application gain data, and the original blind mapping after results are revealed.
 
 The underlying model must not assume a maximum of two candidates. The UI should be optimized for roughly **3–5 revisions**, while allowing larger sets without an architectural redesign.
 
@@ -57,7 +58,7 @@ Locked behavior:
 
 ## Blind identities
 
-Each selected revision is assigned a blind identity (`A`, `B`, `C`, `D`, ...). The mapping is randomized once when the comparison session is created and remains fixed for that session. Before reveal, Studio must avoid exposing revision number, filename, dates, lifecycle status, or other identifying metadata.
+Each selected revision is assigned a blind identity (`A`, `B`, `C`, `D`, ...). The mapping is randomized once when the comparison session is created and remains fixed for that session. Before reveal, Studio must avoid exposing revision number, filename, dates, lifecycle status, loudness-analysis values, applied gain, or other identifying metadata.
 
 ## Project evaluation regions
 
@@ -108,6 +109,33 @@ Blind comparison uses the existing Studio playback support matrix. Any audio for
 
 If Studio cannot play the audio selected for a revision, that revision is not eligible for the comparison and must be excluded before the blind session begins.
 
+### Loudness matching — baseline requirement
+
+**Playback-only loudness matching is required in the first release and is enabled by default for Blind Revision Comparison.**
+
+The purpose is to reduce loudness bias without changing the source audio or altering the musical dynamics being judged.
+
+Locked behavior:
+
+- analyze each candidate's **Full Song integrated loudness** before the comparison begins;
+- choose the **quietest candidate as the reference level**;
+- calculate one fixed playback gain for every other candidate so matching requires attenuation only;
+- the quietest candidate receives `0 dB` matching gain and louder candidates receive negative gain values;
+- apply the same fixed per-candidate gain for Full Song and every timestamped project region;
+- do **not** calculate separate region-specific gains, because section-level gain changes would alter the revision's internal dynamics and could bias the comparison;
+- do **not** add gain above the original candidate level as part of matching;
+- do **not** introduce limiting, compression, normalization renders, or other dynamics processing;
+- source audio and published/listening copies are never modified by comparison loudness matching;
+- the normal playback/output-device volume remains available independently of the comparison matching gain.
+
+The comparison UI exposes a simple **Loudness Match** control. It defaults to `On` and may be deliberately turned `Off` before/during a session to compare original levels.
+
+While identities are blind, Studio must not expose candidate LUFS measurements or applied gain values because they could become identity clues. After Reveal Results, completed-session detail may show the measured integrated loudness and fixed gain applied to each candidate for transparency/reproducibility.
+
+If any selected candidate cannot be analyzed reliably for loudness matching, Studio must not silently mix matched and unmatched candidates in the same session. The user must either exclude the unanalyzable candidate or deliberately run the entire session with Loudness Match `Off`.
+
+The session history persists whether loudness matching was enabled and, when enabled, the measured loudness and applied fixed gain for each candidate so the listening conditions of the completed ranking remain explainable.
+
 ### Region looping — baseline requirement
 
 **Active-region looping is required in the first release of Blind Revision Comparison.**
@@ -121,10 +149,6 @@ Expected behavior:
 - reaching the region end returns playback to the region start and continues;
 - changing the active region updates the loop bounds;
 - stopping/disabling loop returns playback to normal comparison playback behavior.
-
-## Level matching
-
-Original-level playback is the baseline. Level-matched playback is a potential follow-on using playback-only gain; source audio is never modified.
 
 ## Ranking model
 
@@ -184,8 +208,9 @@ The user must be able to **clear the cumulative rankings for a project**. This m
 
 Locked behavior:
 
-- provide a project-level **Clear Ranking History** action;
-- clearing removes all saved Blind Revision Comparison sessions/results for that project, including Full Song rankings, regional rankings, blind mappings, and comparison notes associated with those sessions;
+- provide a project-level **Clear Ranking History** action inside the **Comparison Results** view;
+- place it as a secondary/destructive action rather than a prominent primary action;
+- clearing removes all saved Blind Revision Comparison sessions/results for that project, including Full Song rankings, regional rankings, blind mappings, comparison notes, and persisted session loudness-match analysis/application data;
 - project region definitions themselves are not ranking history and are not deleted simply because rankings are cleared;
 - cumulative Full Song standings are removed;
 - cumulative regional standings are removed;
@@ -193,7 +218,26 @@ Locked behavior:
 - comparison-history drill-down becomes empty for that project;
 - future comparisons begin a new cumulative ranking history from zero;
 - revision audio, revision lifecycle state, approval/delivery status, project region definitions, and all other non-comparison-history project data are unaffected;
-- the action requires an explicit destructive confirmation because the deleted comparison history cannot be reconstructed afterward.
+- the action requires a normal destructive confirmation dialog; typed/project-name confirmation is not required.
+
+Confirmation copy:
+
+```text
+Clear all blind comparison ranking history for this project?
+
+This permanently removes all completed comparison sessions, rankings,
+blind mappings, and comparison notes for this project.
+
+Cumulative Full Song and regional standings will be cleared, and the TOP
+indicator will be removed.
+
+Revision audio, approval/delivery status, and project region definitions
+will not be changed.
+
+[Cancel] [Clear Ranking History]
+```
+
+Individual completed-session Delete actions remain with the corresponding session and are distinct from clearing all ranking history.
 
 ## Reveal workflow
 
@@ -216,7 +260,7 @@ Locked behavior:
 
 ## Comparison history
 
-Completed comparison sessions are historical records and do not overwrite one another during normal use. History preserves date/time, candidates, blind mapping, Full Song result, regional results, and per-candidate notes.
+Completed comparison sessions are historical records and do not overwrite one another during normal use. History preserves date/time, candidates, blind mapping, Full Song result, regional results, per-candidate notes, whether Loudness Match was enabled, and the associated candidate loudness/gain data when matching was used.
 
 Individual completed sessions can be explicitly deleted. **Clear Ranking History** deletes all of them at once.
 
@@ -252,7 +296,9 @@ The Comparison Results view includes:
 - completed comparison-session history;
 - drill-down into an individual completed session;
 - per-session candidates, region rankings, and per-candidate notes;
-- delete action for an individual completed comparison session.
+- post-reveal loudness-match details for the session when applicable;
+- delete action for an individual completed comparison session;
+- secondary/destructive **Clear Ranking History** action.
 
 The default Revision History intentionally does **not** show cumulative rank numbers on every revision row.
 
@@ -274,7 +320,7 @@ Locked behavior:
 
 - use a dedicated project-local JSON document for comparison metadata, for example `Studio/comparison.json` under the project; if implementation identifies an existing project-local Studio metadata directory convention, use that convention while keeping comparison data in its own document;
 - the document has its own explicit schema/version, beginning with a version such as `1.0`;
-- persist project region definitions, stable region IDs, completed comparison sessions, stable session IDs, candidate revision references, blind mappings, region rankings, per-candidate notes, and completion timestamps;
+- persist project region definitions, stable region IDs, completed comparison sessions, stable session IDs, candidate revision references, blind mappings, region rankings, per-candidate notes, completion timestamps, session Loudness Match state, and per-candidate loudness/application gain values when matching was enabled;
 - use Studio's stable revision identifiers/references rather than filenames as the primary candidate identity;
 - use stable UUID-style IDs for project regions and completed sessions so renaming a region does not break historical references;
 - do **not** persist cumulative standings as authoritative state;
@@ -298,6 +344,10 @@ Project Comparison Document
     Stable ID
     Candidates (stable normal revision references)
     Blind Mapping
+    Loudness Match
+      Enabled
+      Candidate Integrated Loudness
+      Candidate Applied Gain
     Region Results
       Project Region ID
       Rankings
@@ -324,6 +374,10 @@ The current baseline includes:
 - automatic Full Song region;
 - timestamped custom regions;
 - overlapping regions;
+- **playback-only Full Song integrated-loudness matching enabled by default**;
+- **quietest candidate as attenuation-only loudness reference**;
+- **one fixed loudness-match gain per candidate across every region**;
+- no limiting, compression, gain boosting, normalized render, or source-audio modification for loudness matching;
 - day-1 active-region looping;
 - randomized fixed blind mapping;
 - identity-safe blind playback;
@@ -344,22 +398,22 @@ The current baseline includes:
 - lightweight Revision History TOP pill only on the cumulative leader;
 - dedicated Comparison Results view with full standings/history/session drill-down;
 - project-timeline regional summary/timeline/table visualization;
-- **project-local versioned comparison JSON with derived-only cumulative standings**;
-- project-level destructive **Clear Ranking History** action that deletes all comparison history for the project;
+- project-local versioned comparison JSON with derived-only cumulative standings;
+- Comparison Results secondary/destructive Clear Ranking History action with explicit confirmation;
 - no automatic approval;
 - no source-audio modification.
 
 ## Follow-on / potential future scope
 
-Potential follow-ons include level matching, formal ABX statistical testing, waveform region editing, weighted regional scoring, multiple listeners, exported/shared reports, client-facing remote blind evaluation, cloud/web-hosted comparison, sample-accurate switching, automatic structural alignment, and sophisticated statistical ranking algorithms.
+Potential follow-ons include formal ABX statistical testing, waveform region editing, weighted regional scoring, multiple listeners, exported/shared reports, client-facing remote blind evaluation, cloud/web-hosted comparison, sample-accurate switching, automatic structural alignment, and sophisticated statistical ranking algorithms.
 
-## Open decisions before implementation
+## Design status
 
-1. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
+All currently identified product/design decisions required before implementation are locked. Implementation may still uncover technical details that require refinement, but those should preserve the behavior and principles defined here unless explicitly revisited.
 
 ## Relationship to existing Studio functionality
 
-This feature builds on Studio v2.1 cross-platform playback. Blind Revision Comparison adds multiple-candidate orchestration, synchronized switching, project-level region control/looping, complete per-region ranking persistence, cumulative ranking derivation, result visualization, Revision History integration, individual-session deletion, and explicit comparison-history clearing.
+This feature builds on Studio v2.1 cross-platform playback. Blind Revision Comparison adds multiple-candidate orchestration, synchronized switching, playback-only loudness matching, project-level region control/looping, complete per-region ranking persistence, cumulative ranking derivation, result visualization, Revision History integration, individual-session deletion, and explicit comparison-history clearing.
 
 It should not duplicate or fork core playback unless technical investigation shows the provider contract must be extended.
 
