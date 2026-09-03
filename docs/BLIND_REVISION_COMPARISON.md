@@ -122,32 +122,33 @@ Within a session, Full Song is the session's overall result. Across sessions, cu
 
 The user must be able to **clear the cumulative rankings for a project**.
 
-This is not merely clearing a cache or hiding the derived standings. It is a project-level reset of the Blind Revision Comparison history.
+This means removing the project's blind-comparison ranking history itself, not merely clearing a cache, hiding results, or recalculating derived standings.
 
 Locked behavior:
 
-- provide a project-level action such as **Clear Ranking History**;
-- clearing removes all stored blind-comparison ranking/session history for that project that contributes to comparison results;
+- provide a project-level **Clear Ranking History** action;
+- clearing removes all saved Blind Revision Comparison sessions/results for that project, including Full Song rankings, regional rankings, blind mappings, and comparison notes associated with those sessions;
 - cumulative Full Song standings are removed;
 - cumulative regional standings are removed;
 - the Revision History `TOP` indicator disappears;
 - comparison-history drill-down becomes empty for that project;
-- future comparisons start a new cumulative history from zero;
-- revision audio, revision lifecycle state, approval/delivery status, and other project data are not affected;
+- future comparisons begin a new cumulative history from zero;
+- revision audio, revision lifecycle state, approval/delivery status, and all non-comparison project data are unaffected;
 - the action requires an explicit destructive confirmation because the deleted comparison history cannot be reconstructed afterward.
 
-Suggested confirmation meaning:
+Suggested confirmation:
 
 ```text
 Clear all blind comparison ranking history for this project?
 
-This will remove all saved comparison sessions and cumulative rankings.
+This will permanently remove all saved comparison sessions, rankings,
+regional results, and comparison notes for this project.
 Revision audio and project status will not be changed.
 
 [Cancel] [Clear Ranking History]
 ```
 
-Implementation should avoid ambiguous wording such as `Reset Rankings` if that could imply only recalculating or clearing the derived aggregate while retaining the underlying sessions.
+Implementation should avoid ambiguous wording such as `Reset Rankings` if that could imply only clearing the derived aggregate while retaining underlying comparison sessions.
 
 ## Notes
 
@@ -247,7 +248,7 @@ The current baseline includes:
 - Revision History cumulative TOP indicator;
 - detailed comparison-results view and session drill-down;
 - regional summary/timeline/table visualization;
-- project-level destructive **Clear Ranking History** action;
+- project-level destructive **Clear Ranking History** action that deletes all comparison history for the project;
 - no automatic approval;
 - no source-audio modification.
 
