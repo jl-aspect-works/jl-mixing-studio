@@ -107,9 +107,10 @@ pub(crate) fn reconcile_delivered_listening(
     trigger: &str,
 ) -> Result<Vec<ListeningPublishResult>, String> {
     let state = app.state::<DeliveredListeningReconciliationState>();
-    let _guard = state.inner.lock().map_err(|_| {
-        "Delivered Listening reconciliation state is unavailable".to_owned()
-    })?;
+    let _guard = state
+        .inner
+        .lock()
+        .map_err(|_| "Delivered Listening reconciliation state is unavailable".to_owned())?;
     reconcile_delivered_listening_unlocked(app, request, trigger)
 }
 
@@ -160,9 +161,10 @@ pub(crate) fn reconcile_resolved_project(
     trigger: &str,
 ) -> Result<Vec<ListeningPublishResult>, String> {
     let state = app.state::<DeliveredListeningReconciliationState>();
-    let _guard = state.inner.lock().map_err(|_| {
-        "Delivered Listening reconciliation state is unavailable".to_owned()
-    })?;
+    let _guard = state
+        .inner
+        .lock()
+        .map_err(|_| "Delivered Listening reconciliation state is unavailable".to_owned())?;
     reconcile_resolved_project_unlocked(
         app,
         project_directory,
