@@ -20,21 +20,24 @@ This feature evaluates revisions; it does not replace revision approval, deliver
 4. **Compatible timeline required** — compared revisions must share a sufficiently compatible song structure/timeline for common timestamped regions to remain meaningful. Studio does not attempt structural alignment or region remapping.
 5. **Normal revisions only** — Blind Revision Comparison candidates are normal project revisions, not Variants or other alternate candidate types.
 6. **Complete rankings** — every candidate must receive an explicit rank in every completed region; partial rankings are not valid completed results.
-7. **Immutable completed rankings** — once completed, ranking results are not edited. A changed judgment is represented by a new blind comparison; an obsolete ranking/session may be explicitly deleted.
-8. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
-9. **Simple cumulative ranking** — cumulative standings use straightforward placement averaging. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
-10. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
-11. **Non-destructive to audio** — comparison never alters revision source audio.
-12. **Approval remains explicit** — ranking a revision first never automatically approves it.
-13. **Revision History remains useful at a glance** — the normal history shows a compact cumulative top-result signal, with richer comparison data available on demand.
+7. **Single-session completion** — a blind comparison must be completed in the active session. Unfinished comparisons are not persisted or resumable.
+8. **Immutable completed rankings** — once completed, ranking results are not edited. A changed judgment is represented by a new blind comparison; an obsolete ranking/session may be explicitly deleted.
+9. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
+10. **Simple cumulative ranking** — cumulative standings use straightforward placement averaging. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
+11. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
+12. **Non-destructive to audio** — comparison never alters revision source audio.
+13. **Approval remains explicit** — ranking a revision first never automatically approves it.
+14. **Revision History remains useful at a glance** — the normal history shows a compact cumulative top-result signal, with richer comparison data available on demand.
 
 ## Comparison Session
 
-A Comparison Session is one persistent blind evaluation exercise for one project.
+A Comparison Session is one blind evaluation exercise for one project.
 
-A session contains two or more candidate revisions, a stable blind identity mapping such as A/B/C/D, one or more project evaluation regions, ranking results for each region, optional per-candidate notes, timestamps/state, and the original blind mapping after results are revealed.
+A session contains two or more candidate revisions, a stable blind identity mapping such as A/B/C/D, one or more project evaluation regions, ranking results for each region, optional per-candidate notes, timestamps, and the original blind mapping after results are revealed.
 
 The underlying model must not assume a maximum of two candidates. The UI should be optimized for roughly **3–5 revisions**, while allowing larger sets without an architectural redesign.
+
+A comparison session must be completed in one active session. Studio does not persist an unfinished blind comparison for later resume. Only a completed session becomes historical comparison data and contributes to cumulative rankings.
 
 ## Candidate selection and timeline compatibility
 
@@ -227,13 +230,20 @@ Blind identities remain hidden until **Reveal Results**. Reveal maps blind ident
 
 A completed/revealed ranking is immutable. Any subsequent re-evaluation is a new blind session rather than an edit to the revealed result.
 
-## Comparison session state and resume behavior
+## Comparison session completion and persistence
 
-The only remaining lifecycle question is whether an **unfinished** comparison should be persistently resumable.
+Blind comparison is a **single-session workflow**.
 
-The product need behind this question is practical rather than conceptual: a user may define candidates/regions and rank some regions, then leave Studio before finishing. We need to decide whether that work is saved as an in-progress session or discarded unless completed.
+Locked behavior:
 
-We do **not** need a complex public state machine merely for its own sake. If resumable sessions are supported, a simple model such as `In Progress` and `Completed/Revealed` should be sufficient unless implementation exposes another real need.
+- an unfinished comparison is not persisted for later resume;
+- the user must complete all required region rankings before the session can be finalized;
+- if the user cancels, leaves the comparison, closes Studio, or otherwise exits before completion, the unfinished ranking work is discarded;
+- unfinished work does not appear in comparison history;
+- unfinished work does not affect cumulative Full Song or regional standings;
+- only a completed session is persisted as comparison history and contributes to cumulative results.
+
+This avoids a separate draft/in-progress session lifecycle and keeps comparison history limited to completed blind evaluations.
 
 ## Comparison history
 
@@ -294,14 +304,14 @@ Project Comparison Data
     Full Song
     Named/Timestamped Regions
 
-  Comparison Sessions
+  Completed Comparison Sessions
     Candidates (normal revision references)
     Blind Mapping
     Region Results
       Project Region reference
       Rankings
       Per-candidate Notes
-    State / timestamps
+    Completed timestamp
 
 Derived Cumulative Standings
   Full Song
@@ -337,6 +347,7 @@ The current baseline includes:
 - ties and explicit no-preference outcomes;
 - **per-candidate notes within each region**;
 - explicit Reveal Results;
+- **single-session completion; unfinished comparisons are not saved or resumable**;
 - immutable completed rankings;
 - new session for any re-ranking/re-evaluation;
 - explicit deletion of an individual completed comparison/session;
@@ -358,10 +369,9 @@ Potential follow-ons include level matching, formal ABX statistical testing, wav
 ## Open decisions before implementation
 
 1. **Tie rank numbering** — exact numeric placement convention after ties, which must remain deterministic for cumulative averaging.
-2. **Unfinished-session persistence** — whether an in-progress comparison is automatically saved/resumable or must be completed in one session.
-3. **Revision History detail density** — exact TOP and comparison-results overlay interactions/layout.
-4. **Persistence schema/location** — concrete storage format, location, migration, and versioning.
-5. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
+2. **Revision History detail density** — exact TOP and comparison-results overlay interactions/layout.
+3. **Persistence schema/location** — concrete storage format, location, migration, and versioning.
+4. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
 
 ## Relationship to existing Studio functionality
 
