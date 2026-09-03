@@ -293,18 +293,14 @@ fn record_scan_timing(
     Ok(())
 }
 
-fn update_scan_timing_state(
-    monitor: &mut MonitorData,
-    duration: Duration,
-) -> DiagnosticTransition {
+fn update_scan_timing_state(monitor: &mut MonitorData, duration: Duration) -> DiagnosticTransition {
     if monitor.last_scan_slow {
         monitor.consecutive_slow_scans = 0;
         if duration > SLOW_SCAN_RECOVERY_THRESHOLD {
             monitor.consecutive_recovered_scans = 0;
             return DiagnosticTransition::Unchanged;
         }
-        monitor.consecutive_recovered_scans =
-            monitor.consecutive_recovered_scans.saturating_add(1);
+        monitor.consecutive_recovered_scans = monitor.consecutive_recovered_scans.saturating_add(1);
         if monitor.consecutive_recovered_scans < SCAN_TIMING_TRANSITION_SAMPLES {
             return DiagnosticTransition::Unchanged;
         }
