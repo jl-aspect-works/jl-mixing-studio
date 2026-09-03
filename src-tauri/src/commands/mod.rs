@@ -8,10 +8,10 @@ mod folders;
 mod listening_artwork;
 #[path = "listening_metadata.rs"]
 mod listening_metadata;
-#[path = "listening_publish_command.rs"]
-mod listening_publish_base;
 #[path = "listening_publish_with_metadata.rs"]
 mod listening_publish;
+#[path = "listening_publish_command.rs"]
+mod listening_publish_base;
 #[path = "native_audio_preview_command.rs"]
 mod native_audio_preview;
 mod os_metadata;

@@ -1206,7 +1206,8 @@ mod tests {
         fs::create_dir_all(&delivery).expect("delivery");
         fs::create_dir_all(&first_revision).expect("first revision");
         fs::create_dir_all(&second_revision).expect("second revision");
-        fs::write(first_revision.join("First.mp3"), b"revision one").expect("first revision source");
+        fs::write(first_revision.join("First.mp3"), b"revision one")
+            .expect("first revision source");
         fs::write(delivery.join("First.mp3"), b"delivery one").expect("first delivery source");
 
         let listening = project.path().join("listening");
@@ -1220,7 +1221,11 @@ mod tests {
             "client-a",
             "blue-sky",
             1,
-            &[delivered_with_source("First.mp3", "First.mp3", MAIN_MIX_TYPE)],
+            &[delivered_with_source(
+                "First.mp3",
+                "First.mp3",
+                MAIN_MIX_TYPE,
+            )],
             "test",
             &[destination.clone()],
         );
@@ -1232,21 +1237,27 @@ mod tests {
         fs::remove_file(delivery.join("First.mp3")).expect("remove first delivery");
         fs::write(second_revision.join("Second.mp3"), b"revision two")
             .expect("second revision source");
-        fs::write(delivery.join("Second.mp3"), b"delivery two")
-            .expect("second delivery source");
+        fs::write(delivery.join("Second.mp3"), b"delivery two").expect("second delivery source");
         let second = reconcile_from_delivery_package_to_destinations(
             project.path(),
             "client-a",
             "blue-sky",
             2,
-            &[delivered_with_source("Second.mp3", "Second.mp3", MAIN_MIX_TYPE)],
+            &[delivered_with_source(
+                "Second.mp3",
+                "Second.mp3",
+                MAIN_MIX_TYPE,
+            )],
             "test",
             &[destination],
         );
 
         assert_eq!(second.len(), 1);
         assert_eq!(second[0].status, ListeningPublishStatus::Published);
-        assert_eq!(fs::read(&target).expect("replacement target"), b"delivery two");
+        assert_eq!(
+            fs::read(&target).expect("replacement target"),
+            b"delivery two"
+        );
         assert_eq!(
             fs::read_dir(target.parent().expect("client folder"))
                 .expect("client folder entries")
