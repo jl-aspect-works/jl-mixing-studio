@@ -49,3 +49,30 @@ fn clean_reconciliation_accepts_automation_fixed_empty_stems_directory() {
         None
     ));
 }
+
+#[test]
+fn delivered_listening_is_eligible_only_after_successful_delivery_creation() {
+    let failed = DeliveryOperationResult {
+        ok: false,
+        code: DeliveryOperationCode::Failed,
+        message: "failed".into(),
+        delivery: None,
+    };
+    let preview = DeliveryOperationResult {
+        ok: true,
+        code: DeliveryOperationCode::Ready,
+        message: "ready".into(),
+        delivery: Some(clean_delivery_without_stems()),
+    };
+    let created = DeliveryOperationResult {
+        ok: true,
+        code: DeliveryOperationCode::Created,
+        message: "created".into(),
+        delivery: Some(clean_delivery_without_stems()),
+    };
+
+    assert!(!delivery_result_allows_listening_publish(true, &failed));
+    assert!(!delivery_result_allows_listening_publish(false, &preview));
+    assert!(!delivery_result_allows_listening_publish(false, &created));
+    assert!(delivery_result_allows_listening_publish(true, &created));
+}

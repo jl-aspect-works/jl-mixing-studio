@@ -46,7 +46,7 @@ const CLASS_DEFINITIONS: ListeningClassDefinition[] = [
   {
     publishClass: "deliveredListening",
     title: "Delivered Listening",
-    description: "Publishes the artifact used by a successful delivery package build and supports manual republishing when recovery is needed.",
+    description: "Publishes the artifact used by a successful delivery and automatically repairs missing or stale listening copies.",
     addLabel: "Add Delivered destination",
   },
 ];

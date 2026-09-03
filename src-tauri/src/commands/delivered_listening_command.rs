@@ -293,6 +293,14 @@ fn publish_from_delivery_preview(
         return Vec::new();
     }
 
+    publish_from_delivery_preview_to_destinations(project_directory, preview, &destinations)
+}
+
+fn publish_from_delivery_preview_to_destinations(
+    project_directory: &Path,
+    preview: &DeliveryCreationPreview,
+    destinations: &[ListeningDestination],
+) -> Vec<ListeningPublishResult> {
     let revision_root = project_directory
         .join("04_Revisions")
         .join(format!("Revision_{:02}", preview.approved_revision));
@@ -331,6 +339,26 @@ fn reconcile_from_delivery_package(
         return Vec::new();
     }
 
+    reconcile_from_delivery_package_to_destinations(
+        project_directory,
+        client_id,
+        project_id,
+        revision,
+        files,
+        trigger,
+        &destinations,
+    )
+}
+
+fn reconcile_from_delivery_package_to_destinations(
+    project_directory: &Path,
+    client_id: &str,
+    project_id: &str,
+    revision: u32,
+    files: &[crate::models::DeliveryFile],
+    trigger: &str,
+    destinations: &[ListeningDestination],
+) -> Vec<ListeningPublishResult> {
     let revision_root = project_directory
         .join("04_Revisions")
         .join(format!("Revision_{revision:02}"));
@@ -842,6 +870,8 @@ fn selection_for_file(
 mod tests {
     use super::*;
     use crate::models::{ListeningArtworkPolicy, ListeningMetadataPolicy};
+    use std::thread;
+    use std::time::Duration;
     use tempfile::tempdir;
 
     fn planned(source_name: &str, deliverable_type: &str) -> PlannedDeliveryFile {
@@ -1109,5 +1139,132 @@ mod tests {
         let repaired = publish().expect("repair publish");
         assert_eq!(repaired.status, ListeningPublishStatus::Published);
         assert!(target.is_file());
+    }
+
+    #[test]
+    fn successful_delivery_publishes_to_multiple_destinations_and_ignores_missing_formats() {
+        let project = tempdir().expect("project");
+        let revision = project.path().join("04_Revisions/Revision_01");
+        fs::create_dir_all(&revision).expect("revision");
+        fs::write(revision.join("Final.mp3"), b"approved mix").expect("source");
+
+        let first_root = project.path().join("plex");
+        let second_root = project.path().join("synced");
+        let missing_root = project.path().join("wav-only");
+        for root in [&first_root, &second_root, &missing_root] {
+            fs::create_dir(root).expect("destination");
+        }
+        let mut first = destination(&first_root, "mp3");
+        first.id = "plex-mp3".into();
+        first.metadata_policy = ListeningMetadataPolicy::Off;
+        first.artwork_policy = ListeningArtworkPolicy::Off;
+        let mut second = destination(&second_root, "mp3");
+        second.id = "synced-mp3".into();
+        second.metadata_policy = ListeningMetadataPolicy::Off;
+        second.artwork_policy = ListeningArtworkPolicy::Off;
+        let mut missing = destination(&missing_root, "wav");
+        missing.id = "missing-wav".into();
+        missing.metadata_policy = ListeningMetadataPolicy::Off;
+        missing.artwork_policy = ListeningArtworkPolicy::Off;
+        let preview = DeliveryCreationPreview {
+            client_id: "client-a".into(),
+            project_id: "blue-sky".into(),
+            project_name: "Blue Sky".into(),
+            current_revision: 1,
+            approved_revision: 1,
+            delivered_revision: Some(1),
+            delivery_method: "Download".into(),
+            replacement_mode: crate::models::DeliveryReplacementMode::Default,
+            create_zip: false,
+            zip_name: None,
+            selected: vec![planned("Final.mp3", MAIN_MIX_TYPE)],
+            excluded: Vec::new(),
+            deletions: Vec::new(),
+        };
+
+        let results = publish_from_delivery_preview_to_destinations(
+            project.path(),
+            &preview,
+            &[first, second, missing],
+        );
+
+        assert_eq!(results.len(), 2);
+        assert!(results
+            .iter()
+            .all(|result| result.status == ListeningPublishStatus::Published));
+        assert!(first_root.join("client-a/blue-sky.mp3").is_file());
+        assert!(second_root.join("client-a/blue-sky.mp3").is_file());
+        assert!(!missing_root.join("client-a/blue-sky.wav").exists());
+    }
+
+    #[test]
+    fn redelivery_replaces_the_stable_target_with_the_new_delivery_source() {
+        let project = tempdir().expect("project");
+        let delivery = project.path().join("05_Final_Delivery");
+        let first_revision = project.path().join("04_Revisions/Revision_01");
+        let second_revision = project.path().join("04_Revisions/Revision_02");
+        fs::create_dir_all(&delivery).expect("delivery");
+        fs::create_dir_all(&first_revision).expect("first revision");
+        fs::create_dir_all(&second_revision).expect("second revision");
+        fs::write(first_revision.join("First.mp3"), b"revision one")
+            .expect("first revision source");
+        fs::write(delivery.join("First.mp3"), b"delivery one").expect("first delivery source");
+
+        let listening = project.path().join("listening");
+        fs::create_dir(&listening).expect("listening");
+        let mut destination = destination(&listening, "mp3");
+        destination.metadata_policy = ListeningMetadataPolicy::Off;
+        destination.artwork_policy = ListeningArtworkPolicy::Off;
+
+        let first = reconcile_from_delivery_package_to_destinations(
+            project.path(),
+            "client-a",
+            "blue-sky",
+            1,
+            &[delivered_with_source(
+                "First.mp3",
+                "First.mp3",
+                MAIN_MIX_TYPE,
+            )],
+            "test",
+            &[destination.clone()],
+        );
+        assert_eq!(first.len(), 1);
+        let target = listening.join("client-a/blue-sky.mp3");
+        assert_eq!(fs::read(&target).expect("first target"), b"delivery one");
+
+        thread::sleep(Duration::from_millis(20));
+        fs::remove_file(delivery.join("First.mp3")).expect("remove first delivery");
+        fs::write(second_revision.join("Second.mp3"), b"revision two")
+            .expect("second revision source");
+        fs::write(delivery.join("Second.mp3"), b"delivery two").expect("second delivery source");
+        let second = reconcile_from_delivery_package_to_destinations(
+            project.path(),
+            "client-a",
+            "blue-sky",
+            2,
+            &[delivered_with_source(
+                "Second.mp3",
+                "Second.mp3",
+                MAIN_MIX_TYPE,
+            )],
+            "test",
+            &[destination],
+        );
+
+        assert_eq!(second.len(), 1);
+        assert_eq!(second[0].status, ListeningPublishStatus::Published);
+        assert_eq!(
+            fs::read(&target).expect("replacement target"),
+            b"delivery two"
+        );
+        assert_eq!(
+            fs::read_dir(target.parent().expect("client folder"))
+                .expect("client folder entries")
+                .filter_map(Result::ok)
+                .filter(|entry| entry.path().extension().is_some_and(|value| value == "mp3"))
+                .count(),
+            1
+        );
     }
 }
