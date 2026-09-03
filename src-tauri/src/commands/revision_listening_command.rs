@@ -17,6 +17,9 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{Emitter, Manager};
 
 const SCAN_INTERVAL: Duration = Duration::from_secs(1);
+const SLOW_SCAN_THRESHOLD: Duration = Duration::from_millis(1_500);
+const SLOW_SCAN_RECOVERY_THRESHOLD: Duration = Duration::from_millis(1_250);
+const SCAN_TIMING_TRANSITION_SAMPLES: u8 = 3;
 const STABLE_SAMPLE_COUNT: u8 = 3;
 const FAILED_RETRY_SCANS: u64 = 10;
 const PUBLISH_EVENT: &str = "revision-listening-publish-results";
@@ -107,6 +110,8 @@ struct MonitorData {
     destinations: HashMap<String, DestinationObservation>,
     last_scan_error: Option<String>,
     last_scan_slow: bool,
+    consecutive_slow_scans: u8,
+    consecutive_recovered_scans: u8,
     revision_diagnostic: Option<DiagnosticOutcome>,
     delivered_diagnostic: Option<DiagnosticOutcome>,
     delivery_identity: Option<Option<DeliveryIdentity>>,
@@ -160,6 +165,8 @@ pub(crate) fn set_revision_listening_project(
         monitor.destinations.clear();
         monitor.last_scan_error = None;
         monitor.last_scan_slow = false;
+        monitor.consecutive_slow_scans = 0;
+        monitor.consecutive_recovered_scans = 0;
         monitor.revision_diagnostic = None;
         monitor.delivered_diagnostic = None;
         monitor.delivery_identity = None;
@@ -259,7 +266,7 @@ fn record_scan_recovery(app: &tauri::AppHandle) {
 fn record_scan_timing(
     state: &RevisionListeningMonitorState,
     generation: u64,
-    slow: bool,
+    duration: Duration,
     fields: &[(&str, serde_json::Value)],
 ) -> Result<(), String> {
     let transition = {
@@ -267,14 +274,16 @@ fn record_scan_timing(
             .inner
             .lock()
             .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
-        if monitor.generation != generation || monitor.last_scan_slow == slow {
+        if monitor.generation != generation {
             return Ok(());
         }
-        monitor.last_scan_slow = slow;
-        slow
+        update_scan_timing_state(&mut monitor, duration)
     };
+    if transition == DiagnosticTransition::Unchanged {
+        return Ok(());
+    }
     diagnostic_log::info(
-        if transition {
+        if transition == DiagnosticTransition::Changed {
             "listening_monitor_scan_slow"
         } else {
             "listening_monitor_scan_speed_recovered"
@@ -282,6 +291,40 @@ fn record_scan_timing(
         fields,
     );
     Ok(())
+}
+
+fn update_scan_timing_state(
+    monitor: &mut MonitorData,
+    duration: Duration,
+) -> DiagnosticTransition {
+    if monitor.last_scan_slow {
+        monitor.consecutive_slow_scans = 0;
+        if duration > SLOW_SCAN_RECOVERY_THRESHOLD {
+            monitor.consecutive_recovered_scans = 0;
+            return DiagnosticTransition::Unchanged;
+        }
+        monitor.consecutive_recovered_scans =
+            monitor.consecutive_recovered_scans.saturating_add(1);
+        if monitor.consecutive_recovered_scans < SCAN_TIMING_TRANSITION_SAMPLES {
+            return DiagnosticTransition::Unchanged;
+        }
+        monitor.last_scan_slow = false;
+        monitor.consecutive_recovered_scans = 0;
+        return DiagnosticTransition::Recovered;
+    }
+
+    monitor.consecutive_recovered_scans = 0;
+    if duration < SLOW_SCAN_THRESHOLD {
+        monitor.consecutive_slow_scans = 0;
+        return DiagnosticTransition::Unchanged;
+    }
+    monitor.consecutive_slow_scans = monitor.consecutive_slow_scans.saturating_add(1);
+    if monitor.consecutive_slow_scans < SCAN_TIMING_TRANSITION_SAMPLES {
+        return DiagnosticTransition::Unchanged;
+    }
+    monitor.last_scan_slow = true;
+    monitor.consecutive_slow_scans = 0;
+    DiagnosticTransition::Changed
 }
 
 fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
@@ -462,12 +505,7 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         ),
     ];
     diagnostic_log::debug("listening_monitor_scan_completed", &timing_fields);
-    record_scan_timing(
-        &state,
-        generation,
-        total_duration >= SCAN_INTERVAL,
-        &timing_fields,
-    )?;
+    record_scan_timing(&state, generation, total_duration, &timing_fields)?;
     Ok(())
 }
 
@@ -1113,6 +1151,62 @@ mod tests {
             update_diagnostic_outcome(&mut previous, &[]),
             DiagnosticTransition::Unchanged
         );
+    }
+
+    #[test]
+    fn marginal_scan_jitter_does_not_create_info_transitions() {
+        let mut monitor = MonitorData::default();
+        let observed_durations = [1_087, 979, 1_012, 998, 1_104, 965];
+
+        for duration_ms in observed_durations {
+            assert_eq!(
+                update_scan_timing_state(&mut monitor, Duration::from_millis(duration_ms)),
+                DiagnosticTransition::Unchanged
+            );
+        }
+
+        assert!(!monitor.last_scan_slow);
+        assert_eq!(monitor.consecutive_slow_scans, 0);
+        assert_eq!(monitor.consecutive_recovered_scans, 0);
+    }
+
+    #[test]
+    fn scan_timing_requires_sustained_slow_and_recovered_samples() {
+        let mut monitor = MonitorData::default();
+
+        for _ in 0..2 {
+            assert_eq!(
+                update_scan_timing_state(&mut monitor, Duration::from_millis(1_600)),
+                DiagnosticTransition::Unchanged
+            );
+        }
+        assert_eq!(
+            update_scan_timing_state(&mut monitor, Duration::from_millis(1_600)),
+            DiagnosticTransition::Changed
+        );
+        assert!(monitor.last_scan_slow);
+
+        for _ in 0..2 {
+            assert_eq!(
+                update_scan_timing_state(&mut monitor, Duration::from_millis(1_200)),
+                DiagnosticTransition::Unchanged
+            );
+        }
+        assert_eq!(
+            update_scan_timing_state(&mut monitor, Duration::from_millis(1_300)),
+            DiagnosticTransition::Unchanged
+        );
+        for _ in 0..2 {
+            assert_eq!(
+                update_scan_timing_state(&mut monitor, Duration::from_millis(1_200)),
+                DiagnosticTransition::Unchanged
+            );
+        }
+        assert_eq!(
+            update_scan_timing_state(&mut monitor, Duration::from_millis(1_200)),
+            DiagnosticTransition::Recovered
+        );
+        assert!(!monitor.last_scan_slow);
     }
 
     #[test]
