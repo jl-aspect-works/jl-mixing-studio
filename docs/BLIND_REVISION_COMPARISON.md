@@ -27,7 +27,7 @@ This feature evaluates revisions; it does not replace revision approval, deliver
 11. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
 12. **Non-destructive to audio** — comparison never alters revision source audio.
 13. **Approval remains explicit** — ranking a revision first never automatically approves it.
-14. **Revision History remains useful at a glance** — the normal history shows a compact cumulative top-result signal, with richer comparison data available on demand.
+14. **Revision History remains useful at a glance** — the normal history shows only a compact cumulative TOP signal, with full comparison details available on demand.
 
 ## Comparison Session
 
@@ -258,28 +258,37 @@ Individual completed sessions can be explicitly deleted. **Clear Ranking History
 
 ### Default Revision History: TOP indicator
 
-The revision currently first in cumulative Full Song standings receives a lightweight **TOP** indicator. A pill is preferred over an unlabeled star.
+The normal Revision History remains primarily a lifecycle/status view. Comparison results should not add cumulative rank numbers or comparison detail to every revision row.
 
-Rules:
+The revision currently first in cumulative Full Song standings receives a lightweight **TOP** pill.
 
+Locked behavior:
+
+- only the cumulative Full Song leader displays TOP;
 - TOP is based on cumulative Full Song results;
 - new comparisons contribute rather than replace prior evidence;
 - when cumulative rankings tie, only the higher-numbered revision receives TOP;
 - TOP is informational only and does not mean Approved, Current, Delivered, or client-preferred;
-- evidence strength should be discoverable, e.g. `Cumulative #1 - 4 blind comparisons`;
+- clicking the TOP pill opens the detailed **Comparison Results** view;
 - deleting a contributing session recomputes TOP as needed;
 - after ranking history is cleared, no revision displays TOP until new completed comparison results exist.
 
-### Detailed comparison overlay / mode
+### Comparison Results view
 
-Revision History should provide **Show Comparison Results** or equivalent, showing cumulative Full Song rank, project-region rankings, contributing session count, regional evidence, recent session result, history links, and drill-down.
+Revision History provides one dedicated **Comparison Results** action/entry point in addition to the clickable TOP pill.
 
-The two-level information model is locked:
+The Comparison Results view is the full project comparison surface and should include:
 
-1. Default history — lightweight cumulative TOP result.
-2. Comparison-results view — cumulative rankings, evidence context, session history, and drill-down.
+- cumulative Full Song standings for all ranked revisions;
+- each revision's cumulative Full Song average placement;
+- contributing completed-comparison count/evidence context;
+- cumulative standings for each project region;
+- completed comparison-session history;
+- drill-down into an individual completed session;
+- per-session candidates, region rankings, and per-candidate notes;
+- delete action for an individual completed comparison session.
 
-The exact visual density and interactions remain an implementation/UI design item.
+The default Revision History intentionally does **not** show cumulative rank numbers on every revision row. Detailed comparison information stays one click away so lifecycle/status information remains easy to scan.
 
 ## Regional result visualization
 
@@ -336,7 +345,7 @@ The current baseline includes:
 - exclusion of unplayable candidates before session start;
 - all Studio-supported revision playback formats;
 - no automatic structural alignment or region remapping;
-- **project-level comparison timeline and regions**;
+- project-level comparison timeline and regions;
 - automatic Full Song region;
 - timestamped custom regions;
 - overlapping regions;
@@ -345,11 +354,11 @@ The current baseline includes:
 - identity-safe blind playback;
 - fast position-synchronized N-way switching;
 - complete per-region ranking of every candidate;
-- **competition ranking for ties (`1, 2, 2, 4`)**;
+- competition ranking for ties (`1, 2, 2, 4`);
 - ties and explicit no-preference outcomes;
-- **per-candidate notes within each region**;
+- per-candidate notes within each region;
 - explicit Reveal Results;
-- **single-session completion; unfinished comparisons are not saved or resumable**;
+- single-session completion; unfinished comparisons are not saved or resumable;
 - immutable completed rankings;
 - new session for any re-ranking/re-evaluation;
 - explicit deletion of an individual completed comparison/session;
@@ -357,8 +366,8 @@ The current baseline includes:
 - higher revision number as cumulative-placement tiebreaker;
 - cumulative project-region standings;
 - evidence/provenance and contributing-session counts;
-- Revision History cumulative TOP indicator;
-- detailed comparison-results view and session drill-down;
+- lightweight Revision History TOP pill only on the cumulative leader;
+- dedicated Comparison Results view with full standings/history/session drill-down;
 - project-timeline regional summary/timeline/table visualization;
 - project-level destructive **Clear Ranking History** action that deletes all comparison history for the project;
 - no automatic approval;
@@ -370,9 +379,8 @@ Potential follow-ons include level matching, formal ABX statistical testing, wav
 
 ## Open decisions before implementation
 
-1. **Revision History detail density** — exact TOP and comparison-results overlay interactions/layout.
-2. **Persistence schema/location** — concrete storage format, location, migration, and versioning.
-3. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
+1. **Persistence schema/location** — concrete storage format, location, migration, and versioning.
+2. **Clear-history confirmation UX** — exact placement and wording of the destructive project-level action.
 
 ## Relationship to existing Studio functionality
 
