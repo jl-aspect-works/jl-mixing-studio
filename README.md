@@ -9,7 +9,7 @@ JL Mixing Studio is an open-source desktop application for small-studio and home
 
 ## Current release line
 
-JL Mixing Studio 2.1 supports JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated 2.1 release-candidate provider is JL Mixing Automation `2.1.0-rc.2`.
+JL Mixing Studio 2.2 release candidates support JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated `2.2.0-rc.1` provider is JL Mixing Automation `2.2.0-rc.1`.
 
 Studio and Automation remain independently versioned products. Compatibility is determined from Automation API version, advertised capabilities, and supported metadata schemas rather than requiring matching application version numbers.
 
@@ -37,7 +37,7 @@ Project navigation:
 6. Delivery
 7. Files
 
-Studio 2.1 includes editable Studio/client/project metadata, managed Client Files import and Audio Prep reset, revision Close/Reopen and Unapprove controls, structured Client Files and Audio Prep validation, reference management, revision history/notes/approval, authoritative Delivery workflows, controlled project Files navigation, configurable/shared workspaces, Tasks/Activities search/filter, and a broad responsiveness pass.
+Studio 2.2 includes the complete 2.1 Daily Workflow plus delivery-note capture, filesystem-based Revision and Delivered Listening, managed listening-copy metadata/artwork, continuous self-healing, contextual publish activity, and an active-project monitor performance pass.
 
 Embedded audio preview is available on macOS and Windows for supported project audio. Windows 2.1 playback uses the native desktop provider; Studio broadly recognizes audio file types for preview eligibility and lets the bundled decoder determine whether the actual file contents are playable.
 
@@ -57,15 +57,15 @@ JL Mixing Automation remains authoritative for workflow semantics, metadata, val
 
 Official Studio packages are currently unsigned. macOS Gatekeeper and Windows SmartScreen may therefore display unknown-developer/publisher warnings.
 
-Before bypassing an operating-system warning, verify the installer against the published `SHA256SUMS.txt`. See the [Studio 2.1 release notes](docs/RELEASE_NOTES_V2.1.md) for exact Intel/Apple Silicon/Windows installer selection and the required Gatekeeper/SmartScreen steps.
+Before bypassing an operating-system warning, verify the installer against the published `SHA256SUMS.txt`. See the [Studio 2.2 release-candidate notes](docs/RELEASE_NOTES_V2.2.md) for exact Intel/Apple Silicon/Windows installer selection and the required Gatekeeper/SmartScreen steps.
 
-JL Mixing Automation is installed separately. See the Automation repository and its 2.1 release notes for its platform-specific installation steps, including the recursive macOS quarantine workaround required by its bundled Python runtime.
+JL Mixing Automation is installed separately. Use the coordinated Automation `2.2.0-rc.1` provider for Studio `2.2.0-rc.1` acceptance and follow its platform-specific installation steps, including the recursive macOS quarantine workaround required by its bundled Python runtime.
 
 ## Workspace compatibility
 
 Studio supports local paths, NAS paths, and OS-mounted synchronized/cloud paths as ordinary filesystems. An explicitly configured workspace remains authoritative if temporarily unavailable; Studio does not silently reinterpret it as the default workspace.
 
-Existing valid v1.1+ workspaces remain compatible with Studio 2.1. No workspace migration is introduced by this release.
+Existing valid v1.1+ workspaces remain compatible with Studio 2.2. No workspace migration is introduced by this release.
 
 ## Safety boundaries
 
