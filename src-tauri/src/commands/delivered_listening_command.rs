@@ -6,19 +6,25 @@ use super::{
 };
 use crate::diagnostic_log;
 use crate::models::{
-    DeliveryCreationPreview, DeliveryStatusRequest, ListeningDestination, ListeningPublishClass,
-    ListeningPublishResult, ListeningPublishStatus, PlannedDeliveryFile,
+    DeliveryCreationPreview, DeliveryStatusRequest, DeliverySummary, ListeningDestination,
+    ListeningPublishClass, ListeningPublishResult, ListeningPublishStatus, PlannedDeliveryFile,
 };
 use crate::workspace;
 use serde::Serialize;
 use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 use std::time::UNIX_EPOCH;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 const PUBLISH_EVENT: &str = "delivered-listening-publish-results";
 const MAIN_MIX_TYPE: &str = "main_mix";
+
+#[derive(Default)]
+pub(crate) struct DeliveredListeningReconciliationState {
+    inner: Mutex<()>,
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,6 +40,22 @@ pub(crate) fn publish_after_delivery_creation(
     project_directory: &Path,
     preview: &DeliveryCreationPreview,
 ) {
+    let state = app.state::<DeliveredListeningReconciliationState>();
+    let Ok(_guard) = state.inner.lock() else {
+        diagnostic_log::error(
+            "delivered_listening_reconciliation_failed",
+            &[
+                ("trigger", json!("delivery_creation")),
+                ("client_id", json!(preview.client_id.as_str())),
+                ("project_id", json!(preview.project_id.as_str())),
+                (
+                    "message",
+                    json!("Delivered Listening reconciliation state is unavailable"),
+                ),
+            ],
+        );
+        return;
+    };
     let results = publish_from_delivery_preview(app, project_directory, preview);
     log_direct_results(
         "delivery_creation",
@@ -84,6 +106,18 @@ pub(crate) fn reconcile_delivered_listening(
     request: DeliveryStatusRequest,
     trigger: &str,
 ) -> Result<Vec<ListeningPublishResult>, String> {
+    let state = app.state::<DeliveredListeningReconciliationState>();
+    let _guard = state.inner.lock().map_err(|_| {
+        "Delivered Listening reconciliation state is unavailable".to_owned()
+    })?;
+    reconcile_delivered_listening_unlocked(app, request, trigger)
+}
+
+fn reconcile_delivered_listening_unlocked(
+    app: &tauri::AppHandle,
+    request: DeliveryStatusRequest,
+    trigger: &str,
+) -> Result<Vec<ListeningPublishResult>, String> {
     let workspace_root = resolve_workspace_root(app)?;
     let snapshot = workspace::discover_workspace_at(&workspace_root);
     let client_id = request.client_id.trim();
@@ -103,26 +137,66 @@ pub(crate) fn reconcile_delivered_listening(
     );
     let project = super::find_project_summary(&snapshot, client_id, project_id)
         .ok_or_else(|| "The selected project is no longer available".to_owned())?;
-    let Some(delivery) = project.delivery.as_ref() else {
+    let project_directory =
+        validated_project_directory(&workspace_root, &snapshot, client_id, project_id).ok_or_else(
+            || "The selected project directory could not be resolved safely".to_owned(),
+        )?;
+    reconcile_resolved_project_unlocked(
+        app,
+        &project_directory,
+        client_id,
+        project_id,
+        project.delivery.as_ref(),
+        trigger,
+    )
+}
+
+pub(crate) fn reconcile_resolved_project(
+    app: &tauri::AppHandle,
+    project_directory: &Path,
+    client_id: &str,
+    project_id: &str,
+    delivery: Option<&DeliverySummary>,
+    trigger: &str,
+) -> Result<Vec<ListeningPublishResult>, String> {
+    let state = app.state::<DeliveredListeningReconciliationState>();
+    let _guard = state.inner.lock().map_err(|_| {
+        "Delivered Listening reconciliation state is unavailable".to_owned()
+    })?;
+    reconcile_resolved_project_unlocked(
+        app,
+        project_directory,
+        client_id,
+        project_id,
+        delivery,
+        trigger,
+    )
+}
+
+fn reconcile_resolved_project_unlocked(
+    app: &tauri::AppHandle,
+    project_directory: &Path,
+    client_id: &str,
+    project_id: &str,
+    delivery: Option<&DeliverySummary>,
+    trigger: &str,
+) -> Result<Vec<ListeningPublishResult>, String> {
+    let Some(delivery) = delivery else {
         diagnostic_log::debug(
             "delivered_listening_delivery_missing",
             &[
                 ("trigger", json!(trigger)),
                 ("client_id", json!(client_id)),
                 ("project_id", json!(project_id)),
-                ("delivered_revision", json!(project.delivered_revision)),
+                ("delivered_revision", serde_json::Value::Null),
             ],
         );
         return Ok(Vec::new());
     };
-    let project_directory =
-        validated_project_directory(&workspace_root, &snapshot, client_id, project_id).ok_or_else(
-            || "The selected project directory could not be resolved safely".to_owned(),
-        )?;
 
     let results = reconcile_from_delivery_package(
         app,
-        &project_directory,
+        project_directory,
         client_id,
         project_id,
         delivery.revision,
@@ -1000,5 +1074,38 @@ mod tests {
             !listening_target_is_current(&selection, &destination, "blue-sky.mp3")
                 .expect("missing")
         );
+    }
+
+    #[test]
+    fn reconciliation_recreates_a_deleted_delivered_target() {
+        let temp = tempdir().expect("tempdir");
+        let source = temp.path().join("Final.mp3");
+        fs::write(&source, b"source").expect("source");
+        let listening = temp.path().join("listening");
+        fs::create_dir(&listening).expect("listening");
+        let mut destination = destination(&listening, "mp3");
+        destination.metadata_policy = ListeningMetadataPolicy::Off;
+        destination.artwork_policy = ListeningArtworkPolicy::Off;
+
+        let publish = || {
+            reconcile_selection_result(
+                selection_for_file(source.clone(), true).map(Some),
+                &destination,
+                "client-a",
+                "blue-sky",
+                "monitor",
+            )
+        };
+
+        let first = publish().expect("first publish");
+        assert_eq!(first.status, ListeningPublishStatus::Published);
+        let target = listening.join("client-a").join("blue-sky.mp3");
+        assert!(target.is_file());
+        assert!(publish().is_none());
+
+        fs::remove_file(&target).expect("delete target");
+        let repaired = publish().expect("repair publish");
+        assert_eq!(repaired.status, ListeningPublishStatus::Published);
+        assert!(target.is_file());
     }
 }

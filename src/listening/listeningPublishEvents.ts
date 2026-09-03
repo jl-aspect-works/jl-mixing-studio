@@ -60,8 +60,13 @@ export function applyListeningPublishEvent(
   return next;
 }
 
-function recordEvent(eventName: ListeningPublishEventName, event: ListeningPublishEvent) {
-  const next = applyListeningPublishEvent(readSnapshot(), eventName, event);
+export function recordListeningPublishEvent(
+  eventName: ListeningPublishEventName,
+  event: ListeningPublishEvent,
+) {
+  const previous = readSnapshot();
+  const next = applyListeningPublishEvent(previous, eventName, event);
+  if (next === previous) return;
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
@@ -76,7 +81,7 @@ export async function startListeningPublishCapture(): Promise<() => void> {
     "delivered-listening-publish-results",
   ];
   const unlisteners = await Promise.all(eventNames.map((eventName) =>
-    listen<ListeningPublishEvent>(eventName, (message) => recordEvent(eventName, message.payload))));
+    listen<ListeningPublishEvent>(eventName, (message) => recordListeningPublishEvent(eventName, message.payload))));
   return () => unlisteners.forEach((unlisten) => unlisten());
 }
 
