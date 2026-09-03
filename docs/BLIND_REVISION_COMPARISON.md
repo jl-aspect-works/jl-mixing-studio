@@ -8,6 +8,8 @@ Blind Revision Comparison gives a mixer a structured way to compare multiple rev
 
 The feature is intentionally designed around **N-way comparison**. Comparing three or more revisions is expected to be a normal workflow. Two-revision A/B comparison is supported, but it is not the primary design case.
 
+A project may be evaluated through multiple blind comparison sessions over time. Those sessions are not isolated final answers: their results contribute to **cumulative comparison standings** so repeated blind evaluations build confidence in which revisions are consistently preferred.
+
 This feature evaluates revisions; it does not replace revision approval, delivery, or listening publication.
 
 ## Core design principles
@@ -15,10 +17,11 @@ This feature evaluates revisions; it does not replace revision approval, deliver
 1. **N-way first** — the data model, playback controls, ranking model, and result visualization must work naturally with 3+ revisions.
 2. **Blind by default** — revision number, filename, date, approval state, delivery state, and other identity clues stay hidden until results are explicitly revealed.
 3. **Region-centric evaluation** — every result belongs to a defined song region. The default Full Song region provides the normal overall preference.
-4. **Non-destructive** — comparison never alters revision source audio.
-5. **Persistent history** — comparison sessions are records of decisions and are not overwritten by later comparisons.
-6. **Approval remains explicit** — ranking a revision first never automatically approves it.
-7. **Revision History remains useful at a glance** — the normal history shows a compact top-result signal, with richer comparison data available on demand.
+4. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
+5. **Non-destructive** — comparison never alters revision source audio.
+6. **Persistent history** — individual comparison sessions are records of decisions and are never overwritten by later comparisons or by cumulative calculations.
+7. **Approval remains explicit** — ranking a revision first never automatically approves it.
+8. **Revision History remains useful at a glance** — the normal history shows a compact cumulative top-result signal, with richer comparison data available on demand.
 
 ## Comparison Session
 
@@ -89,7 +92,7 @@ Full Song: 0:00 -> End
 
 The Full Song region is the default overall comparison and requires no setup from the user.
 
-Its ranking is treated as the session's normal overall preference. Regional rankings provide additional context; they are not automatically averaged into a replacement overall winner.
+Its ranking is treated as that session's overall preference and contributes to the project's cumulative Full Song standings. Regional rankings provide additional context and contribute to cumulative standings for equivalent regions, but regional rankings are not automatically averaged into a replacement Full Song result.
 
 ### Additional timestamped regions
 
@@ -132,7 +135,8 @@ Before implementation we must decide:
 - how regions behave when revisions differ materially in duration or structure;
 - whether overlapping regions are allowed;
 - whether a region may extend beyond the duration of one candidate;
-- whether looping the active region is baseline behavior.
+- whether looping the active region is baseline behavior;
+- how regions from separate sessions are identified as equivalent for cumulative regional standings.
 
 ## Playback behavior
 
@@ -182,7 +186,7 @@ Current design direction: **Original Level is the baseline behavior; level-match
 
 ## Ranking model
 
-Ranking is recorded **per region**.
+Ranking is recorded **per region, per comparison session**.
 
 The model must support more than two candidates naturally.
 
@@ -206,17 +210,60 @@ Ranking must support:
 
 The exact semantics for partial rankings with larger candidate sets remain open. Examples to decide include whether the user can rank only a top three out of five or must provide a complete order before completing a region.
 
+### Cumulative ranking
+
+Comparison rankings are **cumulative**.
+
+A project can have multiple completed blind comparison sessions. Each applicable session remains preserved independently and also contributes to derived aggregate standings.
+
+Conceptually:
+
+```text
+Session 1: R04 > R06 > R05
+Session 2: R06 > R05 > R04
+Session 3: R06 > R04 > R05
+
+Cumulative Full Song standing:
+1. R06
+2. R04
+3. R05
+```
+
+The cumulative result is intended to answer a different question from a single session:
+
+- **Session result:** What did I prefer in this blind evaluation?
+- **Cumulative result:** Across repeated blind evaluations, which revision has been preferred most consistently?
+
+Locked behavior:
+
+- individual session results are immutable historical evidence once finalized under the eventual lifecycle rules;
+- completing another comparison does not replace previous rankings;
+- applicable completed sessions are combined into cumulative standings;
+- cumulative standings must be available for the Full Song region;
+- equivalent timestamped regions should also support cumulative standings when they can be matched consistently across sessions;
+- cumulative results are derived data and must be reproducible from preserved session results;
+- Studio must retain enough provenance to show which sessions contributed to a cumulative result;
+- a revision does not need to appear in every session to participate in cumulative standings;
+- the UI should expose sample/evidence context such as number of contributing sessions so a result based on one comparison is distinguishable from one supported by many comparisons.
+
+The exact aggregation algorithm is intentionally **not yet locked**. We still need to decide how to combine unequal candidate sets, ordered rankings, ties, no-preference results, partial rankings, and revisions that appear in different numbers of sessions without producing misleading standings.
+
+Potential approaches may include pairwise preference accumulation, rank-based points, or another comparison-aware model, but no scoring method is selected by this document yet.
+
 ### Full Song as overall preference
 
-The Full Song region provides the normal overall result.
+Within an individual session, the Full Song region provides that session's normal overall result.
 
-Studio should **not automatically average regional rankings** to generate a different overall winner. Equal averaging could give a short region the same influence as the listener's explicit full-song judgment and could obscure the actual decision.
+Across sessions, cumulative Full Song rankings provide the project's normal aggregate comparison result.
+
+Studio should **not automatically average timestamped regional rankings** to generate a different Full Song winner. Equal averaging could give a short region the same influence as the listener's explicit full-song judgment and could obscure the actual decision.
 
 Regional results instead answer questions such as:
 
 - Which revision has the best chorus?
 - Did a revision win most song sections but lose overall?
 - Why did the mixer prefer one revision even though another had isolated strengths?
+- Is the same revision repeatedly preferred in a particular section across several blind sessions?
 
 Weighted-region scoring may be considered later.
 
@@ -260,8 +307,8 @@ Comparison sessions are historical records and should not overwrite one another.
 A project may therefore contain multiple sessions over time, for example:
 
 ```text
-Sep 03  R04 / R05 / R06 / R07   Top: R06   4 regions
-Aug 29  R02 / R03 / R04         Top: R04   Full Song
+Sep 03  R04 / R05 / R06 / R07   Session top: R06   4 regions
+Aug 29  R02 / R03 / R04         Session top: R04   Full Song
 ```
 
 Comparison history should preserve at least:
@@ -274,7 +321,9 @@ Comparison history should preserve at least:
 - notes;
 - session state.
 
-This history should help explain why a revision was chosen or why a project later returned to an older revision.
+In addition to viewing individual sessions, Studio should expose cumulative standings derived from applicable completed sessions and allow the user to understand which sessions contributed to those standings.
+
+This history should help explain both why a revision won an individual evaluation and why it rose or fell in the cumulative ranking over repeated comparisons.
 
 ## Revision History integration
 
@@ -284,7 +333,7 @@ Comparison results should become part of the context visible from the existing R
 
 The normal Revision History should remain visually clean while still surfacing the most important comparison outcome.
 
-The revision ranked first in the latest applicable completed/revealed **Full Song** comparison should receive a lightweight **TOP** indicator.
+The revision currently ranked first in the **cumulative Full Song standings** should receive a lightweight **TOP** indicator.
 
 A pill is preferred over an unlabeled star because a star can be confused with Favorite, Approved, Important, or similar concepts.
 
@@ -299,18 +348,19 @@ R04
 
 Rules:
 
-- the indicator is based on the latest applicable completed/revealed comparison that includes the revision;
-- Full Song ranking determines the top result;
+- the indicator is based on cumulative Full Song results from applicable completed comparison sessions;
+- a newer comparison contributes to the cumulative result rather than replacing prior evidence;
 - only first-ranked revision(s) receive the indicator;
-- tied first-place results may show TOP on each tied revision;
+- tied first-place cumulative results may show TOP on each tied revision;
 - TOP is informational only;
 - TOP does not mean Approved, Current, Delivered, or Preferred by the client;
-- visual styling must remain distinct from revision lifecycle/status badges.
+- visual styling must remain distinct from revision lifecycle/status badges;
+- the indicator should make evidence strength discoverable, for example by exposing the number of contributing comparisons.
 
 A hover/click detail could expose compact context such as:
 
 ```text
-Ranked #1 of 4 - comparison Sep 3
+Cumulative #1 - 4 blind comparisons
 ```
 
 The exact interaction and density remain to be resolved during UI design.
@@ -319,58 +369,63 @@ The exact interaction and density remain to be resolved during UI design.
 
 Revision History should provide a control such as **Show Comparison Results** that exposes richer information without permanently cluttering the normal view.
 
+The detailed view should emphasize cumulative standings while allowing drill-down to individual comparison sessions.
+
 Potential information includes:
 
-- Full Song rank;
-- rankings by region;
-- number of regional wins;
-- latest comparison result;
-- comparison date/session;
-- icon/link to open the complete comparison session.
+- cumulative Full Song rank;
+- cumulative rankings by equivalent region;
+- number of contributing sessions/comparisons;
+- regional wins or preference evidence;
+- most recent session result;
+- comparison history/date/session links;
+- drill-down into contributing sessions.
 
 Example compact result data:
 
 ```text
-R04   Full Song #4   Region wins 1
-R05   Full Song #2   Region wins 3
-R06   Full Song #1   Region wins 5
-R07   Full Song #3   Region wins 2
+R04   Cumulative #3   4 comparisons
+R05   Cumulative #2   5 comparisons
+R06   Cumulative #1   5 comparisons
+R07   Cumulative #4   2 comparisons
 ```
 
 The exact table/overlay layout is an implementation-design item, but the two-level information model is locked:
 
-1. **Default history** — lightweight TOP result.
-2. **Comparison-results view** — detailed rankings and drill-down.
+1. **Default history** — lightweight cumulative TOP result.
+2. **Comparison-results view** — cumulative rankings, evidence context, individual-session history, and drill-down.
 
 ## Regional result visualization
 
-Once multiple regions exist, a plain ranking list is insufficient. Studio should provide complementary summary, timeline, and exact-detail views.
+Once multiple regions and multiple sessions exist, a plain ranking list is insufficient. Studio should provide complementary summary, timeline, and exact-detail views.
 
 ### Summary
 
 A compact summary can show:
 
-- Full Song first-place revision;
-- number of regional wins by revision;
+- cumulative Full Song leader;
+- number of contributing comparison sessions;
+- cumulative regional leaders where regions are comparable;
 - candidate count;
 - region count.
 
 ### Timeline / ranking strip
 
-A timeline-style visualization should align region results to the song timeline so the user can quickly see where each revision performed best.
+A timeline-style visualization should align regional results to the song timeline so the user can quickly see where each revision performed best.
 
 Conceptually:
 
 - horizontal axis = song time;
 - rows = compared revisions;
 - timestamped regions = aligned segments;
-- each segment indicates the revision's rank or result in that region.
+- each segment indicates the revision's cumulative rank or aggregate result in that region;
+- drill-down can expose the individual session results that produced that aggregate.
 
 The exact visual encoding (rank numbers, intensity, symbols, etc.) should be designed later. It must remain understandable without relying solely on color.
 
 ### Table
 
-An exact table should show region-by-region rankings and notes.
+An exact table should show cumulative region-by-region standings with access to the underlying individual rankings and notes.
 
 The table is the authoritative detailed view when the visual timeline is ambiguous or when accessibility requires explicit textual values.
 
@@ -378,7 +433,7 @@ The table is the authoritative detailed view when the visual timeline is ambiguo
 
 Comparison is an evaluation tool, not an automatic project-state transition.
 
-A first-place result must **not** automatically approve a revision.
+A first-place session result or cumulative TOP result must **not** automatically approve a revision.
 
 After completing/revealing a comparison, Studio may offer explicit follow-up actions such as:
 
@@ -390,7 +445,7 @@ Any approval action must remain an explicit user command and use the normal revi
 
 ## Persistence model
 
-The persistence model should be region-centric and should support N-way ranking without redesign.
+The persistence model should be region-centric and should support N-way ranking and cumulative aggregation without redesign.
 
 Conceptual shape:
 
@@ -417,7 +472,18 @@ Comparison Session
       Rankings
       Notes
   Lifecycle / timestamps
+
+Derived Cumulative Standings
+  Full Song
+    Revision standings
+    Contributing session references
+  Equivalent Regions
+    Region identity/range
+    Revision standings
+    Contributing session references
 ```
+
+Cumulative standings should preferably remain derived/recomputable rather than becoming an independent source of truth that can drift from session history. If cached for performance, the cache must be safely rebuildable from persisted comparison sessions.
 
 The exact schema and storage location remain implementation decisions.
 
@@ -439,10 +505,13 @@ The current baseline design includes:
 - ties and no-preference results;
 - optional notes;
 - explicit Reveal Results;
-- Full Song ranking as the normal overall preference;
+- Full Song ranking as the normal per-session overall preference;
 - persistent comparison-session history;
-- default Revision History TOP indicator;
-- detailed Revision History comparison-results view;
+- cumulative Full Song standings across applicable completed comparison sessions;
+- cumulative regional standings where equivalent regions can be identified;
+- evidence/provenance showing which sessions contribute to cumulative results;
+- default Revision History cumulative TOP indicator;
+- detailed Revision History cumulative comparison-results view with session drill-down;
 - regional summary/timeline/table visualization;
 - no automatic approval;
 - no source-audio modification.
@@ -456,7 +525,7 @@ The following are intentionally not required by the locked baseline design unles
 - playback level matching / loudness normalization;
 - formal ABX statistical testing;
 - waveform-based region selection/editing;
-- weighted regions or automatic aggregate scoring;
+- weighted regions or automatic aggregation of regional sections into a Full Song score;
 - multiple listeners/reviewers;
 - exported/shared comparison reports;
 - client-facing blind evaluation through the external Listening workflow;
@@ -467,18 +536,20 @@ The following are intentionally not required by the locked baseline design unles
 
 The following items remain intentionally unresolved and should be worked through before implementation issues are split:
 
-1. **Different revision timing** — behavior when candidate revisions differ in total duration, offsets, or song structure.
-2. **Region overlap** — whether timestamped regions may overlap.
-3. **Region looping** — baseline requirement vs early follow-on.
-4. **Ranking completeness** — complete ordering vs partial rankings for larger sets.
-5. **Notes** — region-level, per-candidate/per-region, or both.
-6. **Session lifecycle** — draft/in-progress/completed/revealed states, resume behavior, and whether reveal finalizes the session.
-7. **Post-reveal editing** — whether revealed results can be edited and how history/audit behavior works.
-8. **Candidate eligibility** — revisions only vs revision Variants and other playback candidates.
-9. **Playback compatibility** — supported source formats and error handling using the existing cross-platform playback provider model.
-10. **Revision History detail density** — exact TOP interaction and detailed comparison overlay layout.
-11. **Timeline reference duration** — how the regional timeline is defined when candidates have different durations.
-12. **Persistence schema/location** — concrete Studio-managed storage format and migration/versioning requirements.
+1. **Cumulative ranking algorithm** — how to fairly combine N-way ordered rankings across sessions with different candidate sets, ties, no-preference, partial rankings, and unequal participation counts.
+2. **Regional equivalence across sessions** — how timestamped/named regions are matched so their results can be accumulated without combining unlike song sections.
+3. **Different revision timing** — behavior when candidate revisions differ in total duration, offsets, or song structure.
+4. **Region overlap** — whether timestamped regions may overlap.
+5. **Region looping** — baseline requirement vs early follow-on.
+6. **Ranking completeness** — complete ordering vs partial rankings for larger sets.
+7. **Notes** — region-level, per-candidate/per-region, or both.
+8. **Session lifecycle** — draft/in-progress/completed/revealed states, resume behavior, and whether reveal finalizes the session.
+9. **Post-reveal editing** — whether revealed results can be edited and how history/audit behavior works.
+10. **Candidate eligibility** — revisions only vs revision Variants and other playback candidates.
+11. **Playback compatibility** — supported source formats and error handling using the existing cross-platform playback provider model.
+12. **Revision History detail density** — exact TOP interaction and detailed comparison overlay layout.
+13. **Timeline reference duration** — how the regional timeline is defined when candidates have different durations.
+14. **Persistence schema/location** — concrete Studio-managed storage format and migration/versioning requirements.
 
 ## Relationship to existing Studio functionality
 
@@ -489,7 +560,8 @@ Blind Revision Comparison adds structured orchestration above that playback laye
 - multiple candidate identity management;
 - synchronized switching;
 - region control;
-- ranking persistence;
+- per-session ranking persistence;
+- cumulative ranking derivation;
 - result visualization;
 - Revision History integration.
 
