@@ -1,8 +1,7 @@
 use super::listening_artwork::ensure_artist_artwork_sidecars;
 use super::listening_metadata::listening_metadata_is_current;
 use super::{
-    find_project_summary, listening_configuration, publish_listening_copy, resolve_workspace_root,
-    validated_project_directory,
+    listening_configuration, publish_listening_copy, resolve_workspace_root,
 };
 use crate::diagnostic_log;
 use crate::models::{
@@ -16,7 +15,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{Emitter, Manager};
 
 const SCAN_INTERVAL: Duration = Duration::from_secs(1);
@@ -109,6 +108,7 @@ struct MonitorData {
     scan_number: u64,
     destinations: HashMap<String, DestinationObservation>,
     last_scan_error: Option<String>,
+    last_scan_slow: bool,
     revision_diagnostic: Option<DiagnosticOutcome>,
     delivered_diagnostic: Option<DiagnosticOutcome>,
     delivery_identity: Option<Option<DeliveryIdentity>>,
@@ -161,6 +161,7 @@ pub(crate) fn set_revision_listening_project(
         monitor.scan_number = 0;
         monitor.destinations.clear();
         monitor.last_scan_error = None;
+        monitor.last_scan_slow = false;
         monitor.revision_diagnostic = None;
         monitor.delivered_diagnostic = None;
         monitor.delivery_identity = None;
@@ -257,6 +258,34 @@ fn record_scan_recovery(app: &tauri::AppHandle) {
     );
 }
 
+fn record_scan_timing(
+    state: &RevisionListeningMonitorState,
+    generation: u64,
+    slow: bool,
+    fields: &[(&str, serde_json::Value)],
+) -> Result<(), String> {
+    let transition = {
+        let mut monitor = state
+            .inner
+            .lock()
+            .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
+        if monitor.generation != generation || monitor.last_scan_slow == slow {
+            return Ok(());
+        }
+        monitor.last_scan_slow = slow;
+        slow
+    };
+    diagnostic_log::info(
+        if transition {
+            "listening_monitor_scan_slow"
+        } else {
+            "listening_monitor_scan_speed_recovered"
+        },
+        fields,
+    );
+    Ok(())
+}
+
 fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
     let state = app.state::<RevisionListeningMonitorState>();
     let (active, generation, scan_number) = {
@@ -271,6 +300,8 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         (active, monitor.generation, monitor.scan_number)
     };
 
+    let scan_started = Instant::now();
+    let configuration_started = Instant::now();
     let configuration = listening_configuration(app)
         .map_err(|message| format!("Listening configuration could not be loaded: {message}"))?;
     let destinations = configuration
@@ -281,38 +312,33 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
                 && destination.publish_class == ListeningPublishClass::RevisionListening
         })
         .collect::<Vec<_>>();
+    let configuration_duration_ms = configuration_started.elapsed().as_millis() as u64;
 
     let workspace_root = resolve_workspace_root(app)
         .map_err(|message| format!("Listening workspace could not be resolved: {message}"))?;
-    let snapshot = workspace::discover_workspace_at(&workspace_root);
+    let project_discovery_started = Instant::now();
+    let (project_directory, project) = workspace::discover_project_at(
+        &workspace_root,
+        &active.client_id,
+        &active.project_id,
+    )
+    .ok_or_else(|| "The active Listening project is unavailable or invalid".to_owned())?;
+    let project_discovery_duration_ms = project_discovery_started.elapsed().as_millis() as u64;
     diagnostic_log::debug(
-        "listening_monitor_workspace_discovered",
+        "listening_monitor_project_discovered",
         &[
             ("client_id", json!(active.client_id.as_str())),
             ("project_id", json!(active.project_id.as_str())),
             ("scan_number", json!(scan_number)),
             ("workspace_path", json!(workspace_root.to_string_lossy())),
-            ("workspace_status", json!(snapshot.status)),
-            ("project_count", json!(snapshot.counts.projects)),
-            ("issue_count", json!(snapshot.issues.len())),
-            ("issues", json!(&snapshot.issues)),
+            ("discovery_scope", json!("active_project")),
+            (
+                "project_discovery_duration_ms",
+                json!(project_discovery_duration_ms),
+            ),
         ],
     );
-    let project = find_project_summary(&snapshot, &active.client_id, &active.project_id)
-        .ok_or_else(|| {
-            format!(
-                "The active Listening project is unavailable after workspace discovery (issues: {})",
-                snapshot.issues.len()
-            )
-        })?;
     let revision = project.current_revision;
-    let project_directory = validated_project_directory(
-        &workspace_root,
-        &snapshot,
-        &active.client_id,
-        &active.project_id,
-    )
-    .ok_or_else(|| "The active Listening project could not be resolved safely".to_owned())?;
     let revision_root = project_directory
         .join("04_Revisions")
         .join(format!("Revision_{revision:02}"));
@@ -336,6 +362,7 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         ],
     );
 
+    let revision_reconciliation_started = Instant::now();
     let destination_ids = destinations
         .iter()
         .map(|destination| destination.id.clone())
@@ -368,7 +395,10 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         );
     }
     record_reconciliation_diagnostics(&state, generation, "revision", &active, revision, &results)?;
+    let revision_reconciliation_duration_ms =
+        revision_reconciliation_started.elapsed().as_millis() as u64;
 
+    let delivered_reconciliation_started = Instant::now();
     if generation_is_current(&state, generation)? {
         let delivery_identity_changed = observe_delivery_identity(
             &state,
@@ -402,12 +432,47 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
             let _ = app.emit(
                 DELIVERY_IDENTITY_CHANGED_EVENT,
                 ProjectDeliveryIdentityChangedEvent {
-                    client_id: active.client_id,
-                    project_id: active.project_id,
+                    client_id: active.client_id.clone(),
+                    project_id: active.project_id.clone(),
                 },
             );
         }
     }
+    let delivered_reconciliation_duration_ms =
+        delivered_reconciliation_started.elapsed().as_millis() as u64;
+    let total_duration = scan_started.elapsed();
+    let timing_fields = [
+        ("client_id", json!(active.client_id.as_str())),
+        ("project_id", json!(active.project_id.as_str())),
+        ("scan_number", json!(scan_number)),
+        (
+            "configuration_duration_ms",
+            json!(configuration_duration_ms),
+        ),
+        (
+            "project_discovery_duration_ms",
+            json!(project_discovery_duration_ms),
+        ),
+        (
+            "revision_reconciliation_duration_ms",
+            json!(revision_reconciliation_duration_ms),
+        ),
+        (
+            "delivered_reconciliation_duration_ms",
+            json!(delivered_reconciliation_duration_ms),
+        ),
+        (
+            "total_duration_ms",
+            json!(total_duration.as_millis() as u64),
+        ),
+    ];
+    diagnostic_log::debug("listening_monitor_scan_completed", &timing_fields);
+    record_scan_timing(
+        &state,
+        generation,
+        total_duration >= SCAN_INTERVAL,
+        &timing_fields,
+    )?;
     Ok(())
 }
 

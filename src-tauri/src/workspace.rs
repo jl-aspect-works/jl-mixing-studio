@@ -349,6 +349,13 @@ pub fn find_validated_project_path(
     project_id: &str,
 ) -> Option<PathBuf> {
     let client_path = find_validated_client_path(root, client_id)?;
+    find_validated_project_path_in_client(&client_path, project_id)
+}
+
+fn find_validated_project_path_in_client(
+    client_path: &Path,
+    project_id: &str,
+) -> Option<PathBuf> {
     let mut matches = directory_entries(&client_path.join("Projects"))
         .ok()?
         .into_iter()
@@ -362,6 +369,36 @@ pub fn find_validated_project_path(
         return None;
     }
     Some(matched)
+}
+
+/// Discovers one project from stable identities without deriving unrelated clients, projects,
+/// tasks, or activity. This is intended for high-frequency project-scoped reconciliation after
+/// the project has already been selected from an authoritative workspace snapshot.
+pub fn discover_project_at(
+    root: &Path,
+    client_id: &str,
+    project_id: &str,
+) -> Option<(PathBuf, ProjectSummary)> {
+    if !root.is_dir() {
+        return None;
+    }
+    read_document::<StudioDocument>(
+        &root.join("Studio").join("studio.json"),
+        STUDIO_SCHEMA,
+        "mixing-studio",
+    )
+    .ok()?;
+    let client_path = find_validated_client_path(root, client_id)?;
+    let client = read_document::<ClientDocument>(
+        &client_path.join("client.json"),
+        CLIENT_SCHEMA,
+        "mixing-client",
+    )
+    .ok()?;
+    let project_path = find_validated_project_path_in_client(&client_path, project_id)?;
+    let mut issues = Vec::new();
+    let (project, _) = discover_project(root, &project_path, &client, &mut issues)?;
+    issues.is_empty().then_some((project_path, project))
 }
 
 fn read_document<T: DeserializeOwned>(

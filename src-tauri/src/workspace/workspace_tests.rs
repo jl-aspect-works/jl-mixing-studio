@@ -389,6 +389,49 @@ fn refuses_an_ambiguous_project_id() {
     );
 }
 
+#[test]
+fn scoped_project_discovery_ignores_unrelated_invalid_siblings() {
+    let temp = tempfile::tempdir().expect("temporary directory");
+    let root = temp.path().join("Mixes");
+    write_workspace(&root);
+    write_client(&root, "target-client", "Target Client", "Artist");
+    write_project(
+        &root,
+        "target-client",
+        "target-project",
+        "Target Project",
+        "target-project",
+    );
+    write_delivery(&root, "target-client", "target-project", false);
+    write_client(&root, "unrelated-client", "Unrelated Client", "Artist");
+    let invalid = root.join("Clients/unrelated-client/Projects/invalid/00_Admin");
+    fs::create_dir_all(&invalid).expect("invalid sibling directory");
+    fs::write(invalid.join("project-manifest.json"), "{").expect("invalid sibling manifest");
+
+    let (path, project) = discover_project_at(&root, "target-client", "target-project")
+        .expect("scoped project");
+
+    assert_eq!(
+        path,
+        root.join("Clients/target-client/Projects/target-project")
+    );
+    assert_eq!(project.project_id, "target-project");
+    assert_eq!(project.current_revision, 1);
+    assert_eq!(project.delivery.as_ref().expect("delivery").revision, 1);
+}
+
+#[test]
+fn scoped_project_discovery_retains_delivery_integrity_validation() {
+    let temp = tempfile::tempdir().expect("temporary directory");
+    let root = temp.path().join("Mixes");
+    write_workspace(&root);
+    write_client(&root, "client", "Client", "Artist");
+    write_project(&root, "client", "project", "Project", "project");
+    write_delivery(&root, "client", "project", true);
+
+    assert!(discover_project_at(&root, "client", "project").is_none());
+}
+
 fn write_workspace(root: &Path) {
     fs::create_dir_all(root.join("Studio")).expect("studio directory");
     fs::create_dir_all(root.join("Clients")).expect("clients directory");
