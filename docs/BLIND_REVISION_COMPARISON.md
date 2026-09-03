@@ -20,7 +20,7 @@ This feature evaluates revisions; it does not replace revision approval, deliver
 4. **Compatible timeline required** — compared revisions must share a sufficiently compatible song structure/timeline for common timestamped regions to remain meaningful. Studio does not attempt structural alignment or region remapping.
 5. **Normal revisions only** — Blind Revision Comparison candidates are normal project revisions, not Variants or other alternate candidate types.
 6. **Complete rankings** — every candidate must receive an explicit rank in every completed region; partial rankings are not valid completed results.
-7. **Single-session completion** — a blind comparison must be completed in one active session. Unfinished comparisons are not persisted or resumable.
+7. **Single-session completion** — a blind comparison must be completed in the active session. Unfinished comparisons are not persisted or resumable.
 8. **Immutable completed rankings** — once completed, ranking results are not edited. A changed judgment is represented by a new blind comparison; an obsolete ranking/session may be explicitly deleted.
 9. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
 10. **Simple cumulative ranking** — cumulative standings use straightforward placement averaging. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
