@@ -18,13 +18,14 @@ This feature evaluates revisions; it does not replace revision approval, deliver
 2. **Blind by default** — revision number, filename, date, approval state, delivery state, and other identity clues stay hidden until results are explicitly revealed.
 3. **Region-centric evaluation** — every result belongs to a defined song region. The default Full Song region provides the normal overall preference.
 4. **Compatible timeline required** — compared revisions must share a sufficiently compatible song structure/timeline for common timestamped regions to remain meaningful. Studio does not attempt structural alignment or region remapping.
-5. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
-6. **Simple cumulative ranking** — cumulative standings use straightforward placement averaging. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
-7. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
-8. **Non-destructive to audio** — comparison never alters revision source audio.
-9. **Persistent history until cleared** — comparison sessions are historical records and are not overwritten by later comparisons or cumulative calculations, but a deliberate project-level clear action removes the ranking history.
-10. **Approval remains explicit** — ranking a revision first never automatically approves it.
-11. **Revision History remains useful at a glance** — the normal history shows a compact cumulative top-result signal, with richer comparison data available on demand.
+5. **Complete rankings** — every candidate must receive an explicit rank in every completed region; partial rankings are not valid completed results.
+6. **Cumulative evidence** — completed blind comparison sessions contribute to aggregate project-level standings rather than the newest session replacing older results.
+7. **Simple cumulative ranking** — cumulative standings use straightforward placement averaging. When cumulative results are tied, the higher-numbered (most recent) revision wins the tie.
+8. **Explicit reset** — the user can clear all comparison-ranking history for a project and return the project to an unranked state.
+9. **Non-destructive to audio** — comparison never alters revision source audio.
+10. **Persistent history until cleared** — comparison sessions are historical records and are not overwritten by later comparisons or cumulative calculations, but a deliberate project-level clear action removes the ranking history.
+11. **Approval remains explicit** — ranking a revision first never automatically approves it.
+12. **Revision History remains useful at a glance** — the normal history shows a compact cumulative top-result signal, with richer comparison data available on demand.
 
 ## Comparison Session
 
@@ -124,7 +125,21 @@ Original-level playback is the baseline. Level-matched playback is a potential f
 
 ## Ranking model
 
-Ranking is recorded **per region, per comparison session** and supports ordered preference, ties, no preference, and optional notes. Partial-ranking semantics for larger candidate sets remain open.
+Ranking is recorded **per region, per comparison session** and supports ordered preference, ties, no preference, and optional notes.
+
+### Complete ranking requirement
+
+**Every candidate must receive an explicit rank before a region can be completed.**
+
+Locked behavior:
+
+- partial rankings such as `top 3 of 5` are not valid completed results;
+- no candidate may remain unranked in a completed region;
+- ties are allowed and count as explicit rankings for every tied candidate;
+- if the user has no preference between candidates, that outcome must still be represented explicitly rather than by leaving candidates unranked;
+- a comparison session cannot be finalized while any required region contains an unranked candidate.
+
+The exact numeric rank sequence used after a tie (for example competition vs dense ranking) can be finalized with the UI/data-model implementation, but it must produce deterministic numeric placements suitable for the cumulative arithmetic-mean calculation.
 
 ### Cumulative ranking
 
@@ -265,12 +280,14 @@ The current baseline includes:
 - no automatic structural alignment or region remapping;
 - automatic Full Song region;
 - timestamped custom regions;
-- **overlapping regions**;
-- **day-1 active-region looping**;
+- overlapping regions;
+- day-1 active-region looping;
 - randomized fixed blind mapping;
 - identity-safe blind playback;
 - fast position-synchronized N-way switching;
-- per-region ranking, ties, no preference, optional notes;
+- **complete per-region ranking of every candidate**;
+- ties and explicit no-preference outcomes;
+- optional notes;
 - explicit Reveal Results;
 - persistent comparison-session history;
 - cumulative Full Song standings using arithmetic mean placement;
@@ -290,7 +307,7 @@ Potential follow-ons include level matching, formal ABX statistical testing, wav
 
 ## Open decisions before implementation
 
-1. **Ranking completeness** — complete vs partial ordering.
+1. **Tie rank numbering** — exact numeric placement convention after ties, which must remain deterministic for cumulative averaging.
 2. **Notes** — region-level, per-candidate/per-region, or both.
 3. **Session lifecycle** — draft/in-progress/completed/revealed and resume behavior.
 4. **Post-reveal editing** — whether revealed results can be edited.
@@ -303,7 +320,7 @@ Potential follow-ons include level matching, formal ABX statistical testing, wav
 
 ## Relationship to existing Studio functionality
 
-This feature builds on Studio v2.1 cross-platform playback. Blind Revision Comparison adds multiple-candidate orchestration, synchronized switching, region control/looping, per-session ranking persistence, cumulative ranking derivation, result visualization, Revision History integration, and explicit comparison-history clearing.
+This feature builds on Studio v2.1 cross-platform playback. Blind Revision Comparison adds multiple-candidate orchestration, synchronized switching, region control/looping, complete per-region ranking persistence, cumulative ranking derivation, result visualization, Revision History integration, and explicit comparison-history clearing.
 
 It should not duplicate or fork core playback unless technical investigation shows the provider contract must be extended.
 
