@@ -84,13 +84,13 @@ Manual macOS acceptance is limited to Intel hardware for this release. All macOS
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| E01 | Successful delivery publish | Successful package creation publishes canonical `<project>.<ext>` Delivered Listening content. | Not run | Not run | Deferred |  |
-| E02 | Continuous self-healing | Delete the Delivered Listening file while any project tab remains open; the monitor restores it without visiting Delivery. | Not run | Not run | Deferred | Self-healing gate |
-| E03 | Re-delivery replacement | Create a later valid delivery; Delivered Listening changes to the new authoritative delivery source. | Not run | Not run | Deferred | Required release gate |
-| E04 | Provenance-backed source identity | New delivery `source_path` provenance selects the same primary source used by the package. | Not run | Not run | Deferred | Requires coordinated Automation build |
+| E01 | Successful delivery publish | Successful package creation publishes canonical `<project>.<ext>` Delivered Listening content. | Pass | Not run | Deferred | User-verified on Windows |
+| E02 | Continuous self-healing | Delete the Delivered Listening file while any project tab remains open; the monitor restores it without visiting Delivery. | Pass | Not run | Deferred | Self-healing gate; user-verified on Windows |
+| E03 | Re-delivery replacement | Create a later valid delivery; Delivered Listening changes to the new authoritative delivery source. | Pass | Not run | Deferred | Required release gate; user-verified on Windows |
+| E04 | Provenance-backed source identity | New delivery `source_path` provenance selects the same primary source used by the package. | Pass | Not run | Deferred | Coordinated Automation build; user-verified on Windows |
 | E05 | Legacy delivery manifest | A legacy manifest uses explicit `main_mix` or a single matching top-level candidate; multiple ambiguous candidates are skipped. | Not run | Not run | Deferred |  |
-| E06 | Metadata title distinction | Direct file inspection shows Revision title contains `Rev XX`; Delivered title does not contain a revision suffix. | Not run | Not run | Deferred |  |
-| E07 | Contextual activity | Delivery shows accurate Published/Skipped/Failed details without recurring quiet refresh churn. | Not run | Not run | Deferred |  |
+| E06 | Metadata title distinction | Direct file inspection shows Revision title contains `Rev XX`; Delivered title does not contain a revision suffix. | Pass | Not run | Deferred | User-verified on Windows |
+| E07 | Contextual activity | Delivery shows accurate Published/Skipped/Failed details without recurring quiet refresh churn. | Pass | Not run | Deferred | User-verified on Windows |
 
 ## F. Metadata, artwork, and source safety
 
