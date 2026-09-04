@@ -54,19 +54,19 @@ Manual macOS acceptance is limited to Intel hardware for this release. All macOS
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| B01 | Create Delivery with a note | The dialog accepts the note; successful delivery stores and displays it in Delivery Notes. | Not run | Not run | Deferred | #336 |
-| B02 | Cancel Create Delivery | No delivery or note mutation occurs. | Not run | Not run | Deferred |  |
-| B03 | Delivery failure safety | A failed delivery attempt preserves prior authoritative delivery/package state and does not change Delivered Listening. | Not run | Not run | Deferred | Required release gate |
+| B01 | Create Delivery with a note | The dialog accepts the note; successful delivery stores and displays it in Delivery Notes. | Pass | Not run | Deferred | #336; user-verified on Windows |
+| B02 | Cancel Create Delivery | No delivery or note mutation occurs. | Pass | Not run | Deferred | User-verified on Windows |
+| B03 | Delivery failure safety | A failed delivery attempt preserves prior authoritative delivery/package state and does not change Delivered Listening. | Pass | Not run | Deferred | Required release gate; user-verified on Windows |
 
 ## C. Listening configuration
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| C01 | Configure separate publish classes | Revision and Delivered destinations save independently and persist after restart. | Not run | Not run | Deferred |  |
-| C02 | Multiple destinations/formats | Multiple enabled destinations publish only their configured required format. | Not run | Not run | Deferred |  |
-| C03 | Enable/disable destination | Disabled destination is not modified; re-enabled destination reconciles from authoritative state. | Not run | Not run | Deferred |  |
-| C04 | Destination validation | Empty, missing, inaccessible, unreadable, or unwritable paths show non-blocking actionable status. | Not run | Not run | Deferred | Exercise practical cases only |
-| C05 | Missing configured format | Destination is skipped quietly; no fallback/transcoding occurs and no error-level activity is shown. | Not run | Not run | Deferred |  |
+| C01 | Configure separate publish classes | Revision and Delivered destinations save independently and persist after restart. | Pass | Not run | Deferred | User-verified on Windows |
+| C02 | Multiple destinations/formats | Multiple enabled destinations publish only their configured required format. | Pass | Not run | Deferred | User-verified on Windows |
+| C03 | Enable/disable destination | Disabled destination is not modified; re-enabled destination reconciles from authoritative state. | Pass | Not run | Deferred | User-verified on Windows |
+| C04 | Destination validation | Empty, missing, inaccessible, unreadable, or unwritable paths show non-blocking actionable status. | Pass | Not run | Deferred | Practical cases user-verified on Windows |
+| C05 | Missing configured format | Destination is skipped quietly; no fallback/transcoding occurs and no error-level activity is shown. | Pass | Not run | Deferred | User-verified on Windows |
 
 ## D. Revision Listening
 
