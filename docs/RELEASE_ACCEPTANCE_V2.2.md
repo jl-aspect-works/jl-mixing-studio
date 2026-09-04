@@ -20,10 +20,10 @@ Branch/runtime verification is useful pre-RC evidence but does not automatically
 | Studio candidate | `v2.2.0-rc.1` | `v2.2.0-rc.1` | `v2.2.0-rc.1` |
 | Studio commit | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` |
 | Automation version/build | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` |
-| OS version | Not yet recorded | Not yet recorded | Not yet recorded |
+| OS version | Windows 11 Pro | Not yet recorded | |
 | Workspace type/path | Record local/NAS/shared | Record local/NAS/shared | Record local/NAS/shared |
-| Listening destination type/path | Record | Record | Record |
-| Tester/date | Manual acceptance / 2026-09-04 | Manual acceptance / 2026-09-04 | Not run |
+| Listening destination type/path | m:/media/Mixes | /Volumes/Media/Mixes | /Volumes/Media/Mixes |
+| Tester/date | Manual acceptance / 2026-09-04 | Manual acceptance / 2026-09-04 | Deferred |
 
 At least one practically testable platform pass must use a NAS/shared workspace and NAS/shared Listening destination. Do not use Plex's displayed library metadata as the authoritative metadata test; inspect the published file directly because server agents may overlay online metadata.
 
