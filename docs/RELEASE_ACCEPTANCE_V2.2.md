@@ -102,23 +102,23 @@ ffprobe -v error -show_entries format_tags=title,artist,album_artist,album,genre
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| F01 | Replace metadata policy | Published-copy tags match project/client metadata and the Revision/Delivered title rules. | Not run | Not run | Deferred |  |
-| F02 | Preserve/off metadata policy | Existing policy behavior is honored without unintended replacement. | Not run | Not run | Deferred |  |
-| F03 | Embedded Studio artwork | Configured Listening copies contain the approved Studio artwork. | Not run | Not run | Deferred |  |
-| F04 | Artwork sidecars | `artist.png` and `folder.png` exist under the client destination and self-heal independently. | Not run | Not run | Deferred |  |
-| F05 | Source immutability | Hash/timestamp/tag inspection confirms revision sources and delivery artifacts were not modified by Listening publication. | Not run | Not run | Deferred | Required release gate |
-| F06 | Media-server sanity | Optional Plex/Navidrome/folder scan sees canonical files; any server metadata overlay is recorded as a server behavior, not accepted as source-tag evidence. | Not run | Not run | Deferred | Optional where available |
+| F01 | Replace metadata policy | Published-copy tags match project/client metadata and the Revision/Delivered title rules. | Pass | Not run | Deferred | User-verified on Windows |
+| F02 | Preserve/off metadata policy | Existing policy behavior is honored without unintended replacement. | Pass | Not run | Deferred | User-verified on Windows |
+| F03 | Embedded Studio artwork | Configured Listening copies contain the approved Studio artwork. | Pass | Not run | Deferred | User-verified on Windows |
+| F04 | Artwork sidecars | `artist.png` and `folder.png` exist under the client destination and self-heal independently. | Pass | Not run | Deferred | User-verified on Windows |
+| F05 | Source immutability | Hash/timestamp/tag inspection confirms revision sources and delivery artifacts were not modified by Listening publication. | Pass | Not run | Deferred | Required release gate; user-verified on Windows |
+| F06 | Media-server sanity | Optional Plex/Navidrome/folder scan sees canonical files; any server metadata overlay is recorded as a server behavior, not accepted as source-tag evidence. | Pass | Not run | Deferred | User-verified on Windows |
 
 ## G. Monitor, performance, and diagnostics
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| G01 | Active-project scope | Monitoring one project does not require unrelated projects to be valid and does not cause visible workspace refresh churn. | Not run | Not run | Deferred |  |
-| G02 | Non-overlapping behavior | Slow NAS operations do not start concurrent monitor scans or duplicate publishers. | Not run | Not run | Deferred | Observe practical run/logs |
-| G03 | Normal info logging | Normal monitoring emits no periodic scan-duration warnings or repeated unchanged success activity. | Not run | Not run | Deferred |  |
+| G01 | Active-project scope | Monitoring one project does not require unrelated projects to be valid and does not cause visible workspace refresh churn. | Pass | Not run | Deferred | User-verified on Windows |
+| G02 | Non-overlapping behavior | Slow NAS operations do not start concurrent monitor scans or duplicate publishers. | Pass | Not run | Deferred | Practical run/logs user-verified on Windows |
+| G03 | Normal info logging | Normal monitoring emits no periodic scan-duration warnings or repeated unchanged success activity. | Pass | Not run | Deferred | User-verified on Windows |
 | G04 | Debug timing evidence | With debug logging enabled, `listening_monitor_scan_completed` records configuration, project discovery, Revision, Delivered, and total durations. | Not run | Not run | Deferred | No fixed slow threshold |
 | G05 | Failure/recovery diagnostics | Make a destination temporarily unavailable where practical; one actionable failure state and recovery are recorded without per-scan spam. | Not run | Not run | Deferred | May be Deferred with reason |
-| G06 | Responsiveness sanity | Normal navigation remains responsive while monitoring a representative NAS/shared project. | Not run | Not run | Deferred |  |
+| G06 | Responsiveness sanity | Normal navigation remains responsive while monitoring a representative NAS/shared project. | Pass | Not run | Deferred | User-verified on Windows |
 
 ## Release-blocking findings
 
