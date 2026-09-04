@@ -1,8 +1,8 @@
-# JL Mixing Studio 2.2 Release Acceptance Matrix
+# JL Mixing Studio 2.2 Release Qualification Record
 
-This is the source of truth for Studio 2.2 release-candidate acceptance. It supplements automated CI with packaged testing of installation, upgrade compatibility, Delivery Notes, and filesystem-based Revision and Delivered Listening on representative local/shared storage.
+This is the final qualification record for Studio 2.2. It supplements automated CI with completed packaged testing of installation, upgrade compatibility, Delivery Notes, and filesystem-based Revision and Delivered Listening on representative local/shared storage.
 
-The first published candidate is Studio `v2.2.0-rc.1` with Automation `v2.2.0-rc.1`. The immutable release commits and packaged acceptance results are recorded below.
+Studio `v2.2.0-rc.1` with Automation `v2.2.0-rc.1` was the accepted candidate pair that qualified the stable release. The immutable candidate commits, completed results, and explicit deferrals are recorded below.
 
 ## Result definitions
 
@@ -11,9 +11,9 @@ The first published candidate is Studio `v2.2.0-rc.1` with Automation `v2.2.0-rc
 - **Not run** — not yet exercised using the packaged candidate.
 - **Deferred** — cannot practically be exercised; record the reason and supporting automated or prior evidence. Deferred does not mean Pass.
 
-Branch/runtime verification is useful pre-RC evidence but does not automatically qualify the packaged candidate.
+Branch/runtime verification supported qualification but did not replace the packaged acceptance results recorded here.
 
-## Candidate test environment
+## Qualified candidate environment
 
 | Item | Windows x64 | macOS Intel | macOS Apple Silicon |
 | --- | --- | --- | --- |
@@ -25,11 +25,11 @@ Branch/runtime verification is useful pre-RC evidence but does not automatically
 | Listening destination type/path | m:/media/Mixes | /Volumes/Media/Mixes | Deferred |
 | Tester/date | Manual acceptance / 2026-09-04 | Manual acceptance / 2026-09-04 | Deferred |
 
-At least one practically testable platform pass must use a NAS/shared workspace and NAS/shared Listening destination. Do not use Plex's displayed library metadata as the authoritative metadata test; inspect the published file directly because server agents may overlay online metadata.
+Qualification included NAS/shared workspace and Listening-destination testing. Plex's displayed library metadata was not used as authoritative tag evidence; published files were inspected directly because server agents may overlay online metadata.
 
 Manual macOS acceptance is limited to Intel hardware for this release. All macOS Apple Silicon manual rows are **Deferred** because suitable hardware is unavailable; the published Apple Silicon package and required automated compile, Listening regression, and WKWebView evidence remain release gates.
 
-## Pre-RC evidence already completed
+## Supporting pre-RC evidence
 
 | Evidence | Status | Source |
 | --- | --- | --- |
@@ -126,7 +126,7 @@ Record every packaged-candidate failure before advancing. A fix requires a new i
 
 | Platform | Issue | Summary | Disposition |
 | --- | --- | --- | --- |
-| — | — | None recorded yet | Acceptance in progress |
+| — | — | None | Qualification completed |
 
 ## Qualification decision
 
@@ -144,4 +144,4 @@ Record every packaged-candidate failure before advancing. A fix requires a new i
 - [x] No release-blocking finding remains open.
 - [x] Final CI/release workflows are green.
 
-**Current decision:** Qualified. Published `v2.2.0-rc.1` artifacts passed packaged acceptance on Windows x64 and macOS Intel. E05 legacy-manifest testing is explicitly Deferred with completed pre-RC manual and integration evidence; macOS Apple Silicon manual testing is Deferred with required automated evidence.
+**Final decision:** Qualified. Published `v2.2.0-rc.1` artifacts passed packaged acceptance on Windows x64 and macOS Intel. E05 legacy-manifest testing is explicitly Deferred with completed pre-RC manual and integration evidence; macOS Apple Silicon manual testing is Deferred with required automated evidence.
