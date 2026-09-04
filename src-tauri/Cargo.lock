@@ -1696,7 +1696,7 @@ dependencies = [
 
 [[package]]
 name = "jl-mixing-studio"
-version = "2.2.0-rc.1"
+version = "2.2.0"
 dependencies = [
  "chrono",
  "jsonschema",

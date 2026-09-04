@@ -9,7 +9,7 @@ JL Mixing Studio is an open-source desktop application for small-studio and home
 
 ## Current release line
 
-JL Mixing Studio 2.2 release candidates support JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated `2.2.0-rc.1` provider is JL Mixing Automation `2.2.0-rc.1`.
+JL Mixing Studio 2.2 supports JL Mixing Automation API `1.0` and workspace metadata schema `1.1.0`. The coordinated stable provider is JL Mixing Automation `2.2.0`.
 
 Studio and Automation remain independently versioned products. Compatibility is determined from Automation API version, advertised capabilities, and supported metadata schemas rather than requiring matching application version numbers.
 
@@ -57,9 +57,9 @@ JL Mixing Automation remains authoritative for workflow semantics, metadata, val
 
 Official Studio packages are currently unsigned. macOS Gatekeeper and Windows SmartScreen may therefore display unknown-developer/publisher warnings.
 
-Before bypassing an operating-system warning, verify the installer against the published `SHA256SUMS.txt`. See the [Studio 2.2 release-candidate notes](docs/RELEASE_NOTES_V2.2.md) for exact Intel/Apple Silicon/Windows installer selection and the required Gatekeeper/SmartScreen steps.
+Before bypassing an operating-system warning, verify the installer against the published `SHA256SUMS.txt`. See the [Studio 2.2 release notes](docs/RELEASE_NOTES_V2.2.md) for exact Intel/Apple Silicon/Windows installer selection and the required Gatekeeper/SmartScreen steps.
 
-JL Mixing Automation is installed separately. Use the coordinated Automation `2.2.0-rc.1` provider for Studio `2.2.0-rc.1` acceptance and follow its platform-specific installation steps, including the recursive macOS quarantine workaround required by its bundled Python runtime.
+JL Mixing Automation is installed separately. Use Automation `2.2.0` with Studio `2.2.0` and follow its platform-specific installation steps, including the recursive macOS quarantine workaround required by its bundled Python runtime.
 
 ## Workspace compatibility
 
@@ -79,7 +79,7 @@ Existing valid v1.1+ workspaces remain compatible with Studio 2.2. No workspace 
 ## Project documents
 
 - [Listening Phase 1 configuration and behavior](docs/LISTENING.md)
-- [Studio 2.2 release-candidate notes](docs/RELEASE_NOTES_V2.2.md)
+- [Studio 2.2 release notes](docs/RELEASE_NOTES_V2.2.md)
 - [Studio 2.2 release acceptance matrix](docs/RELEASE_ACCEPTANCE_V2.2.md)
 - [Studio 2.1 release notes and installation](docs/RELEASE_NOTES_V2.1.md)
 - [Development status](docs/development-status.md)

@@ -2,13 +2,13 @@
 
 JL Mixing Studio 2.2 adds filesystem-based Revision and Delivered Listening workflows for local, NAS/shared, and mounted synchronized folders. It also captures the delivery note while creating a delivery and reduces the steady-state workspace work performed by the active-project monitor.
 
-> Release-candidate status: these notes describe the intended 2.2 release. Packaged qualification is not complete until the accepted candidate and platform results are recorded in [`RELEASE_ACCEPTANCE_V2.2.md`](RELEASE_ACCEPTANCE_V2.2.md).
+Studio 2.2.0 was qualified through packaged acceptance on Windows x64 and macOS Intel. Apple Silicon manual acceptance was deferred because suitable hardware was unavailable; the published Apple Silicon candidate and required automated compile, Listening regression, and WKWebView checks passed.
 
 Studio remains a client of JL Mixing Automation API `1.0`. Compatibility is determined by API version, advertised capabilities, and supported workspace metadata rather than requiring matching Studio and Automation product versions.
 
 ## Installation
 
-Download the installer for your platform from the Assets section of the candidate release and verify it against `SHA256SUMS.txt` before bypassing an operating-system security warning. Replace `<version>` below with the exact candidate version shown on the release.
+Download the installer for your platform from the Assets section of the release and verify it against `SHA256SUMS.txt` before bypassing an operating-system security warning. Replace `<version>` below with the version shown on the release (`2.2.0` for this stable release).
 
 ### macOS
 
@@ -35,7 +35,7 @@ Studio is currently unsigned. After verifying the checksum, use **More info → 
 
 ### Automation requirement
 
-JL Mixing Automation is installed separately. Studio `2.2.0-rc.1` is coordinated with Automation `2.2.0-rc.1`; the acceptance record must still identify the exact installed Automation build. Full Delivered Listening provenance acceptance requires the delivery `source_path` support tracked by `jl-aspect-works/jl-mixing-automation#190`. Existing delivery manifests without that field remain supported through Studio's conservative legacy fallback.
+JL Mixing Automation is installed separately. Studio `2.2.0` is coordinated with Automation `2.2.0`. Stable qualification used the accepted `2.2.0-rc.1` pair, and Automation 2.2.0 includes the delivery `source_path` provenance required for precise Delivered Listening source selection. Existing delivery manifests without that field remain supported through Studio's conservative legacy fallback.
 
 ## Highlights
 
@@ -105,4 +105,4 @@ Actual scan and repair time varies with the selected project, source/destination
 
 ## Release qualification
 
-Branch/runtime feature and performance checks have passed. Packaged Windows and macOS acceptance remains required before Studio 2.2 can be promoted to stable. Record the exact candidates, environments, results, and any release-blocking findings in [`RELEASE_ACCEPTANCE_V2.2.md`](RELEASE_ACCEPTANCE_V2.2.md).
+Branch/runtime feature and performance checks passed. Published `v2.2.0-rc.1` packages passed the required Windows x64 and macOS Intel acceptance matrix with no release-blocking findings. E05 legacy-manifest testing and macOS Apple Silicon manual testing were explicitly deferred with supporting automated and prior evidence, as recorded in [`RELEASE_ACCEPTANCE_V2.2.md`](RELEASE_ACCEPTANCE_V2.2.md).
