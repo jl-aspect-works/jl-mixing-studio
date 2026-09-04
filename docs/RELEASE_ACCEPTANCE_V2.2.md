@@ -20,7 +20,7 @@ Branch/runtime verification is useful pre-RC evidence but does not automatically
 | Studio candidate | `v2.2.0-rc.1` | `v2.2.0-rc.1` | `v2.2.0-rc.1` |
 | Studio commit | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` |
 | Automation version/build | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` |
-| OS version | Windows 11 Pro | Not yet recorded | Deferred — hardware unavailable |
+| OS version | Windows 11 Pro | macOS 12.7.6 | Deferred — hardware unavailable |
 | Workspace type/path | Record local/NAS/shared | Record local/NAS/shared | Deferred |
 | Listening destination type/path | m:/media/Mixes | /Volumes/Media/Mixes | Deferred |
 | Tester/date | Manual acceptance / 2026-09-04 | Manual acceptance / 2026-09-04 | Deferred |
@@ -54,43 +54,43 @@ Manual macOS acceptance is limited to Intel hardware for this release. All macOS
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| B01 | Create Delivery with a note | The dialog accepts the note; successful delivery stores and displays it in Delivery Notes. | Pass | Not run | Deferred | #336; user-verified on Windows |
-| B02 | Cancel Create Delivery | No delivery or note mutation occurs. | Pass | Not run | Deferred | User-verified on Windows |
-| B03 | Delivery failure safety | A failed delivery attempt preserves prior authoritative delivery/package state and does not change Delivered Listening. | Pass | Not run | Deferred | Required release gate; user-verified on Windows |
+| B01 | Create Delivery with a note | The dialog accepts the note; successful delivery stores and displays it in Delivery Notes. | Pass | Pass | Deferred | #336; user-verified on Windows and macOS Intel |
+| B02 | Cancel Create Delivery | No delivery or note mutation occurs. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| B03 | Delivery failure safety | A failed delivery attempt preserves prior authoritative delivery/package state and does not change Delivered Listening. | Pass | Pass | Deferred | Required release gate; user-verified on Windows and macOS Intel |
 
 ## C. Listening configuration
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| C01 | Configure separate publish classes | Revision and Delivered destinations save independently and persist after restart. | Pass | Not run | Deferred | User-verified on Windows |
-| C02 | Multiple destinations/formats | Multiple enabled destinations publish only their configured required format. | Pass | Not run | Deferred | User-verified on Windows |
-| C03 | Enable/disable destination | Disabled destination is not modified; re-enabled destination reconciles from authoritative state. | Pass | Not run | Deferred | User-verified on Windows |
-| C04 | Destination validation | Empty, missing, inaccessible, unreadable, or unwritable paths show non-blocking actionable status. | Pass | Not run | Deferred | Practical cases user-verified on Windows |
-| C05 | Missing configured format | Destination is skipped quietly; no fallback/transcoding occurs and no error-level activity is shown. | Pass | Not run | Deferred | User-verified on Windows |
+| C01 | Configure separate publish classes | Revision and Delivered destinations save independently and persist after restart. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| C02 | Multiple destinations/formats | Multiple enabled destinations publish only their configured required format. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| C03 | Enable/disable destination | Disabled destination is not modified; re-enabled destination reconciles from authoritative state. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| C04 | Destination validation | Empty, missing, inaccessible, unreadable, or unwritable paths show non-blocking actionable status. | Pass | Pass | Deferred | Practical cases user-verified on Windows and macOS Intel |
+| C05 | Missing configured format | Destination is skipped quietly; no fallback/transcoding occurs and no error-level activity is shown. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 
 ## D. Revision Listening
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| D01 | Stable current-revision publish | A completed source publishes after stability observation with canonical `<project>-rev-XX.<ext>` naming. | Pass | Not run | Deferred | User-verified on Windows |
-| D02 | In-progress source change | A changing/growing source is not published until its fingerprint is stable for three observations. | Pass | Not run | Deferred | User-verified on Windows |
-| D03 | Source selection | Deterministic primary selection is used and `Variants/` is excluded from automatic selection. | Pass | Not run | Deferred | User-verified on Windows |
-| D04 | Delete published audio | The active-project monitor restores the missing Revision Listening file without a source change. | Pass | Not run | Deferred | Self-healing gate; user-verified on Windows |
-| D05 | Stale published audio | Replacing/changing the authoritative stable source causes the managed copy to update. | Pass | Not run | Deferred | User-verified on Windows |
-| D06 | Metadata/artwork repair | Remove or alter managed metadata/artwork/sidecars; reconciliation restores configured values. | Pass | Not run | Deferred | User-verified on Windows |
-| D07 | Contextual activity | Revision shows accurate Published/Skipped/Failed destination details only when state changes. | Pass | Not run | Deferred | User-verified on Windows |
+| D01 | Stable current-revision publish | A completed source publishes after stability observation with canonical `<project>-rev-XX.<ext>` naming. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| D02 | In-progress source change | A changing/growing source is not published until its fingerprint is stable for three observations. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| D03 | Source selection | Deterministic primary selection is used and `Variants/` is excluded from automatic selection. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| D04 | Delete published audio | The active-project monitor restores the missing Revision Listening file without a source change. | Pass | Pass | Deferred | Self-healing gate; user-verified on Windows and macOS Intel |
+| D05 | Stale published audio | Replacing/changing the authoritative stable source causes the managed copy to update. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| D06 | Metadata/artwork repair | Remove or alter managed metadata/artwork/sidecars; reconciliation restores configured values. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| D07 | Contextual activity | Revision shows accurate Published/Skipped/Failed destination details only when state changes. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 
 ## E. Delivered Listening
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| E01 | Successful delivery publish | Successful package creation publishes canonical `<project>.<ext>` Delivered Listening content. | Pass | Not run | Deferred | User-verified on Windows |
-| E02 | Continuous self-healing | Delete the Delivered Listening file while any project tab remains open; the monitor restores it without visiting Delivery. | Pass | Not run | Deferred | Self-healing gate; user-verified on Windows |
-| E03 | Re-delivery replacement | Create a later valid delivery; Delivered Listening changes to the new authoritative delivery source. | Pass | Not run | Deferred | Required release gate; user-verified on Windows |
-| E04 | Provenance-backed source identity | New delivery `source_path` provenance selects the same primary source used by the package. | Pass | Not run | Deferred | Coordinated Automation build; user-verified on Windows |
+| E01 | Successful delivery publish | Successful package creation publishes canonical `<project>.<ext>` Delivered Listening content. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| E02 | Continuous self-healing | Delete the Delivered Listening file while any project tab remains open; the monitor restores it without visiting Delivery. | Pass | Pass | Deferred | Self-healing gate; user-verified on Windows and macOS Intel |
+| E03 | Re-delivery replacement | Create a later valid delivery; Delivered Listening changes to the new authoritative delivery source. | Pass | Pass | Deferred | Required release gate; user-verified on Windows and macOS Intel |
+| E04 | Provenance-backed source identity | New delivery `source_path` provenance selects the same primary source used by the package. | Pass | Pass | Deferred | Coordinated Automation build; user-verified on Windows and macOS Intel |
 | E05 | Legacy delivery manifest | A legacy manifest uses explicit `main_mix` or a single matching top-level candidate; multiple ambiguous candidates are skipped. | Not run | Not run | Deferred |  |
-| E06 | Metadata title distinction | Direct file inspection shows Revision title contains `Rev XX`; Delivered title does not contain a revision suffix. | Pass | Not run | Deferred | User-verified on Windows |
-| E07 | Contextual activity | Delivery shows accurate Published/Skipped/Failed details without recurring quiet refresh churn. | Pass | Not run | Deferred | User-verified on Windows |
+| E06 | Metadata title distinction | Direct file inspection shows Revision title contains `Rev XX`; Delivered title does not contain a revision suffix. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| E07 | Contextual activity | Delivery shows accurate Published/Skipped/Failed details without recurring quiet refresh churn. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 
 ## F. Metadata, artwork, and source safety
 
@@ -102,23 +102,23 @@ ffprobe -v error -show_entries format_tags=title,artist,album_artist,album,genre
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| F01 | Replace metadata policy | Published-copy tags match project/client metadata and the Revision/Delivered title rules. | Pass | Not run | Deferred | User-verified on Windows |
-| F02 | Preserve/off metadata policy | Existing policy behavior is honored without unintended replacement. | Pass | Not run | Deferred | User-verified on Windows |
-| F03 | Embedded Studio artwork | Configured Listening copies contain the approved Studio artwork. | Pass | Not run | Deferred | User-verified on Windows |
-| F04 | Artwork sidecars | `artist.png` and `folder.png` exist under the client destination and self-heal independently. | Pass | Not run | Deferred | User-verified on Windows |
-| F05 | Source immutability | Hash/timestamp/tag inspection confirms revision sources and delivery artifacts were not modified by Listening publication. | Pass | Not run | Deferred | Required release gate; user-verified on Windows |
-| F06 | Media-server sanity | Optional Plex/Navidrome/folder scan sees canonical files; any server metadata overlay is recorded as a server behavior, not accepted as source-tag evidence. | Pass | Not run | Deferred | User-verified on Windows |
+| F01 | Replace metadata policy | Published-copy tags match project/client metadata and the Revision/Delivered title rules. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| F02 | Preserve/off metadata policy | Existing policy behavior is honored without unintended replacement. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| F03 | Embedded Studio artwork | Configured Listening copies contain the approved Studio artwork. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| F04 | Artwork sidecars | `artist.png` and `folder.png` exist under the client destination and self-heal independently. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| F05 | Source immutability | Hash/timestamp/tag inspection confirms revision sources and delivery artifacts were not modified by Listening publication. | Pass | Pass | Deferred | Required release gate; user-verified on Windows and macOS Intel |
+| F06 | Media-server sanity | Optional Plex/Navidrome/folder scan sees canonical files; any server metadata overlay is recorded as a server behavior, not accepted as source-tag evidence. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 
 ## G. Monitor, performance, and diagnostics
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| G01 | Active-project scope | Monitoring one project does not require unrelated projects to be valid and does not cause visible workspace refresh churn. | Pass | Not run | Deferred | User-verified on Windows |
-| G02 | Non-overlapping behavior | Slow NAS operations do not start concurrent monitor scans or duplicate publishers. | Pass | Not run | Deferred | Practical run/logs user-verified on Windows |
-| G03 | Normal info logging | Normal monitoring emits no periodic scan-duration warnings or repeated unchanged success activity. | Pass | Not run | Deferred | User-verified on Windows |
+| G01 | Active-project scope | Monitoring one project does not require unrelated projects to be valid and does not cause visible workspace refresh churn. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
+| G02 | Non-overlapping behavior | Slow NAS operations do not start concurrent monitor scans or duplicate publishers. | Pass | Pass | Deferred | Practical run/logs user-verified on Windows and macOS Intel |
+| G03 | Normal info logging | Normal monitoring emits no periodic scan-duration warnings or repeated unchanged success activity. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 | G04 | Debug timing evidence | With debug logging enabled, `listening_monitor_scan_completed` records configuration, project discovery, Revision, Delivered, and total durations. | Not run | Not run | Deferred | No fixed slow threshold |
 | G05 | Failure/recovery diagnostics | Make a destination temporarily unavailable where practical; one actionable failure state and recovery are recorded without per-scan spam. | Not run | Not run | Deferred | May be Deferred with reason |
-| G06 | Responsiveness sanity | Normal navigation remains responsive while monitoring a representative NAS/shared project. | Pass | Not run | Deferred | User-verified on Windows |
+| G06 | Responsiveness sanity | Normal navigation remains responsive while monitoring a representative NAS/shared project. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 
 ## Release-blocking findings
 
