@@ -72,13 +72,13 @@ Manual macOS acceptance is limited to Intel hardware for this release. All macOS
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| D01 | Stable current-revision publish | A completed source publishes after stability observation with canonical `<project>-rev-XX.<ext>` naming. | Not run | Not run | Deferred |  |
-| D02 | In-progress source change | A changing/growing source is not published until its fingerprint is stable for three observations. | Not run | Not run | Deferred |  |
-| D03 | Source selection | Deterministic primary selection is used and `Variants/` is excluded from automatic selection. | Not run | Not run | Deferred |  |
-| D04 | Delete published audio | The active-project monitor restores the missing Revision Listening file without a source change. | Not run | Not run | Deferred | Self-healing gate |
-| D05 | Stale published audio | Replacing/changing the authoritative stable source causes the managed copy to update. | Not run | Not run | Deferred |  |
-| D06 | Metadata/artwork repair | Remove or alter managed metadata/artwork/sidecars; reconciliation restores configured values. | Not run | Not run | Deferred |  |
-| D07 | Contextual activity | Revision shows accurate Published/Skipped/Failed destination details only when state changes. | Not run | Not run | Deferred |  |
+| D01 | Stable current-revision publish | A completed source publishes after stability observation with canonical `<project>-rev-XX.<ext>` naming. | Pass | Not run | Deferred | User-verified on Windows |
+| D02 | In-progress source change | A changing/growing source is not published until its fingerprint is stable for three observations. | Pass | Not run | Deferred | User-verified on Windows |
+| D03 | Source selection | Deterministic primary selection is used and `Variants/` is excluded from automatic selection. | Pass | Not run | Deferred | User-verified on Windows |
+| D04 | Delete published audio | The active-project monitor restores the missing Revision Listening file without a source change. | Pass | Not run | Deferred | Self-healing gate; user-verified on Windows |
+| D05 | Stale published audio | Replacing/changing the authoritative stable source causes the managed copy to update. | Pass | Not run | Deferred | User-verified on Windows |
+| D06 | Metadata/artwork repair | Remove or alter managed metadata/artwork/sidecars; reconciliation restores configured values. | Pass | Not run | Deferred | User-verified on Windows |
+| D07 | Contextual activity | Revision shows accurate Published/Skipped/Failed destination details only when state changes. | Pass | Not run | Deferred | User-verified on Windows |
 
 ## E. Delivered Listening
 
