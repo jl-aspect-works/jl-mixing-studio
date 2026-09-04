@@ -88,7 +88,7 @@ Manual macOS acceptance is limited to Intel hardware for this release. All macOS
 | E02 | Continuous self-healing | Delete the Delivered Listening file while any project tab remains open; the monitor restores it without visiting Delivery. | Pass | Pass | Deferred | Self-healing gate; user-verified on Windows and macOS Intel |
 | E03 | Re-delivery replacement | Create a later valid delivery; Delivered Listening changes to the new authoritative delivery source. | Pass | Pass | Deferred | Required release gate; user-verified on Windows and macOS Intel |
 | E04 | Provenance-backed source identity | New delivery `source_path` provenance selects the same primary source used by the package. | Pass | Pass | Deferred | Coordinated Automation build; user-verified on Windows and macOS Intel |
-| E05 | Legacy delivery manifest | A legacy manifest uses explicit `main_mix` or a single matching top-level candidate; multiple ambiguous candidates are skipped. | Not run | Not run | Deferred |  |
+| E05 | Legacy delivery manifest | A legacy manifest uses explicit `main_mix` or a single matching top-level candidate; multiple ambiguous candidates are skipped. | Deferred | Deferred | Deferred | Impractical packaged setup; covered by completed #356 manual legacy checks and #361 integration tests |
 | E06 | Metadata title distinction | Direct file inspection shows Revision title contains `Rev XX`; Delivered title does not contain a revision suffix. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 | E07 | Contextual activity | Delivery shows accurate Published/Skipped/Failed details without recurring quiet refresh churn. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 
@@ -116,8 +116,8 @@ ffprobe -v error -show_entries format_tags=title,artist,album_artist,album,genre
 | G01 | Active-project scope | Monitoring one project does not require unrelated projects to be valid and does not cause visible workspace refresh churn. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 | G02 | Non-overlapping behavior | Slow NAS operations do not start concurrent monitor scans or duplicate publishers. | Pass | Pass | Deferred | Practical run/logs user-verified on Windows and macOS Intel |
 | G03 | Normal info logging | Normal monitoring emits no periodic scan-duration warnings or repeated unchanged success activity. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
-| G04 | Debug timing evidence | With debug logging enabled, `listening_monitor_scan_completed` records configuration, project discovery, Revision, Delivered, and total durations. | Not run | Not run | Deferred | No fixed slow threshold |
-| G05 | Failure/recovery diagnostics | Make a destination temporarily unavailable where practical; one actionable failure state and recovery are recorded without per-scan spam. | Not run | Not run | Deferred | May be Deferred with reason |
+| G04 | Debug timing evidence | With debug logging enabled, `listening_monitor_scan_completed` records configuration, project discovery, Revision, Delivered, and total durations. | Pass | Pass | Deferred | No fixed slow threshold; user-verified on Windows and macOS Intel |
+| G05 | Failure/recovery diagnostics | Make a destination temporarily unavailable where practical; one actionable failure state and recovery are recorded without per-scan spam. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 | G06 | Responsiveness sanity | Normal navigation remains responsive while monitoring a representative NAS/shared project. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 
 ## Release-blocking findings
@@ -134,14 +134,14 @@ Record every packaged-candidate failure before advancing. A fix requires a new i
 
 - [x] Exact Studio and Automation candidate/builds recorded.
 - [x] Candidate artifacts and `SHA256SUMS.txt` published successfully.
-- [ ] Windows x64 packaged acceptance passes.
-- [ ] At least one packaged macOS architecture acceptance passes; unavailable architecture is explicitly Deferred with CI evidence.
-- [ ] Normal NAS/shared-workspace Listening behavior passes on at least one platform.
-- [ ] Revision and Delivered deletion/metadata/artwork self-healing passes.
-- [ ] Failed delivery produces no Delivered Listening change.
-- [ ] Re-delivery replacement passes.
-- [ ] Source revision/delivery artifacts remain unchanged.
-- [ ] No release-blocking finding remains open.
+- [x] Windows x64 packaged acceptance passes with the documented legacy-manifest deferral.
+- [x] At least one packaged macOS architecture acceptance passes; unavailable architecture is explicitly Deferred with CI evidence.
+- [x] Normal NAS/shared-workspace Listening behavior passes on at least one platform.
+- [x] Revision and Delivered deletion/metadata/artwork self-healing passes.
+- [x] Failed delivery produces no Delivered Listening change.
+- [x] Re-delivery replacement passes.
+- [x] Source revision/delivery artifacts remain unchanged.
+- [x] No release-blocking finding remains open.
 - [x] Final CI/release workflows are green.
 
-**Current decision:** Not yet qualified. Published `v2.2.0-rc.1` artifacts passed baseline packaged checks 1–6 on Windows x64 and macOS Intel; feature-specific packaged acceptance is in progress.
+**Current decision:** Qualified. Published `v2.2.0-rc.1` artifacts passed packaged acceptance on Windows x64 and macOS Intel. E05 legacy-manifest testing is explicitly Deferred with completed pre-RC manual and integration evidence; macOS Apple Silicon manual testing is Deferred with required automated evidence.
