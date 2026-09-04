@@ -4,6 +4,10 @@ Status: **Approved design reference** for issue #370 and implementation issues #
 
 These wireframes lock the intended information hierarchy and control grouping for the active comparison workspace and the reveal/results screen. They are not final visual styling specifications.
 
+## Approved visual reference
+
+![Blind Revision Comparison wireframes](wireframes/blind-revision-comparison-wireframes.svg)
+
 ## Comparison screen
 
 ```text
