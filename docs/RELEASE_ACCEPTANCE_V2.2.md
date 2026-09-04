@@ -46,7 +46,7 @@ Manual macOS acceptance is limited to Intel hardware for this release. All macOS
 | A02 | Upgrade from Studio 2.1.0 | Existing workspace selection and Studio settings remain intact; no unexpected reset or migration occurs. | Pass | Pass | Deferred | User-reported packaged check 2 |
 | A03 | Automation discovery | Studio discovers the recorded compatible Automation provider without API/schema errors. | Pass | Pass | Deferred | User-reported packaged checks 3 and 5 |
 | A04 | Existing workspace compatibility | Representative existing clients/projects/revisions/deliveries load correctly with no mutation. | Pass | Pass | Deferred | User-reported packaged checks 4 and 5 |
-| A05 | Baseline Daily Workflow sanity | Create/open a project, navigate all project tabs, create/approve a revision, and inspect Delivery. | Not run | Not run | Deferred |  |
+| A05 | Baseline Daily Workflow sanity | Create/open a project, navigate all project tabs, create/approve a revision, and inspect Delivery. | Pass | Pass | Deferred | User-verified on Windows and macOS Intel |
 | A06 | Audio preview regression | Representative supported audio plays; pause/seek/stop and file release behave normally. | Pass | Pass | Deferred | User-reported packaged check 6 |
 | A07 | Restart/persistence | Relaunch Studio; workspace, Listening configuration, and project context reload correctly. | Pass | Pass | Deferred | User-reported packaged check 6 |
 
