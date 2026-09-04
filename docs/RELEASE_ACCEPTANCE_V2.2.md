@@ -2,7 +2,7 @@
 
 This is the source of truth for Studio 2.2 release-candidate acceptance. It supplements automated CI with packaged testing of installation, upgrade compatibility, Delivery Notes, and filesystem-based Revision and Delivered Listening on representative local/shared storage.
 
-The first planned candidate is `2.2.0-rc.1`. Record the actual immutable candidate and provider builds below after the release workflows publish them.
+The first published candidate is Studio `v2.2.0-rc.1` with Automation `v2.2.0-rc.1`. The immutable release commits and packaged acceptance results are recorded below.
 
 ## Result definitions
 
@@ -17,13 +17,13 @@ Branch/runtime verification is useful pre-RC evidence but does not automatically
 
 | Item | Windows x64 | macOS Intel | macOS Apple Silicon |
 | --- | --- | --- | --- |
-| Studio candidate | `2.2.0-rc.1` (planned) | `2.2.0-rc.1` (planned) | `2.2.0-rc.1` (planned) |
-| Studio commit | Record after publish | Record after publish | Record after publish |
-| Automation version/build | Record exact provider | Record exact provider | Record exact provider |
-| OS version | Record | Record | Record |
+| Studio candidate | `v2.2.0-rc.1` | `v2.2.0-rc.1` | `v2.2.0-rc.1` |
+| Studio commit | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` | `d17740b68dacbe8f7f9e2d8760e9563bc7902376` |
+| Automation version/build | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` | `v2.2.0-rc.1` / `01df878650a4131c0305f92f037dff3713f03409` |
+| OS version | Not yet recorded | Not yet recorded | Not yet recorded |
 | Workspace type/path | Record local/NAS/shared | Record local/NAS/shared | Record local/NAS/shared |
 | Listening destination type/path | Record | Record | Record |
-| Tester/date | Record | Record | Record |
+| Tester/date | Manual acceptance / 2026-09-04 | Manual acceptance / 2026-09-04 | Not run |
 
 At least one practically testable platform pass must use a NAS/shared workspace and NAS/shared Listening destination. Do not use Plex's displayed library metadata as the authoritative metadata test; inspect the published file directly because server agents may overlay online metadata.
 
@@ -40,13 +40,13 @@ At least one practically testable platform pass must use a NAS/shared workspace 
 
 | ID | Test | Expected result | Windows x64 | macOS Intel | macOS Apple Silicon | Notes / issue |
 | --- | --- | --- | --- | --- | --- | --- |
-| A01 | Verify package checksum, install, and launch | Checksum matches; installation succeeds; Studio launches and displays the exact candidate version. | Not run | Not run | Not run |  |
-| A02 | Upgrade from Studio 2.1.0 | Existing workspace selection and Studio settings remain intact; no unexpected reset or migration occurs. | Not run | Not run | Not run |  |
-| A03 | Automation discovery | Studio discovers the recorded compatible Automation provider without API/schema errors. | Not run | Not run | Not run |  |
-| A04 | Existing workspace compatibility | Representative existing clients/projects/revisions/deliveries load correctly with no mutation. | Not run | Not run | Not run |  |
+| A01 | Verify package checksum, install, and launch | Checksum matches; installation succeeds; Studio launches and displays the exact candidate version. | Pass | Pass | Not run | User-reported packaged checks 1–3 |
+| A02 | Upgrade from Studio 2.1.0 | Existing workspace selection and Studio settings remain intact; no unexpected reset or migration occurs. | Pass | Pass | Not run | User-reported packaged check 2 |
+| A03 | Automation discovery | Studio discovers the recorded compatible Automation provider without API/schema errors. | Pass | Pass | Not run | User-reported packaged checks 3 and 5 |
+| A04 | Existing workspace compatibility | Representative existing clients/projects/revisions/deliveries load correctly with no mutation. | Pass | Pass | Not run | User-reported packaged checks 4 and 5 |
 | A05 | Baseline Daily Workflow sanity | Create/open a project, navigate all project tabs, create/approve a revision, and inspect Delivery. | Not run | Not run | Not run |  |
-| A06 | Audio preview regression | Representative supported audio plays; pause/seek/stop and file release behave normally. | Not run | Not run | Not run |  |
-| A07 | Restart/persistence | Relaunch Studio; workspace, Listening configuration, and project context reload correctly. | Not run | Not run | Not run |  |
+| A06 | Audio preview regression | Representative supported audio plays; pause/seek/stop and file release behave normally. | Pass | Pass | Not run | User-reported packaged check 6 |
+| A07 | Restart/persistence | Relaunch Studio; workspace, Listening configuration, and project context reload correctly. | Pass | Pass | Not run | User-reported packaged check 6 |
 
 ## B. Delivery note capture
 
@@ -124,14 +124,14 @@ Record every packaged-candidate failure before advancing. A fix requires a new i
 
 | Platform | Issue | Summary | Disposition |
 | --- | --- | --- | --- |
-| — | — | None recorded yet | Acceptance not started |
+| — | — | None recorded yet | Acceptance in progress |
 
 ## Qualification decision
 
 ### Required gates
 
-- [ ] Exact Studio and Automation candidate/builds recorded.
-- [ ] Candidate artifacts and `SHA256SUMS.txt` published successfully.
+- [x] Exact Studio and Automation candidate/builds recorded.
+- [x] Candidate artifacts and `SHA256SUMS.txt` published successfully.
 - [ ] Windows x64 packaged acceptance passes.
 - [ ] At least one packaged macOS architecture acceptance passes; unavailable architecture is explicitly Deferred with CI evidence.
 - [ ] Normal NAS/shared-workspace Listening behavior passes on at least one platform.
@@ -140,6 +140,6 @@ Record every packaged-candidate failure before advancing. A fix requires a new i
 - [ ] Re-delivery replacement passes.
 - [ ] Source revision/delivery artifacts remain unchanged.
 - [ ] No release-blocking finding remains open.
-- [ ] Final CI/release workflows are green.
+- [x] Final CI/release workflows are green.
 
-**Current decision:** Not yet qualified. Awaiting published `2.2.0-rc.1` artifacts and packaged acceptance.
+**Current decision:** Not yet qualified. Published `v2.2.0-rc.1` artifacts passed baseline packaged checks 1–6 on Windows x64 and macOS Intel; feature-specific packaged acceptance is in progress.
