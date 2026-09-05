@@ -188,7 +188,8 @@ fn validate_regions(regions: &[ProjectRegion]) -> Result<(), String> {
 fn validate_sessions(sessions: &[CompletedSession]) -> Result<(), String> {
     let mut session_ids = HashSet::new();
     for session in sessions {
-        if session.session_id.trim().is_empty() || !session_ids.insert(session.session_id.as_str()) {
+        if session.session_id.trim().is_empty() || !session_ids.insert(session.session_id.as_str())
+        {
             return Err("Completed comparison session IDs must be non-empty and unique".to_owned());
         }
         validate_session(session)?;
@@ -197,13 +198,32 @@ fn validate_sessions(sessions: &[CompletedSession]) -> Result<(), String> {
 }
 
 fn validate_session(session: &CompletedSession) -> Result<(), String> {
-    if session.completed_at.trim().is_empty() || session.candidates.len() < 2 || session.regions.is_empty() {
-        return Err("Completed comparison sessions require a timestamp, 2+ candidates, and 1+ regions".to_owned());
+    if session.completed_at.trim().is_empty()
+        || session.candidates.len() < 2
+        || session.regions.is_empty()
+    {
+        return Err(
+            "Completed comparison sessions require a timestamp, 2+ candidates, and 1+ regions"
+                .to_owned(),
+        );
     }
-    let candidate_ids: HashSet<&str> = session.candidates.iter().map(|c| c.revision_id.as_str()).collect();
-    let blind_ids: HashSet<&str> = session.candidates.iter().map(|c| c.blind_id.as_str()).collect();
-    if candidate_ids.len() != session.candidates.len() || blind_ids.len() != session.candidates.len() {
-        return Err("Completed comparison candidates require unique revision_id and blind_id values".to_owned());
+    let candidate_ids: HashSet<&str> = session
+        .candidates
+        .iter()
+        .map(|candidate| candidate.revision_id.as_str())
+        .collect();
+    let blind_ids: HashSet<&str> = session
+        .candidates
+        .iter()
+        .map(|candidate| candidate.blind_id.as_str())
+        .collect();
+    if candidate_ids.len() != session.candidates.len()
+        || blind_ids.len() != session.candidates.len()
+    {
+        return Err(
+            "Completed comparison candidates require unique revision_id and blind_id values"
+                .to_owned(),
+        );
     }
     if session.candidates.iter().any(|candidate| {
         candidate.revision_id.trim().is_empty()
@@ -240,7 +260,10 @@ fn validate_region_bounds(name: &str, start: f64, end: Option<f64>) -> Result<()
     Ok(())
 }
 
-fn validate_rank_rows(result: &CompletedRegionResult, candidate_ids: &HashSet<&str>) -> Result<(), String> {
+fn validate_rank_rows(
+    result: &CompletedRegionResult,
+    candidate_ids: &HashSet<&str>,
+) -> Result<(), String> {
     let ranked: Vec<&str> = result
         .rank_rows
         .iter()
@@ -251,10 +274,19 @@ fn validate_rank_rows(result: &CompletedRegionResult, candidate_ids: &HashSet<&s
     }
     let unique: HashSet<&str> = ranked.iter().copied().collect();
     if ranked.len() != candidate_ids.len() || unique != *candidate_ids {
-        return Err("Every session candidate must be ranked exactly once in each completed region".to_owned());
+        return Err(
+            "Every session candidate must be ranked exactly once in each completed region"
+                .to_owned(),
+        );
     }
-    if result.notes.keys().any(|revision_id| !candidate_ids.contains(revision_id.as_str())) {
-        return Err("Comparison notes may reference only candidates in the completed session".to_owned());
+    if result
+        .notes
+        .keys()
+        .any(|revision_id| !candidate_ids.contains(revision_id.as_str()))
+    {
+        return Err(
+            "Comparison notes may reference only candidates in the completed session".to_owned(),
+        );
     }
     Ok(())
 }
@@ -300,12 +332,17 @@ pub fn update_custom_region(
     validate(document)
 }
 
-pub fn delete_custom_region(document: &mut ComparisonDocument, region_id: &str) -> Result<bool, String> {
+pub fn delete_custom_region(
+    document: &mut ComparisonDocument,
+    region_id: &str,
+) -> Result<bool, String> {
     if region_id == FULL_SONG_REGION_ID {
         return Err("Full Song cannot be deleted".to_owned());
     }
     let before = document.regions.len();
-    document.regions.retain(|region| region.region_id != region_id);
+    document
+        .regions
+        .retain(|region| region.region_id != region_id);
     validate(document)?;
     Ok(document.regions.len() != before)
 }
@@ -325,7 +362,9 @@ pub fn append_completed_session(
 
 pub fn delete_completed_session(document: &mut ComparisonDocument, session_id: &str) -> bool {
     let before = document.completed_sessions.len();
-    document.completed_sessions.retain(|session| session.session_id != session_id);
+    document
+        .completed_sessions
+        .retain(|session| session.session_id != session_id);
     document.completed_sessions.len() != before
 }
 
@@ -333,7 +372,10 @@ pub fn clear_ranking_history(document: &mut ComparisonDocument) {
     document.completed_sessions.clear();
 }
 
-pub fn cumulative_standings(document: &ComparisonDocument, region_id: &str) -> Vec<CumulativeStanding> {
+pub fn cumulative_standings(
+    document: &ComparisonDocument,
+    region_id: &str,
+) -> Vec<CumulativeStanding> {
     #[derive(Default)]
     struct Aggregate {
         revision_number: u32,
@@ -343,7 +385,11 @@ pub fn cumulative_standings(document: &ComparisonDocument, region_id: &str) -> V
 
     let mut aggregates: HashMap<String, Aggregate> = HashMap::new();
     for session in &document.completed_sessions {
-        let Some(result) = session.regions.iter().find(|result| result.region.region_id == region_id) else {
+        let Some(result) = session
+            .regions
+            .iter()
+            .find(|result| result.region.region_id == region_id)
+        else {
             continue;
         };
         let numbers: HashMap<&str, u32> = session
