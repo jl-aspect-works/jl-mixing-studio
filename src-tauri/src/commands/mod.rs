@@ -1,3 +1,5 @@
+#[path = "comparison_command.rs"]
+mod comparison;
 #[path = "delivered_listening_command.rs"]
 pub(crate) mod delivered_listening;
 #[path = "delivery_notes_command.rs"]
@@ -39,10 +41,19 @@ mod workspace_configuration;
 #[path = "workspace_storage_summary_command.rs"]
 mod workspace_storage_summary;
 
+pub(super) use comparison::{
+    add_comparison_region, delete_comparison_region, get_comparison_setup, update_comparison_region,
+};
 pub(crate) use delivered_listening::{
     publish_after_delivery_creation, DeliveredListeningReconciliationState,
 };
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
+#[cfg(test)]
+pub(super) use delivery_notes::{
+    read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
+};
+#[cfg(test)]
+pub(super) use folders::intake_directory;
 pub(super) use folders::{open_folder, resolve_folder};
 pub(crate) use listening_publish::{
     listening_configuration, publish_listening_copy, save_listening_configuration,
@@ -67,20 +78,12 @@ pub(super) use revision_listening::{
 };
 pub(super) use revision_notes::{get_revision_notes, update_revision_notes};
 pub(super) use system::{discover_default_workspace, get_jl_mixing_version, get_system_info};
+pub(crate) use workspace_command_support::{
+    find_project_summary, resolve_home, validated_project_directory,
+};
+pub(crate) use workspace_configuration::resolve_workspace_root;
 pub(super) use workspace_configuration::{
     choose_workspace_folder, get_workspace_configuration, set_workspace_root,
     validate_workspace_root,
 };
 pub(super) use workspace_storage_summary::summarize_workspace_storage;
-
-#[cfg(test)]
-pub(super) use delivery_notes::{
-    read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
-};
-#[cfg(test)]
-pub(super) use folders::intake_directory;
-
-pub(crate) use workspace_command_support::{
-    find_project_summary, resolve_home, validated_project_directory,
-};
-pub(crate) use workspace_configuration::resolve_workspace_root;
