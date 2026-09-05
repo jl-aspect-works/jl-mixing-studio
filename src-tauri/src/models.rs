@@ -4,6 +4,11 @@
 //! structural refactor cannot silently change Tauri command contracts or JL Mixing metadata
 //! compatibility. Field names, serde attributes, and enum variants remain unchanged.
 
+// Blind comparison begins as a Rust-only domain/persistence foundation. Keeping the module
+// crate-internal prevents #374 from creating a frontend contract before the #375 UI workflow.
+#[path = "comparison.rs"]
+pub(crate) mod comparison;
+
 mod client_model;
 mod delivery_model;
 mod intake_model;
