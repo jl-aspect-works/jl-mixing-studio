@@ -10,6 +10,7 @@ import type {
 } from "../types";
 import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import { ActionIcon } from "../components/ActionIcon";
+import { ComparisonFlow } from "../comparison";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -144,6 +145,7 @@ export function RevisionsView({
   const [mutationBusy, setMutationBusy] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [mutationNotice, setMutationNotice] = useState<string | null>(null);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
 
   useEffect(() => { notesRef.current = notes; }, [notes]);
   useEffect(() => { notesBusyRef.current = notesBusy; }, [notesBusy]);
@@ -332,11 +334,15 @@ export function RevisionsView({
       : "Close this revision without deleting its files or history.";
   })();
 
+  if (comparisonOpen) {
+    return <ComparisonFlow client={client} project={project} onClose={() => setComparisonOpen(false)} />;
+  }
+
   return <>
     <ProjectNavigationBar
       active="revisions"
       onSelect={onSelectView}
-      actions={<button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button>}
+      actions={<><button type="button" className="secondary" onClick={() => setComparisonOpen(true)} disabled={revisions.length < 2 || loading} title={revisions.length < 2 ? "Create at least two revisions before starting a comparison." : "Compare two or more normal revisions without seeing their identities."}>New Comparison</button><button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button></>}
     />
 
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}

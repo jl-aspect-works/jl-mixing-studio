@@ -25,6 +25,8 @@ use commands::{
     set_native_project_audio_preview_volume, set_workspace_root, stop_native_project_audio_preview,
     summarize_project_files, summarize_workspace_storage, update_delivery_notes,
     update_revision_description, update_revision_notes, validate_workspace_root,
+    add_comparison_region, delete_comparison_region, get_comparison_setup,
+    update_comparison_region,
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
@@ -456,6 +458,10 @@ pub fn run() {
             delete_project_reference,
             rename_revision_file,
             delete_revision_file,
+            get_comparison_setup,
+            add_comparison_region,
+            update_comparison_region,
+            delete_comparison_region,
             get_revision_notes,
             update_revision_notes,
             update_revision_description,

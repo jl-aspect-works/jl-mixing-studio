@@ -71,7 +71,7 @@ Candidate keyboard shortcuts use the same letters as the blind identities:
 
 - `A` switches to candidate A;
 - `B` switches to candidate B;
-- continuing through `I` where applicable.
+- continuing through `Z` where applicable.
 
 Candidate shortcuts are disabled while focus is in a notes/text-input control so normal typing never changes playback.
 
@@ -527,7 +527,7 @@ Implementation/acceptance must cover at least:
 - candidate too short for required region;
 - unplayable or unanalyzable candidate;
 - unexpected in-session playback failure;
-- position-synchronized A-I switching;
+- position-synchronized A-Z switching;
 - Windows native and macOS WKWebView behavior;
 - NAS-hosted projects and variable storage latency;
 - cancel/close unfinished session;

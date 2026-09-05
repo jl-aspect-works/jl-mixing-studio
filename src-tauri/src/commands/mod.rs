@@ -38,6 +38,8 @@ mod workspace_command_support;
 mod workspace_configuration;
 #[path = "workspace_storage_summary_command.rs"]
 mod workspace_storage_summary;
+#[path = "comparison_command.rs"]
+mod comparison;
 
 pub(crate) use delivered_listening::{
     publish_after_delivery_creation, DeliveredListeningReconciliationState,
@@ -72,6 +74,10 @@ pub(super) use workspace_configuration::{
     validate_workspace_root,
 };
 pub(super) use workspace_storage_summary::summarize_workspace_storage;
+pub(super) use comparison::{
+    add_comparison_region, delete_comparison_region, get_comparison_setup,
+    update_comparison_region,
+};
 
 #[cfg(test)]
 pub(super) use delivery_notes::{
