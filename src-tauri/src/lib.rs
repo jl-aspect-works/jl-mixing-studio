@@ -15,18 +15,18 @@ mod workflows;
 mod workspace;
 
 use commands::{
-    add_project_reference, choose_workspace_folder, delete_project_file, delete_project_reference,
-    delete_revision_file, discover_default_workspace, get_delivery_notes, get_jl_mixing_version,
+    add_comparison_region, add_project_reference, choose_workspace_folder,
+    delete_comparison_region, delete_project_file, delete_project_reference, delete_revision_file,
+    discover_default_workspace, get_comparison_setup, get_delivery_notes, get_jl_mixing_version,
     get_native_project_audio_preview_status, get_revision_notes, get_system_info,
     get_workspace_configuration, list_project_files, load_native_project_audio_preview,
     open_folder, open_project_file, pause_native_project_audio_preview,
     play_native_project_audio_preview, prepare_project_audio_preview, rename_project_file,
     rename_revision_file, resolve_folder, reveal_project_file, seek_native_project_audio_preview,
     set_native_project_audio_preview_volume, set_workspace_root, stop_native_project_audio_preview,
-    summarize_project_files, summarize_workspace_storage, update_delivery_notes,
-    update_revision_description, update_revision_notes, validate_workspace_root,
-    add_comparison_region, delete_comparison_region, get_comparison_setup,
-    update_comparison_region,
+    summarize_project_files, summarize_workspace_storage, update_comparison_region,
+    update_delivery_notes, update_revision_description, update_revision_notes,
+    validate_workspace_root,
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,

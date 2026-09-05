@@ -1,5 +1,5 @@
-use super::{find_project_summary, resolve_workspace_root, validated_project_directory};
 use super::project_revision_files::select_listening_source;
+use super::{find_project_summary, resolve_workspace_root, validated_project_directory};
 use crate::models::comparison::{self, ComparisonDocument, ProjectRegion};
 use crate::workspace;
 use serde::{Deserialize, Serialize};
@@ -66,13 +66,9 @@ fn project_context(
     let project = find_project_summary(&snapshot, client_id.trim(), project_id.trim())
         .cloned()
         .ok_or_else(|| "The selected project could not be resolved safely".to_owned())?;
-    let directory = validated_project_directory(
-        &root,
-        &snapshot,
-        client_id.trim(),
-        project_id.trim(),
-    )
-    .ok_or_else(|| "The selected project could not be resolved safely".to_owned())?;
+    let directory =
+        validated_project_directory(&root, &snapshot, client_id.trim(), project_id.trim())
+            .ok_or_else(|| "The selected project could not be resolved safely".to_owned())?;
     Ok((directory, project))
 }
 
@@ -87,11 +83,8 @@ fn candidate_availability(
             let revision_directory = project_directory
                 .join("04_Revisions")
                 .join(format!("Revision_{:02}", revision.number));
-            let selection = select_listening_source(
-                &revision_directory,
-                &project.file_format,
-                None,
-            );
+            let selection =
+                select_listening_source(&revision_directory, &project.file_format, None);
             let (eligible, reason) = match selection {
                 Ok(Some(_)) => (true, None),
                 Ok(None) => (
