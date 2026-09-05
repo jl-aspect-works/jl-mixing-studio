@@ -6,6 +6,8 @@
 
 // Blind comparison begins as a Rust-only domain/persistence foundation. Keeping the module
 // crate-internal prevents #374 from creating a frontend contract before the #375 UI workflow.
+// The foundation is intentionally not called by production code until that workflow is wired.
+#[allow(dead_code)]
 #[path = "comparison.rs"]
 pub(crate) mod comparison;
 
