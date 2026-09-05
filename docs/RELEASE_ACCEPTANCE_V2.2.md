@@ -4,6 +4,18 @@ This is the final qualification record for Studio 2.2. It supplements automated 
 
 Studio `v2.2.0-rc.1` with Automation `v2.2.0-rc.1` was the accepted candidate pair that qualified the stable release. The immutable candidate commits, completed results, and explicit deferrals are recorded below.
 
+## Stable release smoke verification
+
+The published stable `v2.2.0` artifacts were installed and smoke-tested after publication on the two manually qualified platforms.
+
+| Platform | Stable artifacts | Result | Verification |
+| --- | --- | --- | --- |
+| Windows x64 | Studio `v2.2.0` + Automation `v2.2.0` | Pass | User-verified installed stable packages on 2026-09-04 |
+| macOS Intel | Studio `v2.2.0` + Automation `v2.2.0` | Pass | User-verified installed stable packages on 2026-09-04 |
+| macOS Apple Silicon | Studio `v2.2.0` + Automation `v2.2.0` | Deferred | Manual hardware unavailable; automated release build and prior required CI evidence passed |
+
+The stable smoke confirmed installation/upgrade, launch/version, existing workspace/settings retention, Automation discovery, representative project navigation/audio preview, Listening behavior, and restart persistence. No stable-release blocker was found.
+
 ## Result definitions
 
 - **Pass** — exercised using the listed packaged candidate on that platform with the expected result.
@@ -143,5 +155,6 @@ Record every packaged-candidate failure before advancing. A fix requires a new i
 - [x] Source revision/delivery artifacts remain unchanged.
 - [x] No release-blocking finding remains open.
 - [x] Final CI/release workflows are green.
+- [x] Published stable `v2.2.0` packages smoke-tested successfully on Windows x64 and macOS Intel.
 
-**Final decision:** Qualified. Published `v2.2.0-rc.1` artifacts passed packaged acceptance on Windows x64 and macOS Intel. E05 legacy-manifest testing is explicitly Deferred with completed pre-RC manual and integration evidence; macOS Apple Silicon manual testing is Deferred with required automated evidence.
+**Final decision:** Qualified and released. Published `v2.2.0-rc.1` artifacts passed packaged acceptance on Windows x64 and macOS Intel, and the published stable `v2.2.0` artifacts subsequently passed installed smoke verification on both platforms. E05 legacy-manifest testing is explicitly Deferred with completed pre-RC manual and integration evidence; macOS Apple Silicon manual testing is Deferred with required automated evidence.
