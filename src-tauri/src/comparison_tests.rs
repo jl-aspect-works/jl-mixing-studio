@@ -33,7 +33,11 @@ fn result(region: RegionSnapshot, rows: &[&[&str]]) -> CompletedRegionResult {
     }
 }
 
-fn session(id: &str, candidates: Vec<CompletedCandidate>, regions: Vec<CompletedRegionResult>) -> CompletedSession {
+fn session(
+    id: &str,
+    candidates: Vec<CompletedCandidate>,
+    regions: Vec<CompletedRegionResult>,
+) -> CompletedSession {
     CompletedSession {
         session_id: id.to_owned(),
         completed_at: "2026-09-05T02:00:00Z".to_owned(),
@@ -83,12 +87,22 @@ fn custom_region_edit_does_not_change_completed_snapshot() {
         session(
             "session-1",
             vec![candidate("r1", 1, "A"), candidate("r2", 2, "B")],
-            vec![result(snapshot(&region.region_id, "Verse", 10.0, Some(20.0)), &[&["r1"], &["r2"]])],
+            vec![result(
+                snapshot(&region.region_id, "Verse", 10.0, Some(20.0)),
+                &[&["r1"], &["r2"]],
+            )],
         ),
     )
     .unwrap();
 
-    update_custom_region(&mut document, &region.region_id, "Verse 1".into(), 12.0, 24.0).unwrap();
+    update_custom_region(
+        &mut document,
+        &region.region_id,
+        "Verse 1".into(),
+        12.0,
+        24.0,
+    )
+    .unwrap();
     let historical = &document.completed_sessions[0].regions[0].region;
     assert_eq!(historical.name, "Verse");
     assert_eq!(historical.start_seconds, 10.0);
@@ -104,14 +118,23 @@ fn deleted_live_region_remains_in_historical_session() {
         session(
             "session-1",
             vec![candidate("r1", 1, "A"), candidate("r2", 2, "B")],
-            vec![result(snapshot(&region.region_id, "Bridge", 30.0, Some(40.0)), &[&["r2"], &["r1"]])],
+            vec![result(
+                snapshot(&region.region_id, "Bridge", 30.0, Some(40.0)),
+                &[&["r2"], &["r1"]],
+            )],
         ),
     )
     .unwrap();
 
     assert!(delete_custom_region(&mut document, &region.region_id).unwrap());
-    assert!(document.regions.iter().all(|item| item.region_id != region.region_id));
-    assert_eq!(document.completed_sessions[0].regions[0].region.region_id, region.region_id);
+    assert!(document
+        .regions
+        .iter()
+        .all(|item| item.region_id != region.region_id));
+    assert_eq!(
+        document.completed_sessions[0].regions[0].region.region_id,
+        region.region_id
+    );
 }
 
 #[test]
@@ -122,7 +145,12 @@ fn competition_ranks_feed_cumulative_mean_and_revision_tiebreak() {
         &mut document,
         session(
             "s1",
-            vec![candidate("r1", 1, "A"), candidate("r2", 2, "B"), candidate("r3", 3, "C"), candidate("r4", 4, "D")],
+            vec![
+                candidate("r1", 1, "A"),
+                candidate("r2", 2, "B"),
+                candidate("r3", 3, "C"),
+                candidate("r4", 4, "D"),
+            ],
             vec![result(full.clone(), &[&["r1"], &["r2", "r3"], &["r4"]])],
         ),
     )
@@ -131,14 +159,25 @@ fn competition_ranks_feed_cumulative_mean_and_revision_tiebreak() {
         &mut document,
         session(
             "s2",
-            vec![candidate("r1", 1, "A"), candidate("r2", 2, "B"), candidate("r3", 3, "C"), candidate("r4", 4, "D")],
+            vec![
+                candidate("r1", 1, "A"),
+                candidate("r2", 2, "B"),
+                candidate("r3", 3, "C"),
+                candidate("r4", 4, "D"),
+            ],
             vec![result(full, &[&["r4"], &["r2", "r3"], &["r1"]])],
         ),
     )
     .unwrap();
 
     let standings = cumulative_standings(&document, FULL_SONG_REGION_ID);
-    assert_eq!(standings.iter().map(|standing| standing.revision_id.as_str()).collect::<Vec<_>>(), vec!["r3", "r2", "r4", "r1"]);
+    assert_eq!(
+        standings
+            .iter()
+            .map(|standing| standing.revision_id.as_str())
+            .collect::<Vec<_>>(),
+        vec!["r3", "r2", "r4", "r1"]
+    );
     assert_eq!(standings[0].average_placement, 2.0);
     assert_eq!(standings[0].contributing_sessions, 2);
 }
@@ -166,9 +205,15 @@ fn deleting_session_recomputes_standings_deterministically() {
     )
     .unwrap();
 
-    assert_eq!(cumulative_standings(&document, FULL_SONG_REGION_ID)[0].revision_id, "r2");
+    assert_eq!(
+        cumulative_standings(&document, FULL_SONG_REGION_ID)[0].revision_id,
+        "r2"
+    );
     assert!(delete_completed_session(&mut document, "newer"));
-    assert_eq!(cumulative_standings(&document, FULL_SONG_REGION_ID)[0].revision_id, "r1");
+    assert_eq!(
+        cumulative_standings(&document, FULL_SONG_REGION_ID)[0].revision_id,
+        "r1"
+    );
 }
 
 #[test]
@@ -180,14 +225,20 @@ fn clear_history_preserves_live_regions() {
         session(
             "session-1",
             vec![candidate("r1", 1, "A"), candidate("r2", 2, "B")],
-            vec![result(snapshot(FULL_SONG_REGION_ID, "Full Song", 0.0, None), &[&["r1"], &["r2"]])],
+            vec![result(
+                snapshot(FULL_SONG_REGION_ID, "Full Song", 0.0, None),
+                &[&["r1"], &["r2"]],
+            )],
         ),
     )
     .unwrap();
 
     clear_ranking_history(&mut document);
     assert!(document.completed_sessions.is_empty());
-    assert!(document.regions.iter().any(|item| item.region_id == region.region_id));
+    assert!(document
+        .regions
+        .iter()
+        .any(|item| item.region_id == region.region_id));
 }
 
 #[test]
@@ -196,7 +247,10 @@ fn incomplete_rankings_are_rejected() {
     let invalid = session(
         "session-1",
         vec![candidate("r1", 1, "A"), candidate("r2", 2, "B")],
-        vec![result(snapshot(FULL_SONG_REGION_ID, "Full Song", 0.0, None), &[&["r1"]])],
+        vec![result(
+            snapshot(FULL_SONG_REGION_ID, "Full Song", 0.0, None),
+            &[&["r1"]],
+        )],
     );
     assert!(append_completed_session(&mut document, invalid).is_err());
     assert!(document.completed_sessions.is_empty());
@@ -208,7 +262,10 @@ fn loudness_matched_session_requires_measurements_and_gain() {
     let mut matched = session(
         "session-1",
         vec![candidate("r1", 1, "A"), candidate("r2", 2, "B")],
-        vec![result(snapshot(FULL_SONG_REGION_ID, "Full Song", 0.0, None), &[&["r1"], &["r2"]])],
+        vec![result(
+            snapshot(FULL_SONG_REGION_ID, "Full Song", 0.0, None),
+            &[&["r1"], &["r2"]],
+        )],
     );
     matched.loudness_match = true;
     assert!(append_completed_session(&mut document, matched).is_err());
