@@ -48,6 +48,12 @@ pub(crate) use delivered_listening::{
     publish_after_delivery_creation, DeliveredListeningReconciliationState,
 };
 pub(super) use delivery_notes::{get_delivery_notes, update_delivery_notes};
+#[cfg(test)]
+pub(super) use delivery_notes::{
+    read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
+};
+#[cfg(test)]
+pub(super) use folders::intake_directory;
 pub(super) use folders::{open_folder, resolve_folder};
 pub(crate) use listening_publish::{
     listening_configuration, publish_listening_copy, save_listening_configuration,
@@ -77,13 +83,6 @@ pub(super) use workspace_configuration::{
     validate_workspace_root,
 };
 pub(super) use workspace_storage_summary::summarize_workspace_storage;
-#[cfg(test)]
-pub(super) use delivery_notes::{
-    read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
-};
-#[cfg(test)]
-pub(super) use folders::intake_directory;
-
 pub(crate) use workspace_command_support::{
     find_project_summary, resolve_home, validated_project_directory,
 };
