@@ -19,7 +19,7 @@ import {
   parseTimestamp,
 } from "./session";
 
-const emptyDraft: RegionDraft = { regionId: null, name: "", start: "0:00", end: "" };
+const emptyDraft: RegionDraft = { regionId: null, name: "", start: "0:00", end: "0:30" };
 
 const errorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : typeof error === "string" ? error : fallback;
@@ -162,9 +162,9 @@ export function ComparisonSetup({
         </div>
         <div className="comparison-region-editor">
           <h4>{draft.regionId ? "Edit region" : "Add region"}</h4>
-          <label>Name<input value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>
-          <label>Start<input aria-label="Region start" placeholder="0:00" value={draft.start} onChange={(event) => setDraft((current) => ({ ...current, start: event.target.value }))} /></label>
-          <label>End<input aria-label="Region end" placeholder="0:30" value={draft.end} onChange={(event) => setDraft((current) => ({ ...current, end: event.target.value }))} /></label>
+          <label>Name<input required value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>
+          <label>Start<input required aria-label="Region start" placeholder="0:00" value={draft.start} onChange={(event) => setDraft((current) => ({ ...current, start: event.target.value }))} /></label>
+          <label>End<input required aria-label="Region end" placeholder="0:30" value={draft.end} onChange={(event) => setDraft((current) => ({ ...current, end: event.target.value }))} /></label>
           <button type="button" className="secondary" disabled={busy} onClick={() => void saveRegion()}>{draft.regionId ? "Save Region" : "Add Region"}</button>
           {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft)}>Cancel edit</button>}
         </div>

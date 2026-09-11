@@ -342,7 +342,7 @@ export function RevisionsView({
     <ProjectNavigationBar
       active="revisions"
       onSelect={onSelectView}
-      actions={<><button type="button" className="secondary" onClick={() => setComparisonOpen(true)} disabled={revisions.length < 2 || loading} title={revisions.length < 2 ? "Create at least two revisions before starting a comparison." : "Compare two or more normal revisions without seeing their identities."}>New Comparison</button><button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button></>}
+      actions={<><button type="button" className="secondary" onClick={() => setComparisonOpen(true)} disabled={revisions.length < 2 || loading} title={revisions.length < 2 ? "Create at least two revisions before starting a comparison." : "Compare two or more normal revisions without seeing their identities."}><ActionIcon name="add" />New Comparison</button><button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button></>}
     />
 
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}

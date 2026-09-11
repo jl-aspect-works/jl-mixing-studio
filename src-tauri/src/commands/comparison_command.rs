@@ -1,8 +1,39 @@
-use super::project_revision_files::select_listening_source;
+use super::project_files::is_audio_extension;
 use super::{find_project_summary, resolve_workspace_root, validated_project_directory};
 use crate::models::comparison::{self, ComparisonDocument, ProjectRegion};
 use crate::workspace;
 use serde::{Deserialize, Serialize};
+use std::fs;
+
+fn has_playable_comparison_source(revision_directory: &std::path::Path) -> Result<bool, String> {
+    let metadata = fs::symlink_metadata(revision_directory)
+        .map_err(|error| format!("Could not inspect the revision folder: {error}"))?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err("Revision folder must be a regular directory".to_owned());
+    }
+
+    for entry in fs::read_dir(revision_directory)
+        .map_err(|error| format!("Could not read the revision folder: {error}"))?
+    {
+        let entry = entry.map_err(|error| format!("Could not inspect a revision file: {error}"))?;
+        let file_type = entry
+            .file_type()
+            .map_err(|error| format!("Could not inspect a revision file: {error}"))?;
+        if file_type.is_symlink() || !file_type.is_file() {
+            continue;
+        }
+        let supported = entry
+            .path()
+            .extension()
+            .and_then(|value| value.to_str())
+            .map(str::to_ascii_lowercase)
+            .is_some_and(|extension| is_audio_extension(&extension));
+        if supported {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -83,16 +114,14 @@ fn candidate_availability(
             let revision_directory = project_directory
                 .join("04_Revisions")
                 .join(format!("Revision_{:02}", revision.number));
-            let selection =
-                select_listening_source(&revision_directory, &project.file_format, None);
-            let (eligible, reason) = match selection {
-                Ok(Some(_)) => (true, None),
-                Ok(None) => (
+            let (eligible, reason) = match has_playable_comparison_source(&revision_directory) {
+                Ok(true) => (true, None),
+                Ok(false) => (
                     false,
-                    Some(format!(
-                        "No playable {} file was found in the normal revision folder.",
-                        project.file_format.to_uppercase()
-                    )),
+                    Some(
+                        "No supported audio file was found in the normal revision folder."
+                            .to_owned(),
+                    ),
                 ),
                 Err(error) => (false, Some(error)),
             };
@@ -171,4 +200,29 @@ pub(crate) fn delete_comparison_region(
     }
     comparison::save(&directory, &document)?;
     Ok(document)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::has_playable_comparison_source;
+    use std::fs;
+
+    #[test]
+    fn comparison_source_accepts_mixed_supported_formats_in_revision_root() {
+        let revision = tempfile::tempdir().unwrap();
+        fs::write(revision.path().join("mix.flac"), b"audio").unwrap();
+
+        assert!(has_playable_comparison_source(revision.path()).unwrap());
+    }
+
+    #[test]
+    fn comparison_source_excludes_variants_and_non_audio_files() {
+        let revision = tempfile::tempdir().unwrap();
+        let variants = revision.path().join("Variants");
+        fs::create_dir(&variants).unwrap();
+        fs::write(variants.join("alternate.wav"), b"audio").unwrap();
+        fs::write(revision.path().join("Revision_Notes.md"), b"notes").unwrap();
+
+        assert!(!has_playable_comparison_source(revision.path()).unwrap());
+    }
 }

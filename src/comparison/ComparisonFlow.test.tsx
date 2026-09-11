@@ -64,11 +64,9 @@ describe("comparison setup", () => {
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     await screen.findByRole("heading", { name: "New Comparison" });
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Verse" } });
-    fireEvent.change(screen.getByLabelText("Region start"), { target: { value: "0:10" } });
-    fireEvent.change(screen.getByLabelText("Region end"), { target: { value: "0:40" } });
     fireEvent.click(screen.getByRole("button", { name: "Add Region" }));
 
-    await waitFor(() => expect(mocks.add).toHaveBeenCalledWith(expect.objectContaining({ name: "Verse", startSeconds: 10, endSeconds: 40 })));
+    await waitFor(() => expect(mocks.add).toHaveBeenCalledWith(expect.objectContaining({ name: "Verse", startSeconds: 0, endSeconds: 30 })));
     expect(await screen.findByRole("checkbox", { name: /Verse/ })).toBeChecked();
   });
 });
