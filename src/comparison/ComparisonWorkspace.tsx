@@ -14,6 +14,7 @@ export function ComparisonWorkspace({
   const [loop, setLoop] = useState(true);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
+  const [cancelConfirmation, setCancelConfirmation] = useState(false);
   const region = session.regions.find((item) => item.regionId === activeRegion) ?? session.regions[0];
   const noteKey = `${activeRegion}:${activeCandidate}`;
   const progress = useMemo(() => session.regions.map((item) => ({ ...item, complete: false })), [session.regions]);
@@ -40,8 +41,7 @@ export function ComparisonWorkspace({
   }, [dirty]);
 
   const cancel = () => {
-    if (dirty && !window.confirm("Discard this unfinished comparison? No session results will be saved.")) return;
-    onCancel();
+    if (dirty) setCancelConfirmation(true); else onCancel();
   };
 
   const chooseRegion = (regionId: string) => {
@@ -56,6 +56,10 @@ export function ComparisonWorkspace({
       <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-workspace-title">Comparison Session</h2></div>
       <div className="comparison-session-facts"><span>{session.candidates.length} candidates</span><span>Loudness Match: <strong>{session.loudnessMatch ? "ON" : "OFF"}</strong></span><button type="button" className="secondary" onClick={cancel}>Cancel</button></div>
     </header>
+    {cancelConfirmation && <div className="inline-notice warning comparison-cancel-confirmation" role="alertdialog" aria-label="Discard unfinished comparison">
+      <span>Discard this unfinished comparison? No session results will be saved.</span>
+      <span><button type="button" className="danger" onClick={onCancel}>Discard Comparison</button><button type="button" className="secondary" onClick={() => setCancelConfirmation(false)}>Keep Comparing</button></span>
+    </div>}
 
     <nav className="comparison-region-strip" aria-label="Comparison regions">
       {progress.map((item) => <button key={item.regionId} type="button" className={item.regionId === activeRegion ? "active" : "secondary"} aria-current={item.regionId === activeRegion ? "page" : undefined} onClick={() => chooseRegion(item.regionId)}>{item.name} <span aria-label="Not complete">○</span></button>)}

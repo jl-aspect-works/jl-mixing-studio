@@ -15,6 +15,11 @@ export type NativeAudioPreviewStatus = {
   durationSeconds: number;
 };
 
+export type ProjectAudioWaveform = { durationSeconds: number; peaks: number[] };
+
+export const getProjectAudioWaveform = (request: ProjectFileMutationRequest) =>
+  invoke<ProjectAudioWaveform>("get_project_audio_waveform", { request });
+
 export type PreparedAudioPreview =
   | {
       provider: "web";

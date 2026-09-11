@@ -59,7 +59,8 @@ pub(crate) use listening_publish::{
     listening_configuration, publish_listening_copy, save_listening_configuration,
 };
 pub(super) use native_audio_preview::{
-    get_native_project_audio_preview_status, load_native_project_audio_preview,
+    get_native_project_audio_preview_status, get_project_audio_waveform,
+    load_native_project_audio_preview,
     pause_native_project_audio_preview, play_native_project_audio_preview,
     seek_native_project_audio_preview, set_native_project_audio_preview_volume,
     stop_native_project_audio_preview,

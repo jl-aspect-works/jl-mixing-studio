@@ -29,9 +29,9 @@ const project = {
 const setup: ComparisonSetupData = {
   document: { schemaVersion: 1, completedSessions: [], regions: [{ regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null, builtIn: true }] },
   candidates: [
-    { revisionId: "r1", revisionNumber: 1, eligible: true, reason: null },
-    { revisionId: "r2", revisionNumber: 2, eligible: true, reason: null },
-    { revisionId: "r3", revisionNumber: 3, eligible: false, reason: "No playable WAV file was found." },
+    { revisionId: "r1", revisionNumber: 1, eligible: true, reason: null, relativePath: "04_Revisions/Revision_01/mix.wav" },
+    { revisionId: "r2", revisionNumber: 2, eligible: true, reason: null, relativePath: "04_Revisions/Revision_02/mix.wav" },
+    { revisionId: "r3", revisionNumber: 3, eligible: false, reason: "No playable WAV file was found.", relativePath: null },
   ],
 };
 
@@ -59,9 +59,15 @@ describe("comparison setup", () => {
   });
 
   it("adds consecutive custom regions and selects them", async () => {
+    const verse = { regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false };
+    const chorus = { regionId: "chorus", name: "Chorus", startSeconds: 0, endSeconds: 30, builtIn: false };
+    mocks.get
+      .mockResolvedValueOnce(setup)
+      .mockResolvedValueOnce({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse] } })
+      .mockResolvedValueOnce({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse, chorus] } });
     mocks.add
-      .mockResolvedValueOnce({ regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false })
-      .mockResolvedValueOnce({ regionId: "chorus", name: "Chorus", startSeconds: 0, endSeconds: 30, builtIn: false });
+      .mockResolvedValueOnce(verse)
+      .mockResolvedValueOnce(chorus);
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     await screen.findByRole("heading", { name: "New Comparison" });
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Verse" } });
@@ -87,6 +93,15 @@ describe("comparison setup", () => {
     expect(screen.queryByRole("checkbox", { name: /Compatible project timeline/ })).not.toBeInTheDocument();
     expect(screen.getByText("Matches the loudness of the revisions being compared.")).toBeInTheDocument();
   });
+
+  it("enables region preview from the highest selected revision", async () => {
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    expect(screen.getByText("Select at least one revision to enable preview.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
+    expect(screen.getByText("Using highest selected: Revision 02")).toBeInTheDocument();
+  });
 });
 
 const frozen: FrozenComparisonSession = {
@@ -108,17 +123,17 @@ describe("blind comparison workspace shell", () => {
 
   it("warns only after session work is entered", () => {
     const onCancel = vi.fn();
-    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { rerender } = render(<ComparisonWorkspace session={frozen} onCancel={onCancel} />);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(confirm).not.toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalledOnce();
 
     onCancel.mockClear();
     rerender(<ComparisonWorkspace session={frozen} onCancel={onCancel} />);
     fireEvent.change(within(screen.getByRole("region", { name: "Candidate notes" })).getByRole("textbox"), { target: { value: "Prefer this" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(confirm).toHaveBeenCalledOnce();
     expect(onCancel).not.toHaveBeenCalled();
+    expect(screen.getByRole("alertdialog", { name: "Discard unfinished comparison" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Discard Comparison" }));
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 });

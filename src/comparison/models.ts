@@ -17,6 +17,7 @@ export type ComparisonCandidateAvailability = {
   revisionNumber: number;
   eligible: boolean;
   reason: string | null;
+  relativePath: string | null;
 };
 
 export type ComparisonSetupData = {

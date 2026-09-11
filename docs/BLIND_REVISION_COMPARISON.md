@@ -127,6 +127,7 @@ The setup flow starts from Revision History and:
 - validates what Studio can validate about playback/region compatibility;
 - selects Full Song and any desired project regions;
 - allows project regions to be defined/edited before the session begins;
+- previews the highest selected revision with standard transport controls and a waveform to help locate region timestamps;
 - shows Loudness Match **On by default**;
 - performs/reuses loudness analysis when matching is enabled;
 - excludes an unanalyzable candidate when matching is required, or allows the user to deliberately choose Loudness Match Off for the entire session;

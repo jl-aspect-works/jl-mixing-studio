@@ -12,6 +12,7 @@ import type {
   ProjectRegion,
   RegionDraft,
 } from "./models";
+import { RegionPreview } from "./RegionPreview";
 import {
   formatTimestamp,
   freezeComparisonSession,
@@ -57,6 +58,10 @@ export function ComparisonSetup({
     [setup?.candidates],
   );
   const selectedCandidateValues = candidates.filter((candidate) => selectedCandidates.has(candidate.revisionId));
+  const previewCandidate = selectedCandidateValues.reduce<ComparisonSetupData["candidates"][number] | null>(
+    (highest, candidate) => !highest || candidate.revisionNumber > highest.revisionNumber ? candidate : highest,
+    null,
+  );
   const selectedRegionValues = (setup?.document.regions ?? []).filter((region) => selectedRegions.has(region.regionId));
   const canStart = selectedCandidateValues.length >= 2
     && selectedCandidateValues.length <= MAX_SHORTCUT_CANDIDATES
@@ -91,15 +96,8 @@ export function ComparisonSetup({
       const saved = draft.regionId
         ? await updateComparisonRegion({ ...identity, regionId: draft.regionId, name: draft.name.trim(), startSeconds, endSeconds })
         : await addComparisonRegion({ ...identity, name: draft.name.trim(), startSeconds, endSeconds });
-      setSetup((current) => current ? {
-        ...current,
-        document: {
-          ...current.document,
-          regions: draft.regionId
-            ? current.document.regions.map((region) => region.regionId === saved.regionId ? saved : region)
-            : [...current.document.regions, saved],
-        },
-      } : current);
+      const refreshed = await getComparisonSetup(identity);
+      setSetup(refreshed);
       setSelectedRegions((current) => new Set(current).add(saved.regionId));
       setDraft(emptyDraft());
       setNotice(draft.regionId ? "Region updated." : "Region added.");
@@ -120,7 +118,8 @@ export function ComparisonSetup({
         projectId: project.projectId,
         regionId: region.regionId,
       });
-      setSetup((current) => current ? { ...current, document } : current);
+      const refreshed = await getComparisonSetup({ clientId: client.clientId, projectId: project.projectId });
+      setSetup({ ...refreshed, document });
       setSelectedRegions((current) => toggle(current, region.regionId, false));
       if (draft.regionId === region.regionId) setDraft(emptyDraft());
     } catch (reason) {
@@ -163,6 +162,7 @@ export function ComparisonSetup({
             {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button" onClick={() => beginEdit(region)}>Edit</button><button type="button" className="text-button danger" onClick={() => void removeRegion(region)}>Delete</button></span>}
           </div>)}
         </div>
+        <RegionPreview clientId={client.clientId} projectId={project.projectId} candidate={previewCandidate} />
         <form className="comparison-region-editor" onSubmit={(event) => { event.preventDefault(); void saveRegion(); }}>
           <h4>{draft.regionId ? "Edit region" : "Add region"}</h4>
           <label>Name<input required value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>

@@ -4,14 +4,16 @@ use crate::models::comparison::{self, ComparisonDocument, ProjectRegion};
 use crate::workspace;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::PathBuf;
 
-fn has_playable_comparison_source(revision_directory: &std::path::Path) -> Result<bool, String> {
+fn comparison_source(revision_directory: &std::path::Path) -> Result<Option<PathBuf>, String> {
     let metadata = fs::symlink_metadata(revision_directory)
         .map_err(|error| format!("Could not inspect the revision folder: {error}"))?;
     if metadata.file_type().is_symlink() || !metadata.is_dir() {
         return Err("Revision folder must be a regular directory".to_owned());
     }
 
+    let mut candidates = Vec::new();
     for entry in fs::read_dir(revision_directory)
         .map_err(|error| format!("Could not read the revision folder: {error}"))?
     {
@@ -29,10 +31,12 @@ fn has_playable_comparison_source(revision_directory: &std::path::Path) -> Resul
             .map(str::to_ascii_lowercase)
             .is_some_and(|extension| is_audio_extension(&extension));
         if supported {
-            return Ok(true);
+            let modified = entry.metadata().and_then(|value| value.modified()).ok();
+            candidates.push((modified, entry.path()));
         }
     }
-    Ok(false)
+    candidates.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| left.1.cmp(&right.1)));
+    Ok(candidates.pop().map(|(_, path)| path))
 }
 
 #[derive(Debug, Deserialize)]
@@ -78,6 +82,7 @@ pub(crate) struct ComparisonCandidateAvailability {
     revision_number: u32,
     eligible: bool,
     reason: Option<String>,
+    relative_path: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -114,22 +119,30 @@ fn candidate_availability(
             let revision_directory = project_directory
                 .join("04_Revisions")
                 .join(format!("Revision_{:02}", revision.number));
-            let (eligible, reason) = match has_playable_comparison_source(&revision_directory) {
-                Ok(true) => (true, None),
-                Ok(false) => (
+            let (eligible, reason, relative_path) = match comparison_source(&revision_directory) {
+                Ok(Some(path)) => (
+                    true,
+                    None,
+                    path.strip_prefix(project_directory)
+                        .ok()
+                        .map(|value| value.to_string_lossy().replace('\\', "/")),
+                ),
+                Ok(None) => (
                     false,
                     Some(
                         "No supported audio file was found in the normal revision folder."
                             .to_owned(),
                     ),
+                    None,
                 ),
-                Err(error) => (false, Some(error)),
+                Err(error) => (false, Some(error), None),
             };
             ComparisonCandidateAvailability {
                 revision_id: revision.revision_id.clone(),
                 revision_number: revision.number,
                 eligible,
                 reason,
+                relative_path,
             }
         })
         .collect()
@@ -204,7 +217,7 @@ pub(crate) fn delete_comparison_region(
 
 #[cfg(test)]
 mod tests {
-    use super::has_playable_comparison_source;
+    use super::comparison_source;
     use std::fs;
 
     #[test]
@@ -212,7 +225,7 @@ mod tests {
         let revision = tempfile::tempdir().unwrap();
         fs::write(revision.path().join("mix.flac"), b"audio").unwrap();
 
-        assert!(has_playable_comparison_source(revision.path()).unwrap());
+        assert!(comparison_source(revision.path()).unwrap().is_some());
     }
 
     #[test]
@@ -223,6 +236,6 @@ mod tests {
         fs::write(variants.join("alternate.wav"), b"audio").unwrap();
         fs::write(revision.path().join("Revision_Notes.md"), b"notes").unwrap();
 
-        assert!(!has_playable_comparison_source(revision.path()).unwrap());
+        assert!(comparison_source(revision.path()).unwrap().is_none());
     }
 }

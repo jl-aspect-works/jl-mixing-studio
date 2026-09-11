@@ -3,9 +3,9 @@ import type { ComparisonCandidateAvailability, ProjectRegion } from "./models";
 import { freezeComparisonSession, formatTimestamp, parseTimestamp, shortcutCandidate } from "./session";
 
 const candidates: ComparisonCandidateAvailability[] = [
-  { revisionId: "r1", revisionNumber: 1, eligible: true, reason: null },
-  { revisionId: "r2", revisionNumber: 2, eligible: true, reason: null },
-  { revisionId: "r3", revisionNumber: 3, eligible: true, reason: null },
+  { revisionId: "r1", revisionNumber: 1, eligible: true, reason: null, relativePath: "r1.wav" },
+  { revisionId: "r2", revisionNumber: 2, eligible: true, reason: null, relativePath: "r2.wav" },
+  { revisionId: "r3", revisionNumber: 3, eligible: true, reason: null, relativePath: "r3.wav" },
 ];
 
 const regions: ProjectRegion[] = [

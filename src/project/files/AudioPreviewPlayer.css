@@ -11,6 +11,18 @@
   background: transparent;
 }
 
+.shared-audio-preview-inline.standard-transport {
+  grid-template-columns: auto 26px auto auto minmax(120px, 1fr) auto 28px 18px auto;
+  width: 100%;
+}
+
+.shared-audio-preview-skip {
+  min-width: 42px;
+  min-height: 28px;
+  padding: 3px 7px;
+  font-size: .7rem;
+}
+
 .shared-audio-preview-inline audio {
   display: none;
 }

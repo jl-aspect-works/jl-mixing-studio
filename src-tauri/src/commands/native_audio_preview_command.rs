@@ -3,8 +3,17 @@ use super::workspace_command_support::validated_project_directory;
 use crate::audio_preview::{self, NativeAudioPreviewState, NativeAudioPreviewStatus};
 use crate::models::{ProjectFileMutationRequest, WorkspaceStatus};
 use crate::workspace;
+use rodio::{Decoder, Source};
+use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ProjectAudioWaveform {
+    duration_seconds: f64,
+    peaks: Vec<f32>,
+}
 
 fn resolve_project_audio_file(
     app: &tauri::AppHandle,
@@ -81,6 +90,39 @@ fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
         return Err("Unsafe project file path segments are not allowed".into());
     }
     Ok(value.to_owned())
+}
+
+#[tauri::command]
+pub(crate) fn get_project_audio_waveform(
+    app: tauri::AppHandle,
+    request: ProjectFileMutationRequest,
+) -> Result<ProjectAudioWaveform, String> {
+    const PEAK_COUNT: usize = 480;
+    let (path, _) = resolve_project_audio_file(&app, &request)?;
+    let decoder = Decoder::try_from(
+        fs::File::open(path).map_err(|error| format!("Unable to open waveform source: {error}"))?,
+    )
+    .map_err(|error| format!("Unable to decode waveform source: {error}"))?;
+    let channels = usize::from(decoder.channels());
+    let sample_rate = decoder.sample_rate() as usize;
+    let duration_seconds = decoder
+        .total_duration()
+        .map(|value| value.as_secs_f64())
+        .ok_or_else(|| "The waveform duration could not be determined".to_owned())?;
+    let total_samples = (duration_seconds * sample_rate as f64 * channels as f64).ceil() as usize;
+    let samples_per_peak = total_samples.div_ceil(PEAK_COUNT).max(1);
+    let mut peaks = vec![0.0_f32; PEAK_COUNT];
+    for (index, sample) in decoder.enumerate() {
+        let peak = (index / samples_per_peak).min(PEAK_COUNT - 1);
+        peaks[peak] = peaks[peak].max(sample.abs());
+    }
+    while peaks.last().is_some_and(|value| *value == 0.0) {
+        peaks.pop();
+    }
+    Ok(ProjectAudioWaveform {
+        duration_seconds,
+        peaks,
+    })
 }
 
 #[tauri::command]
