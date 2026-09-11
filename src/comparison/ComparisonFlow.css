@@ -69,7 +69,7 @@
 .comparison-transport { justify-content: center; }
 .comparison-candidate-switches { justify-content: center; }
 .comparison-candidate-switches button { min-width: 42px; font-size: 1rem; }
-.comparison-candidate-switches small { width: 100%; color: var(--muted-text, #748096); text-align: right; }
+.comparison-candidate-switches small { width: 100%; color: var(--muted-text, #748096); text-align: center; }
 .comparison-session-control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .comparison-session-subpanel { display: grid; align-content: start; gap: 8px; padding: 12px; border: 1px solid var(--border, #dfe4ea); border-radius: 8px; background: rgba(255,255,255,.55); }
 .comparison-session-progress { display: flex; gap: 7px; overflow-x: auto; }
