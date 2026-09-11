@@ -1,23 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
 import { getProjectAudioWaveform, type ProjectAudioWaveform } from "../project/files/audioPreviewService";
 import type { ComparisonCandidateAvailability } from "./models";
+import { parseTimestamp } from "./session";
+
+const locatorTimestamp = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds - minutes * 60;
+  const display = Number.isInteger(remainder) ? String(remainder) : remainder.toFixed(1);
+  return `${minutes}:${display.padStart(2, "0")}`;
+};
 
 export function RegionPreview({
-  clientId,
-  projectId,
-  candidate,
+  clientId, projectId, candidates, start, end, onBoundsChange,
 }: {
   clientId: string;
   projectId: string;
-  candidate: ComparisonCandidateAvailability | null;
+  candidates: readonly ComparisonCandidateAvailability[];
+  start: string;
+  end: string;
+  onBoundsChange: (start: string, end: string) => void;
 }) {
+  const available = useMemo(
+    () => candidates.filter((candidate) => candidate.eligible && candidate.relativePath)
+      .sort((left, right) => right.revisionNumber - left.revisionNumber),
+    [candidates],
+  );
+  const [revisionId, setRevisionId] = useState(() => available[0]?.revisionId ?? "");
   const [waveform, setWaveform] = useState<ProjectAudioWaveform | null>(null);
+  const [playhead, setPlayhead] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const candidate = available.find((item) => item.revisionId === revisionId) ?? available[0] ?? null;
+
+  useEffect(() => {
+    if (!available.some((item) => item.revisionId === revisionId)) setRevisionId(available[0]?.revisionId ?? "");
+  }, [available, revisionId]);
 
   useEffect(() => {
     let cancelled = false;
     setWaveform(null);
+    setPlayhead(0);
     setError(null);
     if (!candidate?.relativePath) return () => { cancelled = true; };
     getProjectAudioWaveform({ clientId, projectId, relativePath: candidate.relativePath })
@@ -27,24 +49,29 @@ export function RegionPreview({
   }, [candidate?.relativePath, clientId, projectId]);
 
   if (!candidate?.relativePath) {
-    return <div className="comparison-region-preview disabled" aria-disabled="true"><strong>Region preview</strong><p>Select at least one revision to enable preview.</p></div>;
+    return <div className="comparison-region-preview disabled" aria-disabled="true"><strong>Region preview</strong><p>No playable normal revision is available.</p></div>;
   }
 
+  const duration = waveform?.durationSeconds ?? 0;
+  const parsedStart = Math.min(parseTimestamp(start) ?? 0, duration || Number.MAX_SAFE_INTEGER);
+  const parsedEnd = Math.min(parseTimestamp(end) ?? Math.min(30, duration), duration || Number.MAX_SAFE_INTEGER);
+  const startPercent = duration ? parsedStart / duration * 100 : 0;
+  const endPercent = duration ? parsedEnd / duration * 100 : 0;
+  const setStart = (seconds: number) => onBoundsChange(locatorTimestamp(Math.min(seconds, Math.max(0, parsedEnd - .1))), end);
+  const setEnd = (seconds: number) => onBoundsChange(start, locatorTimestamp(Math.max(seconds, parsedStart + .1)));
   const label = `Revision ${String(candidate.revisionNumber).padStart(2, "0")}`;
+
   return <div className="comparison-region-preview">
-    <div className="comparison-region-preview-heading"><strong>Region preview</strong><span>Using highest selected: {label}</span></div>
+    <div className="comparison-region-preview-heading"><strong>Region preview</strong><label>Preview revision<select aria-label="Preview revision" value={candidate.revisionId} onChange={(event) => setRevisionId(event.target.value)}>{available.map((item) => <option key={item.revisionId} value={item.revisionId}>Revision {String(item.revisionNumber).padStart(2, "0")}</option>)}</select></label></div>
     <div className="comparison-waveform" aria-label={`Waveform for ${label}`}>
-      {waveform ? <svg viewBox={`0 0 ${waveform.peaks.length || 1} 100`} preserveAspectRatio="none" role="img">
-        {waveform.peaks.map((peak, index) => <line key={index} x1={index + .5} x2={index + .5} y1={50 - peak * 48} y2={50 + peak * 48} />)}
-      </svg> : <span>{error ? "Waveform unavailable" : "Loading waveform…"}</span>}
+      {waveform ? <><svg viewBox={`0 0 ${waveform.peaks.length || 1} 100`} preserveAspectRatio="none" role="img">{waveform.peaks.map((peak, index) => <line key={index} x1={index + .5} x2={index + .5} y1={50 - peak * 48} y2={50 + peak * 48} />)}</svg>
+        <span className="comparison-region-selection" style={{ left: `${startPercent}%`, width: `${Math.max(0, endPercent - startPercent)}%` }} />
+        <span className="comparison-playhead" style={{ left: `${duration ? playhead / duration * 100 : 0}%` }} />
+        <input className="comparison-region-locator start" type="range" aria-label="Region start locator" min="0" max={duration} step="0.1" value={parsedStart} onChange={(event) => setStart(Number(event.target.value))} />
+        <input className="comparison-region-locator end" type="range" aria-label="Region end locator" min="0" max={duration} step="0.1" value={parsedEnd} onChange={(event) => setEnd(Number(event.target.value))} /></> : <span>{error ? "Waveform unavailable" : "Loading waveform…"}</span>}
     </div>
-    <AudioPreviewPlayer
-      clientId={clientId}
-      projectId={projectId}
-      entry={{ relativePath: candidate.relativePath, displayName: label }}
-      durationSeconds={waveform?.durationSeconds}
-      standardTransport
-    />
+    <div className="comparison-locator-actions"><button type="button" className="secondary" disabled={!duration} onClick={() => setStart(playhead)}>Set start to playhead</button><button type="button" className="secondary" disabled={!duration} onClick={() => setEnd(playhead)}>Set end to playhead</button></div>
+    <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} />
     {error && <small className="comparison-preview-error">{error}</small>}
   </div>;
 }

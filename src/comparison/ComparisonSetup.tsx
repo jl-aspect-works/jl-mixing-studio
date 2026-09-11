@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ClientSummary, ProjectSummary } from "../types";
 import {
   addComparisonRegion,
@@ -43,6 +43,9 @@ export function ComparisonSetup({
   const [draft, setDraft] = useState<RegionDraft>(emptyDraft);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const updateDraftBounds = useCallback((start: string, end: string) => {
+    setDraft((current) => ({ ...current, start, end }));
+  }, []);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,10 +61,6 @@ export function ComparisonSetup({
     [setup?.candidates],
   );
   const selectedCandidateValues = candidates.filter((candidate) => selectedCandidates.has(candidate.revisionId));
-  const previewCandidate = selectedCandidateValues.reduce<ComparisonSetupData["candidates"][number] | null>(
-    (highest, candidate) => !highest || candidate.revisionNumber > highest.revisionNumber ? candidate : highest,
-    null,
-  );
   const selectedRegionValues = (setup?.document.regions ?? []).filter((region) => selectedRegions.has(region.regionId));
   const canStart = selectedCandidateValues.length >= 2
     && selectedCandidateValues.length <= MAX_SHORTCUT_CANDIDATES
@@ -162,7 +161,14 @@ export function ComparisonSetup({
             {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button" onClick={() => beginEdit(region)}>Edit</button><button type="button" className="text-button danger" onClick={() => void removeRegion(region)}>Delete</button></span>}
           </div>)}
         </div>
-        <RegionPreview clientId={client.clientId} projectId={project.projectId} candidate={previewCandidate} />
+        <RegionPreview
+          clientId={client.clientId}
+          projectId={project.projectId}
+          candidates={candidates}
+          start={draft.start}
+          end={draft.end}
+          onBoundsChange={updateDraftBounds}
+        />
         <form className="comparison-region-editor" onSubmit={(event) => { event.preventDefault(); void saveRegion(); }}>
           <h4>{draft.regionId ? "Edit region" : "Add region"}</h4>
           <label>Name<input required value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>

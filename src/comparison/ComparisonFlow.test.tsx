@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   add: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  waveform: vi.fn(),
 }));
 
 vi.mock("./comparisonService", () => ({
@@ -17,6 +18,15 @@ vi.mock("./comparisonService", () => ({
   addComparisonRegion: mocks.add,
   updateComparisonRegion: mocks.update,
   deleteComparisonRegion: mocks.remove,
+}));
+
+vi.mock("../project/files/audioPreviewService", () => ({
+  getProjectAudioWaveform: mocks.waveform,
+}));
+
+vi.mock("../project/files/AudioPreviewPlayer", () => ({
+  AudioPreviewPlayer: ({ onPositionChange }: { onPositionChange?: (seconds: number) => void }) =>
+    <button type="button" aria-label="Preview playback" onClick={() => onPositionChange?.(42)}>Preview playback</button>,
 }));
 
 const client = { clientId: "c1", clientName: "Client", createdAt: "", defaultArtist: "Artist", projects: [] } satisfies ClientSummary;
@@ -40,6 +50,7 @@ beforeEach(() => {
   mocks.add.mockReset();
   mocks.update.mockReset();
   mocks.remove.mockReset();
+  mocks.waveform.mockReset().mockResolvedValue({ durationSeconds: 120, peaks: [.1, .5, .9, .4] });
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -94,15 +105,32 @@ describe("comparison setup", () => {
     expect(screen.getByText("Matches the loudness of the revisions being compared.")).toBeInTheDocument();
   });
 
-  it("enables region preview from the highest selected revision", async () => {
+  it("defaults preview to the highest playable revision and synchronizes timeline locators", async () => {
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     await screen.findByRole("heading", { name: "New Comparison" });
-    expect(screen.getByText("Select at least one revision to enable preview.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
-    expect(screen.getByText("Using highest selected: Revision 02")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Back 5 seconds" }).querySelector(".action-icon")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "Forward 5 seconds" }).querySelector(".action-icon")).not.toBeNull();
+    const selector = screen.getByRole("combobox", { name: "Preview revision" });
+    expect(selector).toHaveValue("r2");
+    await waitFor(() => expect(mocks.waveform).toHaveBeenCalledWith(expect.objectContaining({ relativePath: expect.stringContaining("Revision_02") })));
+
+    fireEvent.change(selector, { target: { value: "r1" } });
+    await waitFor(() => expect(mocks.waveform).toHaveBeenLastCalledWith(expect.objectContaining({ relativePath: expect.stringContaining("Revision_01") })));
+
+    fireEvent.change(await screen.findByRole("slider", { name: "Region start locator" }), { target: { value: "12.5" } });
+    expect(screen.getByLabelText("Start")).toHaveValue("0:12.5");
+    fireEvent.click(screen.getByRole("button", { name: "Preview playback" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set end to playhead" }));
+    expect(screen.getByLabelText("End")).toHaveValue("0:42");
+  });
+
+  it("loads an existing region into the preview locators for editing", async () => {
+    const verse = { regionId: "verse", name: "Verse", startSeconds: 15, endSeconds: 45, builtIn: false };
+    mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse] } });
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+
+    expect(await screen.findByRole("slider", { name: "Region start locator" })).toHaveValue("15");
+    expect(screen.getByRole("slider", { name: "Region end locator" })).toHaveValue("45");
   });
 });
 

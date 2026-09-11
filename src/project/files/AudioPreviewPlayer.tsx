@@ -47,12 +47,14 @@ export function AudioPreviewPlayer({
   entry,
   durationSeconds = 0,
   standardTransport = false,
+  onPositionChange,
 }: {
   clientId: string;
   projectId: string;
   entry: Pick<ProjectFileEntry, "relativePath" | "displayName">;
   durationSeconds?: number | null;
   standardTransport?: boolean;
+  onPositionChange?: (seconds: number) => void;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preparePromiseRef = useRef<Promise<PreparedAudioPreview | null> | null>(null);
@@ -66,6 +68,10 @@ export function AudioPreviewPlayer({
   const [duration, setDuration] = useState(durationSeconds ?? 0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    onPositionChange?.(currentTime);
+  }, [currentTime, onPositionChange]);
 
   const request = { clientId, projectId, relativePath: entry.relativePath };
   const sessionId = sessionIdRef.current;
