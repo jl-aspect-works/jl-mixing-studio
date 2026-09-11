@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import { ComparisonRanking } from "./ComparisonRanking";
 import type { FrozenComparisonSession } from "./models";
-import { initialRanking, rankingIsComplete, type CandidateRanking } from "./ranking";
+import { initialRanking, moveCandidate, rankingDestinationForSlot, rankingIsComplete, shortcutRank, type CandidateRanking } from "./ranking";
 import { formatTimestamp, shortcutCandidate } from "./session";
 
 export function ComparisonWorkspace({
@@ -29,18 +29,6 @@ export function ComparisonWorkspace({
   const allRegionsComplete = completedCount === session.regions.length;
 
   useEffect(() => {
-    const keydown = (event: KeyboardEvent) => {
-      const candidate = shortcutCandidate(event, session.candidates);
-      if (!candidate) return;
-      event.preventDefault();
-      setActiveCandidate(candidate);
-      setDirty(true);
-    };
-    window.addEventListener("keydown", keydown);
-    return () => window.removeEventListener("keydown", keydown);
-  }, [session.candidates]);
-
-  useEffect(() => {
     const beforeUnload = (event: BeforeUnloadEvent) => {
       if (!dirty) return;
       event.preventDefault();
@@ -60,7 +48,7 @@ export function ComparisonWorkspace({
     setDirty(true);
   };
 
-  const updateRanking = (next: CandidateRanking) => {
+  const updateRanking = useCallback((next: CandidateRanking) => {
     setRankings((current) => ({ ...current, [activeRegion]: next }));
     if (!rankingIsComplete(next)) setCompletedRegions((current) => {
       const updated = new Set(current);
@@ -69,13 +57,31 @@ export function ComparisonWorkspace({
     });
     setCompletionNotice(false);
     setDirty(true);
-  };
+  }, [activeRegion]);
 
   const markRegionComplete = () => {
     if (!rankingIsComplete(ranking)) return;
     setCompletedRegions((current) => new Set(current).add(activeRegion));
     setDirty(true);
   };
+
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      const rank = shortcutRank(event, session.candidates.length);
+      if (rank !== null) {
+        event.preventDefault();
+        updateRanking(moveCandidate(ranking, activeCandidate, rankingDestinationForSlot(ranking, rank)));
+        return;
+      }
+      const candidate = shortcutCandidate(event, session.candidates);
+      if (!candidate) return;
+      event.preventDefault();
+      setActiveCandidate(candidate);
+      setDirty(true);
+    };
+    window.addEventListener("keydown", keydown);
+    return () => window.removeEventListener("keydown", keydown);
+  }, [activeCandidate, ranking, session.candidates, updateRanking]);
 
   return <section className="comparison-workspace" aria-labelledby="comparison-workspace-title">
     <header className="comparison-screen-header comparison-workspace-header">

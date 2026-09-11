@@ -203,7 +203,8 @@ describe("blind comparison workspace shell", () => {
     expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("Full SongActive");
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
-    expect(screen.getByLabelText("Rank ordering")).toHaveTextContent("No candidates ranked");
+    expect(screen.getByLabelText("Rank ordering")).toHaveTextContent("Drop Candidate A or press 1");
+    expect(screen.getByLabelText("Rank slot 2")).toBeInTheDocument();
   });
 
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {
@@ -234,31 +235,44 @@ describe("blind comparison workspace shell", () => {
 
   it("supports drag placement, ties, and splitting ties", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "new:0" } });
+    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "slot:1" } });
 
     fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!);
-    fireEvent.drop(screen.getByLabelText("Rank 1"));
-    expect(within(screen.getByLabelText("Rank 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
-    expect(within(screen.getByLabelText("Rank 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    fireEvent.drop(screen.getByLabelText("Rank slot 1"));
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
 
     fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!);
-    const placeAfter = screen.getByLabelText("Rank ordering").querySelectorAll(".comparison-rank-drop-zone")[1];
-    fireEvent.drop(placeAfter);
-    expect(within(screen.getByLabelText("Rank 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
-    expect(within(screen.getByLabelText("Rank 2")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    fireEvent.drop(screen.getByLabelText("Rank slot 2"));
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate B")).toBeInTheDocument();
+  });
+
+  it("uses number shortcuts to place the active candidate while preserving text entry", () => {
+    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    fireEvent.keyDown(window, { key: "2" });
+    expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate A")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "B" });
+    fireEvent.keyDown(window, { key: "1" });
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+
+    const notes = screen.getByRole("textbox", { name: "Notes for Candidate B" });
+    fireEvent.keyDown(notes, { key: "2" });
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
   });
 
   it("preserves candidate notes while accessible ranking controls move candidates", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for Candidate A" }), { target: { value: "Open top end" } });
-    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "new:0" } });
+    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "slot:1" } });
     fireEvent.click(screen.getByTitle("Select Candidate B"));
-    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate B"), { target: { value: "tie:0" } });
+    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate B"), { target: { value: "slot:1" } });
     fireEvent.click(screen.getByTitle("Select Candidate A"));
 
     expect(screen.getByRole("textbox", { name: "Notes for Candidate A" })).toHaveValue("Open top end");
-    expect(within(screen.getByLabelText("Rank 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
-    expect(within(screen.getByLabelText("Rank 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
   });
 
   it("uses No Preference and gates completion for every region", () => {
@@ -271,8 +285,8 @@ describe("blind comparison workspace shell", () => {
     expect(reveal).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "No Preference — tie all at rank 1" }));
-    expect(within(screen.getByLabelText("Rank 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
-    expect(within(screen.getByLabelText("Rank 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Mark Region Complete" }));
     expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("Full SongCompleteVerseNot complete");
     expect(reveal).toBeDisabled();

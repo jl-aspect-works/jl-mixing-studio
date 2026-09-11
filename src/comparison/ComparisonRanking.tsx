@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import {
-  competitionRanks,
   moveCandidate,
   noPreferenceRanking,
+  rankingDestinationForSlot,
+  rankingIsComplete,
   type CandidateRanking,
   type RankingDestination,
 } from "./ranking";
@@ -11,25 +12,24 @@ import {
 function CandidatePlacement({
   candidateId,
   ranking,
-  rankNumbers,
   active,
   onChoose,
   onMove,
+  slotCount,
   onDragStart,
 }: {
   candidateId: string;
   ranking: CandidateRanking;
-  rankNumbers: readonly number[];
   active: boolean;
   onChoose: () => void;
   onMove: (destination: RankingDestination) => void;
+  slotCount: number;
   onDragStart: () => void;
 }) {
   const move = (value: string) => {
     if (value === "unranked") onMove({ kind: "unranked" });
     else {
-      const [kind, index] = value.split(":");
-      onMove({ kind: kind === "tie" ? "tie" : "newRow", index: Number(index) });
+      onMove(rankingDestinationForSlot(ranking, Number(value.split(":")[1])));
     }
   };
 
@@ -38,11 +38,7 @@ function CandidatePlacement({
     <select aria-label={`Ranking destination for Candidate ${candidateId}`} value="" onChange={(event) => move(event.target.value)}>
       <option value="" disabled>Move…</option>
       <option value="unranked">Move to Unranked</option>
-      <option value="new:0">Place first</option>
-      {ranking.rankRows.map((row, index) => <optgroup key={`${row.join("-")}:${index}`} label={`Rank ${rankNumbers[index]}`}>
-        <option value={`tie:${index}`}>Tie at rank {rankNumbers[index]}</option>
-        <option value={`new:${index + 1}`}>Place after rank {rankNumbers[index]}</option>
-      </optgroup>)}
+      {Array.from({ length: slotCount }, (_, index) => <option key={index + 1} value={`slot:${index + 1}`}>Place in slot {index + 1}</option>)}
     </select>
   </div>;
 }
@@ -61,7 +57,7 @@ export function ComparisonRanking({
   onChange: (ranking: CandidateRanking) => void;
 }) {
   const [draggedCandidate, setDraggedCandidate] = useState<string | null>(null);
-  const rankNumbers = competitionRanks(ranking.rankRows);
+  const slots = Array.from({ length: candidateIds.length }, (_, index) => index + 1);
   const place = (candidateId: string, destination: RankingDestination) => onChange(moveCandidate(ranking, candidateId, destination));
   const drop = (destination: RankingDestination) => {
     if (draggedCandidate) place(draggedCandidate, destination);
@@ -71,7 +67,7 @@ export function ComparisonRanking({
     key={candidateId}
     candidateId={candidateId}
     ranking={ranking}
-    rankNumbers={rankNumbers}
+    slotCount={candidateIds.length}
     active={candidateId === activeCandidate}
     onChoose={() => onSelectCandidate(candidateId)}
     onMove={(destination) => place(candidateId, destination)}
@@ -89,17 +85,18 @@ export function ComparisonRanking({
 
     <section className="panel comparison-rank-panel" aria-labelledby="comparison-rank-order-title">
       <h3 id="comparison-rank-order-title">Rank Ordering</h3>
-      <p className="comparison-placeholder">Drop between rows for a new position or onto a row to create a tie.</p>
+      <p className="comparison-placeholder">Drop onto a numbered slot. Dropping onto an occupied slot creates a tie.</p>
       <div className="comparison-rank-order" aria-label="Rank ordering">
-        <div className="comparison-rank-drop-zone" onDragOver={(event) => event.preventDefault()} onDrop={() => drop({ kind: "newRow", index: 0 })}>Place first</div>
-        {ranking.rankRows.map((row, index) => <div className="comparison-rank-entry" key={`${row.join("-")}:${index}`}>
-          <div className="comparison-rank-row" aria-label={`Rank ${rankNumbers[index]}`} onDragOver={(event) => event.preventDefault()} onDrop={() => drop({ kind: "tie", index })}>
-            <strong>{rankNumbers[index]}</strong><div>{row.map(candidate)}</div>
-          </div>
-          <div className="comparison-rank-drop-zone" onDragOver={(event) => event.preventDefault()} onDrop={() => drop({ kind: "newRow", index: index + 1 })}>Place after rank {rankNumbers[index]}</div>
-        </div>)}
-        {ranking.rankRows.length === 0 && <div className="comparison-empty-ranking">No candidates ranked</div>}
+        {slots.map((slotNumber) => {
+          const row = ranking.rankRows[slotNumber - 1];
+          const occupied = row && row.length > 0;
+          return <div className={`comparison-rank-slot${occupied ? " occupied" : ""}`} key={slotNumber} aria-label={`Rank slot ${slotNumber}`} onDragOver={(event) => event.preventDefault()} onDrop={() => drop(rankingDestinationForSlot(ranking, slotNumber))}>
+            <strong>{slotNumber}</strong><div>{occupied ? row.map(candidate) : <span>Drop Candidate {activeCandidate} or press {slotNumber}</span>}</div>
+          </div>;
+        })}
       </div>
+      <small className="comparison-rank-shortcuts">1–{Math.min(candidateIds.length, 9)} keyboard shortcuts rank Candidate {activeCandidate}</small>
+      {ranking.unranked.length === 0 && !rankingIsComplete(ranking) && <small className="comparison-rank-validation" role="status">Adjust occupied slots to competition ranking: ties skip the following slot numbers.</small>}
       <button type="button" className="secondary comparison-no-preference" onClick={() => onChange(noPreferenceRanking(candidateIds))}><ActionIcon name="check" />No Preference — tie all at rank 1</button>
     </section>
   </>;
