@@ -26,9 +26,10 @@ serde_json = "1"
 jsonschema = { version = "0.33", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 lofty = "0.25.1"
+rodio = { version = "0.22.2", default-features = false, features = ["symphonia-all"] }
 
 [target.'cfg(windows)'.dependencies]
-rodio = { version = "0.22.2", default-features = false, features = ["playback", "symphonia-all"] }
+rodio = { version = "0.22.2", default-features = false, features = ["playback"] }
 
 [dev-dependencies]
 tempfile = "3"
