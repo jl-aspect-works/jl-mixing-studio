@@ -103,8 +103,8 @@ pub(crate) fn get_project_audio_waveform(
         fs::File::open(path).map_err(|error| format!("Unable to open waveform source: {error}"))?,
     )
     .map_err(|error| format!("Unable to decode waveform source: {error}"))?;
-    let channels = usize::from(decoder.channels());
-    let sample_rate = decoder.sample_rate() as usize;
+    let channels = usize::from(decoder.channels().get());
+    let sample_rate = decoder.sample_rate().get() as usize;
     let duration_seconds = decoder
         .total_duration()
         .map(|value| value.as_secs_f64())
