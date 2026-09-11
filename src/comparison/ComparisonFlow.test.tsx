@@ -241,19 +241,19 @@ describe("blind comparison workspace shell", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
     fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
-    const dragged = { effectAllowed: "none", dropEffect: "none", setData: vi.fn(), getData: vi.fn(() => "") };
 
-    let candidateB = screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!;
-    fireEvent.dragStart(candidateB, { dataTransfer: dragged });
-    expect(dragged.setData).toHaveBeenCalledWith("text/plain", "B");
-    fireEvent.dragOver(screen.getByLabelText("Rank slot 1"), { dataTransfer: dragged });
-    fireEvent.dragEnd(candidateB, { dataTransfer: dragged });
+    let candidateB = screen.getByTitle("Select Candidate B");
+    fireEvent.pointerDown(candidateB, { button: 0 });
+    fireEvent.pointerEnter(screen.getByLabelText("Rank slot 1"));
+    expect(screen.getByLabelText("Rank slot 1")).toHaveClass("drag-target");
+    fireEvent.pointerUp(screen.getByLabelText("Rank slot 1"));
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
 
-    candidateB = screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!;
-    fireEvent.dragStart(candidateB, { dataTransfer: dragged });
-    fireEvent.drop(screen.getByLabelText("Rank slot 2"), { dataTransfer: dragged });
+    candidateB = screen.getByTitle("Select Candidate B");
+    fireEvent.pointerDown(candidateB, { button: 0 });
+    fireEvent.pointerEnter(screen.getByLabelText("Rank slot 2"));
+    fireEvent.pointerUp(screen.getByLabelText("Rank slot 2"));
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate B")).toBeInTheDocument();
   });
