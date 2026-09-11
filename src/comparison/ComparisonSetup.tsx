@@ -197,7 +197,7 @@ export function ComparisonSetup({
               <input type="checkbox" checked={selectedRegions.has(region.regionId)} disabled={region.builtIn} onClick={(event) => event.stopPropagation()} onChange={(event) => setSelectedRegions((current) => toggle(current, region.regionId, event.target.checked))} />
               <span><strong>{region.name}</strong><small>{formatTimestamp(region.startSeconds)} – {region.endSeconds === null ? "End" : formatTimestamp(region.endSeconds)}</small></span>
             </label>
-            {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button danger" onClick={(event) => { event.stopPropagation(); setPendingDelete(region); }}><ActionIcon name="delete" />Delete</button></span>}
+            {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button danger icon-only comparison-region-delete" aria-label={`Delete ${region.name}`} title={`Delete ${region.name}`} onClick={(event) => { event.stopPropagation(); setPendingDelete(region); }}><ActionIcon name="delete" /></button></span>}
           </div>)}
         </div>
         {pendingDelete && <div className="inline-notice warning comparison-delete-confirmation" role="alertdialog" aria-label={`Delete ${pendingDelete.name}`}><span>Delete <strong>{pendingDelete.name}</strong>? Completed comparison history will keep its saved snapshot.</span><span><button type="button" className="secondary" onClick={() => setPendingDelete(null)}><ActionIcon name="close" />Keep Region</button><button type="button" className="danger" disabled={busy} onClick={() => void removeRegion(pendingDelete)}><ActionIcon name="delete" />Delete Region</button></span></div>}

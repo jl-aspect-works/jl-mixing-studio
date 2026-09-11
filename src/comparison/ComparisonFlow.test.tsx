@@ -159,7 +159,7 @@ describe("comparison setup", () => {
     await screen.findByRole("slider", { name: "Preview playhead" });
     expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("checkbox", { name: "Set playhead to region start" }));
-    fireEvent.click(screen.getByRole("button", { name: /Verse/ }));
+    fireEvent.click(screen.getByText("Verse").closest(".comparison-region-row")!);
 
     expect(await screen.findByRole("slider", { name: "Region start locator" })).toHaveValue("15");
     expect(screen.getByRole("slider", { name: "Region end locator" })).toHaveValue("45");
@@ -172,14 +172,14 @@ describe("comparison setup", () => {
     mocks.get.mockResolvedValueOnce(withVerse).mockResolvedValueOnce(setup);
     mocks.remove.mockResolvedValue(setup.document);
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
-    await screen.findByRole("button", { name: /Verse/ });
+    expect((await screen.findByText("Verse")).closest(".comparison-region-row")).not.toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete Verse" }));
     expect(screen.getByRole("alertdialog", { name: "Delete Verse" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Delete Region" }));
 
     await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith(expect.objectContaining({ regionId: "verse" })));
-    await waitFor(() => expect(screen.queryByRole("button", { name: /Verse/ })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("Verse")).not.toBeInTheDocument());
   });
 });
 

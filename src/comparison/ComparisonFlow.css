@@ -16,6 +16,7 @@
 .comparison-region-row small { font-size: .7rem; white-space: nowrap; }
 .comparison-region-row .text-button { min-height: 22px; padding: 1px 4px; font-size: .7rem; }
 .comparison-region-row .action-icon { width: 13px; height: 13px; }
+.comparison-region-row .comparison-region-delete { width: 20px; min-width: 20px; height: 20px; min-height: 20px; padding: 0; }
 .comparison-region-row[role="button"] { cursor: pointer; }
 .comparison-region-row[role="button"]:hover, .comparison-region-row[role="button"]:focus-visible { background: rgba(67, 104, 226, .08); outline: none; }
 .comparison-region-row.editing { background: rgba(67, 104, 226, .13); box-shadow: inset 3px 0 0 var(--blue, #4368e2); }
