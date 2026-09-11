@@ -12,13 +12,14 @@ const locatorTimestamp = (seconds: number) => {
 };
 
 export function RegionPreview({
-  clientId, projectId, candidates, start, end, onBoundsChange,
+  clientId, projectId, candidates, start, end, editRequest, onBoundsChange,
 }: {
   clientId: string;
   projectId: string;
   candidates: readonly ComparisonCandidateAvailability[];
   start: string;
   end: string;
+  editRequest: number;
   onBoundsChange: (start: string, end: string) => void;
 }) {
   const available = useMemo(
@@ -29,6 +30,8 @@ export function RegionPreview({
   const [revisionId, setRevisionId] = useState(() => available[0]?.revisionId ?? "");
   const [waveform, setWaveform] = useState<ProjectAudioWaveform | null>(null);
   const [playhead, setPlayhead] = useState(0);
+  const [seekRequest, setSeekRequest] = useState<{ id: number; seconds: number } | null>(null);
+  const [seekToRegionStart, setSeekToRegionStart] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const candidate = available.find((item) => item.revisionId === revisionId) ?? available[0] ?? null;
 
@@ -48,10 +51,6 @@ export function RegionPreview({
     return () => { cancelled = true; };
   }, [candidate?.relativePath, clientId, projectId]);
 
-  if (!candidate?.relativePath) {
-    return <div className="comparison-region-preview disabled" aria-disabled="true"><strong>Region preview</strong><p>No playable normal revision is available.</p></div>;
-  }
-
   const duration = waveform?.durationSeconds ?? 0;
   const parsedStart = Math.min(parseTimestamp(start) ?? 0, duration || Number.MAX_SAFE_INTEGER);
   const parsedEnd = Math.min(parseTimestamp(end) ?? Math.min(30, duration), duration || Number.MAX_SAFE_INTEGER);
@@ -59,6 +58,20 @@ export function RegionPreview({
   const endPercent = duration ? parsedEnd / duration * 100 : 0;
   const setStart = (seconds: number) => onBoundsChange(locatorTimestamp(Math.min(seconds, Math.max(0, parsedEnd - .1))), end);
   const setEnd = (seconds: number) => onBoundsChange(start, locatorTimestamp(Math.max(seconds, parsedStart + .1)));
+  const seekPreview = (seconds: number) => {
+    const next = Math.min(duration, Math.max(0, seconds));
+    setPlayhead(next);
+    setSeekRequest((current) => ({ id: (current?.id ?? 0) + 1, seconds: next }));
+  };
+  useEffect(() => {
+    if (editRequest > 0 && seekToRegionStart && duration > 0) seekPreview(parsedStart);
+  // The edit request is the user action that triggers this optional seek.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editRequest, duration]);
+
+  if (!candidate?.relativePath) {
+    return <div className="comparison-region-preview disabled" aria-disabled="true"><strong>Region preview</strong><p>No playable normal revision is available.</p></div>;
+  }
   const label = `Revision ${String(candidate.revisionNumber).padStart(2, "0")}`;
 
   return <div className="comparison-region-preview">
@@ -66,12 +79,12 @@ export function RegionPreview({
     <div className="comparison-waveform" aria-label={`Waveform for ${label}`}>
       {waveform ? <><svg viewBox={`0 0 ${waveform.peaks.length || 1} 100`} preserveAspectRatio="none" role="img">{waveform.peaks.map((peak, index) => <line key={index} x1={index + .5} x2={index + .5} y1={50 - peak * 48} y2={50 + peak * 48} />)}</svg>
         <span className="comparison-region-selection" style={{ left: `${startPercent}%`, width: `${Math.max(0, endPercent - startPercent)}%` }} />
-        <span className="comparison-playhead" style={{ left: `${duration ? playhead / duration * 100 : 0}%` }} />
         <input className="comparison-region-locator start" type="range" aria-label="Region start locator" min="0" max={duration} step="0.1" value={parsedStart} onChange={(event) => setStart(Number(event.target.value))} />
         <input className="comparison-region-locator end" type="range" aria-label="Region end locator" min="0" max={duration} step="0.1" value={parsedEnd} onChange={(event) => setEnd(Number(event.target.value))} /></> : <span>{error ? "Waveform unavailable" : "Loading waveform…"}</span>}
+        <input className="comparison-playhead-locator" type="range" aria-label="Preview playhead" min="0" max={duration} step="0.1" value={Math.min(playhead, duration)} onChange={(event) => seekPreview(Number(event.target.value))} />
     </div>
-    <div className="comparison-locator-actions"><button type="button" className="secondary" disabled={!duration} onClick={() => setStart(playhead)}>Set start to playhead</button><button type="button" className="secondary" disabled={!duration} onClick={() => setEnd(playhead)}>Set end to playhead</button></div>
-    <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} />
+    <div className="comparison-locator-actions"><button type="button" className="secondary" disabled={!duration} onClick={() => setStart(playhead)}>Set start to playhead</button><button type="button" className="secondary" disabled={!duration} onClick={() => setEnd(playhead)}>Set end to playhead</button><label><input type="checkbox" checked={seekToRegionStart} onChange={(event) => setSeekToRegionStart(event.target.checked)} />Set playhead to region start</label></div>
+    <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} seekRequest={seekRequest} />
     {error && <small className="comparison-preview-error">{error}</small>}
   </div>;
 }

@@ -48,6 +48,7 @@ export function AudioPreviewPlayer({
   durationSeconds = 0,
   standardTransport = false,
   onPositionChange,
+  seekRequest,
 }: {
   clientId: string;
   projectId: string;
@@ -55,10 +56,12 @@ export function AudioPreviewPlayer({
   durationSeconds?: number | null;
   standardTransport?: boolean;
   onPositionChange?: (seconds: number) => void;
+  seekRequest?: { id: number; seconds: number } | null;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preparePromiseRef = useRef<Promise<PreparedAudioPreview | null> | null>(null);
   const nativeLoadedRef = useRef(false);
+  const pendingSeekRef = useRef<number | null>(null);
   const sessionIdRef = useRef(`audio-preview-${previewSequence += 1}`);
   const [prepared, setPrepared] = useState<PreparedAudioPreview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,6 +82,7 @@ export function AudioPreviewPlayer({
   useEffect(() => {
     preparePromiseRef.current = null;
     nativeLoadedRef.current = false;
+    pendingSeekRef.current = null;
     setPrepared(null);
     setLoading(false);
     setError(null);
@@ -177,6 +181,11 @@ export function AudioPreviewPlayer({
           nativeLoadedRef.current = true;
           setCurrentTime(loaded.currentSeconds);
           setDuration(loaded.durationSeconds || durationSeconds || 0);
+          if (pendingSeekRef.current !== null) {
+            const sought = await seekNativeProjectAudioPreview(pendingSeekRef.current);
+            pendingSeekRef.current = null;
+            setCurrentTime(sought.currentSeconds);
+          }
         }
         await setNativeProjectAudioPreviewVolume(muted ? 0 : volume);
         const status = await playNativeProjectAudioPreview();
@@ -195,6 +204,10 @@ export function AudioPreviewPlayer({
         current.src = nextPrepared.sourceUrl;
         current.load();
       }
+      if (pendingSeekRef.current !== null) {
+        current.currentTime = pendingSeekRef.current;
+        pendingSeekRef.current = null;
+      }
       await claimAudioPlayback(sessionId, () => {
         current.pause();
         setPlaying(false);
@@ -211,14 +224,26 @@ export function AudioPreviewPlayer({
     if (!Number.isFinite(value)) return;
     setCurrentTime(value);
     if (prepared?.provider === "native" && nativeLoadedRef.current) {
+      pendingSeekRef.current = null;
       void seekNativeProjectAudioPreview(value)
         .then((status) => setCurrentTime(status.currentSeconds))
         .catch((reason) => setError(previewErrorMessage(reason)));
       return;
     }
     const current = audioRef.current;
-    if (current && prepared?.provider === "web") current.currentTime = value;
+    if (current && prepared?.provider === "web") {
+      current.currentTime = value;
+      pendingSeekRef.current = null;
+    } else {
+      pendingSeekRef.current = value;
+    }
   };
+
+  const seekRef = useRef(seek);
+  seekRef.current = seek;
+  useEffect(() => {
+    if (seekRequest) seekRef.current(seekRequest.seconds);
+  }, [seekRequest]);
 
   const changeVolume = (value: number) => {
     const nextVolume = Math.min(1, Math.max(0, value));

@@ -25,8 +25,8 @@ vi.mock("../project/files/audioPreviewService", () => ({
 }));
 
 vi.mock("../project/files/AudioPreviewPlayer", () => ({
-  AudioPreviewPlayer: ({ onPositionChange }: { onPositionChange?: (seconds: number) => void }) =>
-    <button type="button" aria-label="Preview playback" onClick={() => onPositionChange?.(42)}>Preview playback</button>,
+  AudioPreviewPlayer: ({ onPositionChange, seekRequest }: { onPositionChange?: (seconds: number) => void; seekRequest?: { seconds: number } | null }) =>
+    <button type="button" aria-label="Preview playback" data-seek-position={seekRequest?.seconds ?? ""} onClick={() => onPositionChange?.(42)}>Preview playback</button>,
 }));
 
 const client = { clientId: "c1", clientName: "Client", createdAt: "", defaultArtist: "Artist", projects: [] } satisfies ClientSummary;
@@ -143,20 +143,27 @@ describe("comparison setup", () => {
 
     fireEvent.change(await screen.findByRole("slider", { name: "Region start locator" }), { target: { value: "12.5" } });
     expect(screen.getByLabelText("Start")).toHaveValue("0:12.5");
+    expect(screen.getByRole("checkbox", { name: "Set playhead to region start" })).not.toBeChecked();
+    fireEvent.change(screen.getByRole("slider", { name: "Preview playhead" }), { target: { value: "25" } });
+    expect(screen.getByRole("button", { name: "Preview playback" })).toHaveAttribute("data-seek-position", "25");
     fireEvent.click(screen.getByRole("button", { name: "Preview playback" }));
     fireEvent.click(screen.getByRole("button", { name: "Set end to playhead" }));
     expect(screen.getByLabelText("End")).toHaveValue("0:42");
   });
 
-  it("loads an existing region into the preview locators for editing", async () => {
+  it("uses the region row to edit and optionally moves the playhead to its start", async () => {
     const verse = { regionId: "verse", name: "Verse", startSeconds: 15, endSeconds: 45, builtIn: false };
     mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse] } });
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     await screen.findByRole("heading", { name: "New Comparison" });
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    await screen.findByRole("slider", { name: "Preview playhead" });
+    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Set playhead to region start" }));
+    fireEvent.click(screen.getByRole("button", { name: /Verse/ }));
 
     expect(await screen.findByRole("slider", { name: "Region start locator" })).toHaveValue("15");
     expect(screen.getByRole("slider", { name: "Region end locator" })).toHaveValue("45");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Preview playback" })).toHaveAttribute("data-seek-position", "15"));
   });
 });
 
