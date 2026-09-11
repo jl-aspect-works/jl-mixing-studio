@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import {
   moveCandidate,
@@ -17,6 +17,7 @@ function CandidatePlacement({
   onMove,
   slotCount,
   onDragStart,
+  onDragEnd,
 }: {
   candidateId: string;
   ranking: CandidateRanking;
@@ -24,7 +25,8 @@ function CandidatePlacement({
   onChoose: () => void;
   onMove: (destination: RankingDestination) => void;
   slotCount: number;
-  onDragStart: () => void;
+  onDragStart: (event: DragEvent<HTMLDivElement>) => void;
+  onDragEnd: () => void;
 }) {
   const move = (value: string) => {
     if (value === "unranked") onMove({ kind: "unranked" });
@@ -33,12 +35,12 @@ function CandidatePlacement({
     }
   };
 
-  return <div className={`comparison-ranking-candidate${active ? " active" : ""}`} draggable onDragStart={onDragStart}>
-    <button type="button" className="comparison-candidate-chip" aria-pressed={active} onClick={onChoose} title={`Select Candidate ${candidateId}`}><span aria-hidden="true">⠿</span>{candidateId}</button>
+  return <div className={`comparison-ranking-candidate${active ? " active" : ""}`} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}>
+    <button type="button" className="comparison-candidate-chip" draggable aria-pressed={active} onClick={onChoose} title={`Select Candidate ${candidateId}`}><span aria-hidden="true">⠿</span>{candidateId}</button>
     <select aria-label={`Ranking destination for Candidate ${candidateId}`} value="" onChange={(event) => move(event.target.value)}>
       <option value="" disabled>Move…</option>
       <option value="unranked">Move to Unranked</option>
-      {Array.from({ length: slotCount }, (_, index) => <option key={index + 1} value={`slot:${index + 1}`}>Move to {index + 1}</option>)}
+      {Array.from({ length: slotCount }, (_, index) => <option key={index + 1} value={`slot:${index + 1}`}>Place in slot {index + 1}</option>)}
     </select>
   </div>;
 }
@@ -59,8 +61,10 @@ export function ComparisonRanking({
   const [draggedCandidate, setDraggedCandidate] = useState<string | null>(null);
   const slots = Array.from({ length: candidateIds.length }, (_, index) => index + 1);
   const place = (candidateId: string, destination: RankingDestination) => onChange(moveCandidate(ranking, candidateId, destination));
-  const drop = (destination: RankingDestination) => {
-    if (draggedCandidate) place(draggedCandidate, destination);
+  const drop = (event: DragEvent<HTMLElement>, destination: RankingDestination) => {
+    event.preventDefault();
+    const candidateId = event.dataTransfer.getData("text/plain") || draggedCandidate;
+    if (candidateId) place(candidateId, destination);
     setDraggedCandidate(null);
   };
   const candidate = (candidateId: string) => <CandidatePlacement
@@ -71,11 +75,16 @@ export function ComparisonRanking({
     active={candidateId === activeCandidate}
     onChoose={() => onSelectCandidate(candidateId)}
     onMove={(destination) => place(candidateId, destination)}
-    onDragStart={() => setDraggedCandidate(candidateId)}
+    onDragStart={(event) => {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", candidateId);
+      setDraggedCandidate(candidateId);
+    }}
+    onDragEnd={() => setDraggedCandidate(null)}
   />;
 
   return <>
-    <section className="panel comparison-unranked-panel" aria-labelledby="comparison-unranked-title" onDragOver={(event) => event.preventDefault()} onDrop={() => drop({ kind: "unranked" })}>
+    <section className="panel comparison-unranked-panel" aria-labelledby="comparison-unranked-title" onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => drop(event, { kind: "unranked" })}>
       <h3 id="comparison-unranked-title">Unranked</h3>
       <p className="comparison-placeholder">Drag each candidate into a rank position.</p>
       <div className="comparison-unranked" aria-label="Unranked candidates">
@@ -90,7 +99,7 @@ export function ComparisonRanking({
         {slots.map((slotNumber) => {
           const row = ranking.rankRows[slotNumber - 1];
           const occupied = row && row.length > 0;
-          return <div className={`comparison-rank-slot${occupied ? " occupied" : ""}`} key={slotNumber} aria-label={`Rank slot ${slotNumber}`} onDragOver={(event) => event.preventDefault()} onDrop={() => drop(rankingDestinationForSlot(ranking, slotNumber))}>
+          return <div className={`comparison-rank-slot${occupied ? " occupied" : ""}`} key={slotNumber} aria-label={`Rank slot ${slotNumber}`} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }} onDrop={(event) => drop(event, rankingDestinationForSlot(ranking, slotNumber))}>
             <strong>{slotNumber}</strong><div>{occupied ? row.map(candidate) : <span>Drop Candidate {activeCandidate} or press {slotNumber}</span>}</div>
           </div>;
         })}

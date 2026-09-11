@@ -205,7 +205,7 @@ describe("blind comparison workspace shell", () => {
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
     expect(screen.getByLabelText("Rank ordering")).toHaveTextContent("Drop Candidate A or press 1");
     expect(screen.getByLabelText("Rank slot 2")).toBeInTheDocument();
-    expect(screen.getByLabelText("Ranking destination for Candidate A")).toHaveTextContent("Move to 1");
+    expect(screen.getByLabelText("Ranking destination for Candidate A")).toHaveTextContent("Place in slot 1");
   });
 
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {
@@ -237,14 +237,16 @@ describe("blind comparison workspace shell", () => {
   it("supports drag placement, ties, and splitting ties", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "slot:1" } });
+    const dragged = { effectAllowed: "none", dropEffect: "none", setData: vi.fn(), getData: vi.fn(() => "B") };
 
-    fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!);
-    fireEvent.drop(screen.getByLabelText("Rank slot 1"));
+    fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!, { dataTransfer: dragged });
+    expect(dragged.setData).toHaveBeenCalledWith("text/plain", "B");
+    fireEvent.drop(screen.getByLabelText("Rank slot 1"), { dataTransfer: dragged });
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
 
-    fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!);
-    fireEvent.drop(screen.getByLabelText("Rank slot 2"));
+    fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!, { dataTransfer: dragged });
+    fireEvent.drop(screen.getByLabelText("Rank slot 2"), { dataTransfer: dragged });
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate B")).toBeInTheDocument();
   });
