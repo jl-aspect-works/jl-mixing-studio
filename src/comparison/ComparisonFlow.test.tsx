@@ -243,7 +243,11 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
 
     let candidateB = screen.getByTitle("Select Candidate B");
-    fireEvent.pointerDown(candidateB, { button: 0 });
+    fireEvent.pointerDown(candidateB, { button: 0, clientX: 20, clientY: 30 });
+    const pointerMove = new Event("pointermove", { bubbles: true });
+    Object.defineProperties(pointerMove, { clientX: { value: 80 }, clientY: { value: 90 } });
+    fireEvent(document, pointerMove);
+    expect(screen.getByText("B", { selector: ".comparison-candidate-drag-ghost" })).toHaveStyle({ left: "80px", top: "90px" });
     fireEvent.pointerEnter(screen.getByLabelText("Rank slot 1"));
     expect(screen.getByLabelText("Rank slot 1")).toHaveClass("drag-target");
     fireEvent.pointerUp(screen.getByLabelText("Rank slot 1"));

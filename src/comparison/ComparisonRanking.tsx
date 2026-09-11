@@ -94,6 +94,7 @@ export function ComparisonRanking({
   const draggedCandidate = useRef<string | null>(null);
   const [draggingCandidate, setDraggingCandidate] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<string | null>(null);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const slots = Array.from({ length: candidateIds.length }, (_, index) => index + 1);
   const place = (candidateId: string, destination: RankingDestination) => onChange(moveCandidate(ranking, candidateId, destination));
   const finishPointerDrag = (destination?: RankingDestination) => {
@@ -101,14 +102,22 @@ export function ComparisonRanking({
     draggedCandidate.current = null;
     setDraggingCandidate(null);
     setDragTarget(null);
+    setDragPosition(null);
     if (candidateId && destination) place(candidateId, destination);
   };
 
   useEffect(() => {
+    const movePointerDrag = (event: PointerEvent) => {
+      if (!draggedCandidate.current) return;
+      event.preventDefault();
+      setDragPosition({ x: event.clientX, y: event.clientY });
+    };
     const cancelPointerDrag = () => finishPointerDrag();
+    document.addEventListener("pointermove", movePointerDrag, { passive: false });
     document.addEventListener("pointerup", cancelPointerDrag);
     document.addEventListener("pointercancel", cancelPointerDrag);
     return () => {
+      document.removeEventListener("pointermove", movePointerDrag);
       document.removeEventListener("pointerup", cancelPointerDrag);
       document.removeEventListener("pointercancel", cancelPointerDrag);
     };
@@ -130,6 +139,7 @@ export function ComparisonRanking({
       draggedCandidate.current = candidateId;
       setDraggingCandidate(candidateId);
       setDragTarget(null);
+      setDragPosition({ x: event.clientX, y: event.clientY });
     }}
   />;
 
@@ -159,5 +169,6 @@ export function ComparisonRanking({
       {ranking.unranked.length === 0 && !rankingIsComplete(ranking) && <small className="comparison-rank-validation" role="status">Adjust occupied slots to competition ranking: ties skip the following slot numbers.</small>}
       <button type="button" className="secondary comparison-no-preference" onClick={() => onChange(noPreferenceRanking(candidateIds))}><ActionIcon name="check" />No Preference — tie all at rank 1</button>
     </section>
+    {draggingCandidate && dragPosition && <div className="comparison-candidate-drag-ghost" aria-hidden="true" style={{ left: dragPosition.x, top: dragPosition.y }}><span>⠿</span>{draggingCandidate}</div>}
   </>;
 }
