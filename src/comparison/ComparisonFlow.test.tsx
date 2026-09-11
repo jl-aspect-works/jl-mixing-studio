@@ -66,7 +66,7 @@ describe("comparison setup", () => {
     expect(screen.getByRole("heading", { name: "Comparison Session" })).toBeInTheDocument();
     expect(screen.getByText("2 candidates")).toBeInTheDocument();
     expect(screen.getByText("ON")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Full Song Not complete" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Full Song Active" })).toBeInTheDocument();
   });
 
   it("adds consecutive custom regions and selects them", async () => {
@@ -194,8 +194,12 @@ describe("blind comparison workspace shell", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     const transport = screen.getByLabelText("Comparison transport");
     const candidates = screen.getByLabelText("Blind candidates");
+    const progress = screen.getByLabelText("Region completion progress");
     expect(transport.compareDocumentPosition(candidates) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(candidates.compareDocumentPosition(progress) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(transport.querySelectorAll(".action-icon")).toHaveLength(6);
+    expect(within(transport).getAllByRole("button")).toHaveLength(6);
+    expect(within(transport).getAllByRole("button").every((button) => button.classList.contains("icon-only"))).toBe(true);
     expect(screen.getByRole("heading", { name: "Session Progress" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Rank Ordering" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
@@ -205,6 +209,7 @@ describe("blind comparison workspace shell", () => {
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
     expect(screen.getByLabelText("Rank ordering")).toHaveTextContent("Drop Candidate A or press 1");
     expect(screen.getByLabelText("Rank slot 2")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Comparison regions")).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Ranking destination for Candidate A" })).not.toBeInTheDocument();
     fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
     expect(screen.getByRole("menu", { name: "Move Candidate A" })).toBeInTheDocument();
@@ -317,6 +322,6 @@ describe("blind comparison workspace shell", () => {
     fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
     fireEvent.click(screen.getByRole("menuitem", { name: "Move to Unranked" }));
     expect(reveal).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Verse Not complete" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Verse Active" })).toBeInTheDocument();
   });
 });
