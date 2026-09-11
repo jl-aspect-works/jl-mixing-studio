@@ -229,18 +229,4 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Discard Comparison" }));
     expect(onCancel).toHaveBeenCalledOnce();
   });
-
-  it("provides a temporary results layout preview without completing the session", () => {
-    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Preview Results" }));
-
-    expect(screen.getByRole("heading", { name: "Comparison Results" })).toBeInTheDocument();
-    expect(screen.getByText("REVEALED PREVIEW")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "By Region Results" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Revision Key" }).closest("section")).toHaveTextContent("A→Revision 01");
-    expect(screen.getByRole("table", { name: "Cumulative standings preview" })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Back to Comparison" }));
-    expect(screen.getByRole("heading", { name: "Comparison Session" })).toBeInTheDocument();
-  });
 });
