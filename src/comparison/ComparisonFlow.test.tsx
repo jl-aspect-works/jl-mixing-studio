@@ -205,6 +205,7 @@ describe("blind comparison workspace shell", () => {
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
     expect(screen.getByLabelText("Rank ordering")).toHaveTextContent("Drop Candidate A or press 1");
     expect(screen.getByLabelText("Rank slot 2")).toBeInTheDocument();
+    expect(screen.getByLabelText("Ranking destination for Candidate A")).toHaveTextContent("Move to 1");
   });
 
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {

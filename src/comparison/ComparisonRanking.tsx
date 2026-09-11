@@ -38,7 +38,7 @@ function CandidatePlacement({
     <select aria-label={`Ranking destination for Candidate ${candidateId}`} value="" onChange={(event) => move(event.target.value)}>
       <option value="" disabled>Move…</option>
       <option value="unranked">Move to Unranked</option>
-      {Array.from({ length: slotCount }, (_, index) => <option key={index + 1} value={`slot:${index + 1}`}>Place in slot {index + 1}</option>)}
+      {Array.from({ length: slotCount }, (_, index) => <option key={index + 1} value={`slot:${index + 1}`}>Move to {index + 1}</option>)}
     </select>
   </div>;
 }
