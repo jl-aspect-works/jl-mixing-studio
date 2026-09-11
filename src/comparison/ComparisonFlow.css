@@ -78,12 +78,21 @@
 .comparison-session-progress small { color: var(--muted-text, #748096); font-size: .7rem; }
 .comparison-playing span, .comparison-placeholder { color: var(--muted-text, #748096); font-size: .82rem; }
 .comparison-judgment-grid { display: grid; grid-template-columns: .72fr 1.2fr 1fr; gap: 12px; }
-.comparison-unranked { display: flex; flex-wrap: wrap; gap: 8px; }
-.comparison-unranked span { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--border, #cbd3df); border-radius: 8px; font-weight: 800; }
-.comparison-rank-order-shell { display: grid; gap: 7px; }
-.comparison-rank-order-shell > div:not(.comparison-no-preference) { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 7px; }
-.comparison-rank-order-shell > div > span, .comparison-no-preference { padding: 8px 10px; border: 1px dashed var(--border, #cbd3df); border-radius: 6px; color: var(--muted-text, #748096); font-size: .76rem; }
-.comparison-no-preference { text-align: center; }
+.comparison-unranked { display: flex; align-content: flex-start; flex-wrap: wrap; gap: 8px; min-height: 52px; padding: 7px; border: 1px dashed var(--border, #cbd3df); border-radius: 7px; }
+.comparison-ranking-candidate { display: flex; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--border, #cbd3df); border-radius: 7px; background: rgba(255,255,255,.82); }
+.comparison-ranking-candidate.active { border-color: var(--blue, #4368e2); box-shadow: 0 0 0 2px rgba(67, 104, 226, .18); }
+.comparison-candidate-chip { min-width: 34px; min-height: 32px; padding: 4px 7px; font-weight: 800; }
+.comparison-candidate-chip span { padding-right: 4px; color: var(--muted-text, #748096); font-weight: 400; }
+.comparison-ranking-candidate select { width: 78px; min-height: 32px; padding: 3px 5px; font-size: .7rem; }
+.comparison-empty-pool, .comparison-empty-ranking { align-self: center; color: var(--muted-text, #748096); font-size: .76rem; }
+.comparison-rank-order { display: grid; gap: 3px; }
+.comparison-rank-entry { display: grid; gap: 3px; }
+.comparison-rank-row { display: grid; grid-template-columns: 28px 1fr; align-items: center; gap: 7px; min-height: 46px; padding: 5px; border: 1px solid var(--border, #cbd3df); border-radius: 7px; background: rgba(67, 104, 226, .06); }
+.comparison-rank-row > strong { text-align: center; }
+.comparison-rank-row > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.comparison-rank-drop-zone { min-height: 18px; padding: 2px 8px; border: 1px dashed transparent; border-radius: 5px; color: var(--muted-text, #748096); text-align: center; font-size: .68rem; }
+.comparison-rank-drop-zone:hover { border-color: var(--blue, #4368e2); background: rgba(67, 104, 226, .08); color: var(--blue, #4368e2); }
+.comparison-no-preference { justify-content: center; width: 100%; min-height: 34px; padding: 6px 10px; font-size: .76rem; }
 .comparison-judgment-grid label { display: grid; gap: 8px; font-weight: 700; }
 .comparison-judgment-grid textarea { min-height: 110px; resize: vertical; }
 .comparison-judgment-grid small { color: var(--muted-text, #748096); }

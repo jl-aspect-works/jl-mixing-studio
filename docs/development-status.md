@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-05
+Last updated: 2026-09-11
 
 ## Current release
 
@@ -32,22 +32,24 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - Studio and Automation `v2.2.0` stable releases were published and verified.
 - #374 persistence foundation was approved and merged through PR #389 at `9b42c12ee5a0506503461b37d19016db6f0617a8`.
 - Post-merge Studio CI run #1971 passed on that exact `main` commit.
+- #375 setup, region management, and blind session shell was approved and merged through PR #390 at `8b175bc740747d9a6bb124f7be74d70d64bfc056`.
+- Post-merge Studio CI run #1993 passed on that exact `main` commit.
 
 ## Active work
 
-- #375 is implementing Revision History launch/setup, eligible normal-revision selection, project region management, frozen in-memory session configuration, A–Z blind identities/shortcuts, and the dedicated blind workspace shell.
-- #376 and later issues remain blocked by the #375 implementation, CI, and approval gate.
+- #376 is implementing per-region unranked pools, drag/drop and accessible ranking operations, ties with competition-rank numbering, candidate notes, No Preference, and region/session completion gates.
+- #377 and later issues remain blocked by the #376 implementation, CI, and approval gate.
 
 ## Remaining release work
 
-1. Complete, validate, approve, and merge #375.
-2. Implement and approve #376–#379 in locked dependency order.
+1. Complete, validate, approve, and merge #376.
+2. Implement and approve #377–#379 in locked dependency order.
 3. Complete #380 cross-platform, NAS-performance, and UX acceptance.
 4. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
-- Actual ranking interaction/completion is owned by #376.
+- Completed comparison persistence remains deferred to the reveal/results workflow in #379; #376 owns in-memory ranking and completion readiness.
 - Comparison playback coordination and looping behavior are owned by #377.
 - Loudness analysis/matching implementation is owned by #378; #375 only captures and freezes the session setting.
 - Reveal/results, cumulative TOP integration, and history actions are owned by #379.
@@ -55,4 +57,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Complete local and CI validation for #375, then submit its focused PR for approval without starting #376.
+Publish the focused #376 implementation PR, complete CI and review, and do not start #377 until #376 is approved and merged.

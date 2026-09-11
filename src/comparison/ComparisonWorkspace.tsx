@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
+import { ComparisonRanking } from "./ComparisonRanking";
 import type { FrozenComparisonSession } from "./models";
+import { initialRanking, rankingIsComplete, type CandidateRanking } from "./ranking";
 import { formatTimestamp, shortcutCandidate } from "./session";
 
 export function ComparisonWorkspace({
@@ -14,11 +16,17 @@ export function ComparisonWorkspace({
   const [activeRegion, setActiveRegion] = useState(session.regions[0].regionId);
   const [loop, setLoop] = useState(true);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [rankings, setRankings] = useState<Record<string, CandidateRanking>>(() => Object.fromEntries(session.regions.map((item) => [item.regionId, initialRanking(session.candidates.map((candidate) => candidate.blindId))])));
+  const [completedRegions, setCompletedRegions] = useState<ReadonlySet<string>>(() => new Set());
   const [dirty, setDirty] = useState(false);
   const [cancelConfirmation, setCancelConfirmation] = useState(false);
+  const [completionNotice, setCompletionNotice] = useState(false);
   const region = session.regions.find((item) => item.regionId === activeRegion) ?? session.regions[0];
   const noteKey = `${activeRegion}:${activeCandidate}`;
-  const progress = useMemo(() => session.regions.map((item) => ({ ...item, complete: false })), [session.regions]);
+  const ranking = rankings[activeRegion];
+  const progress = useMemo(() => session.regions.map((item) => ({ ...item, complete: completedRegions.has(item.regionId) })), [completedRegions, session.regions]);
+  const completedCount = progress.filter((item) => item.complete).length;
+  const allRegionsComplete = completedCount === session.regions.length;
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
@@ -52,6 +60,23 @@ export function ComparisonWorkspace({
     setDirty(true);
   };
 
+  const updateRanking = (next: CandidateRanking) => {
+    setRankings((current) => ({ ...current, [activeRegion]: next }));
+    if (!rankingIsComplete(next)) setCompletedRegions((current) => {
+      const updated = new Set(current);
+      updated.delete(activeRegion);
+      return updated;
+    });
+    setCompletionNotice(false);
+    setDirty(true);
+  };
+
+  const markRegionComplete = () => {
+    if (!rankingIsComplete(ranking)) return;
+    setCompletedRegions((current) => new Set(current).add(activeRegion));
+    setDirty(true);
+  };
+
   return <section className="comparison-workspace" aria-labelledby="comparison-workspace-title">
     <header className="comparison-screen-header comparison-workspace-header">
       <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-workspace-title">Comparison Session</h2></div>
@@ -63,7 +88,7 @@ export function ComparisonWorkspace({
     </div>}
 
     <nav className="comparison-region-strip" aria-label="Comparison regions">
-      {progress.map((item) => <button key={item.regionId} type="button" className={item.regionId === activeRegion ? "active" : "secondary"} aria-current={item.regionId === activeRegion ? "page" : undefined} onClick={() => chooseRegion(item.regionId)}>{item.name} <span aria-label="Not complete">○</span></button>)}
+      {progress.map((item) => <button key={item.regionId} type="button" className={item.regionId === activeRegion ? "active" : "secondary"} aria-current={item.regionId === activeRegion ? "page" : undefined} onClick={() => chooseRegion(item.regionId)}>{item.name} <span aria-label={item.complete ? "Complete" : "Not complete"}>{item.complete ? "✓" : "○"}</span></button>)}
     </nav>
 
     <section className="panel comparison-listening" aria-labelledby="comparison-listening-title">
@@ -79,10 +104,10 @@ export function ComparisonWorkspace({
     </section>
 
     <div className="comparison-judgment-grid">
-      <section className="panel" aria-labelledby="comparison-unranked-title"><h3 id="comparison-unranked-title">Unranked</h3><p className="comparison-placeholder">Candidates begin here for each region.</p><div className="comparison-unranked">{session.candidates.map((candidate) => <span key={candidate.blindId}>{candidate.blindId}</span>)}</div></section>
-      <section className="panel" aria-labelledby="comparison-rank-order-title"><h3 id="comparison-rank-order-title">Rank Ordering</h3><p className="comparison-placeholder">Ranking interaction, placement, and ties are added by the next sequenced issue.</p><div className="comparison-rank-order-shell" aria-label="Rank ordering placeholder">{session.candidates.map((_, index) => <div key={index}><strong>{index + 1}</strong><span>Rank position</span></div>)}<div className="comparison-no-preference">No Preference</div></div></section>
-      <section className="panel" aria-labelledby="comparison-notes-title"><h3 id="comparison-notes-title">Candidate notes</h3><label>Candidate {activeCandidate}<textarea aria-label={`Notes for Candidate ${activeCandidate}`} value={notes[noteKey] ?? ""} onChange={(event) => { setNotes((current) => ({ ...current, [noteKey]: event.target.value })); setDirty(true); }} placeholder="Listening notes for this candidate and region" /></label><small>Notes remain in memory until the completed-session workflow is available.</small></section>
+      <ComparisonRanking candidateIds={session.candidates.map((candidate) => candidate.blindId)} ranking={ranking} activeCandidate={activeCandidate} onSelectCandidate={(candidateId) => { setActiveCandidate(candidateId); setDirty(true); }} onChange={updateRanking} />
+      <section className="panel" aria-labelledby="comparison-notes-title"><h3 id="comparison-notes-title">Candidate notes</h3><label>Candidate {activeCandidate}<textarea aria-label={`Notes for Candidate ${activeCandidate}`} value={notes[noteKey] ?? ""} onChange={(event) => { setNotes((current) => ({ ...current, [noteKey]: event.target.value })); setDirty(true); }} placeholder="Listening notes for this candidate and region" /></label><small>Notes stay attached to this candidate and region when rankings move.</small></section>
     </div>
-    <footer className="comparison-workspace-footer"><span>{session.regions.length} regions · 0 complete · Loop {loop ? "On" : "Off"}</span><span className="comparison-workspace-actions"><button type="button" disabled><ActionIcon name="check" />Mark Region Complete</button><button type="button" disabled><ActionIcon name="check" />Reveal &amp; Complete Comparison</button></span></footer>
+    {completionNotice && <div className="inline-notice" role="status">All regions are complete. Reveal and persistence are provided by the later results workflow.</div>}
+    <footer className="comparison-workspace-footer"><span>{session.regions.length} regions · {completedCount} complete · {ranking.unranked.length} unranked · Loop {loop ? "On" : "Off"}</span><span className="comparison-workspace-actions"><button type="button" disabled={!rankingIsComplete(ranking) || completedRegions.has(activeRegion)} onClick={markRegionComplete}><ActionIcon name="check" />{completedRegions.has(activeRegion) ? "Region Complete" : "Mark Region Complete"}</button><button type="button" disabled={!allRegionsComplete} onClick={() => setCompletionNotice(true)}><ActionIcon name="check" />Reveal &amp; Complete Comparison</button></span></footer>
   </section>;
 }
