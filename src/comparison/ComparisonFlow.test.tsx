@@ -165,6 +165,22 @@ describe("comparison setup", () => {
     expect(screen.getByRole("slider", { name: "Region end locator" })).toHaveValue("45");
     await waitFor(() => expect(screen.getByRole("button", { name: "Preview playback" })).toHaveAttribute("data-seek-position", "15"));
   });
+
+  it("deletes a region through the in-app confirmation", async () => {
+    const verse = { regionId: "verse", name: "Verse", startSeconds: 15, endSeconds: 45, builtIn: false };
+    const withVerse = { ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse] } };
+    mocks.get.mockResolvedValueOnce(withVerse).mockResolvedValueOnce(setup);
+    mocks.remove.mockResolvedValue(setup.document);
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("button", { name: /Verse/ });
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByRole("alertdialog", { name: "Delete Verse" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete Region" }));
+
+    await waitFor(() => expect(mocks.remove).toHaveBeenCalledWith(expect.objectContaining({ regionId: "verse" })));
+    await waitFor(() => expect(screen.queryByRole("button", { name: /Verse/ })).not.toBeInTheDocument());
+  });
 });
 
 const frozen: FrozenComparisonSession = {

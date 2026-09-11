@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActionIcon } from "../components/ActionIcon";
 import type { ClientSummary, ProjectSummary } from "../types";
 import {
   addComparisonRegion,
@@ -42,6 +43,7 @@ export function ComparisonSetup({
   const [loudnessMatch, setLoudnessMatch] = useState(true);
   const [draft, setDraft] = useState<RegionDraft>(emptyDraft);
   const [editRequest, setEditRequest] = useState(0);
+  const [pendingDelete, setPendingDelete] = useState<ProjectRegion | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const updateDraftBounds = useCallback((start: string, end: string) => {
@@ -123,7 +125,6 @@ export function ComparisonSetup({
   };
 
   const removeRegion = async (region: ProjectRegion) => {
-    if (!window.confirm(`Delete ${region.name}? Completed comparison history will keep its saved snapshot.`)) return;
     setBusy(true);
     setError(null);
     try {
@@ -136,6 +137,7 @@ export function ComparisonSetup({
       setSetup({ ...refreshed, document });
       setSelectedRegions((current) => toggle(current, region.regionId, false));
       if (draft.regionId === region.regionId) setDraft(emptyDraft());
+      setPendingDelete(null);
     } catch (reason) {
       setError(errorMessage(reason, "The comparison region could not be deleted."));
     } finally {
@@ -144,12 +146,12 @@ export function ComparisonSetup({
   };
 
   if (!setup && !error) return <section className="comparison-loading" aria-live="polite">Checking revision eligibility and project regions…</section>;
-  if (!setup) return <section className="comparison-loading error" role="alert">{error}<button type="button" className="secondary" onClick={onCancel}>Back to Revision History</button></section>;
+  if (!setup) return <section className="comparison-loading error" role="alert">{error}<button type="button" className="secondary" onClick={onCancel}><ActionIcon name="back" />Back to Revision History</button></section>;
 
   return <section className="comparison-setup" aria-labelledby="comparison-setup-title">
     <header className="comparison-screen-header">
       <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-setup-title">New Comparison</h2><p>{project.projectName}</p></div>
-      <button type="button" className="secondary" onClick={onCancel}>Cancel</button>
+      <button type="button" className="secondary" onClick={onCancel}><ActionIcon name="close" />Cancel</button>
     </header>
     {error && <div className="inline-notice error" role="alert">{error}</div>}
     {notice && <div className="inline-notice success" role="status">{notice}</div>}
@@ -186,8 +188,8 @@ export function ComparisonSetup({
           <label>Name<input required value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>
           <label>Start<input required aria-label="Region start" placeholder="0:00" value={draft.start} onChange={(event) => setDraft((current) => ({ ...current, start: event.target.value }))} /></label>
           <label>End<input required aria-label="Region end" placeholder="0:30" value={draft.end} onChange={(event) => setDraft((current) => ({ ...current, end: event.target.value }))} /></label>
-          <button type="submit" className="secondary" disabled={busy}>{draft.regionId ? "Save Region" : "Add Region"}</button>
-          {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft())}>Cancel edit</button>}
+          <button type="submit" className="secondary" disabled={busy}><ActionIcon name={draft.regionId ? "save" : "add"} />{draft.regionId ? "Save Region" : "Add Region"}</button>
+          {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft())}><ActionIcon name="close" />Cancel edit</button>}
         </form>
         <div className="comparison-choice-list" role="group" aria-label="Available regions">
           {regions.map((region) => <div key={region.regionId} className={`comparison-region-row${draft.regionId === region.regionId ? " editing" : ""}${region.builtIn ? " built-in" : ""}`} role={region.builtIn ? undefined : "button"} tabIndex={region.builtIn ? undefined : 0} onClick={() => beginEdit(region)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); beginEdit(region); } }}>
@@ -195,10 +197,11 @@ export function ComparisonSetup({
               <input type="checkbox" checked={selectedRegions.has(region.regionId)} disabled={region.builtIn} onClick={(event) => event.stopPropagation()} onChange={(event) => setSelectedRegions((current) => toggle(current, region.regionId, event.target.checked))} />
               <span><strong>{region.name}</strong><small>{formatTimestamp(region.startSeconds)} – {region.endSeconds === null ? "End" : formatTimestamp(region.endSeconds)}</small></span>
             </label>
-            {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button danger" onClick={(event) => { event.stopPropagation(); void removeRegion(region); }}>Delete</button></span>}
+            {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button danger" onClick={(event) => { event.stopPropagation(); setPendingDelete(region); }}><ActionIcon name="delete" />Delete</button></span>}
           </div>)}
         </div>
+        {pendingDelete && <div className="inline-notice warning comparison-delete-confirmation" role="alertdialog" aria-label={`Delete ${pendingDelete.name}`}><span>Delete <strong>{pendingDelete.name}</strong>? Completed comparison history will keep its saved snapshot.</span><span><button type="button" className="secondary" onClick={() => setPendingDelete(null)}><ActionIcon name="close" />Keep Region</button><button type="button" className="danger" disabled={busy} onClick={() => void removeRegion(pendingDelete)}><ActionIcon name="delete" />Delete Region</button></span></div>}
     </section>
-    <footer className="comparison-setup-footer"><span>{selectedCandidateValues.length} candidates · {selectedRegionValues.length} regions</span><button type="button" disabled={!canStart} onClick={() => onStart(freezeComparisonSession(selectedCandidateValues, selectedRegionValues, loudnessMatch))}>Start Comparison</button></footer>
+    <footer className="comparison-setup-footer"><span>{selectedCandidateValues.length} candidates · {selectedRegionValues.length} regions</span><button type="button" disabled={!canStart} onClick={() => onStart(freezeComparisonSession(selectedCandidateValues, selectedRegionValues, loudnessMatch))}><ActionIcon name="play" />Start Comparison</button></footer>
   </section>;
 }

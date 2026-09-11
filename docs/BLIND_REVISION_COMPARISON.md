@@ -131,6 +131,7 @@ The setup flow starts from Revision History and:
 - shows the preview playhead and draggable start/end locators over the waveform, synchronized with the timestamp fields for both new and edited regions;
 - keeps the full-width region preview/editor above a region list sorted by start time and then longest duration;
 - uses the region-row background as the edit target, supports dragging the preview playhead, and can optionally seek to a region's start when editing it;
+- keeps region-bound controls above the waveform, centers transport and volume below it, and confirms region deletion in-app;
 - shows Loudness Match **On by default**;
 - performs/reuses loudness analysis when matching is enabled;
 - excludes an unanalyzable candidate when matching is required, or allows the user to deliberately choose Loudness Match Off for the entire session;

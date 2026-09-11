@@ -11,7 +11,11 @@
 .comparison-choice-list label > span, .comparison-toggle > span { display: grid; gap: 2px; }
 .comparison-choice-list small, .comparison-toggle small { color: var(--muted-text, #748096); }
 .comparison-choice-list .unavailable { opacity: .62; }
-.comparison-region-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; padding: 3px 6px; border-bottom: 1px solid var(--border, #dfe4ea); border-radius: 4px; }
+.comparison-region-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; padding: 2px 5px; border-bottom: 1px solid var(--border, #dfe4ea); border-radius: 4px; font-size: .78rem; }
+.comparison-region-row label > span { display: flex; align-items: baseline; gap: 8px; }
+.comparison-region-row small { font-size: .7rem; white-space: nowrap; }
+.comparison-region-row .text-button { min-height: 22px; padding: 1px 4px; font-size: .7rem; }
+.comparison-region-row .action-icon { width: 13px; height: 13px; }
 .comparison-region-row[role="button"] { cursor: pointer; }
 .comparison-region-row[role="button"]:hover, .comparison-region-row[role="button"]:focus-visible { background: rgba(67, 104, 226, .08); outline: none; }
 .comparison-region-row.editing { background: rgba(67, 104, 226, .13); box-shadow: inset 3px 0 0 var(--blue, #4368e2); }
@@ -19,7 +23,7 @@
 .comparison-region-preview { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border, #dfe4ea); border-radius: 8px; background: rgba(255,255,255,.5); }
 .comparison-region-preview.disabled { color: var(--muted-text, #748096); }
 .comparison-region-preview p { margin: 0; }
-.comparison-region-preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.comparison-region-preview-heading { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
 .comparison-region-preview-heading label { display: flex; align-items: center; gap: 8px; font-size: .78rem; font-weight: 700; }
 .comparison-region-preview-heading span, .comparison-preview-error { color: var(--muted-text, #748096); font-size: .75rem; }
 .comparison-waveform { position: relative; display: grid; place-items: center; height: 76px; overflow: hidden; border-radius: 6px; background: #edf1f7; color: var(--muted-text, #748096); font-size: .75rem; }
@@ -40,6 +44,7 @@
 .comparison-playhead-locator::-moz-range-thumb { width: 18px; height: 72px; border: 0; border-radius: 0; background: linear-gradient(to right, transparent 8px, #e64a3b 8px, #e64a3b 10px, transparent 10px); cursor: ew-resize; pointer-events: auto; }
 .comparison-locator-actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 10px; }
 .comparison-locator-actions label { display: flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700; }
+.comparison-locator-actions button { min-height: 28px; padding: 4px 8px; font-size: .72rem; }
 .comparison-region-editor { display: grid; grid-template-columns: minmax(120px, 1fr) 90px 90px auto auto; gap: 8px; align-items: end; padding-top: 8px; }
 .comparison-region-editor h4 { grid-column: 1 / -1; }
 .comparison-region-editor label { display: grid; gap: 4px; font-size: .78rem; font-weight: 700; }
@@ -50,6 +55,8 @@
 .comparison-session-facts { display: flex; align-items: center; gap: 16px; }
 .comparison-cancel-confirmation { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .comparison-cancel-confirmation > span:last-child { display: flex; gap: 8px; }
+.comparison-delete-confirmation { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 2px; }
+.comparison-delete-confirmation > span:last-child { display: flex; flex: 0 0 auto; gap: 6px; }
 .comparison-region-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
 .comparison-region-strip button { white-space: nowrap; }
 .comparison-region-strip button.active, .comparison-candidate-switches button.active { box-shadow: 0 0 0 3px rgba(67, 104, 226, .2); }
@@ -74,4 +81,7 @@
   .comparison-region-editor { grid-template-columns: 1fr 1fr; }
   .comparison-region-editor label:first-of-type { grid-column: 1 / -1; }
   .comparison-session-facts { align-items: flex-end; flex-direction: column; gap: 6px; }
+  .comparison-region-preview-heading { grid-template-columns: 1fr; }
+  .comparison-region-preview-heading > label { justify-self: start; }
+  .comparison-delete-confirmation { align-items: flex-start; flex-direction: column; }
 }
