@@ -129,6 +129,7 @@ The setup flow starts from Revision History and:
 - allows project regions to be defined/edited before the session begins;
 - defaults the region preview to the highest-number playable normal revision, with an independent selector for choosing another revision;
 - shows the preview playhead and draggable start/end locators over the waveform, synchronized with the timestamp fields for both new and edited regions;
+- keeps the full-width region preview/editor above a region list sorted by start time and then longest duration;
 - shows Loudness Match **On by default**;
 - performs/reuses loudness analysis when matching is enabled;
 - excludes an unanalyzable candidate when matching is required, or allows the user to deliberately choose Loudness Match Off for the entire session;

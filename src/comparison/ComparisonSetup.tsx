@@ -61,7 +61,17 @@ export function ComparisonSetup({
     [setup?.candidates],
   );
   const selectedCandidateValues = candidates.filter((candidate) => selectedCandidates.has(candidate.revisionId));
-  const selectedRegionValues = (setup?.document.regions ?? []).filter((region) => selectedRegions.has(region.regionId));
+  const regions = useMemo(
+    () => [...(setup?.document.regions ?? [])].sort((left, right) => {
+      const startOrder = left.startSeconds - right.startSeconds;
+      if (startOrder) return startOrder;
+      const leftWidth = left.endSeconds === null ? Number.POSITIVE_INFINITY : left.endSeconds - left.startSeconds;
+      const rightWidth = right.endSeconds === null ? Number.POSITIVE_INFINITY : right.endSeconds - right.startSeconds;
+      return rightWidth - leftWidth;
+    }),
+    [setup?.document.regions],
+  );
+  const selectedRegionValues = regions.filter((region) => selectedRegions.has(region.regionId));
   const canStart = selectedCandidateValues.length >= 2
     && selectedCandidateValues.length <= MAX_SHORTCUT_CANDIDATES
     && selectedRegionValues.length > 0
@@ -150,17 +160,13 @@ export function ComparisonSetup({
           </label>)}
         </div>
       </section>
-      <section className="panel" aria-labelledby="comparison-regions-title">
-        <h3 id="comparison-regions-title">2. Select and manage regions</h3>
-        <div className="comparison-choice-list">
-          {setup.document.regions.map((region) => <div key={region.regionId} className="comparison-region-row">
-            <label>
-              <input type="checkbox" checked={selectedRegions.has(region.regionId)} disabled={region.builtIn} onChange={(event) => setSelectedRegions((current) => toggle(current, region.regionId, event.target.checked))} />
-              <span><strong>{region.name}</strong><small>{formatTimestamp(region.startSeconds)} – {region.endSeconds === null ? "End" : formatTimestamp(region.endSeconds)}</small></span>
-            </label>
-            {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button" onClick={() => beginEdit(region)}>Edit</button><button type="button" className="text-button danger" onClick={() => void removeRegion(region)}>Delete</button></span>}
-          </div>)}
-        </div>
+      <section className="panel comparison-session-options" aria-labelledby="comparison-options-title">
+        <h3 id="comparison-options-title">2. Session options</h3>
+        <label className="comparison-toggle"><input type="checkbox" checked={loudnessMatch} onChange={(event) => setLoudnessMatch(event.target.checked)} /><span><strong>Loudness Match</strong><small>Matches the loudness of the revisions being compared.</small></span></label>
+      </section>
+    </div>
+    <section className="panel comparison-regions-panel" aria-labelledby="comparison-regions-title">
+        <h3 id="comparison-regions-title">3. Select and manage regions</h3>
         <RegionPreview
           clientId={client.clientId}
           projectId={project.projectId}
@@ -177,11 +183,15 @@ export function ComparisonSetup({
           <button type="submit" className="secondary" disabled={busy}>{draft.regionId ? "Save Region" : "Add Region"}</button>
           {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft())}>Cancel edit</button>}
         </form>
-      </section>
-    </div>
-    <section className="panel comparison-session-options" aria-labelledby="comparison-options-title">
-      <h3 id="comparison-options-title">3. Session options</h3>
-      <label className="comparison-toggle"><input type="checkbox" checked={loudnessMatch} onChange={(event) => setLoudnessMatch(event.target.checked)} /><span><strong>Loudness Match</strong><small>Matches the loudness of the revisions being compared.</small></span></label>
+        <div className="comparison-choice-list" role="group" aria-label="Available regions">
+          {regions.map((region) => <div key={region.regionId} className="comparison-region-row">
+            <label>
+              <input type="checkbox" checked={selectedRegions.has(region.regionId)} disabled={region.builtIn} onChange={(event) => setSelectedRegions((current) => toggle(current, region.regionId, event.target.checked))} />
+              <span><strong>{region.name}</strong><small>{formatTimestamp(region.startSeconds)} – {region.endSeconds === null ? "End" : formatTimestamp(region.endSeconds)}</small></span>
+            </label>
+            {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button" onClick={() => beginEdit(region)}>Edit</button><button type="button" className="text-button danger" onClick={() => void removeRegion(region)}>Delete</button></span>}
+          </div>)}
+        </div>
     </section>
     <footer className="comparison-setup-footer"><span>{selectedCandidateValues.length} candidates · {selectedRegionValues.length} regions</span><button type="button" disabled={!canStart} onClick={() => onStart(freezeComparisonSession(selectedCandidateValues, selectedRegionValues, loudnessMatch))}>Start Comparison</button></footer>
   </section>;

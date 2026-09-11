@@ -17,10 +17,11 @@
 }
 
 .shared-audio-preview-skip {
-  min-width: 42px;
-  min-height: 28px;
-  padding: 3px 7px;
-  font-size: .7rem;
+  min-width: 24px;
+  width: 24px;
+  min-height: 24px;
+  height: 24px;
+  padding: 0;
 }
 
 .shared-audio-preview-inline audio {
@@ -28,6 +29,7 @@
 }
 
 .shared-audio-preview-play,
+.shared-audio-preview-skip,
 .shared-audio-preview-mute {
   display: inline-grid;
   place-items: center;
@@ -47,6 +49,8 @@
 
 .shared-audio-preview-play:hover:not(:disabled),
 .shared-audio-preview-play:focus:not(:disabled),
+.shared-audio-preview-skip:hover:not(:disabled),
+.shared-audio-preview-skip:focus:not(:disabled),
 .shared-audio-preview-mute:hover:not(:disabled),
 .shared-audio-preview-mute:focus:not(:disabled) {
   border: 0;

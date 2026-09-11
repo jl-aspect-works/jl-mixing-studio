@@ -105,6 +105,32 @@ describe("comparison setup", () => {
     expect(screen.getByText("Matches the loudness of the revisions being compared.")).toBeInTheDocument();
   });
 
+  it("places the full-width region tools below session options and sorts regions by time then duration", async () => {
+    const regions = [
+      { regionId: "later", name: "Later", startSeconds: 30, endSeconds: 50, builtIn: false },
+      { regionId: "short", name: "Short", startSeconds: 0, endSeconds: 10, builtIn: false },
+      { regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null, builtIn: true },
+      { regionId: "long", name: "Long", startSeconds: 0, endSeconds: 20, builtIn: false },
+    ];
+    mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, regions } });
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+
+    const optionsHeading = await screen.findByRole("heading", { name: "2. Session options" });
+    const regionsHeading = screen.getByRole("heading", { name: "3. Select and manage regions" });
+    expect(optionsHeading.compareDocumentPosition(regionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(regionsHeading.closest(".comparison-regions-panel")).not.toBeNull();
+
+    const regionList = screen.getByRole("group", { name: "Available regions" });
+    expect(within(regionList).getAllByRole("checkbox").map((checkbox) => checkbox.parentElement?.textContent)).toEqual([
+      expect.stringContaining("Full Song"),
+      expect.stringContaining("Long"),
+      expect.stringContaining("Short"),
+      expect.stringContaining("Later"),
+    ]);
+    expect(screen.getByText("Region preview").compareDocumentPosition(regionList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Add region" }).compareDocumentPosition(regionList) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("defaults preview to the highest playable revision and synchronizes timeline locators", async () => {
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     await screen.findByRole("heading", { name: "New Comparison" });
