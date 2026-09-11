@@ -19,7 +19,7 @@ import {
   parseTimestamp,
 } from "./session";
 
-const emptyDraft: RegionDraft = { regionId: null, name: "", start: "0:00", end: "0:30" };
+const emptyDraft = (): RegionDraft => ({ regionId: null, name: "", start: "0:00", end: "0:30" });
 
 const errorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : typeof error === "string" ? error : fallback;
@@ -39,10 +39,10 @@ export function ComparisonSetup({
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
   const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set(["full-song"]));
   const [loudnessMatch, setLoudnessMatch] = useState(true);
-  const [timelineConfirmed, setTimelineConfirmed] = useState(false);
   const [draft, setDraft] = useState<RegionDraft>(emptyDraft);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,7 +61,6 @@ export function ComparisonSetup({
   const canStart = selectedCandidateValues.length >= 2
     && selectedCandidateValues.length <= MAX_SHORTCUT_CANDIDATES
     && selectedRegionValues.length > 0
-    && timelineConfirmed
     && !busy;
 
   const toggle = (values: Set<string>, value: string, checked: boolean) => {
@@ -86,6 +85,7 @@ export function ComparisonSetup({
     }
     setBusy(true);
     setError(null);
+    setNotice(null);
     const identity = { clientId: client.clientId, projectId: project.projectId };
     try {
       const saved = draft.regionId
@@ -101,7 +101,8 @@ export function ComparisonSetup({
         },
       } : current);
       setSelectedRegions((current) => new Set(current).add(saved.regionId));
-      setDraft(emptyDraft);
+      setDraft(emptyDraft());
+      setNotice(draft.regionId ? "Region updated." : "Region added.");
     } catch (reason) {
       setError(errorMessage(reason, "The comparison region could not be saved."));
     } finally {
@@ -121,7 +122,7 @@ export function ComparisonSetup({
       });
       setSetup((current) => current ? { ...current, document } : current);
       setSelectedRegions((current) => toggle(current, region.regionId, false));
-      if (draft.regionId === region.regionId) setDraft(emptyDraft);
+      if (draft.regionId === region.regionId) setDraft(emptyDraft());
     } catch (reason) {
       setError(errorMessage(reason, "The comparison region could not be deleted."));
     } finally {
@@ -138,10 +139,12 @@ export function ComparisonSetup({
       <button type="button" className="secondary" onClick={onCancel}>Cancel</button>
     </header>
     {error && <div className="inline-notice error" role="alert">{error}</div>}
+    {notice && <div className="inline-notice success" role="status">{notice}</div>}
     <div className="comparison-setup-grid">
       <section className="panel" aria-labelledby="comparison-candidates-title">
         <h3 id="comparison-candidates-title">1. Select revisions</h3>
-        <p>Choose 2–26 normal revisions. Variants and revisions without a playable primary file are unavailable.</p>
+        <p>Select 2 or more versions to compare. Variants and revisions without playable files are excluded from this list.</p>
+        <p><strong>Make sure the selected revisions have the same song structure.</strong></p>
         <div className="comparison-choice-list">
           {candidates.map((candidate) => <label key={candidate.revisionId} className={!candidate.eligible ? "unavailable" : ""}>
             <input type="checkbox" checked={selectedCandidates.has(candidate.revisionId)} disabled={!candidate.eligible} onChange={(event) => setSelectedCandidates((current) => toggle(current, candidate.revisionId, event.target.checked))} />
@@ -160,20 +163,19 @@ export function ComparisonSetup({
             {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button" onClick={() => beginEdit(region)}>Edit</button><button type="button" className="text-button danger" onClick={() => void removeRegion(region)}>Delete</button></span>}
           </div>)}
         </div>
-        <div className="comparison-region-editor">
+        <form className="comparison-region-editor" onSubmit={(event) => { event.preventDefault(); void saveRegion(); }}>
           <h4>{draft.regionId ? "Edit region" : "Add region"}</h4>
           <label>Name<input required value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>
           <label>Start<input required aria-label="Region start" placeholder="0:00" value={draft.start} onChange={(event) => setDraft((current) => ({ ...current, start: event.target.value }))} /></label>
           <label>End<input required aria-label="Region end" placeholder="0:30" value={draft.end} onChange={(event) => setDraft((current) => ({ ...current, end: event.target.value }))} /></label>
-          <button type="button" className="secondary" disabled={busy} onClick={() => void saveRegion()}>{draft.regionId ? "Save Region" : "Add Region"}</button>
-          {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft)}>Cancel edit</button>}
-        </div>
+          <button type="submit" className="secondary" disabled={busy}>{draft.regionId ? "Save Region" : "Add Region"}</button>
+          {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft())}>Cancel edit</button>}
+        </form>
       </section>
     </div>
     <section className="panel comparison-session-options" aria-labelledby="comparison-options-title">
       <h3 id="comparison-options-title">3. Session options</h3>
-      <label className="comparison-toggle"><input type="checkbox" checked={loudnessMatch} onChange={(event) => setLoudnessMatch(event.target.checked)} /><span><strong>Loudness Match</strong><small>On by default; this choice is frozen when the session starts.</small></span></label>
-      <label className="comparison-toggle"><input type="checkbox" checked={timelineConfirmed} onChange={(event) => setTimelineConfirmed(event.target.checked)} /><span><strong>Compatible project timeline</strong><small>I confirm the selected revisions use the same song structure and the selected timestamps describe equivalent material.</small></span></label>
+      <label className="comparison-toggle"><input type="checkbox" checked={loudnessMatch} onChange={(event) => setLoudnessMatch(event.target.checked)} /><span><strong>Loudness Match</strong><small>Matches the loudness of the revisions being compared.</small></span></label>
     </section>
     <footer className="comparison-setup-footer"><span>{selectedCandidateValues.length} candidates · {selectedRegionValues.length} regions</span><button type="button" disabled={!canStart} onClick={() => onStart(freezeComparisonSession(selectedCandidateValues, selectedRegionValues, loudnessMatch))}>Start Comparison</button></footer>
   </section>;

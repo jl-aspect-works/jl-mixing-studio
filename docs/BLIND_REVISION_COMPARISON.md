@@ -57,6 +57,7 @@ Locked eligibility behavior:
 - normal revisions only;
 - Variants excluded;
 - user selects revisions that are structurally/timing compatible;
+- setup reminds the user to ensure selected revisions have the same song structure without requiring a separate confirmation control;
 - Studio does not perform structural alignment, time-warping, section detection, or timestamp remapping;
 - small duration differences are acceptable when selected project regions still describe equivalent material;
 - a candidate too short for a required region is incompatible and must be excluded rather than clipped/remapped;

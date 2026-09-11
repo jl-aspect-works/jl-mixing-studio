@@ -50,7 +50,6 @@ describe("comparison setup", () => {
     expect(screen.getByRole("checkbox", { name: /Revision 03/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Compatible project timeline/ }));
     fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
 
     expect(screen.getByRole("heading", { name: "Comparison Session" })).toBeInTheDocument();
@@ -59,8 +58,10 @@ describe("comparison setup", () => {
     expect(screen.getByRole("button", { name: "Full Song Not complete" })).toBeInTheDocument();
   });
 
-  it("adds a custom timestamp region and selects it", async () => {
-    mocks.add.mockResolvedValue({ regionId: "verse", name: "Verse", startSeconds: 10, endSeconds: 40, builtIn: false });
+  it("adds consecutive custom regions and selects them", async () => {
+    mocks.add
+      .mockResolvedValueOnce({ regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false })
+      .mockResolvedValueOnce({ regionId: "chorus", name: "Chorus", startSeconds: 0, endSeconds: 30, builtIn: false });
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     await screen.findByRole("heading", { name: "New Comparison" });
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Verse" } });
@@ -68,6 +69,23 @@ describe("comparison setup", () => {
 
     await waitFor(() => expect(mocks.add).toHaveBeenCalledWith(expect.objectContaining({ name: "Verse", startSeconds: 0, endSeconds: 30 })));
     expect(await screen.findByRole("checkbox", { name: /Verse/ })).toBeChecked();
+
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Chorus" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Region" }));
+
+    await waitFor(() => expect(mocks.add).toHaveBeenCalledTimes(2));
+    expect(mocks.add).toHaveBeenLastCalledWith(expect.objectContaining({ name: "Chorus", startSeconds: 0, endSeconds: 30 }));
+    expect(await screen.findByRole("checkbox", { name: /Chorus/ })).toBeChecked();
+  });
+
+  it("uses guidance instead of a timeline confirmation gate", async () => {
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+
+    expect(screen.getByText("Select 2 or more versions to compare. Variants and revisions without playable files are excluded from this list.")).toBeInTheDocument();
+    expect(screen.getByText("Make sure the selected revisions have the same song structure.")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: /Compatible project timeline/ })).not.toBeInTheDocument();
+    expect(screen.getByText("Matches the loudness of the revisions being compared.")).toBeInTheDocument();
   });
 });
 
