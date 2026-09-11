@@ -196,6 +196,10 @@ describe("blind comparison workspace shell", () => {
     const candidates = screen.getByLabelText("Blind candidates");
     expect(transport.compareDocumentPosition(candidates) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(transport.querySelectorAll(".action-icon")).toHaveLength(6);
+    expect(screen.getByRole("heading", { name: "Session Progress" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rank Ordering" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("Full SongActive");
+    expect(screen.getByLabelText("Rank ordering placeholder").children).toHaveLength(3);
   });
 
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {

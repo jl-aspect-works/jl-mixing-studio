@@ -152,6 +152,7 @@ The workspace includes:
 - per-region ranking editor;
 - per-candidate notes;
 - region completion state such as `Full Song ✓  Intro ✓  V1 ○`;
+- explicit Session Progress and Rank Ordering shell sections before #376 enables their interactions;
 - terminal **Reveal & Complete Comparison** action.
 
 The blind workspace must not expose revision identity clues.
