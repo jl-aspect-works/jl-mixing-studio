@@ -57,6 +57,7 @@ Locked eligibility behavior:
 - normal revisions only;
 - Variants excluded;
 - user selects revisions that are structurally/timing compatible;
+- setup reminds the user to ensure selected revisions have the same song structure without requiring a separate confirmation control;
 - Studio does not perform structural alignment, time-warping, section detection, or timestamp remapping;
 - small duration differences are acceptable when selected project regions still describe equivalent material;
 - a candidate too short for a required region is incompatible and must be excluded rather than clipped/remapped;
@@ -71,7 +72,7 @@ Candidate keyboard shortcuts use the same letters as the blind identities:
 
 - `A` switches to candidate A;
 - `B` switches to candidate B;
-- continuing through `I` where applicable.
+- continuing through `Z` where applicable.
 
 Candidate shortcuts are disabled while focus is in a notes/text-input control so normal typing never changes playback.
 
@@ -126,6 +127,11 @@ The setup flow starts from Revision History and:
 - validates what Studio can validate about playback/region compatibility;
 - selects Full Song and any desired project regions;
 - allows project regions to be defined/edited before the session begins;
+- defaults the region preview to the highest-number playable normal revision, with an independent selector for choosing another revision;
+- shows the preview playhead and draggable start/end locators over the waveform, synchronized with the timestamp fields for both new and edited regions;
+- keeps the full-width region preview/editor above a region list sorted by start time and then longest duration;
+- uses the region-row background as the edit target, supports dragging the preview playhead, and can optionally seek to a region's start when editing it;
+- keeps region-bound controls above the waveform, centers transport and volume below it, and confirms region deletion in-app;
 - shows Loudness Match **On by default**;
 - performs/reuses loudness analysis when matching is enabled;
 - excludes an unanalyzable candidate when matching is required, or allows the user to deliberately choose Loudness Match Off for the entire session;
@@ -146,6 +152,7 @@ The workspace includes:
 - per-region ranking editor;
 - per-candidate notes;
 - region completion state such as `Full Song ✓  Intro ✓  V1 ○`;
+- explicit Session Progress and Rank Ordering shell sections before #376 enables their interactions;
 - terminal **Reveal & Complete Comparison** action.
 
 The blind workspace must not expose revision identity clues.
@@ -527,7 +534,7 @@ Implementation/acceptance must cover at least:
 - candidate too short for required region;
 - unplayable or unanalyzable candidate;
 - unexpected in-session playback failure;
-- position-synchronized A-I switching;
+- position-synchronized A-Z switching;
 - Windows native and macOS WKWebView behavior;
 - NAS-hosted projects and variable storage latency;
 - cancel/close unfinished session;

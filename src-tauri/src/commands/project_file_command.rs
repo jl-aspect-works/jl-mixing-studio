@@ -438,7 +438,7 @@ fn permissions_for(
     }
 }
 
-fn is_audio_extension(extension: &str) -> bool {
+pub(crate) fn is_audio_extension(extension: &str) -> bool {
     matches!(
         extension,
         "wav"

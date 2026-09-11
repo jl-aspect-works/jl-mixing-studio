@@ -46,15 +46,22 @@ export function AudioPreviewPlayer({
   projectId,
   entry,
   durationSeconds = 0,
+  standardTransport = false,
+  onPositionChange,
+  seekRequest,
 }: {
   clientId: string;
   projectId: string;
-  entry: ProjectFileEntry;
+  entry: Pick<ProjectFileEntry, "relativePath" | "displayName">;
   durationSeconds?: number | null;
+  standardTransport?: boolean;
+  onPositionChange?: (seconds: number) => void;
+  seekRequest?: { id: number; seconds: number } | null;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preparePromiseRef = useRef<Promise<PreparedAudioPreview | null> | null>(null);
   const nativeLoadedRef = useRef(false);
+  const pendingSeekRef = useRef<number | null>(null);
   const sessionIdRef = useRef(`audio-preview-${previewSequence += 1}`);
   const [prepared, setPrepared] = useState<PreparedAudioPreview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,12 +72,17 @@ export function AudioPreviewPlayer({
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
 
+  useEffect(() => {
+    onPositionChange?.(currentTime);
+  }, [currentTime, onPositionChange]);
+
   const request = { clientId, projectId, relativePath: entry.relativePath };
   const sessionId = sessionIdRef.current;
 
   useEffect(() => {
     preparePromiseRef.current = null;
     nativeLoadedRef.current = false;
+    pendingSeekRef.current = null;
     setPrepared(null);
     setLoading(false);
     setError(null);
@@ -169,6 +181,11 @@ export function AudioPreviewPlayer({
           nativeLoadedRef.current = true;
           setCurrentTime(loaded.currentSeconds);
           setDuration(loaded.durationSeconds || durationSeconds || 0);
+          if (pendingSeekRef.current !== null) {
+            const sought = await seekNativeProjectAudioPreview(pendingSeekRef.current);
+            pendingSeekRef.current = null;
+            setCurrentTime(sought.currentSeconds);
+          }
         }
         await setNativeProjectAudioPreviewVolume(muted ? 0 : volume);
         const status = await playNativeProjectAudioPreview();
@@ -187,6 +204,10 @@ export function AudioPreviewPlayer({
         current.src = nextPrepared.sourceUrl;
         current.load();
       }
+      if (pendingSeekRef.current !== null) {
+        current.currentTime = pendingSeekRef.current;
+        pendingSeekRef.current = null;
+      }
       await claimAudioPlayback(sessionId, () => {
         current.pause();
         setPlaying(false);
@@ -203,14 +224,26 @@ export function AudioPreviewPlayer({
     if (!Number.isFinite(value)) return;
     setCurrentTime(value);
     if (prepared?.provider === "native" && nativeLoadedRef.current) {
+      pendingSeekRef.current = null;
       void seekNativeProjectAudioPreview(value)
         .then((status) => setCurrentTime(status.currentSeconds))
         .catch((reason) => setError(previewErrorMessage(reason)));
       return;
     }
     const current = audioRef.current;
-    if (current && prepared?.provider === "web") current.currentTime = value;
+    if (current && prepared?.provider === "web") {
+      current.currentTime = value;
+      pendingSeekRef.current = null;
+    } else {
+      pendingSeekRef.current = value;
+    }
   };
+
+  const seekRef = useRef(seek);
+  seekRef.current = seek;
+  useEffect(() => {
+    if (seekRequest) seekRef.current(seekRequest.seconds);
+  }, [seekRequest]);
 
   const changeVolume = (value: number) => {
     const nextVolume = Math.min(1, Math.max(0, value));
@@ -236,7 +269,7 @@ export function AudioPreviewPlayer({
     if (audioRef.current) audioRef.current.muted = nextMuted;
   };
 
-  return <div className="shared-audio-preview-inline" aria-label={`Preview ${entry.displayName}`} aria-busy={loading}>
+  return <div className={`shared-audio-preview-inline${standardTransport ? " standard-transport" : ""}`} aria-label={`Preview ${entry.displayName}`} aria-busy={loading}>
     <audio
       ref={audioRef}
       preload="none"
@@ -247,12 +280,7 @@ export function AudioPreviewPlayer({
       onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
       onError={() => prepared?.provider === "web" && setError("This audio file could not be played by the macOS WebView.")}
     />
-    <button type="button" className="shared-audio-preview-play icon-only" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : <ActionIcon name={playing ? "pause" : "play"} />}</button>
-    <span className="shared-audio-preview-time">{formatPreviewTime(currentTime)}</span>
-    <input className="shared-audio-preview-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} aria-label={`Seek ${entry.displayName}`} disabled={!duration} onChange={(event) => seek(Number(event.target.value))} />
-    <span className="shared-audio-preview-time">{formatPreviewTime(duration)}</span>
-    <button type="button" className="shared-audio-preview-mute" aria-label={muted ? `Unmute ${entry.displayName}` : `Mute ${entry.displayName}`} title={muted ? "Unmute" : "Mute"} onClick={toggleMute}><VolumeIcon muted={muted || volume === 0} /></button>
-    <input className="shared-audio-preview-volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} aria-label={`Volume ${entry.displayName}`} onChange={(event) => changeVolume(Number(event.target.value))} />
+    {standardTransport ? <><div className="shared-audio-preview-transport"><button type="button" className="shared-audio-preview-skip icon-only" aria-label="Back 5 seconds" title="Back 5 seconds" disabled={!duration} onClick={() => seek(Math.max(0, currentTime - 5))}><ActionIcon name="skipBack" /></button><button type="button" className="shared-audio-preview-play icon-only" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : <ActionIcon name={playing ? "pause" : "play"} />}</button><button type="button" className="shared-audio-preview-skip icon-only" aria-label="Forward 5 seconds" title="Forward 5 seconds" disabled={!duration} onClick={() => seek(Math.min(duration, currentTime + 5))}><ActionIcon name="skipForward" /></button></div><span className="shared-audio-preview-time">{formatPreviewTime(currentTime)} / {formatPreviewTime(duration)}</span><div className="shared-audio-preview-volume-cluster"><button type="button" className="shared-audio-preview-mute" aria-label={muted ? `Unmute ${entry.displayName}` : `Mute ${entry.displayName}`} title={muted ? "Unmute" : "Mute"} onClick={toggleMute}><VolumeIcon muted={muted || volume === 0} /></button><input className="shared-audio-preview-volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} aria-label={`Volume ${entry.displayName}`} onChange={(event) => changeVolume(Number(event.target.value))} /></div></> : <><button type="button" className="shared-audio-preview-play icon-only" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : <ActionIcon name={playing ? "pause" : "play"} />}</button><span className="shared-audio-preview-time">{formatPreviewTime(currentTime)}</span><input className="shared-audio-preview-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} aria-label={`Seek ${entry.displayName}`} disabled={!duration} onChange={(event) => seek(Number(event.target.value))} /><span className="shared-audio-preview-time">{formatPreviewTime(duration)}</span><button type="button" className="shared-audio-preview-mute" aria-label={muted ? `Unmute ${entry.displayName}` : `Mute ${entry.displayName}`} title={muted ? "Unmute" : "Mute"} onClick={toggleMute}><VolumeIcon muted={muted || volume === 0} /></button><input className="shared-audio-preview-volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} aria-label={`Volume ${entry.displayName}`} onChange={(event) => changeVolume(Number(event.target.value))} /></>}
     {error && <span className="shared-audio-preview-error" title={error}>!</span>}
   </div>;
 }

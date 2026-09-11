@@ -16,6 +16,11 @@ export type ActionIconName =
   | "open"
   | "pause"
   | "play"
+  | "previous"
+  | "next"
+  | "skipBack"
+  | "skipForward"
+  | "loop"
   | "refresh"
   | "retry"
   | "save"
@@ -40,6 +45,11 @@ const iconPaths: Record<ActionIconName, ReactNode> = {
   open: <><path d="M5 19 19 5"/><path d="M10 5h9v9"/></>,
   pause: <><path d="M8 5v14"/><path d="M16 5v14"/></>,
   play: <path d="m8 5 11 7-11 7Z"/>,
+  previous: <><path d="M6 5v14"/><path d="m18 5-9 7 9 7Z"/></>,
+  next: <><path d="M18 5v14"/><path d="m6 5 9 7-9 7Z"/></>,
+  skipBack: <><path d="M6 8v5h5"/><path d="M7 13a6 6 0 1 0 2-5"/></>,
+  skipForward: <><path d="M18 8v5h-5"/><path d="M17 13a6 6 0 1 1-2-5"/></>,
+  loop: <><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></>,
   refresh: <><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 8.5A8 8 0 0 0 5 7"/><path d="M5.5 15.5A8 8 0 0 0 19 17"/></>,
   retry: <><path d="M20 7v5h-5"/><path d="M20 12a8 8 0 1 0-2.3 5.7"/></>,
   save: <><path d="M5 3h12l2 2v16H5z"/><path d="M8 3v6h8V3"/><path d="M8 21v-7h8v7"/></>,
