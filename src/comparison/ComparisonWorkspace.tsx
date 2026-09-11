@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import type { FrozenComparisonSession } from "./models";
+import { ComparisonResultsPreview } from "./ComparisonResultsPreview";
 import { formatTimestamp, shortcutCandidate } from "./session";
 
 export function ComparisonWorkspace({
@@ -16,6 +17,7 @@ export function ComparisonWorkspace({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [dirty, setDirty] = useState(false);
   const [cancelConfirmation, setCancelConfirmation] = useState(false);
+  const [previewResults, setPreviewResults] = useState(false);
   const region = session.regions.find((item) => item.regionId === activeRegion) ?? session.regions[0];
   const noteKey = `${activeRegion}:${activeCandidate}`;
   const progress = useMemo(() => session.regions.map((item) => ({ ...item, complete: false })), [session.regions]);
@@ -52,6 +54,8 @@ export function ComparisonWorkspace({
     setDirty(true);
   };
 
+  if (previewResults) return <ComparisonResultsPreview session={session} onBack={() => setPreviewResults(false)} />;
+
   return <section className="comparison-workspace" aria-labelledby="comparison-workspace-title">
     <header className="comparison-screen-header comparison-workspace-header">
       <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-workspace-title">Comparison Session</h2></div>
@@ -83,6 +87,6 @@ export function ComparisonWorkspace({
       <section className="panel" aria-labelledby="comparison-rank-order-title"><h3 id="comparison-rank-order-title">Rank Ordering</h3><p className="comparison-placeholder">Ranking interaction, placement, and ties are added by the next sequenced issue.</p><div className="comparison-rank-order-shell" aria-label="Rank ordering placeholder">{session.candidates.map((_, index) => <div key={index}><strong>{index + 1}</strong><span>Rank position</span></div>)}<div className="comparison-no-preference">No Preference</div></div></section>
       <section className="panel" aria-labelledby="comparison-notes-title"><h3 id="comparison-notes-title">Candidate notes</h3><label>Candidate {activeCandidate}<textarea aria-label={`Notes for Candidate ${activeCandidate}`} value={notes[noteKey] ?? ""} onChange={(event) => { setNotes((current) => ({ ...current, [noteKey]: event.target.value })); setDirty(true); }} placeholder="Listening notes for this candidate and region" /></label><small>Notes remain in memory until the completed-session workflow is available.</small></section>
     </div>
-    <footer className="comparison-workspace-footer"><span>{session.regions.length} regions · 0 complete · Loop {loop ? "On" : "Off"}</span><span className="comparison-workspace-actions"><button type="button" disabled><ActionIcon name="check" />Mark Region Complete</button><button type="button" disabled><ActionIcon name="check" />Reveal &amp; Complete Comparison</button></span></footer>
+    <footer className="comparison-workspace-footer"><span>{session.regions.length} regions · 0 complete · Loop {loop ? "On" : "Off"}</span><span className="comparison-workspace-actions"><button type="button" className="secondary" onClick={() => setPreviewResults(true)}><ActionIcon name="open" />Preview Results</button><button type="button" disabled><ActionIcon name="check" />Mark Region Complete</button><button type="button" disabled><ActionIcon name="check" />Reveal &amp; Complete Comparison</button></span></footer>
   </section>;
 }

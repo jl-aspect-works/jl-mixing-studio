@@ -88,6 +88,22 @@
 .comparison-judgment-grid textarea { min-height: 110px; resize: vertical; }
 .comparison-judgment-grid small { color: var(--muted-text, #748096); }
 .comparison-workspace-actions { display: flex; gap: 8px; }
+.comparison-revealed-label { color: var(--blue, #4368e2); letter-spacing: .08em; }
+.comparison-results-preview-notice { justify-content: center; text-align: center; }
+.comparison-results-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.comparison-results-summary > span { display: grid; gap: 3px; padding-right: 16px; border-right: 1px solid var(--border, #dfe4ea); }
+.comparison-results-summary > span:last-child { border-right: 0; }
+.comparison-results-summary small { color: var(--muted-text, #748096); }
+.comparison-results-tabs { display: flex; gap: 8px; }
+.comparison-results-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .38fr); gap: 12px; }
+.comparison-results-sidebar { display: grid; align-content: start; gap: 12px; }
+.comparison-region-results, .comparison-revision-key { display: grid; gap: 0; }
+.comparison-region-results > div { display: grid; grid-template-columns: minmax(110px, .3fr) 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border, #dfe4ea); }
+.comparison-region-results > div:last-child { border-bottom: 0; }
+.comparison-revision-key > div { display: grid; grid-template-columns: 24px 18px 1fr; gap: 6px; padding: 5px 0; }
+.comparison-results-notes { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.comparison-cumulative-table { display: grid; overflow-x: auto; }
+.comparison-cumulative-table > div { display: grid; grid-template-columns: minmax(150px, 1.2fr) minmax(100px, .7fr) minmax(80px, .5fr) minmax(180px, 1.5fr); gap: 12px; min-width: 620px; padding: 8px; border-bottom: 1px solid var(--border, #dfe4ea); }
 @media (max-width: 900px) {
   .comparison-setup-grid, .comparison-judgment-grid, .comparison-session-control-grid { grid-template-columns: 1fr; }
   .comparison-region-editor { grid-template-columns: 1fr 1fr; }
@@ -96,4 +112,5 @@
   .comparison-region-preview-heading { grid-template-columns: 1fr; }
   .comparison-region-preview-heading > label { justify-self: start; }
   .comparison-delete-confirmation { align-items: flex-start; flex-direction: column; }
+  .comparison-results-summary, .comparison-results-grid, .comparison-results-notes { grid-template-columns: 1fr; }
 }
