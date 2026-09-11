@@ -249,9 +249,9 @@ export function AudioPreviewPlayer({
       onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
       onError={() => prepared?.provider === "web" && setError("This audio file could not be played by the macOS WebView.")}
     />
-    {standardTransport && <button type="button" className="shared-audio-preview-skip" aria-label="Back 5 seconds" disabled={!duration} onClick={() => seek(Math.max(0, currentTime - 5))}>−5s</button>}
+    {standardTransport && <button type="button" className="shared-audio-preview-skip" aria-label="Back 5 seconds" disabled={!duration} onClick={() => seek(Math.max(0, currentTime - 5))}><ActionIcon name="skipBack" />5s</button>}
     <button type="button" className="shared-audio-preview-play icon-only" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : <ActionIcon name={playing ? "pause" : "play"} />}</button>
-    {standardTransport && <button type="button" className="shared-audio-preview-skip" aria-label="Forward 5 seconds" disabled={!duration} onClick={() => seek(Math.min(duration, currentTime + 5))}>+5s</button>}
+    {standardTransport && <button type="button" className="shared-audio-preview-skip" aria-label="Forward 5 seconds" disabled={!duration} onClick={() => seek(Math.min(duration, currentTime + 5))}><ActionIcon name="skipForward" />5s</button>}
     <span className="shared-audio-preview-time">{formatPreviewTime(currentTime)}</span>
     <input className="shared-audio-preview-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} aria-label={`Seek ${entry.displayName}`} disabled={!duration} onChange={(event) => seek(Number(event.target.value))} />
     <span className="shared-audio-preview-time">{formatPreviewTime(duration)}</span>

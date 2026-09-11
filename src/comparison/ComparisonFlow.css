@@ -38,9 +38,10 @@
 .comparison-active-region, .comparison-playing { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .comparison-seek-shell { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; color: var(--muted-text, #748096); font-variant-numeric: tabular-nums; }
 .comparison-seek-shell div { height: 6px; border-radius: 999px; background: #dfe4ea; }
-.comparison-playback-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 20px; }
+.comparison-playback-row { display: grid; justify-items: center; gap: 14px; }
 .comparison-transport, .comparison-candidate-switches { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.comparison-candidate-switches { padding-left: 20px; border-left: 1px solid var(--border, #dfe4ea); }
+.comparison-transport { justify-content: center; }
+.comparison-candidate-switches { justify-content: center; }
 .comparison-candidate-switches button { min-width: 42px; font-size: 1rem; }
 .comparison-candidate-switches small { width: 100%; color: var(--muted-text, #748096); }
 .comparison-playing span, .comparison-placeholder { color: var(--muted-text, #748096); font-size: .82rem; }

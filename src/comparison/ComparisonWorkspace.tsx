@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ActionIcon } from "../components/ActionIcon";
 import type { FrozenComparisonSession } from "./models";
 import { formatTimestamp, shortcutCandidate } from "./session";
 
@@ -69,7 +70,7 @@ export function ComparisonWorkspace({
       <div className="comparison-active-region"><div><p className="kicker">Active region</p><h3 id="comparison-listening-title">{region.name}</h3></div><span>{formatTimestamp(region.startSeconds)} – {region.endSeconds === null ? "End" : formatTimestamp(region.endSeconds)}</span></div>
       <div className="comparison-seek-shell" aria-label="Playback progress integration point"><span>0:00</span><div /><span>–:––</span></div>
       <div className="comparison-playback-row">
-        <div className="comparison-transport" aria-label="Comparison transport"><button type="button" disabled>Previous</button><button type="button" disabled>−5s</button><button type="button" disabled>Play</button><button type="button" disabled>+5s</button><button type="button" disabled>Next</button><button type="button" className={loop ? "" : "secondary"} onClick={() => { setLoop((value) => !value); setDirty(true); }}>Loop: {loop ? "ON" : "OFF"}</button></div>
+        <div className="comparison-transport" aria-label="Comparison transport"><button type="button" disabled><ActionIcon name="previous" />Previous</button><button type="button" disabled><ActionIcon name="skipBack" />5s</button><button type="button" disabled><ActionIcon name="play" />Play</button><button type="button" disabled><ActionIcon name="skipForward" />5s</button><button type="button" disabled><ActionIcon name="next" />Next</button><button type="button" className={loop ? "" : "secondary"} onClick={() => { setLoop((value) => !value); setDirty(true); }}><ActionIcon name="loop" />Loop: {loop ? "ON" : "OFF"}</button></div>
         <div className="comparison-candidate-switches" aria-label="Blind candidates">
           {session.candidates.map((candidate) => <button key={candidate.blindId} type="button" className={candidate.blindId === activeCandidate ? "active" : "secondary"} aria-pressed={candidate.blindId === activeCandidate} onClick={() => { setActiveCandidate(candidate.blindId); setDirty(true); }}>{candidate.blindId}</button>)}
           <small>A–Z keyboard shortcuts</small>

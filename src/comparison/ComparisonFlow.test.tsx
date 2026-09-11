@@ -101,6 +101,8 @@ describe("comparison setup", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
     expect(screen.getByText("Using highest selected: Revision 02")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back 5 seconds" }).querySelector(".action-icon")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Forward 5 seconds" }).querySelector(".action-icon")).not.toBeNull();
   });
 });
 
@@ -111,6 +113,14 @@ const frozen: FrozenComparisonSession = {
 };
 
 describe("blind comparison workspace shell", () => {
+  it("stacks the icon transport above the blind candidate selector", () => {
+    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    const transport = screen.getByLabelText("Comparison transport");
+    const candidates = screen.getByLabelText("Blind candidates");
+    expect(transport.compareDocumentPosition(candidates) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(transport.querySelectorAll(".action-icon")).toHaveLength(6);
+  });
+
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
