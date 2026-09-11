@@ -198,6 +198,8 @@ describe("blind comparison workspace shell", () => {
     expect(transport.querySelectorAll(".action-icon")).toHaveLength(6);
     expect(screen.getByRole("heading", { name: "Session Progress" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Rank Ordering" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
+    expect(screen.queryByText(/Selected: Candidate/)).not.toBeInTheDocument();
     expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("Full SongActive");
     expect(screen.getByLabelText("Rank ordering placeholder").children).toHaveLength(3);
   });
@@ -206,9 +208,9 @@ describe("blind comparison workspace shell", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
     fireEvent.keyDown(notes, { key: "B" });
-    expect(screen.getByText("Candidate A", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "B" });
-    expect(screen.getByText("Candidate B", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Notes for Candidate B" })).toBeInTheDocument();
   });
 
