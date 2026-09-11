@@ -205,7 +205,10 @@ describe("blind comparison workspace shell", () => {
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
     expect(screen.getByLabelText("Rank ordering")).toHaveTextContent("Drop Candidate A or press 1");
     expect(screen.getByLabelText("Rank slot 2")).toBeInTheDocument();
-    expect(screen.getByLabelText("Ranking destination for Candidate A")).toHaveTextContent("Place in slot 1");
+    expect(screen.queryByRole("combobox", { name: "Ranking destination for Candidate A" })).not.toBeInTheDocument();
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    expect(screen.getByRole("menu", { name: "Move Candidate A" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Place in slot 1" })).toBeInTheDocument();
   });
 
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {
@@ -236,16 +239,20 @@ describe("blind comparison workspace shell", () => {
 
   it("supports drag placement, ties, and splitting ties", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
-    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "slot:1" } });
-    const dragged = { effectAllowed: "none", dropEffect: "none", setData: vi.fn(), getData: vi.fn(() => "B") };
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
+    const dragged = { effectAllowed: "none", dropEffect: "none", setData: vi.fn(), getData: vi.fn(() => "") };
 
-    fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!, { dataTransfer: dragged });
+    let candidateB = screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!;
+    fireEvent.dragStart(candidateB, { dataTransfer: dragged });
     expect(dragged.setData).toHaveBeenCalledWith("text/plain", "B");
-    fireEvent.drop(screen.getByLabelText("Rank slot 1"), { dataTransfer: dragged });
+    fireEvent.dragOver(screen.getByLabelText("Rank slot 1"), { dataTransfer: dragged });
+    fireEvent.dragEnd(candidateB, { dataTransfer: dragged });
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
 
-    fireEvent.dragStart(screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!, { dataTransfer: dragged });
+    candidateB = screen.getByTitle("Select Candidate B").closest(".comparison-ranking-candidate")!;
+    fireEvent.dragStart(candidateB, { dataTransfer: dragged });
     fireEvent.drop(screen.getByLabelText("Rank slot 2"), { dataTransfer: dragged });
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate B")).toBeInTheDocument();
@@ -268,9 +275,11 @@ describe("blind comparison workspace shell", () => {
   it("preserves candidate notes while accessible ranking controls move candidates", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for Candidate A" }), { target: { value: "Open top end" } });
-    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "slot:1" } });
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
     fireEvent.click(screen.getByTitle("Select Candidate B"));
-    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate B"), { target: { value: "slot:1" } });
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate B"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
     fireEvent.click(screen.getByTitle("Select Candidate A"));
 
     expect(screen.getByRole("textbox", { name: "Notes for Candidate A" })).toHaveValue("Open top end");
@@ -301,7 +310,8 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mark Region Complete" }));
     expect(reveal).toBeEnabled();
 
-    fireEvent.change(screen.getByLabelText("Ranking destination for Candidate A"), { target: { value: "unranked" } });
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Move to Unranked" }));
     expect(reveal).toBeDisabled();
     expect(screen.getByRole("button", { name: "Verse Not complete" })).toBeInTheDocument();
   });

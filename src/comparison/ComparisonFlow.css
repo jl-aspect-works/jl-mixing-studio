@@ -80,11 +80,14 @@
 .comparison-judgment-grid { display: grid; grid-template-columns: .72fr 1.2fr 1fr; gap: 12px; }
 .comparison-unranked { display: flex; align-content: flex-start; flex-wrap: wrap; gap: 8px; min-height: 52px; padding: 7px; border: 1px dashed var(--border, #cbd3df); border-radius: 7px; }
 .comparison-ranking-candidate { display: flex; align-items: center; gap: 4px; padding: 3px; border: 1px solid var(--border, #cbd3df); border-radius: 7px; background: rgba(255,255,255,.82); }
+.comparison-ranking-candidate { position: relative; }
 .comparison-ranking-candidate.active { border-color: var(--blue, #4368e2); box-shadow: 0 0 0 2px rgba(67, 104, 226, .18); }
 .comparison-candidate-chip { min-width: 34px; min-height: 32px; padding: 4px 7px; cursor: grab; font-weight: 800; }
 .comparison-candidate-chip:active { cursor: grabbing; }
 .comparison-candidate-chip span { padding-right: 4px; color: var(--muted-text, #748096); font-weight: 400; }
-.comparison-ranking-candidate select { width: 78px; min-height: 32px; padding: 3px 5px; font-size: .7rem; }
+.comparison-ranking-menu { position: absolute; z-index: 20; top: calc(100% + 3px); left: 3px; display: grid; min-width: 132px; padding: 4px; border: 1px solid var(--border, #cbd3df); border-radius: 7px; background: var(--panel, #fff); box-shadow: 0 8px 24px rgba(15, 23, 42, .2); }
+.comparison-ranking-menu button { justify-content: flex-start; min-height: 28px; padding: 4px 7px; border: 0; background: transparent; color: inherit; font-size: .72rem; text-align: left; }
+.comparison-ranking-menu button:hover, .comparison-ranking-menu button:focus-visible { background: rgba(67, 104, 226, .12); }
 .comparison-empty-pool { align-self: center; color: var(--muted-text, #748096); font-size: .76rem; }
 .comparison-rank-order { display: grid; gap: 6px; }
 .comparison-rank-slot { display: grid; grid-template-columns: 28px 1fr; align-items: center; gap: 7px; min-height: 48px; padding: 5px; border: 1px dashed var(--border, #cbd3df); border-radius: 7px; }
