@@ -366,6 +366,26 @@ describe("blind comparison workspace shell", () => {
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
   });
 
+  it("uses keyboard shortcuts for playback transport controls", async () => {
+    mocks.playbackToggle.mockResolvedValueOnce({ activeCandidateId: "A", playing: false, currentSeconds: 0, durationSeconds: 120 });
+    render(workspace());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Play" })).toBeEnabled());
+
+    fireEvent.keyDown(window, { key: " ", code: "Space" });
+    await waitFor(() => expect(mocks.playbackToggle).toHaveBeenCalledOnce());
+
+    fireEvent.keyDown(window, { key: ".", code: "Period" });
+    await waitFor(() => expect(mocks.playbackSeek).toHaveBeenLastCalledWith(5));
+    await waitFor(() => expect(screen.getByRole("slider", { name: "Comparison playback position" })).toHaveValue("5"));
+
+    fireEvent.keyDown(window, { key: ",", code: "Comma" });
+    await waitFor(() => expect(mocks.playbackSeek).toHaveBeenLastCalledWith(0));
+
+    const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
+    fireEvent.keyDown(notes, { key: ".", code: "Period" });
+    expect(mocks.playbackSeek).toHaveBeenCalledTimes(2);
+  });
+
   it("preserves candidate notes while accessible ranking controls move candidates", () => {
     render(workspace());
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for Candidate A" }), { target: { value: "Open top end" } });

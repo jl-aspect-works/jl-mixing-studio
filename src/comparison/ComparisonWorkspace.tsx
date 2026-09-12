@@ -4,7 +4,7 @@ import { ComparisonPlaybackSession, type ComparisonPlaybackSnapshot } from "./co
 import { ComparisonRanking } from "./ComparisonRanking";
 import type { FrozenComparisonSession } from "./models";
 import { initialRanking, moveCandidate, rankingDestinationForSlot, rankingIsComplete, shortcutRank, type CandidateRanking } from "./ranking";
-import { formatTimestamp, shortcutCandidate } from "./session";
+import { formatTimestamp, shortcutCandidate, shortcutTransport } from "./session";
 
 export function ComparisonWorkspace({
   clientId,
@@ -130,7 +130,7 @@ export function ComparisonWorkspace({
     }
   }, [activeCandidate, playbackBusy, playbackError, playbackFailure]);
 
-  const togglePlayback = async () => {
+  const togglePlayback = useCallback(async () => {
     if (playbackBusy || playbackError) return;
     try {
       const next = await playbackSessionRef.current?.toggle();
@@ -139,9 +139,10 @@ export function ComparisonWorkspace({
     } catch (error) {
       await playbackFailure(activeCandidate, error);
     }
-  };
+  }, [activeCandidate, playbackBusy, playbackError, playbackFailure]);
 
-  const seekPlayback = async (seconds: number) => {
+  const seekPlayback = useCallback(async (seconds: number) => {
+    if (playbackBusy || playbackError) return;
     try {
       const next = await playbackSessionRef.current?.seek(seconds);
       if (next) setPlayback(next);
@@ -149,7 +150,7 @@ export function ComparisonWorkspace({
     } catch (error) {
       await playbackFailure(activeCandidate, error);
     }
-  };
+  }, [activeCandidate, playbackBusy, playbackError, playbackFailure]);
 
   const stepCandidate = (offset: number) => {
     const index = session.candidates.findIndex((candidate) => candidate.blindId === activeCandidate);
@@ -209,6 +210,17 @@ export function ComparisonWorkspace({
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
+      const transport = shortcutTransport(event);
+      if (transport !== null) {
+        event.preventDefault();
+        if (!playback || playbackBusy || playbackError) return;
+        if (transport === "toggle") {
+          void togglePlayback();
+          return;
+        }
+        void seekPlayback(playback.currentSeconds + (transport === "back" ? -5 : 5));
+        return;
+      }
       const rank = shortcutRank(event, session.candidates.length);
       if (rank !== null) {
         event.preventDefault();
@@ -222,7 +234,7 @@ export function ComparisonWorkspace({
     };
     window.addEventListener("keydown", keydown);
     return () => window.removeEventListener("keydown", keydown);
-  }, [activeCandidate, chooseCandidate, ranking, session.candidates, updateRanking]);
+  }, [activeCandidate, chooseCandidate, playback, playbackBusy, playbackError, ranking, seekPlayback, session.candidates, togglePlayback, updateRanking]);
 
   return <section className="comparison-workspace" aria-labelledby="comparison-workspace-title">
     <header className="comparison-screen-header comparison-workspace-header">
@@ -242,7 +254,7 @@ export function ComparisonWorkspace({
       <div className="comparison-active-region"><div><p className="kicker">Active region</p><h3 id="comparison-listening-title">{region.name}: Candidate {activeCandidate}</h3></div><span>{formatTimestamp(region.startSeconds)} – {region.endSeconds === null ? "End" : formatTimestamp(region.endSeconds)}</span></div>
       <div className="comparison-seek-shell"><span>{formatTimestamp(playback?.currentSeconds ?? region.startSeconds)}</span><input type="range" min={region.startSeconds} max={region.endSeconds ?? playback?.durationSeconds ?? region.startSeconds} step="0.05" value={playback?.currentSeconds ?? region.startSeconds} aria-label="Comparison playback position" disabled={!playback || playbackBusy || !!playbackError} onChange={(event) => void seekPlayback(Number(event.target.value))} /><span>{formatTimestamp(region.endSeconds ?? playback?.durationSeconds ?? 0)}</span></div>
       <div className="comparison-playback-row">
-        <div className="comparison-transport" aria-label="Comparison transport"><button type="button" className="icon-only" aria-label="Previous candidate" title="Previous candidate" disabled={!playback || playbackBusy || !!playbackError} onClick={() => stepCandidate(-1)}><ActionIcon name="previous" /></button><button type="button" className="icon-only" aria-label="Back 5 seconds" title="Back 5 seconds" disabled={!playback || playbackBusy || !!playbackError} onClick={() => void seekPlayback((playback?.currentSeconds ?? region.startSeconds) - 5)}><ActionIcon name="skipBack" /></button><button type="button" className="icon-only" aria-label={playback?.playing ? "Pause" : "Play"} title={playback?.playing ? "Pause" : "Play"} disabled={!playback || playbackBusy || !!playbackError} onClick={() => void togglePlayback()}><ActionIcon name={playback?.playing ? "pause" : "play"} /></button><button type="button" className="icon-only" aria-label="Forward 5 seconds" title="Forward 5 seconds" disabled={!playback || playbackBusy || !!playbackError} onClick={() => void seekPlayback((playback?.currentSeconds ?? region.startSeconds) + 5)}><ActionIcon name="skipForward" /></button><button type="button" className="icon-only" aria-label="Next candidate" title="Next candidate" disabled={!playback || playbackBusy || !!playbackError} onClick={() => stepCandidate(1)}><ActionIcon name="next" /></button><button type="button" className={`${loop ? "" : "secondary"} icon-only`} aria-label={`Loop ${loop ? "on" : "off"}`} title={`Loop ${loop ? "on" : "off"}`} disabled={!playback || playbackBusy || !!playbackError} onClick={changeLoop}><ActionIcon name="loop" /></button><label className="comparison-volume">Volume<input type="range" min="0" max="1" step="0.05" value={volume} aria-label="Comparison volume" disabled={!playback || playbackBusy || !!playbackError} onChange={(event) => void changeVolume(Number(event.target.value))} /></label></div>
+        <div className="comparison-transport" aria-label="Comparison transport"><button type="button" className="icon-only" aria-label="Previous candidate" title="Previous candidate" disabled={!playback || playbackBusy || !!playbackError} onClick={() => stepCandidate(-1)}><ActionIcon name="previous" /></button><button type="button" className="icon-only" aria-label="Back 5 seconds" title="Back 5 seconds (,)" disabled={!playback || playbackBusy || !!playbackError} onClick={() => void seekPlayback((playback?.currentSeconds ?? region.startSeconds) - 5)}><ActionIcon name="skipBack" /></button><button type="button" className="icon-only" aria-label={playback?.playing ? "Pause" : "Play"} title={playback?.playing ? "Pause (Space)" : "Play (Space)"} disabled={!playback || playbackBusy || !!playbackError} onClick={() => void togglePlayback()}><ActionIcon name={playback?.playing ? "pause" : "play"} /></button><button type="button" className="icon-only" aria-label="Forward 5 seconds" title="Forward 5 seconds (.)" disabled={!playback || playbackBusy || !!playbackError} onClick={() => void seekPlayback((playback?.currentSeconds ?? region.startSeconds) + 5)}><ActionIcon name="skipForward" /></button><button type="button" className="icon-only" aria-label="Next candidate" title="Next candidate" disabled={!playback || playbackBusy || !!playbackError} onClick={() => stepCandidate(1)}><ActionIcon name="next" /></button><button type="button" className={`${loop ? "" : "secondary"} icon-only`} aria-label={`Loop ${loop ? "on" : "off"}`} title={`Loop ${loop ? "on" : "off"}`} disabled={!playback || playbackBusy || !!playbackError} onClick={changeLoop}><ActionIcon name="loop" /></button><label className="comparison-volume">Volume<input type="range" min="0" max="1" step="0.05" value={volume} aria-label="Comparison volume" disabled={!playback || playbackBusy || !!playbackError} onChange={(event) => void changeVolume(Number(event.target.value))} /></label></div>
       </div>
       {playbackBusy && <p className="comparison-playback-status" role="status">Preparing {session.candidates.length} candidates…</p>}
       <div className={`comparison-session-control-grid ${session.regions.length <= 5 ? "side-by-side" : "stacked"}`}>

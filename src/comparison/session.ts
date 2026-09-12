@@ -24,6 +24,8 @@ export const formatTimestamp = (seconds: number): string => {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 };
 
+export type ComparisonTransportShortcut = "toggle" | "back" | "forward";
+
 const shuffled = <T,>(items: readonly T[], random: () => number): T[] => {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
@@ -58,18 +60,32 @@ export const freezeComparisonSession = (
   });
 };
 
-export const shortcutCandidate = (
-  event: Pick<KeyboardEvent, "key" | "target" | "metaKey" | "ctrlKey" | "altKey">,
-  candidates: readonly { blindId: string }[],
-) => {
-  if (event.metaKey || event.ctrlKey || event.altKey) return null;
+const eventTargetAllowsShortcuts = (event: Pick<KeyboardEvent, "target" | "metaKey" | "ctrlKey" | "altKey">) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) return false;
   const target = event.target;
-  if (target instanceof HTMLElement && (
+  return !(target instanceof HTMLElement && (
     target.isContentEditable
     || target.tagName === "INPUT"
     || target.tagName === "TEXTAREA"
     || target.tagName === "SELECT"
-  )) return null;
+  ));
+};
+
+export const shortcutCandidate = (
+  event: Pick<KeyboardEvent, "key" | "target" | "metaKey" | "ctrlKey" | "altKey">,
+  candidates: readonly { blindId: string }[],
+) => {
+  if (!eventTargetAllowsShortcuts(event)) return null;
   const key = event.key.toUpperCase();
   return candidates.find((candidate) => candidate.blindId === key)?.blindId ?? null;
+};
+
+export const shortcutTransport = (
+  event: Pick<KeyboardEvent, "key" | "code" | "target" | "metaKey" | "ctrlKey" | "altKey">,
+): ComparisonTransportShortcut | null => {
+  if (!eventTargetAllowsShortcuts(event)) return null;
+  if (event.key === " " || event.key === "Spacebar" || event.code === "Space") return "toggle";
+  if (event.key === ",") return "back";
+  if (event.key === ".") return "forward";
+  return null;
 };
