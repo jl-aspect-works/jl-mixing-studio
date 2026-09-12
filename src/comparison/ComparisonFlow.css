@@ -72,10 +72,10 @@
 .comparison-candidate-switches small { width: 100%; color: var(--muted-text, #748096); text-align: center; }
 .comparison-session-control-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .comparison-session-subpanel { display: grid; align-content: start; gap: 8px; padding: 12px; border: 1px solid var(--border, #dfe4ea); border-radius: 8px; background: rgba(255,255,255,.55); }
-.comparison-session-progress { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 7px; }
-.comparison-session-progress > button { display: grid; flex: 0 0 100px; width: 100px; justify-items: center; gap: 3px; min-width: 100px; min-height: 48px; padding: 6px 5px; border: 1px solid var(--border, #cbd3df); border-radius: 6px; }
+.comparison-session-progress { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 5px; }
+.comparison-session-progress > button { display: grid; flex: 0 0 108px; width: 108px; justify-items: center; gap: 3px; min-width: 108px; min-height: 48px; padding: 6px 4px; border: 1px solid var(--border, #cbd3df); border-radius: 6px; }
 .comparison-session-progress > button.active { border-color: var(--blue, #4368e2); background: rgba(67, 104, 226, .12); box-shadow: inset 0 -3px 0 var(--blue, #4368e2); }
-.comparison-session-progress strong { max-width: 100%; overflow: hidden; font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
+.comparison-session-progress strong { max-width: 100%; overflow: hidden; font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
 .comparison-session-progress small { color: var(--muted-text, #748096); font-size: .7rem; }
 .comparison-playing span, .comparison-placeholder { color: var(--muted-text, #748096); font-size: .82rem; }
 .comparison-judgment-grid { display: grid; grid-template-columns: .72fr 1.2fr 1fr; gap: 12px; }
