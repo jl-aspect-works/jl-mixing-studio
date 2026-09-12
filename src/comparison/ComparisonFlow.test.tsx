@@ -195,6 +195,7 @@ describe("blind comparison workspace shell", () => {
     const transport = screen.getByLabelText("Comparison transport");
     const candidates = screen.getByLabelText("Blind candidates");
     const progress = screen.getByLabelText("Region completion progress");
+    expect(candidates.closest(".comparison-session-control-grid")).toHaveClass("side-by-side");
     expect(transport.compareDocumentPosition(candidates) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(candidates.compareDocumentPosition(progress) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(transport.querySelectorAll(".action-icon")).toHaveLength(6);
@@ -214,6 +215,22 @@ describe("blind comparison workspace shell", () => {
     fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
     expect(screen.getByRole("menu", { name: "Move Candidate A" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Place in slot 1" })).toBeInTheDocument();
+  });
+
+  it("stacks candidate switch and session progress when six or more regions are evaluated", () => {
+    const manyRegions: FrozenComparisonSession = {
+      ...frozen,
+      regions: Array.from({ length: 6 }, (_, index) => ({
+        regionId: `region-${index + 1}`,
+        name: index === 0 ? "Full Song" : `Verse ${index}`,
+        startSeconds: index * 10,
+        endSeconds: index === 0 ? null : (index + 1) * 10,
+        builtIn: index === 0,
+      })),
+    };
+    render(<ComparisonWorkspace session={manyRegions} onCancel={vi.fn()} />);
+
+    expect(screen.getByLabelText("Blind candidates").closest(".comparison-session-control-grid")).toHaveClass("stacked");
   });
 
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {
