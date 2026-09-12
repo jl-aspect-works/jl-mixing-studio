@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ClientSummary, ProjectSummary } from "../types";
 import { ComparisonFlow } from "./ComparisonFlow";
@@ -298,6 +298,33 @@ describe("blind comparison workspace shell", () => {
     expect(screen.getByLabelText("Blind candidates").closest(".comparison-session-control-grid")).toHaveClass("stacked");
   });
 
+  it("ignores startup preparation failures from a disposed playback session", async () => {
+    let rejectAbandonedPrepare: (error: Error) => void = () => {};
+    const abandonedPrepare = new Promise<never>((_, reject) => { rejectAbandonedPrepare = reject; });
+    mocks.playbackPrepare
+      .mockReset()
+      .mockImplementationOnce(() => abandonedPrepare)
+      .mockResolvedValueOnce({ activeCandidateId: "A", playing: false, currentSeconds: 0, durationSeconds: 120 });
+    const { rerender } = render(workspace());
+    await waitFor(() => expect(mocks.playbackPrepare).toHaveBeenCalledOnce());
+
+    rerender(workspace({
+      ...frozen,
+      candidates: frozen.candidates.map((candidate) => ({ ...candidate })),
+      regions: frozen.regions.map((region) => ({ ...region })),
+    }));
+    await waitFor(() => expect(mocks.playbackPrepare).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Play" })).toBeEnabled());
+
+    await act(async () => {
+      rejectAbandonedPrepare(new Error("Comparison playback session is closed."));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(screen.queryByText("Comparison playback session is closed.")).not.toBeInTheDocument();
+  });
+
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", async () => {
     render(workspace());
     await waitFor(() => expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" })).toBeEnabled());
@@ -371,14 +398,14 @@ describe("blind comparison workspace shell", () => {
     render(workspace());
     await waitFor(() => expect(screen.getByRole("button", { name: "Play" })).toBeEnabled());
 
-    fireEvent.keyDown(window, { key: " ", code: "Space" });
+    fireEvent.keyDown(document.body, { key: " ", code: "Space" });
     await waitFor(() => expect(mocks.playbackToggle).toHaveBeenCalledOnce());
 
-    fireEvent.keyDown(window, { key: ".", code: "Period" });
+    fireEvent.keyDown(document.body, { key: ".", code: "Period" });
     await waitFor(() => expect(mocks.playbackSeek).toHaveBeenLastCalledWith(5));
     await waitFor(() => expect(screen.getByRole("slider", { name: "Comparison playback position" })).toHaveValue("5"));
 
-    fireEvent.keyDown(window, { key: ",", code: "Comma" });
+    fireEvent.keyDown(document.body, { key: ",", code: "Comma" });
     await waitFor(() => expect(mocks.playbackSeek).toHaveBeenLastCalledWith(0));
 
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });

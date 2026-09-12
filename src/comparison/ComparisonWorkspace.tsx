@@ -38,28 +38,39 @@ export function ComparisonWorkspace({
   const completedCount = progress.filter((item) => item.complete).length;
   const allRegionsComplete = completedCount === session.regions.length;
 
-  const preparePlayback = useCallback(async (playbackSession: ComparisonPlaybackSession) => {
-    setPlaybackBusy(true);
-    setPlaybackError(null);
+  const preparePlayback = useCallback(async (
+    playbackSession: ComparisonPlaybackSession,
+    shouldApply = () => playbackSessionRef.current === playbackSession,
+  ) => {
+    if (shouldApply()) {
+      setPlaybackBusy(true);
+      setPlaybackError(null);
+    }
     try {
-      setPlayback(await playbackSession.prepare());
+      const next = await playbackSession.prepare();
+      if (shouldApply()) setPlayback(next);
     } catch (error) {
-      setPlayback(null);
-      setPlaybackError({
-        candidateId: candidateFromPlaybackError(error) ?? session.candidates[0].blindId,
-        message: error instanceof Error ? error.message : "Comparison audio could not be prepared.",
-      });
+      if (shouldApply()) {
+        setPlayback(null);
+        setPlaybackError({
+          candidateId: candidateFromPlaybackError(error) ?? session.candidates[0].blindId,
+          message: error instanceof Error ? error.message : "Comparison audio could not be prepared.",
+        });
+      }
     } finally {
-      setPlaybackBusy(false);
+      if (shouldApply()) setPlaybackBusy(false);
     }
   }, [session.candidates]);
 
   useEffect(() => {
     const playbackSession = new ComparisonPlaybackSession(clientId, projectId, session.candidates, session.regions, session.regions[0]);
+    let cancelled = false;
+    const shouldApply = () => !cancelled && playbackSessionRef.current === playbackSession;
     playbackSessionRef.current = playbackSession;
-    void preparePlayback(playbackSession);
+    void preparePlayback(playbackSession, shouldApply);
     return () => {
-      playbackSessionRef.current = null;
+      cancelled = true;
+      if (playbackSessionRef.current === playbackSession) playbackSessionRef.current = null;
       void playbackSession.dispose();
     };
   }, [clientId, preparePlayback, projectId, session.candidates, session.regions]);
