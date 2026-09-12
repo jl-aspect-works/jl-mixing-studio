@@ -24,11 +24,8 @@ export const competitionRanks = (rankRows: CandidateRanking["rankRows"]): number
 };
 
 export const rankingIsComplete = (ranking: CandidateRanking): boolean => {
-  if (ranking.unranked.length > 0) return false;
-  const occupiedSlots = ranking.rankRows.flatMap((row, index) => row.length > 0 ? [index + 1] : []);
-  const expectedRanks = competitionRanks(ranking.rankRows);
-  return occupiedSlots.length > 0
-    && occupiedSlots.every((slot, index) => slot === expectedRanks[index]);
+  return ranking.unranked.length === 0
+    && ranking.rankRows.some((row) => row.length > 0);
 };
 
 export const noPreferenceRanking = (candidateIds: readonly string[]): CandidateRanking => ({

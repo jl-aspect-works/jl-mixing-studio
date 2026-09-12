@@ -64,8 +64,9 @@ describe("comparison ranking", () => {
     expect(shortcutRank({ key: "1", target: null, metaKey: false, ctrlKey: true, altKey: false }, 3)).toBeNull();
   });
 
-  it("requires completed slots to follow competition ranking", () => {
+  it("is complete when every candidate is ranked even when ties leave slots empty", () => {
     expect(rankingIsComplete({ unranked: [], rankRows: [["A", "B"], [], ["C"]] })).toBe(true);
-    expect(rankingIsComplete({ unranked: [], rankRows: [["A", "B"], ["C"], []] })).toBe(false);
+    expect(rankingIsComplete({ unranked: [], rankRows: [["A", "B"], ["C"], []] })).toBe(true);
+    expect(rankingIsComplete({ unranked: ["C"], rankRows: [["A", "B"], [], []] })).toBe(false);
   });
 });

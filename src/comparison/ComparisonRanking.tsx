@@ -4,7 +4,6 @@ import {
   moveCandidate,
   noPreferenceRanking,
   rankingDestinationForSlot,
-  rankingIsComplete,
   type CandidateRanking,
   type RankingDestination,
 } from "./ranking";
@@ -166,7 +165,6 @@ export function ComparisonRanking({
         })}
       </div>
       <small className="comparison-rank-shortcuts">1–{Math.min(candidateIds.length, 9)} keyboard shortcuts rank Candidate {activeCandidate}</small>
-      {ranking.unranked.length === 0 && !rankingIsComplete(ranking) && <small className="comparison-rank-validation" role="status">Adjust occupied slots to competition ranking: ties skip the following slot numbers.</small>}
       <button type="button" className="secondary comparison-no-preference" onClick={() => onChange(noPreferenceRanking(candidateIds))}><ActionIcon name="check" />No Preference — tie all at rank 1</button>
     </section>
     {draggingCandidate && dragPosition && <div className="comparison-candidate-drag-ghost" aria-hidden="true" style={{ left: dragPosition.x, top: dragPosition.y }}><span>⠿</span>{draggingCandidate}</div>}
