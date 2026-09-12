@@ -69,6 +69,28 @@ describe("comparison setup", () => {
     expect(screen.getByRole("button", { name: "Full Song Active" })).toBeInTheDocument();
   });
 
+  it("allows a comparison to evaluate a custom region without requiring Full Song", async () => {
+    const intro = { regionId: "intro", name: "Intro", startSeconds: 0, endSeconds: 20, builtIn: false };
+    mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, intro] } });
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
+    const fullSong = screen.getByRole("checkbox", { name: /Full Song/ });
+    expect(fullSong).toBeEnabled();
+    expect(fullSong).toBeChecked();
+    fireEvent.click(fullSong);
+    expect(screen.getByRole("button", { name: "Start Comparison" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Intro/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
+
+    expect(screen.getByRole("heading", { name: "Intro: Candidate A" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("IntroActive");
+    expect(screen.getByLabelText("Region completion progress")).not.toHaveTextContent("Full Song");
+  });
+
   it("adds consecutive custom regions and selects them", async () => {
     const verse = { regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false };
     const chorus = { regionId: "chorus", name: "Chorus", startSeconds: 0, endSeconds: 30, builtIn: false };
