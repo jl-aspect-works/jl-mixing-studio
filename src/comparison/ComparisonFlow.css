@@ -76,6 +76,7 @@
 .comparison-session-progress { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 5px; }
 .comparison-session-progress > button { display: grid; flex: 0 0 108px; width: 108px; justify-items: center; gap: 3px; min-width: 108px; min-height: 48px; padding: 6px 4px; border: 1px solid var(--border, #cbd3df); border-radius: 6px; }
 .comparison-session-progress > button.active { border-color: var(--blue, #4368e2); background: rgba(67, 104, 226, .12); box-shadow: inset 0 -3px 0 var(--blue, #4368e2); }
+.comparison-session-progress > button.active:hover:not(:disabled) { border-color: var(--blue, #4368e2); background: rgba(67, 104, 226, .18); color: var(--blue, #4368e2); }
 .comparison-session-progress strong { max-width: 100%; overflow: hidden; font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
 .comparison-session-progress small { color: var(--muted-text, #748096); font-size: .7rem; }
 .comparison-playing span, .comparison-placeholder { color: var(--muted-text, #748096); font-size: .82rem; }
