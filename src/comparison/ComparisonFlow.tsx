@@ -15,6 +15,6 @@ export function ComparisonFlow({
   onClose: () => void;
 }) {
   const [session, setSession] = useState<FrozenComparisonSession | null>(null);
-  if (session) return <ComparisonWorkspace session={session} onCancel={onClose} />;
+  if (session) return <ComparisonWorkspace clientId={client.clientId} projectId={project.projectId} session={session} onCancel={onClose} />;
   return <ComparisonSetup client={client} project={project} onCancel={onClose} onStart={setSession} />;
 }

@@ -25,6 +25,7 @@ describe("comparison session configuration", () => {
 
     expect(session.candidates.map((candidate) => candidate.blindId)).toEqual(["A", "B", "C"]);
     expect(new Set(session.candidates.map((candidate) => candidate.revisionId))).toEqual(new Set(["r1", "r2", "r3"]));
+    expect(session.candidates.every((candidate) => candidate.relativePath.endsWith(".wav"))).toBe(true);
     expect(session.loudnessMatch).toBe(true);
     expect(Object.isFrozen(session)).toBe(true);
     expect(Object.isFrozen(session.candidates)).toBe(true);

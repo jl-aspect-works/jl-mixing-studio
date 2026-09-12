@@ -1,10 +1,12 @@
 use super::resolve_workspace_root;
 use super::workspace_command_support::validated_project_directory;
-use crate::audio_preview::{self, NativeAudioPreviewState, NativeAudioPreviewStatus};
+use crate::audio_preview::{
+    self, NativeAudioPreviewState, NativeAudioPreviewStatus, NativeComparisonAudioStatus,
+};
 use crate::models::{ProjectFileMutationRequest, WorkspaceStatus};
 use crate::workspace;
 use rodio::{Decoder, Source};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -13,6 +15,22 @@ use std::path::{Path, PathBuf};
 pub(crate) struct ProjectAudioWaveform {
     duration_seconds: f64,
     peaks: Vec<f32>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct NativeComparisonCandidateRequest {
+    blind_id: String,
+    client_id: String,
+    project_id: String,
+    relative_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct NativeComparisonPrepareRequest {
+    candidates: Vec<NativeComparisonCandidateRequest>,
+    start_seconds: f64,
 }
 
 fn resolve_project_audio_file(
@@ -180,6 +198,83 @@ pub(crate) fn get_native_project_audio_preview_status(
     state: tauri::State<'_, NativeAudioPreviewState>,
 ) -> Result<NativeAudioPreviewStatus, String> {
     audio_preview::status(&state)
+}
+
+#[tauri::command]
+pub(crate) fn prepare_native_comparison_audio(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, NativeAudioPreviewState>,
+    request: NativeComparisonPrepareRequest,
+) -> Result<NativeComparisonAudioStatus, String> {
+    if !cfg!(target_os = "windows") {
+        return audio_preview::comparison_status(&state);
+    }
+    let candidates = request
+        .candidates
+        .into_iter()
+        .map(|candidate| {
+            let file_request = ProjectFileMutationRequest {
+                client_id: candidate.client_id,
+                project_id: candidate.project_id,
+                relative_path: candidate.relative_path,
+            };
+            resolve_project_audio_file(&app, &file_request)
+                .map(|(path, _)| (candidate.blind_id, path))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    audio_preview::prepare_comparison(&state, candidates, request.start_seconds)
+}
+
+#[tauri::command]
+pub(crate) fn play_native_comparison_audio(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::play_comparison(&state)
+}
+
+#[tauri::command]
+pub(crate) fn pause_native_comparison_audio(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::pause_comparison(&state)
+}
+
+#[tauri::command]
+pub(crate) fn seek_native_comparison_audio(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+    seconds: f64,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::seek_comparison(&state, seconds)
+}
+
+#[tauri::command]
+pub(crate) fn switch_native_comparison_candidate(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+    candidate_id: String,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::switch_comparison_candidate(&state, &candidate_id)
+}
+
+#[tauri::command]
+pub(crate) fn set_native_comparison_audio_volume(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+    volume: f32,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::set_comparison_volume(&state, volume)
+}
+
+#[tauri::command]
+pub(crate) fn stop_native_comparison_audio(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::stop_comparison(&state)
+}
+
+#[tauri::command]
+pub(crate) fn get_native_comparison_audio_status(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::comparison_status(&state)
 }
 
 #[cfg(test)]

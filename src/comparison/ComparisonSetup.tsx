@@ -77,6 +77,7 @@ export function ComparisonSetup({
   const selectedRegionValues = regions.filter((region) => selectedRegions.has(region.regionId));
   const canStart = selectedCandidateValues.length >= 2
     && selectedCandidateValues.length <= MAX_SHORTCUT_CANDIDATES
+    && selectedCandidateValues.every((candidate) => candidate.relativePath)
     && selectedRegionValues.length > 0
     && !busy;
 

@@ -29,6 +29,7 @@ export type FrozenComparisonCandidate = {
   revisionId: string;
   revisionNumber: number;
   blindId: string;
+  relativePath: string;
 };
 
 export type FrozenComparisonSession = {

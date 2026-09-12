@@ -11,6 +11,16 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   remove: vi.fn(),
   waveform: vi.fn(),
+  playbackPrepare: vi.fn(),
+  playbackSwitch: vi.fn(),
+  playbackSeek: vi.fn(),
+  playbackRegion: vi.fn(),
+  playbackToggle: vi.fn(),
+  playbackPause: vi.fn(),
+  playbackRefresh: vi.fn(),
+  playbackRetry: vi.fn(),
+  playbackVolume: vi.fn(),
+  playbackDispose: vi.fn(),
 }));
 
 vi.mock("./comparisonService", () => ({
@@ -27,6 +37,22 @@ vi.mock("../project/files/audioPreviewService", () => ({
 vi.mock("../project/files/AudioPreviewPlayer", () => ({
   AudioPreviewPlayer: ({ onPositionChange, seekRequest }: { onPositionChange?: (seconds: number) => void; seekRequest?: { seconds: number } | null }) =>
     <button type="button" aria-label="Preview playback" data-seek-position={seekRequest?.seconds ?? ""} onClick={() => onPositionChange?.(42)}>Preview playback</button>,
+}));
+
+vi.mock("./comparisonPlaybackService", () => ({
+  ComparisonPlaybackSession: class {
+    prepare = mocks.playbackPrepare;
+    switchCandidate = mocks.playbackSwitch;
+    seek = mocks.playbackSeek;
+    setRegion = mocks.playbackRegion;
+    toggle = mocks.playbackToggle;
+    pause = mocks.playbackPause;
+    refresh = mocks.playbackRefresh;
+    retry = mocks.playbackRetry;
+    setVolume = mocks.playbackVolume;
+    setLoop = vi.fn();
+    dispose = mocks.playbackDispose;
+  },
 }));
 
 const client = { clientId: "c1", clientName: "Client", createdAt: "", defaultArtist: "Artist", projects: [] } satisfies ClientSummary;
@@ -51,6 +77,17 @@ beforeEach(() => {
   mocks.update.mockReset();
   mocks.remove.mockReset();
   mocks.waveform.mockReset().mockResolvedValue({ durationSeconds: 120, peaks: [.1, .5, .9, .4] });
+  const playback = { activeCandidateId: "A", playing: false, currentSeconds: 0, durationSeconds: 120 };
+  mocks.playbackPrepare.mockReset().mockResolvedValue(playback);
+  mocks.playbackSwitch.mockReset().mockImplementation(async (candidateId: string) => ({ ...playback, activeCandidateId: candidateId }));
+  mocks.playbackSeek.mockReset().mockImplementation(async (seconds: number) => ({ ...playback, currentSeconds: seconds }));
+  mocks.playbackRegion.mockReset().mockImplementation(async (region: { startSeconds: number }) => ({ ...playback, currentSeconds: region.startSeconds }));
+  mocks.playbackToggle.mockReset().mockResolvedValue({ ...playback, playing: true });
+  mocks.playbackPause.mockReset().mockResolvedValue(playback);
+  mocks.playbackRefresh.mockReset().mockResolvedValue(playback);
+  mocks.playbackRetry.mockReset().mockResolvedValue(playback);
+  mocks.playbackVolume.mockReset().mockResolvedValue(playback);
+  mocks.playbackDispose.mockReset().mockResolvedValue(undefined);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -206,14 +243,20 @@ describe("comparison setup", () => {
 });
 
 const frozen: FrozenComparisonSession = {
-  candidates: [{ revisionId: "r1", revisionNumber: 1, blindId: "A" }, { revisionId: "r2", revisionNumber: 2, blindId: "B" }],
+  candidates: [
+    { revisionId: "r1", revisionNumber: 1, blindId: "A", relativePath: "04_Revisions/Revision_01/mix.wav" },
+    { revisionId: "r2", revisionNumber: 2, blindId: "B", relativePath: "04_Revisions/Revision_02/mix.wav" },
+  ],
   regions: [{ regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null, builtIn: true }],
   loudnessMatch: false,
 };
 
+const workspace = (session: FrozenComparisonSession = frozen, onCancel = vi.fn()) =>
+  <ComparisonWorkspace clientId="c1" projectId="p1" session={session} onCancel={onCancel} />;
+
 describe("blind comparison workspace shell", () => {
   it("stacks the icon transport above the blind candidate selector", () => {
-    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    render(workspace());
     const transport = screen.getByLabelText("Comparison transport");
     const candidates = screen.getByLabelText("Blind candidates");
     const progress = screen.getByLabelText("Region completion progress");
@@ -250,29 +293,30 @@ describe("blind comparison workspace shell", () => {
         builtIn: index === 0,
       })),
     };
-    render(<ComparisonWorkspace session={manyRegions} onCancel={vi.fn()} />);
+    render(workspace(manyRegions));
 
     expect(screen.getByLabelText("Blind candidates").closest(".comparison-session-control-grid")).toHaveClass("stacked");
   });
 
-  it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {
-    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+  it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", async () => {
+    render(workspace());
+    await waitFor(() => expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" })).toBeEnabled());
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
     fireEvent.keyDown(notes, { key: "B" });
     expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
     fireEvent.keyDown(window, { key: "B" });
-    expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument());
     expect(screen.getByRole("textbox", { name: "Notes for Candidate B" })).toBeInTheDocument();
   });
 
   it("warns only after session work is entered", () => {
     const onCancel = vi.fn();
-    const { rerender } = render(<ComparisonWorkspace session={frozen} onCancel={onCancel} />);
+    const { rerender } = render(workspace(frozen, onCancel));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onCancel).toHaveBeenCalledOnce();
 
     onCancel.mockClear();
-    rerender(<ComparisonWorkspace session={frozen} onCancel={onCancel} />);
+    rerender(workspace(frozen, onCancel));
     fireEvent.change(within(screen.getByRole("region", { name: "Candidate notes" })).getByRole("textbox"), { target: { value: "Prefer this" } });
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(onCancel).not.toHaveBeenCalled();
@@ -282,7 +326,7 @@ describe("blind comparison workspace shell", () => {
   });
 
   it("supports drag placement, ties, and splitting ties", () => {
-    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    render(workspace());
     fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
     fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
 
@@ -306,12 +350,14 @@ describe("blind comparison workspace shell", () => {
     expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate B")).toBeInTheDocument();
   });
 
-  it("uses number shortcuts to place the active candidate while preserving text entry", () => {
-    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+  it("uses number shortcuts to place the active candidate while preserving text entry", async () => {
+    render(workspace());
+    await waitFor(() => expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" })).toBeEnabled());
     fireEvent.keyDown(window, { key: "2" });
     expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate A")).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "B" });
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument());
     fireEvent.keyDown(window, { key: "1" });
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
 
@@ -321,7 +367,7 @@ describe("blind comparison workspace shell", () => {
   });
 
   it("preserves candidate notes while accessible ranking controls move candidates", () => {
-    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    render(workspace());
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for Candidate A" }), { target: { value: "Open top end" } });
     fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
     fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
@@ -335,12 +381,13 @@ describe("blind comparison workspace shell", () => {
     expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
   });
 
-  it("uses No Preference and gates completion for every region", () => {
+  it("uses No Preference and gates completion for every region", async () => {
     const multiRegion: FrozenComparisonSession = {
       ...frozen,
       regions: [...frozen.regions, { regionId: "verse", name: "Verse", startSeconds: 10, endSeconds: 30, builtIn: false }],
     };
-    render(<ComparisonWorkspace session={multiRegion} onCancel={vi.fn()} />);
+    render(workspace(multiRegion));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Verse Not complete" })).toBeEnabled());
     const reveal = screen.getByRole("button", { name: "Reveal & Complete Comparison" });
     expect(reveal).toBeDisabled();
 
@@ -352,6 +399,7 @@ describe("blind comparison workspace shell", () => {
     expect(reveal).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "Verse Not complete" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Verse Active" })).toBeInTheDocument());
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate A")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "No Preference — tie all at rank 1" }));
@@ -362,5 +410,27 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Move to Unranked" }));
     expect(reveal).toBeDisabled();
     expect(screen.getByRole("button", { name: "Verse Active" })).toBeInTheDocument();
+  });
+
+  it("pauses on a runtime candidate failure and requires Retry or Cancel", async () => {
+    mocks.playbackSwitch.mockRejectedValueOnce(new Error("Candidate B could not be played."));
+    render(workspace());
+    const candidateB = await waitFor(() => {
+      const button = within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" });
+      expect(button).toBeEnabled();
+      return button;
+    });
+
+    fireEvent.click(candidateB);
+    const failure = await screen.findByRole("alert");
+    expect(mocks.playbackPause).toHaveBeenCalledOnce();
+    expect(within(failure).getByText("Candidate B playback stopped.")).toBeInTheDocument();
+    expect(within(failure).getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(within(failure).getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "A" })).toBeDisabled();
+
+    fireEvent.click(within(failure).getByRole("button", { name: "Retry" }));
+    await waitFor(() => expect(mocks.playbackRetry).toHaveBeenCalledOnce());
+    await waitFor(() => expect(screen.queryByText("Candidate B playback stopped.")).not.toBeInTheDocument());
   });
 });

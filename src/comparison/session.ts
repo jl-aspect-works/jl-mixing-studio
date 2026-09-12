@@ -49,6 +49,7 @@ export const freezeComparisonSession = (
     revisionId: candidate.revisionId,
     revisionNumber: candidate.revisionNumber,
     blindId: String.fromCharCode(65 + index),
+    relativePath: candidate.relativePath!,
   }));
   return Object.freeze({
     candidates: Object.freeze(randomized),

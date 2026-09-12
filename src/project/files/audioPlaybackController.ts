@@ -3,20 +3,27 @@ type StopPlayback = () => Promise<void> | void;
 type ActivePlayback = {
   id: string;
   stop: StopPlayback;
+  exclusive: boolean;
 };
 
 let activePlayback: ActivePlayback | null = null;
 
-export async function claimAudioPlayback(id: string, stop: StopPlayback) {
+async function claim(id: string, stop: StopPlayback, exclusive: boolean) {
   if (activePlayback?.id === id) {
-    activePlayback = { id, stop };
-    return;
+    activePlayback = { id, stop, exclusive };
+    return true;
   }
+  if (activePlayback?.exclusive && !exclusive) return false;
   const previous = activePlayback;
   activePlayback = null;
   if (previous) await previous.stop();
-  activePlayback = { id, stop };
+  activePlayback = { id, stop, exclusive };
+  return true;
 }
+
+export const claimAudioPlayback = (id: string, stop: StopPlayback) => claim(id, stop, false);
+
+export const claimExclusiveAudioPlayback = (id: string, stop: StopPlayback) => claim(id, stop, true);
 
 export function releaseAudioPlayback(id: string) {
   if (activePlayback?.id === id) activePlayback = null;
