@@ -66,7 +66,29 @@ describe("comparison setup", () => {
     expect(screen.getByRole("heading", { name: "Comparison Session" })).toBeInTheDocument();
     expect(screen.getByText("2 candidates")).toBeInTheDocument();
     expect(screen.getByText("ON")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Full Song Not complete" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Full Song Active" })).toBeInTheDocument();
+  });
+
+  it("allows a comparison to evaluate a custom region without requiring Full Song", async () => {
+    const intro = { regionId: "intro", name: "Intro", startSeconds: 0, endSeconds: 20, builtIn: false };
+    mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, intro] } });
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
+    const fullSong = screen.getByRole("checkbox", { name: /Full Song/ });
+    expect(fullSong).toBeEnabled();
+    expect(fullSong).toBeChecked();
+    fireEvent.click(fullSong);
+    expect(screen.getByRole("button", { name: "Start Comparison" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Intro/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
+
+    expect(screen.getByRole("heading", { name: "Intro: Candidate A" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("IntroActive");
+    expect(screen.getByLabelText("Region completion progress")).not.toHaveTextContent("Full Song");
   });
 
   it("adds consecutive custom regions and selects them", async () => {
@@ -194,14 +216,43 @@ describe("blind comparison workspace shell", () => {
     render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
     const transport = screen.getByLabelText("Comparison transport");
     const candidates = screen.getByLabelText("Blind candidates");
+    const progress = screen.getByLabelText("Region completion progress");
+    expect(candidates.closest(".comparison-session-control-grid")).toHaveClass("side-by-side");
     expect(transport.compareDocumentPosition(candidates) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(candidates.compareDocumentPosition(progress) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(transport.querySelectorAll(".action-icon")).toHaveLength(6);
+    expect(within(transport).getAllByRole("button")).toHaveLength(6);
+    expect(within(transport).getAllByRole("button").every((button) => button.classList.contains("icon-only"))).toBe(true);
     expect(screen.getByRole("heading", { name: "Session Progress" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Rank Ordering" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
     expect(screen.queryByText(/Selected: Candidate/)).not.toBeInTheDocument();
     expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("Full SongActive");
-    expect(screen.getByLabelText("Rank ordering placeholder").children).toHaveLength(3);
+    expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    expect(screen.getByLabelText("Rank ordering")).toHaveTextContent("Drop Candidate A or press 1");
+    expect(screen.getByLabelText("Rank slot 2")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Comparison regions")).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Ranking destination for Candidate A" })).not.toBeInTheDocument();
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    expect(screen.getByRole("menu", { name: "Move Candidate A" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Place in slot 1" })).toBeInTheDocument();
+  });
+
+  it("stacks candidate switch and session progress when six or more regions are evaluated", () => {
+    const manyRegions: FrozenComparisonSession = {
+      ...frozen,
+      regions: Array.from({ length: 6 }, (_, index) => ({
+        regionId: `region-${index + 1}`,
+        name: index === 0 ? "Full Song" : `Verse ${index}`,
+        startSeconds: index * 10,
+        endSeconds: index === 0 ? null : (index + 1) * 10,
+        builtIn: index === 0,
+      })),
+    };
+    render(<ComparisonWorkspace session={manyRegions} onCancel={vi.fn()} />);
+
+    expect(screen.getByLabelText("Blind candidates").closest(".comparison-session-control-grid")).toHaveClass("stacked");
   });
 
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", () => {
@@ -228,5 +279,88 @@ describe("blind comparison workspace shell", () => {
     expect(screen.getByRole("alertdialog", { name: "Discard unfinished comparison" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Discard Comparison" }));
     expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it("supports drag placement, ties, and splitting ties", () => {
+    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
+
+    let candidateB = screen.getByTitle("Select Candidate B");
+    fireEvent.pointerDown(candidateB, { button: 0, clientX: 20, clientY: 30 });
+    const pointerMove = new Event("pointermove", { bubbles: true });
+    Object.defineProperties(pointerMove, { clientX: { value: 80 }, clientY: { value: 90 } });
+    fireEvent(document, pointerMove);
+    expect(screen.getByText("B", { selector: ".comparison-candidate-drag-ghost" })).toHaveStyle({ left: "80px", top: "90px" });
+    fireEvent.pointerEnter(screen.getByLabelText("Rank slot 1"));
+    expect(screen.getByLabelText("Rank slot 1")).toHaveClass("drag-target");
+    fireEvent.pointerUp(screen.getByLabelText("Rank slot 1"));
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+
+    candidateB = screen.getByTitle("Select Candidate B");
+    fireEvent.pointerDown(candidateB, { button: 0 });
+    fireEvent.pointerEnter(screen.getByLabelText("Rank slot 2"));
+    fireEvent.pointerUp(screen.getByLabelText("Rank slot 2"));
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate B")).toBeInTheDocument();
+  });
+
+  it("uses number shortcuts to place the active candidate while preserving text entry", () => {
+    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    fireEvent.keyDown(window, { key: "2" });
+    expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate A")).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "B" });
+    fireEvent.keyDown(window, { key: "1" });
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+
+    const notes = screen.getByRole("textbox", { name: "Notes for Candidate B" });
+    fireEvent.keyDown(notes, { key: "2" });
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+  });
+
+  it("preserves candidate notes while accessible ranking controls move candidates", () => {
+    render(<ComparisonWorkspace session={frozen} onCancel={vi.fn()} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Notes for Candidate A" }), { target: { value: "Open top end" } });
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
+    fireEvent.click(screen.getByTitle("Select Candidate B"));
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate B"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
+    fireEvent.click(screen.getByTitle("Select Candidate A"));
+
+    expect(screen.getByRole("textbox", { name: "Notes for Candidate A" })).toHaveValue("Open top end");
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+  });
+
+  it("uses No Preference and gates completion for every region", () => {
+    const multiRegion: FrozenComparisonSession = {
+      ...frozen,
+      regions: [...frozen.regions, { regionId: "verse", name: "Verse", startSeconds: 10, endSeconds: 30, builtIn: false }],
+    };
+    render(<ComparisonWorkspace session={multiRegion} onCancel={vi.fn()} />);
+    const reveal = screen.getByRole("button", { name: "Reveal & Complete Comparison" });
+    expect(reveal).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "No Preference — tie all at rank 1" }));
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Mark Region Complete" }));
+    expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("Full SongCompleteVerseNot complete");
+    expect(reveal).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Verse Not complete" }));
+    expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate A")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Unranked candidates")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "No Preference — tie all at rank 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark Region Complete" }));
+    expect(reveal).toBeEnabled();
+
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Move to Unranked" }));
+    expect(reveal).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Verse Active" })).toBeInTheDocument();
   });
 });

@@ -174,6 +174,7 @@ export function ComparisonSetup({
     </div>
     <section className="panel comparison-regions-panel" aria-labelledby="comparison-regions-title">
         <h3 id="comparison-regions-title">3. Select and manage regions</h3>
+        <p>Select one or more regions to evaluate. Full Song is selected by default but is optional.</p>
         <RegionPreview
           clientId={client.clientId}
           projectId={project.projectId}
@@ -194,7 +195,7 @@ export function ComparisonSetup({
         <div className="comparison-choice-list" role="group" aria-label="Available regions">
           {regions.map((region) => <div key={region.regionId} className={`comparison-region-row${draft.regionId === region.regionId ? " editing" : ""}${region.builtIn ? " built-in" : ""}`} role={region.builtIn ? undefined : "button"} tabIndex={region.builtIn ? undefined : 0} onClick={() => beginEdit(region)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); beginEdit(region); } }}>
             <label>
-              <input type="checkbox" checked={selectedRegions.has(region.regionId)} disabled={region.builtIn} onClick={(event) => event.stopPropagation()} onChange={(event) => setSelectedRegions((current) => toggle(current, region.regionId, event.target.checked))} />
+              <input type="checkbox" checked={selectedRegions.has(region.regionId)} onClick={(event) => event.stopPropagation()} onChange={(event) => setSelectedRegions((current) => toggle(current, region.regionId, event.target.checked))} />
               <span><strong>{region.name}</strong><small>{formatTimestamp(region.startSeconds)} – {region.endSeconds === null ? "End" : formatTimestamp(region.endSeconds)}</small></span>
             </label>
             {!region.builtIn && <span className="comparison-region-actions"><button type="button" className="text-button danger icon-only comparison-region-delete" aria-label={`Delete ${region.name}`} title={`Delete ${region.name}`} onClick={(event) => { event.stopPropagation(); setPendingDelete(region); }}><ActionIcon name="delete" /></button></span>}

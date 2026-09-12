@@ -88,7 +88,9 @@ Every project comparison has the built-in region:
 Full Song: 0:00 -> End
 ```
 
-Full Song is immutable as the built-in overall region. A session's Full Song ranking is the session's overall preference and contributes to cumulative Full Song standings.
+Full Song is immutable as the built-in overall region definition, is selected by default, and may be omitted from an individual session. When selected, a session's Full Song ranking is the session's overall preference and contributes to cumulative Full Song standings.
+
+When Full Song is omitted, it is not a required region in the blind workspace and does not block session completion. If the persistence schema requires a Full Song row, Studio records an implicit all-way No Preference placeholder marked as not evaluated. That placeholder must not be presented as an explicit user judgment or counted as cumulative Full Song evidence.
 
 ### Custom regions
 
@@ -125,7 +127,7 @@ The setup flow starts from Revision History and:
 
 - selects 2+ eligible normal revisions;
 - validates what Studio can validate about playback/region compatibility;
-- selects Full Song and any desired project regions;
+- selects one or more project regions, with Full Song selected by default but optional;
 - allows project regions to be defined/edited before the session begins;
 - defaults the region preview to the highest-number playable normal revision, with an independent selector for choosing another revision;
 - shows the preview playhead and draggable start/end locators over the waveform, synchronized with the timestamp fields for both new and edited regions;
@@ -144,7 +146,7 @@ Blind comparison uses a dedicated full-screen workspace, not a modal.
 The workspace includes:
 
 - session header with candidate count, active region, frozen Loudness Match state, and Cancel;
-- project region tabs/chips with Full Song first;
+- selected project-region navigation, with Full Song first when it is included;
 - active-region bounds and Loop control;
 - playback transport and seek/progress;
 - large blind candidate controls (`A`, `B`, `C`, ...);
@@ -310,7 +312,7 @@ It is not represented by leaving candidates Unranked.
 - every candidate must receive an explicit placement in every required region;
 - partial rankings are invalid completed results;
 - ties use competition ranking (`1, 2, 2, 4`);
-- all regions, including Full Song, must be complete before Reveal & Complete is enabled;
+- every selected region must be complete before Reveal & Complete is enabled; omitted Full Song does not block completion;
 - ranking/notes may be freely rearranged before completion;
 - after Reveal & Complete the persisted result is immutable;
 - re-evaluation requires a new Comparison Session;
@@ -327,7 +329,7 @@ For each revision/region:
 - equal averages are broken by **higher revision number** (more recent revision);
 - revision number adds no other weighting;
 - contributing session count/evidence is shown;
-- cumulative Full Song standings are required;
+- cumulative Full Song standings are derived when explicit Full Song evidence exists; omitted Full Song placeholders do not contribute evidence;
 - cumulative standings are also derived for each project region;
 - regional results do not get averaged into a replacement Full Song result.
 
@@ -341,7 +343,7 @@ The results screen shows:
 
 - completed timestamp, candidate count, and frozen Loudness Match state;
 - revealed mapping such as `A -> Revision 04`;
-- Full Song session ranking;
+- Full Song session ranking when evaluated, otherwise a clear Not Evaluated state rather than an implied user judgment;
 - real revision plus original blind identity, such as `Revision 06 (B)`;
 - clear distinction between this session's winner and the cumulative Full Song TOP revision;
 - regional tabs with revealed ranking and per-candidate notes;
@@ -528,7 +530,8 @@ Implementation/acceptance must cover at least:
 - mixed supported audio formats;
 - Loudness Match On and Off selected before start;
 - Loudness Match frozen during active comparison;
-- Full Song and custom regions with Loop On by default;
+- selected Full Song and custom regions with Loop On by default;
+- Full Song selected by default but removable from a session whose custom regions remain selected;
 - overlapping project regions;
 - region rename/edit/delete with historical snapshot preservation;
 - candidate too short for required region;
