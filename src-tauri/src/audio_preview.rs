@@ -5,6 +5,14 @@ use std::sync::Mutex;
 #[cfg(target_os = "windows")]
 use std::time::Duration;
 
+mod comparison_audio;
+pub(crate) use comparison_audio::{
+    pause as pause_comparison, play as play_comparison, prepare as prepare_comparison,
+    seek as seek_comparison, set_volume as set_comparison_volume, status as comparison_status,
+    stop as stop_comparison, switch_candidate as switch_comparison_candidate,
+    NativeComparisonAudioStatus,
+};
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NativeAudioPreviewStatus {
@@ -29,6 +37,7 @@ struct WindowsPlayback {
     relative_path: Option<String>,
     duration: Duration,
     volume: f32,
+    comparison: Option<comparison_audio::WindowsComparisonPlayback>,
 }
 
 #[cfg(target_os = "windows")]
@@ -41,6 +50,9 @@ impl WindowsPlayback {
         self.stream.take();
         self.relative_path = None;
         self.duration = Duration::ZERO;
+        if let Some(comparison) = self.comparison.take() {
+            comparison.clear();
+        }
     }
 
     fn status(&self) -> NativeAudioPreviewStatus {

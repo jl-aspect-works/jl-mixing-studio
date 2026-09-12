@@ -59,10 +59,14 @@ pub(crate) use listening_publish::{
     listening_configuration, publish_listening_copy, save_listening_configuration,
 };
 pub(super) use native_audio_preview::{
-    get_native_project_audio_preview_status, get_project_audio_waveform,
-    load_native_project_audio_preview, pause_native_project_audio_preview,
-    play_native_project_audio_preview, seek_native_project_audio_preview,
-    set_native_project_audio_preview_volume, stop_native_project_audio_preview,
+    get_native_comparison_audio_status, get_native_project_audio_preview_status,
+    get_project_audio_waveform, load_native_project_audio_preview, pause_native_comparison_audio,
+    pause_native_project_audio_preview, play_native_comparison_audio,
+    play_native_project_audio_preview, prepare_native_comparison_audio,
+    seek_native_comparison_audio, seek_native_project_audio_preview,
+    set_native_comparison_audio_volume, set_native_project_audio_preview_volume,
+    stop_native_comparison_audio, stop_native_project_audio_preview,
+    switch_native_comparison_candidate,
 };
 pub(super) use project_file_open::{
     open_project_file, prepare_project_audio_preview, reveal_project_file,

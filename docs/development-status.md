@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-11
+Last updated: 2026-09-12
 
 ## Current release
 
@@ -34,16 +34,18 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - Post-merge Studio CI run #1971 passed on that exact `main` commit.
 - #375 setup, region management, and blind session shell was approved and merged through PR #390 at `8b175bc740747d9a6bb124f7be74d70d64bfc056`.
 - Post-merge Studio CI run #1993 passed on that exact `main` commit.
+- #376 per-region ranking, ties, notes, and completion rules was approved and merged through PR #393 at `a3c8f3f7a7a101f1fd3588159e910047b0f86c08`.
+- Post-merge Studio CI run #2010 passed on that exact `main` commit.
 
 ## Active work
 
-- #376 is implementing per-region unranked pools, drag/drop and accessible ranking operations, ties with competition-rank numbering, candidate notes, No Preference, and region/session completion gates.
-- #377 and later issues remain blocked by the #376 implementation, CI, and approval gate.
+- #377 is implementing the N-way comparison playback coordinator, synchronized candidate switching, exclusive playback ownership, and region looping.
+- #378 and later issues remain blocked by the #377 implementation, CI, and approval gate.
 
 ## Remaining release work
 
-1. Complete, validate, approve, and merge #376.
-2. Implement and approve #377–#379 in locked dependency order.
+1. Complete, validate, approve, and merge #377.
+2. Implement and approve #378–#379 in locked dependency order.
 3. Complete #380 cross-platform, NAS-performance, and UX acceptance.
 4. Prepare and publish `v2.3.0` through the repository release workflow.
 
@@ -57,4 +59,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Publish the focused #376 implementation PR, complete CI and review, and do not start #377 until #376 is approved and merged.
+Publish the focused #377 implementation PR, complete CI and review, and do not start #378 until #377 is approved and merged.

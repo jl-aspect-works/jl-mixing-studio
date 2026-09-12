@@ -175,7 +175,10 @@ export function AudioPreviewPlayer({
           setCurrentTime(status.currentSeconds);
           return;
         }
-        await claimAudioPlayback(sessionId, stopOwnPlayback);
+        if (!await claimAudioPlayback(sessionId, stopOwnPlayback)) {
+          setError("Audio preview is unavailable while a comparison session is active.");
+          return;
+        }
         if (!nativeLoadedRef.current) {
           const loaded = await loadNativeProjectAudioPreview(request);
           nativeLoadedRef.current = true;
@@ -208,10 +211,13 @@ export function AudioPreviewPlayer({
         current.currentTime = pendingSeekRef.current;
         pendingSeekRef.current = null;
       }
-      await claimAudioPlayback(sessionId, () => {
+      if (!await claimAudioPlayback(sessionId, () => {
         current.pause();
         setPlaying(false);
-      });
+      })) {
+        setError("Audio preview is unavailable while a comparison session is active.");
+        return;
+      }
       await current.play();
     } catch (reason) {
       releaseAudioPlayback(sessionId);

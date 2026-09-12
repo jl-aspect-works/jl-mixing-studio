@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ComparisonCandidateAvailability, ProjectRegion } from "./models";
-import { freezeComparisonSession, formatTimestamp, parseTimestamp, shortcutCandidate } from "./session";
+import { freezeComparisonSession, formatTimestamp, parseTimestamp, shortcutCandidate, shortcutTransport } from "./session";
 
 const candidates: ComparisonCandidateAvailability[] = [
   { revisionId: "r1", revisionNumber: 1, eligible: true, reason: null, relativePath: "r1.wav" },
@@ -25,6 +25,7 @@ describe("comparison session configuration", () => {
 
     expect(session.candidates.map((candidate) => candidate.blindId)).toEqual(["A", "B", "C"]);
     expect(new Set(session.candidates.map((candidate) => candidate.revisionId))).toEqual(new Set(["r1", "r2", "r3"]));
+    expect(session.candidates.every((candidate) => candidate.relativePath.endsWith(".wav"))).toBe(true);
     expect(session.loudnessMatch).toBe(true);
     expect(Object.isFrozen(session)).toBe(true);
     expect(Object.isFrozen(session.candidates)).toBe(true);
@@ -36,5 +37,14 @@ describe("comparison session configuration", () => {
     const blind = [{ blindId: "A" }, { blindId: "Z" }];
     expect(shortcutCandidate({ key: "z", target: document.body, metaKey: false, ctrlKey: false, altKey: false }, blind)).toBe("Z");
     expect(shortcutCandidate({ key: "A", target: textarea, metaKey: false, ctrlKey: false, altKey: false }, blind)).toBeNull();
+  });
+
+  it("maps transport shortcuts while preserving text entry and modified keys", () => {
+    const textarea = document.createElement("textarea");
+    expect(shortcutTransport({ key: " ", code: "Space", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("toggle");
+    expect(shortcutTransport({ key: ",", code: "Comma", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("back");
+    expect(shortcutTransport({ key: ".", code: "Period", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("forward");
+    expect(shortcutTransport({ key: " ", code: "Space", target: textarea, metaKey: false, ctrlKey: false, altKey: false })).toBeNull();
+    expect(shortcutTransport({ key: ".", code: "Period", target: document.body, metaKey: true, ctrlKey: false, altKey: false })).toBeNull();
   });
 });

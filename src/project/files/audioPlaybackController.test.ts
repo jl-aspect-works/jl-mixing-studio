@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   claimAudioPlayback,
+  claimExclusiveAudioPlayback,
   releaseAudioPlayback,
   stopActiveAudioPlayback,
   stopAudioPlayback,
@@ -43,5 +44,17 @@ describe("audioPlaybackController", () => {
 
     await stopAudioPlayback("preview");
     expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps an exclusive comparison owner until it releases playback", async () => {
+    const stopComparison = vi.fn();
+    const stopPreview = vi.fn();
+    expect(await claimExclusiveAudioPlayback("comparison", stopComparison)).toBe(true);
+
+    expect(await claimAudioPlayback("preview", stopPreview)).toBe(false);
+    expect(stopComparison).not.toHaveBeenCalled();
+
+    releaseAudioPlayback("comparison");
+    expect(await claimAudioPlayback("preview", stopPreview)).toBe(true);
   });
 });
