@@ -1,0 +1,206 @@
+import { useMemo, useState } from "react";
+import type { ProjectSummary } from "../types";
+import { ActionIcon } from "../components/ActionIcon";
+import type {
+  CompletedComparisonCandidate,
+  CompletedComparisonRegionResult,
+  CompletedComparisonSession,
+  ComparisonResultsData,
+  CumulativeStanding,
+} from "./models";
+import { formatTimestamp } from "./session";
+import { cumulativeTopRevisionId, sessionFullSongWinner, sessionRegionWinner } from "./results";
+
+const formatDate = (value: string) => new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "short",
+}).format(new Date(value));
+
+const formatAverage = (value: number) => value.toFixed(2);
+
+const revisionLabel = (revisionNumber: number) => `Revision ${String(revisionNumber).padStart(2, "0")}`;
+const lastSession = (sessions: readonly CompletedComparisonSession[]) => sessions[sessions.length - 1] ?? null;
+
+function CandidateName({
+  candidate,
+  showBlind = true,
+}: {
+  candidate: CompletedComparisonCandidate;
+  showBlind?: boolean;
+}) {
+  return <span>{revisionLabel(candidate.revisionNumber)}{showBlind ? ` (${candidate.blindId})` : ""}</span>;
+}
+
+function RegionRanking({
+  result,
+  candidates,
+}: {
+  result: CompletedComparisonRegionResult;
+  candidates: Map<string, CompletedComparisonCandidate>;
+}) {
+  let nextRank = 1;
+  return <section className="comparison-results-region" aria-labelledby={`comparison-region-${result.region.regionId}`}>
+    <div>
+      <h4 id={`comparison-region-${result.region.regionId}`}>{result.region.name}</h4>
+      <small>{formatTimestamp(result.region.startSeconds)} - {result.region.endSeconds === null ? "End" : formatTimestamp(result.region.endSeconds)}</small>
+    </div>
+    <div className="comparison-results-ranking">
+      {result.rankRows.map((row) => {
+        const rank = nextRank;
+        nextRank += row.length;
+        return <div key={`${result.region.regionId}:${rank}`} className="comparison-results-rank-row">
+          <strong>{rank}</strong>
+          <span>{row.map((revisionId) => {
+            const candidate = candidates.get(revisionId);
+            return candidate ? <CandidateName key={revisionId} candidate={candidate} /> : <span key={revisionId}>{revisionId}</span>;
+          })}</span>
+        </div>;
+      })}
+    </div>
+    {Object.keys(result.notes).length > 0 && <div className="comparison-results-notes">
+      {Object.entries(result.notes).map(([revisionId, note]) => {
+        const candidate = candidates.get(revisionId);
+        return <p key={revisionId}><strong>{candidate ? revisionLabel(candidate.revisionNumber) : revisionId}:</strong> {note}</p>;
+      })}
+    </div>}
+  </section>;
+}
+
+function StandingsTable({
+  title,
+  standings,
+  topRevisionId,
+}: {
+  title: string;
+  standings: readonly CumulativeStanding[];
+  topRevisionId?: string | null;
+}) {
+  return <section className="comparison-results-standings" aria-labelledby={`${title.replace(/\W+/g, "-").toLowerCase()}-title`}>
+    <h4 id={`${title.replace(/\W+/g, "-").toLowerCase()}-title`}>{title}</h4>
+    {standings.length === 0 ? <p className="comparison-placeholder">No cumulative evidence yet.</p> : <table>
+      <thead><tr><th>Rank</th><th>Revision</th><th>Avg</th><th>Sessions</th><th>Status</th></tr></thead>
+      <tbody>{standings.map((standing, index) => <tr key={standing.revisionId}>
+        <td>{index + 1}</td>
+        <td>{revisionLabel(standing.revisionNumber)}</td>
+        <td>{formatAverage(standing.averagePlacement)}</td>
+        <td>{standing.contributingSessions}</td>
+        <td>{standing.revisionId === topRevisionId ? <span className="comparison-top-pill">TOP</span> : ""}</td>
+      </tr>)}</tbody>
+    </table>}
+  </section>;
+}
+
+export function ComparisonResults({
+  project,
+  results,
+  selectedSession,
+  onBack,
+  onOpenRevision,
+  onApproveRevision,
+  onDeleteSession,
+  onClearHistory,
+  busy = false,
+  error = null,
+}: {
+  project: ProjectSummary;
+  results: ComparisonResultsData;
+  selectedSession: CompletedComparisonSession | null;
+  onBack: () => void;
+  onOpenRevision: (revisionNumber: number) => void;
+  onApproveRevision: (revisionNumber: number) => void;
+  onDeleteSession: (sessionId: string) => void;
+  onClearHistory: () => void;
+  busy?: boolean;
+  error?: string | null;
+}) {
+  const [deleteTarget, setDeleteTarget] = useState<CompletedComparisonSession | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [activeSessionId, setActiveSessionId] = useState(selectedSession?.sessionId ?? lastSession(results.document.completedSessions)?.sessionId ?? null);
+  const activeSession = results.document.completedSessions.find((session) => session.sessionId === activeSessionId)
+    ?? selectedSession
+    ?? lastSession(results.document.completedSessions)
+    ?? null;
+  const candidates = useMemo(() => new Map<string, CompletedComparisonCandidate>(activeSession?.candidates.map((candidate) => [candidate.revisionId, candidate]) ?? []), [activeSession]);
+  const topRevisionId = cumulativeTopRevisionId(results.fullSongStandings);
+  const sessionWinnerId = activeSession ? sessionFullSongWinner(activeSession) ?? sessionRegionWinner(activeSession.regions[0]) : null;
+  const sessionWinner = sessionWinnerId ? candidates.get(sessionWinnerId) ?? null : null;
+  const cumulativeTop = topRevisionId ? results.fullSongStandings.find((standing) => standing.revisionId === topRevisionId) ?? null : null;
+
+  return <section className="comparison-results" aria-labelledby="comparison-results-title">
+    <header className="comparison-screen-header comparison-results-header">
+      <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-results-title">Comparison Results</h2><p>{project.projectName}</p></div>
+      <div className="comparison-session-facts"><span>{results.document.completedSessions.length} completed sessions</span><button type="button" className="secondary" onClick={onBack}><ActionIcon name="back" />Back to Revision History</button></div>
+    </header>
+    {error && <div className="inline-notice error" role="alert">{error}</div>}
+
+    {activeSession ? <div className="comparison-results-grid">
+      <section className="panel comparison-results-summary" aria-labelledby="comparison-session-result-title">
+        <h3 id="comparison-session-result-title">Revealed Session</h3>
+        <dl>
+          <div><dt>Completed</dt><dd>{formatDate(activeSession.completedAt)}</dd></div>
+          <div><dt>Candidates</dt><dd>{activeSession.candidates.length}</dd></div>
+          <div><dt>Loudness Match</dt><dd>{activeSession.loudnessMatch ? "ON" : "OFF"}</dd></div>
+          <div><dt>Session winner</dt><dd>{sessionWinner ? <CandidateName candidate={sessionWinner} /> : "No Full Song winner"}</dd></div>
+          <div><dt>Cumulative TOP</dt><dd>{cumulativeTop ? revisionLabel(cumulativeTop.revisionNumber) : "No Full Song evidence"}</dd></div>
+        </dl>
+        <div className="comparison-revealed-map" aria-label="Revealed blind mapping">
+          {activeSession.candidates.map((candidate) => <span key={candidate.revisionId}><strong>{candidate.blindId}</strong> {"->"} {revisionLabel(candidate.revisionNumber)}</span>)}
+        </div>
+        {activeSession.loudnessMatch && <div className="comparison-loudness-table">
+          <h4>Loudness Match Details</h4>
+          <table><thead><tr><th>Revision</th><th>LUFS</th><th>Gain</th></tr></thead><tbody>
+            {activeSession.candidates.map((candidate) => <tr key={candidate.revisionId}>
+              <td><CandidateName candidate={candidate} /></td>
+              <td>{candidate.integratedLufs === null ? "n/a" : candidate.integratedLufs.toFixed(2)}</td>
+              <td>{candidate.appliedGainDb === null ? "n/a" : `${candidate.appliedGainDb.toFixed(2)} dB`}</td>
+            </tr>)}
+          </tbody></table>
+        </div>}
+        {sessionWinner && <div className="comparison-results-actions">
+          <button type="button" className="secondary" onClick={() => onOpenRevision(sessionWinner.revisionNumber)}><ActionIcon name="open" />Open Preferred Revision</button>
+          <button type="button" className="secondary" onClick={() => onApproveRevision(sessionWinner.revisionNumber)}><ActionIcon name="check" />Approve Preferred Revision</button>
+        </div>}
+      </section>
+
+      <section className="panel comparison-results-regions-panel" aria-labelledby="comparison-region-results-title">
+        <h3 id="comparison-region-results-title">By Region Results</h3>
+        {activeSession.regions.map((result) => <RegionRanking key={result.region.regionId} result={result} candidates={candidates} />)}
+      </section>
+
+      <section className="panel comparison-results-cumulative-panel" aria-labelledby="comparison-cumulative-title">
+        <h3 id="comparison-cumulative-title">Cumulative Results</h3>
+        <StandingsTable title="Full Song Standings" standings={results.fullSongStandings} topRevisionId={topRevisionId} />
+        {results.regionalStandings.filter((region) => region.region.regionId !== "full-song").map((region) =>
+          <StandingsTable key={region.region.regionId} title={`${region.region.name} Standings`} standings={region.standings} />,
+        )}
+      </section>
+
+      <section className="panel comparison-results-history" aria-labelledby="comparison-session-history-title">
+        <h3 id="comparison-session-history-title">Completed Sessions</h3>
+        {results.document.completedSessions.map((session) => <button key={session.sessionId} type="button" className={session.sessionId === activeSession.sessionId ? "active" : "secondary"} onClick={() => setActiveSessionId(session.sessionId)}>
+          {formatDate(session.completedAt)} - {session.candidates.length} candidates
+        </button>)}
+        {deleteTarget && <div className="inline-notice warning comparison-delete-confirmation" role="alertdialog" aria-label="Delete completed comparison session">
+          <span>Delete this completed comparison session? Cumulative standings and TOP will be recomputed.</span>
+          <span><button type="button" className="secondary" onClick={() => setDeleteTarget(null)}>Keep Session</button><button type="button" className="danger" disabled={busy} onClick={() => { onDeleteSession(deleteTarget.sessionId); setDeleteTarget(null); }}><ActionIcon name="delete" />Delete Session</button></span>
+        </div>}
+        <div className="comparison-history-actions">
+          <button type="button" className="danger secondary" disabled={busy || !activeSession} onClick={() => setDeleteTarget(activeSession)}><ActionIcon name="delete" />Delete This Session</button>
+          <button type="button" className="danger secondary" disabled={busy || results.document.completedSessions.length === 0} onClick={() => setConfirmClear(true)}><ActionIcon name="delete" />Clear Ranking History</button>
+        </div>
+        {confirmClear && <div className="inline-notice warning comparison-clear-confirmation" role="alertdialog" aria-label="Clear ranking history">
+          <div>
+            <strong>Clear all blind comparison ranking history for this project?</strong>
+            <p>This permanently removes all completed comparison sessions, rankings, blind mappings, and comparison notes for this project.</p>
+            <p>Cumulative Full Song and regional standings will be cleared, and the TOP indicator will be removed.</p>
+            <p>Revision audio, approval/delivery status, and project region definitions will not be changed.</p>
+          </div>
+          <span><button type="button" className="secondary" onClick={() => setConfirmClear(false)}>Cancel</button><button type="button" className="danger" disabled={busy} onClick={() => { onClearHistory(); setConfirmClear(false); }}><ActionIcon name="delete" />Clear Ranking History</button></span>
+        </div>}
+      </section>
+    </div> : <section className="empty-state">
+      <h3>No completed comparisons</h3>
+      <p>Completed blind comparison sessions will appear here after reveal.</p>
+    </section>}
+  </section>;
+}

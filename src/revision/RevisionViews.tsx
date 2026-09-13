@@ -11,6 +11,8 @@ import type {
 import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import { ActionIcon } from "../components/ActionIcon";
 import { ComparisonFlow } from "../comparison";
+import { getComparisonResults } from "../comparison/comparisonService";
+import type { CumulativeStanding } from "../comparison/models";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
 import type { ProjectShellView } from "../project/ProjectView";
@@ -48,11 +50,15 @@ export function RevisionBadges({
   number,
   historicallyApproved,
   lifecycle = "open",
+  top = false,
+  onTopClick,
 }: {
   project: ProjectSummary;
   number: number;
   historicallyApproved: boolean;
   lifecycle?: "open" | "closed";
+  top?: boolean;
+  onTopClick?: () => void;
 }) {
   const badges: Array<[string, string]> = [];
   if (number === project.currentRevision) badges.push(["Current", "current"]);
@@ -62,6 +68,9 @@ export function RevisionBadges({
   if (historicallyApproved && number !== project.approvedRevision) badges.push(["Previously approved", "approved"]);
   if (badges.length === 0 && number < project.currentRevision) badges.push(["Superseded", ""]);
   return <span className="revision-badges">
+    {top && (onTopClick
+      ? <button type="button" className="revision-badge top clickable" onClick={onTopClick} title="Open cumulative blind comparison results">TOP</button>
+      : <span className="revision-badge top">TOP</span>)}
     {badges.map(([label, className]) => <span key={label} className={`revision-badge ${className}`}>{label}</span>)}
   </span>;
 }
@@ -145,7 +154,9 @@ export function RevisionsView({
   const [mutationBusy, setMutationBusy] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [mutationNotice, setMutationNotice] = useState<string | null>(null);
-  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [comparisonOpen, setComparisonOpen] = useState<"setup" | "results" | null>(null);
+  const [comparisonStandings, setComparisonStandings] = useState<CumulativeStanding[]>([]);
+  const [comparisonSessionCount, setComparisonSessionCount] = useState(0);
 
   useEffect(() => { notesRef.current = notes; }, [notes]);
   useEffect(() => { notesBusyRef.current = notesBusy; }, [notesBusy]);
@@ -214,6 +225,19 @@ export function RevisionsView({
     () => addWorkspaceRefreshListener(() => { void loadRevisionNotes(true, false); }),
     [loadRevisionNotes],
   );
+
+  const loadComparisonStandings = useCallback(async () => {
+    try {
+      const results = await getComparisonResults({ clientId: client.clientId, projectId: project.projectId });
+      setComparisonStandings(results.fullSongStandings);
+      setComparisonSessionCount(results.document.completedSessions.length);
+    } catch {
+      setComparisonStandings([]);
+      setComparisonSessionCount(0);
+    }
+  }, [client.clientId, project.projectId]);
+
+  useEffect(() => { void loadComparisonStandings(); }, [loadComparisonStandings]);
 
   const saveDescription = async () => {
     if (!selected) return;
@@ -335,14 +359,31 @@ export function RevisionsView({
   })();
 
   if (comparisonOpen) {
-    return <ComparisonFlow client={client} project={project} onClose={() => setComparisonOpen(false)} />;
+    return <ComparisonFlow
+      client={client}
+      project={project}
+      initialView={comparisonOpen}
+      onClose={() => {
+        setComparisonOpen(null);
+        void loadComparisonStandings();
+      }}
+      onOpenRevision={(revisionNumber) => setSelectedNumber(revisionNumber)}
+      onApproveRevision={(revisionNumber) => {
+        const revision = revisions.find((item) => item.number === revisionNumber);
+        if (revision) {
+          setSelectedNumber(revisionNumber);
+          onApprove(revision);
+        }
+      }}
+    />;
   }
+  const topRevisionId = comparisonStandings[0]?.revisionId ?? null;
 
   return <>
     <ProjectNavigationBar
       active="revisions"
       onSelect={onSelectView}
-      actions={<><button type="button" className="secondary" onClick={() => setComparisonOpen(true)} disabled={revisions.length < 2 || loading} title={revisions.length < 2 ? "Create at least two revisions before starting a comparison." : "Compare two or more normal revisions without seeing their identities."}><ActionIcon name="add" />New Comparison</button><button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button></>}
+      actions={<><button type="button" className="secondary" onClick={() => setComparisonOpen("results")} disabled={comparisonSessionCount === 0 || loading} title={comparisonSessionCount === 0 ? "Complete a blind comparison before viewing results." : "Open cumulative blind comparison results."}><ActionIcon name="search" />Comparison Results</button><button type="button" className="secondary" onClick={() => setComparisonOpen("setup")} disabled={revisions.length < 2 || loading} title={revisions.length < 2 ? "Create at least two revisions before starting a comparison." : "Compare two or more normal revisions without seeing their identities."}><ActionIcon name="add" />New Comparison</button><button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button></>}
     />
 
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}
@@ -364,7 +405,7 @@ export function RevisionsView({
             >
               <span className="revision-history-title">
                 <strong>Revision {String(revision.number).padStart(2, "0")}</strong>
-                <RevisionBadges project={project} number={revision.number} lifecycle={lifecycleOf(revision)} historicallyApproved={revision.approvedAt !== null} />
+                <RevisionBadges project={project} number={revision.number} lifecycle={lifecycleOf(revision)} historicallyApproved={revision.approvedAt !== null} top={revision.revisionId === topRevisionId} />
               </span>
               <span className="revision-history-description">{revision.description}</span>
               <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
@@ -384,7 +425,7 @@ export function RevisionsView({
               </div>
               <div className="revision-detail-heading-actions">
                 <span className="revision-badges">
-                  <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} />
+                  <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} top={selected.revisionId === topRevisionId} onTopClick={() => setComparisonOpen("results")} />
                   <RevisionListeningBadge summary={listeningSummary} />
                 </span>
                 {(!selectedApproved || !selectedDelivered) && <button

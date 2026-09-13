@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import { ComparisonPlaybackSession, type ComparisonPlaybackSnapshot } from "./comparisonPlaybackService";
 import { ComparisonRanking } from "./ComparisonRanking";
-import type { FrozenComparisonSession } from "./models";
+import type { CompletedComparisonSession, FrozenComparisonSession } from "./models";
 import { initialRanking, moveCandidate, rankingDestinationForSlot, rankingIsComplete, shortcutRank, type CandidateRanking } from "./ranking";
+import { completedCandidatesFromSession, completedRegionResultsFromRankings } from "./results";
 import { formatTimestamp, shortcutCandidate, shortcutTransport } from "./session";
 
 export function ComparisonWorkspace({
@@ -11,11 +12,13 @@ export function ComparisonWorkspace({
   projectId,
   session,
   onCancel,
+  onComplete,
 }: {
   clientId: string;
   projectId: string;
   session: FrozenComparisonSession;
   onCancel: () => void;
+  onComplete: (session: CompletedComparisonSession) => Promise<void>;
 }) {
   const [activeCandidate, setActiveCandidate] = useState(session.candidates[0].blindId);
   const [activeRegion, setActiveRegion] = useState(session.regions[0].regionId);
@@ -25,7 +28,8 @@ export function ComparisonWorkspace({
   const [completedRegions, setCompletedRegions] = useState<ReadonlySet<string>>(() => new Set());
   const [dirty, setDirty] = useState(false);
   const [cancelConfirmation, setCancelConfirmation] = useState(false);
-  const [completionNotice, setCompletionNotice] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
+  const [completionBusy, setCompletionBusy] = useState(false);
   const [playback, setPlayback] = useState<ComparisonPlaybackSnapshot | null>(null);
   const [playbackBusy, setPlaybackBusy] = useState(true);
   const [playbackError, setPlaybackError] = useState<{ candidateId: string; message: string } | null>(null);
@@ -209,7 +213,7 @@ export function ComparisonWorkspace({
       updated.delete(activeRegion);
       return updated;
     });
-    setCompletionNotice(false);
+    setCompletionError(null);
     setDirty(true);
   }, [activeRegion]);
 
@@ -217,6 +221,30 @@ export function ComparisonWorkspace({
     if (!rankingIsComplete(ranking)) return;
     setCompletedRegions((current) => new Set(current).add(activeRegion));
     setDirty(true);
+  };
+
+  const complete = async () => {
+    if (!allRegionsComplete || completionBusy) return;
+    setCompletionBusy(true);
+    setCompletionError(null);
+    try {
+      await playbackSessionRef.current?.pause();
+      const completed = await onComplete({
+        sessionId: "",
+        completedAt: "",
+        candidates: completedCandidatesFromSession(session),
+        regions: completedRegionResultsFromRankings(session, rankings, notes),
+        loudnessMatch: session.loudnessMatch,
+      });
+      setDirty(false);
+      await playbackSessionRef.current?.dispose();
+      playbackSessionRef.current = null;
+      return completed;
+    } catch (error) {
+      setCompletionError(error instanceof Error ? error.message : "Comparison results could not be saved.");
+    } finally {
+      setCompletionBusy(false);
+    }
   };
 
   useEffect(() => {
@@ -282,8 +310,8 @@ export function ComparisonWorkspace({
       <ComparisonRanking candidateIds={session.candidates.map((candidate) => candidate.blindId)} ranking={ranking} activeCandidate={activeCandidate} onSelectCandidate={(candidateId) => void chooseCandidate(candidateId)} onChange={updateRanking} />
       <section className="panel" aria-labelledby="comparison-notes-title"><h3 id="comparison-notes-title">Candidate notes</h3><label>Candidate {activeCandidate}<textarea aria-label={`Notes for Candidate ${activeCandidate}`} value={notes[noteKey] ?? ""} onChange={(event) => { setNotes((current) => ({ ...current, [noteKey]: event.target.value })); setDirty(true); }} placeholder="Listening notes for this candidate and region" /></label><small>Notes stay attached to this candidate and region when rankings move.</small></section>
     </div>
-    {completionNotice && <div className="inline-notice" role="status">All regions are complete. Reveal and persistence are provided by the later results workflow.</div>}
-    <footer className="comparison-workspace-footer"><span>{session.regions.length} regions · {completedCount} complete · {ranking.unranked.length} unranked · Loop {loop ? "On" : "Off"}</span><span className="comparison-workspace-actions"><button type="button" disabled={!rankingIsComplete(ranking) || completedRegions.has(activeRegion)} onClick={markRegionComplete}><ActionIcon name="check" />{completedRegions.has(activeRegion) ? "Region Complete" : "Mark Region Complete"}</button><button type="button" disabled={!allRegionsComplete} onClick={() => setCompletionNotice(true)}><ActionIcon name="check" />Reveal &amp; Complete Comparison</button></span></footer>
+    {completionError && <div className="inline-notice error" role="alert">{completionError}</div>}
+    <footer className="comparison-workspace-footer"><span>{session.regions.length} regions - {completedCount} complete - {ranking.unranked.length} unranked - Loop {loop ? "On" : "Off"}</span><span className="comparison-workspace-actions"><button type="button" disabled={!rankingIsComplete(ranking) || completedRegions.has(activeRegion) || completionBusy} onClick={markRegionComplete}><ActionIcon name="check" />{completedRegions.has(activeRegion) ? "Region Complete" : "Mark Region Complete"}</button><button type="button" disabled={!allRegionsComplete || completionBusy} onClick={() => void complete()}><ActionIcon name="check" />{completionBusy ? "Saving Results..." : "Reveal & Complete Comparison"}</button></span></footer>
   </section>;
 }
 

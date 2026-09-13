@@ -9,7 +9,7 @@ export type ProjectRegion = {
 export type ComparisonDocument = {
   schemaVersion: number;
   regions: ProjectRegion[];
-  completedSessions: unknown[];
+  completedSessions: CompletedComparisonSession[];
 };
 
 export type ComparisonCandidateAvailability = {
@@ -37,6 +37,65 @@ export type FrozenComparisonCandidate = {
 export type FrozenComparisonSession = {
   candidates: readonly FrozenComparisonCandidate[];
   regions: readonly ProjectRegion[];
+  loudnessMatch: boolean;
+};
+
+export type CompletedComparisonCandidate = {
+  revisionId: string;
+  revisionNumber: number;
+  blindId: string;
+  integratedLufs: number | null;
+  appliedGainDb: number | null;
+};
+
+export type CompletedRegionSnapshot = {
+  regionId: string;
+  name: string;
+  startSeconds: number;
+  endSeconds: number | null;
+};
+
+export type CompletedComparisonRegionResult = {
+  region: CompletedRegionSnapshot;
+  rankRows: string[][];
+  notes: Record<string, string>;
+};
+
+export type CompletedComparisonSession = {
+  sessionId: string;
+  completedAt: string;
+  candidates: CompletedComparisonCandidate[];
+  regions: CompletedComparisonRegionResult[];
+  loudnessMatch: boolean;
+};
+
+export type CumulativeStanding = {
+  revisionId: string;
+  revisionNumber: number;
+  averagePlacement: number;
+  contributingSessions: number;
+};
+
+export type RegionalCumulativeStandings = {
+  region: CompletedRegionSnapshot;
+  standings: CumulativeStanding[];
+};
+
+export type ComparisonResultsData = {
+  document: ComparisonDocument;
+  fullSongStandings: CumulativeStanding[];
+  regionalStandings: RegionalCumulativeStandings[];
+};
+
+export type CompleteComparisonSessionRequest = {
+  clientId: string;
+  projectId: string;
+  candidates: CompletedComparisonCandidate[];
+  regions: {
+    region: CompletedRegionSnapshot;
+    rankRows: string[][];
+    notes: Record<string, string>;
+  }[];
   loudnessMatch: boolean;
 };
 

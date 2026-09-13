@@ -146,6 +146,17 @@
 .revision-history-item { padding: 8px 10px; flex: 0 0 auto; }
 .revision-history-footer { padding: 6px 10px; }
 .revision-history-footer button { min-height: 28px !important; }
+.revision-badge.top {
+  border-color: #3157c4;
+  background: #3157c4;
+  color: #fff;
+}
+.revision-badge.top.clickable {
+  cursor: pointer;
+}
+.revision-badge.top.clickable:hover {
+  filter: brightness(.95);
+}
 .revisions-workspace { gap: 10px; margin-bottom: 9px; }
 .revision-files-heading { padding-top: 9px; }
 .revision-files { margin-top: 7px; }

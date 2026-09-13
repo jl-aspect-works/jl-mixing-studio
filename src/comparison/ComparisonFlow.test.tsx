@@ -3,13 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ClientSummary, ProjectSummary } from "../types";
 import { ComparisonFlow } from "./ComparisonFlow";
 import { ComparisonWorkspace } from "./ComparisonWorkspace";
-import type { ComparisonSetupData, FrozenComparisonSession } from "./models";
+import type { CompletedComparisonSession, ComparisonResultsData, ComparisonSetupData, FrozenComparisonSession } from "./models";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   add: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  results: vi.fn(),
+  complete: vi.fn(),
+  deleteSession: vi.fn(),
+  clearHistory: vi.fn(),
   analyzeLoudness: vi.fn(),
   waveform: vi.fn(),
   playbackPrepare: vi.fn(),
@@ -29,6 +33,10 @@ vi.mock("./comparisonService", () => ({
   addComparisonRegion: mocks.add,
   updateComparisonRegion: mocks.update,
   deleteComparisonRegion: mocks.remove,
+  getComparisonResults: mocks.results,
+  completeComparisonSession: mocks.complete,
+  deleteComparisonSession: mocks.deleteSession,
+  clearComparisonHistory: mocks.clearHistory,
   analyzeComparisonLoudness: mocks.analyzeLoudness,
 }));
 
@@ -78,6 +86,10 @@ beforeEach(() => {
   mocks.add.mockReset();
   mocks.update.mockReset();
   mocks.remove.mockReset();
+  mocks.results.mockReset();
+  mocks.complete.mockReset();
+  mocks.deleteSession.mockReset();
+  mocks.clearHistory.mockReset();
   mocks.analyzeLoudness.mockReset().mockResolvedValue({
     candidates: [
       { revisionId: "r1", revisionNumber: 1, relativePath: "04_Revisions/Revision_01/mix.wav", integratedLufs: -18, appliedGainDb: 0, cacheState: "analyzed" },
@@ -278,8 +290,58 @@ const frozen: FrozenComparisonSession = {
   loudnessMatch: false,
 };
 
-const workspace = (session: FrozenComparisonSession = frozen, onCancel = vi.fn()) =>
-  <ComparisonWorkspace clientId="c1" projectId="p1" session={session} onCancel={onCancel} />;
+const completedSession: CompletedComparisonSession = {
+  sessionId: "session-1",
+  completedAt: "2026-01-02T03:04:05Z",
+  candidates: [
+    { revisionId: "r1", revisionNumber: 1, blindId: "A", integratedLufs: -18.2, appliedGainDb: 0 },
+    { revisionId: "r2", revisionNumber: 2, blindId: "B", integratedLufs: -16.2, appliedGainDb: -2 },
+  ],
+  regions: [
+    {
+      region: { regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null },
+      rankRows: [["r1"], ["r2"]],
+      notes: { r1: "More balanced" },
+    },
+    {
+      region: { regionId: "chorus", name: "Chorus", startSeconds: 45, endSeconds: 75 },
+      rankRows: [["r2"], ["r1"]],
+      notes: {},
+    },
+  ],
+  loudnessMatch: true,
+};
+
+const comparisonResults = (session: CompletedComparisonSession = completedSession): ComparisonResultsData => ({
+  document: {
+    schemaVersion: 1,
+    regions: setup.document.regions,
+    completedSessions: [session],
+  },
+  fullSongStandings: [
+    { revisionId: "r2", revisionNumber: 2, averagePlacement: 1, contributingSessions: 2 },
+    { revisionId: "r1", revisionNumber: 1, averagePlacement: 1.5, contributingSessions: 2 },
+  ],
+  regionalStandings: [
+    {
+      region: { regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null },
+      standings: [
+        { revisionId: "r2", revisionNumber: 2, averagePlacement: 1, contributingSessions: 2 },
+        { revisionId: "r1", revisionNumber: 1, averagePlacement: 1.5, contributingSessions: 2 },
+      ],
+    },
+    {
+      region: { regionId: "chorus", name: "Chorus", startSeconds: 45, endSeconds: 75 },
+      standings: [
+        { revisionId: "r2", revisionNumber: 2, averagePlacement: 1, contributingSessions: 1 },
+        { revisionId: "r1", revisionNumber: 1, averagePlacement: 2, contributingSessions: 1 },
+      ],
+    },
+  ],
+});
+
+const workspace = (session: FrozenComparisonSession = frozen, onCancel = vi.fn(), onComplete = vi.fn().mockResolvedValue(undefined)) =>
+  <ComparisonWorkspace clientId="c1" projectId="p1" session={session} onCancel={onCancel} onComplete={onComplete} />;
 
 describe("blind comparison workspace shell", () => {
   it("stacks the icon transport above the blind candidate selector", () => {
@@ -451,7 +513,7 @@ describe("blind comparison workspace shell", () => {
 
     fireEvent.keyDown(document.body, { key: "ArrowLeft", code: "ArrowLeft" });
     await waitFor(() => expect(mocks.playbackSwitch).toHaveBeenLastCalledWith("A"));
-    expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument());
 
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
     fireEvent.keyDown(notes, { key: "ArrowRight", code: "ArrowRight" });
@@ -502,6 +564,73 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Move to Unranked" }));
     expect(reveal).toBeDisabled();
     expect(screen.getByRole("button", { name: "Verse Active" })).toBeInTheDocument();
+  });
+
+  it("persists revealed rankings with real revision identities", async () => {
+    const onComplete = vi.fn().mockResolvedValue(undefined);
+    render(workspace({
+      ...frozen,
+      candidates: [
+        { ...frozen.candidates[0], integratedLufs: -18.2, appliedGainDb: 0 },
+        { ...frozen.candidates[1], integratedLufs: -16.2, appliedGainDb: -2 },
+      ],
+      loudnessMatch: true,
+    }, vi.fn(), onComplete));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Play" })).toBeEnabled());
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Notes for Candidate A" }), { target: { value: "More balanced" } });
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate A"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 1" }));
+    fireEvent.contextMenu(screen.getByTitle("Select Candidate B"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Place in slot 2" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark Region Complete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reveal & Complete Comparison" }));
+
+    await waitFor(() => expect(onComplete).toHaveBeenCalledOnce());
+    expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({
+      candidates: [
+        { revisionId: "r1", revisionNumber: 1, blindId: "A", integratedLufs: -18.2, appliedGainDb: 0 },
+        { revisionId: "r2", revisionNumber: 2, blindId: "B", integratedLufs: -16.2, appliedGainDb: -2 },
+      ],
+      regions: [expect.objectContaining({
+        region: expect.objectContaining({ regionId: "full-song", name: "Full Song" }),
+        rankRows: [["r1"], ["r2"]],
+        notes: { r1: "More balanced" },
+      })],
+      loudnessMatch: true,
+    }));
+    expect(mocks.playbackPause).toHaveBeenCalled();
+    expect(mocks.playbackDispose).toHaveBeenCalled();
+  });
+
+  it("reveals completed results, separates session winner from cumulative TOP, and supports history actions", async () => {
+    mocks.results.mockResolvedValue(comparisonResults());
+    mocks.deleteSession.mockResolvedValue(comparisonResults({ ...completedSession, sessionId: "session-2" }));
+    mocks.clearHistory.mockResolvedValue({ ...comparisonResults(), document: { ...comparisonResults().document, completedSessions: [] }, fullSongStandings: [], regionalStandings: [] });
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} initialView="results" />);
+
+    expect(await screen.findByRole("heading", { name: "Revealed Session" })).toBeInTheDocument();
+    expect(screen.getByText("A")).toBeInTheDocument();
+    expect(screen.getAllByText("Revision 01").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Revision 01 (A)").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Revision 02").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Revision 02 (B)").length).toBeGreaterThan(0);
+    expect(screen.getByText("-18.20")).toBeInTheDocument();
+    expect(screen.getByText("-2.00 dB")).toBeInTheDocument();
+    expect(screen.getByText("Full Song Standings")).toBeInTheDocument();
+    expect(screen.getByText("Chorus Standings")).toBeInTheDocument();
+    expect(screen.getByText("More balanced")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete This Session" }));
+    expect(screen.getByRole("alertdialog", { name: "Delete completed comparison session" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete Session" }));
+    await waitFor(() => expect(mocks.deleteSession).toHaveBeenCalledWith({ clientId: "c1", projectId: "p1", sessionId: "session-1" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear Ranking History" }));
+    expect(screen.getByRole("alertdialog", { name: "Clear ranking history" })).toBeInTheDocument();
+    const clearButtons = screen.getAllByRole("button", { name: "Clear Ranking History" });
+    fireEvent.click(clearButtons[clearButtons.length - 1]);
+    await waitFor(() => expect(mocks.clearHistory).toHaveBeenCalledWith({ clientId: "c1", projectId: "p1" }));
   });
 
   it("pauses on a runtime candidate failure and requires Retry or Cancel", async () => {
