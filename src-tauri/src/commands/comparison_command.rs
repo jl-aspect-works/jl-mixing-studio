@@ -2,7 +2,7 @@ use super::project_files::is_audio_extension;
 use super::{find_project_summary, resolve_workspace_root, validated_project_directory};
 use crate::comparison_loudness::{self, LoudnessAnalysisInput};
 use crate::models::comparison::{
-    self, CompletedCandidate, CompletedRegionResult, CompletedSession, ComparisonDocument,
+    self, ComparisonDocument, CompletedCandidate, CompletedRegionResult, CompletedSession,
     CumulativeStanding, ProjectRegion, RegionSnapshot, FULL_SONG_REGION_ID,
 };
 use crate::workspace;
