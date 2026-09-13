@@ -277,7 +277,8 @@ pub(crate) fn set_volume(
             comparison.volume = volume.clamp(0.0, 1.0);
             for (blind_id, player) in &comparison.players {
                 player.set_volume(
-                    comparison.volume * comparison.match_gains.get(blind_id).copied().unwrap_or(1.0),
+                    comparison.volume
+                        * comparison.match_gains.get(blind_id).copied().unwrap_or(1.0),
                 );
             }
             Ok(comparison.status(false))

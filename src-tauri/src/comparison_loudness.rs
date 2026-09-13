@@ -73,14 +73,11 @@ fn analyze_project_candidates_with(
     let mut analyzed = Vec::with_capacity(inputs.len());
     for input in inputs {
         let source = source_identity(&input.path)?;
-        let cached = cache
-            .entries
-            .iter()
-            .find(|entry| {
-                entry.revision_id == input.revision_id
-                    && entry.relative_path == input.relative_path
-                    && entry.source == source
-            });
+        let cached = cache.entries.iter().find(|entry| {
+            entry.revision_id == input.revision_id
+                && entry.relative_path == input.relative_path
+                && entry.source == source
+        });
         let (integrated_lufs, cache_state) = if let Some(entry) = cached {
             (entry.integrated_lufs, LoudnessCacheState::Reused)
         } else {
@@ -110,13 +107,17 @@ fn analyze_project_candidates_with(
     Ok(analyzed)
 }
 
-fn apply_attenuation_only_gains(candidates: &mut [LoudnessAnalysisCandidate]) -> Result<(), String> {
+fn apply_attenuation_only_gains(
+    candidates: &mut [LoudnessAnalysisCandidate],
+) -> Result<(), String> {
     let quietest = candidates
         .iter()
         .map(|candidate| candidate.integrated_lufs)
         .filter(|value| value.is_finite())
         .min_by(f64::total_cmp)
-        .ok_or_else(|| "Loudness Match could not identify a valid reference candidate".to_owned())?;
+        .ok_or_else(|| {
+            "Loudness Match could not identify a valid reference candidate".to_owned()
+        })?;
     for candidate in candidates {
         candidate.applied_gain_db = (quietest - candidate.integrated_lufs).min(0.0);
     }
@@ -155,7 +156,8 @@ fn analyze_integrated_loudness(path: &Path) -> Result<f64, String> {
     let gated_power = if channels == 1 {
         bs1770::gated_mean(channel_power[0].as_ref())
     } else {
-        let stereo_power = bs1770::reduce_stereo(channel_power[0].as_ref(), channel_power[1].as_ref());
+        let stereo_power =
+            bs1770::reduce_stereo(channel_power[0].as_ref(), channel_power[1].as_ref());
         bs1770::gated_mean(stereo_power.as_ref())
     };
     Ok(round_db(f64::from(gated_power.loudness_lkfs())))
@@ -189,7 +191,11 @@ fn sampled_fingerprint(path: &Path, size: u64) -> Result<String, String> {
     let offsets = if size <= SAMPLE_BYTES {
         vec![0]
     } else {
-        vec![0, size.saturating_sub(SAMPLE_BYTES) / 2, size.saturating_sub(SAMPLE_BYTES)]
+        vec![
+            0,
+            size.saturating_sub(SAMPLE_BYTES) / 2,
+            size.saturating_sub(SAMPLE_BYTES),
+        ]
     };
     for offset in offsets {
         file.seek(SeekFrom::Start(offset))
@@ -316,7 +322,11 @@ mod tests {
         };
         let analyzer = |path: &Path| {
             calls.set(calls.get() + 1);
-            Ok(if path.ends_with("a.wav") { -18.0 } else { -15.0 })
+            Ok(if path.ends_with("a.wav") {
+                -18.0
+            } else {
+                -15.0
+            })
         };
 
         let first = analyze_project_candidates_with(temp.path(), inputs(), analyzer).unwrap();

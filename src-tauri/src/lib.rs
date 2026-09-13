@@ -1,9 +1,9 @@
 mod audio_preview;
 mod automation_api;
 mod cli;
-mod comparison_loudness;
 mod client_edit;
 mod commands;
+mod comparison_loudness;
 mod derived;
 mod diagnostic_log;
 mod intake;
@@ -17,21 +17,23 @@ mod workspace;
 
 use commands::{
     add_comparison_region, add_project_reference, analyze_comparison_loudness,
-    choose_workspace_folder,
-    delete_comparison_region, delete_project_file, delete_project_reference, delete_revision_file,
-    discover_default_workspace, get_comparison_setup, get_delivery_notes, get_jl_mixing_version,
+    choose_workspace_folder, delete_comparison_region, delete_project_file,
+    delete_project_reference, delete_revision_file, discover_default_workspace,
+    get_comparison_setup, get_delivery_notes, get_jl_mixing_version,
     get_native_comparison_audio_status, get_native_project_audio_preview_status,
-    get_project_audio_waveform, get_revision_notes, get_system_info, get_workspace_configuration,
-    list_project_files, load_native_project_audio_preview, open_folder, open_project_file,
-    pause_native_comparison_audio, pause_native_project_audio_preview,
-    play_native_comparison_audio, play_native_project_audio_preview,
-    prepare_native_comparison_audio, prepare_project_audio_preview, rename_project_file,
-    rename_revision_file, resolve_folder, reveal_project_file, seek_native_comparison_audio,
+    get_project_audio_waveform, get_revision_notes, get_system_info,
+    get_workspace_configuration, list_project_files, load_native_project_audio_preview,
+    open_folder, open_project_file, pause_native_comparison_audio,
+    pause_native_project_audio_preview, play_native_comparison_audio,
+    play_native_project_audio_preview, prepare_native_comparison_audio,
+    prepare_project_audio_preview, rename_project_file, rename_revision_file,
+    resolve_folder, reveal_project_file, seek_native_comparison_audio,
     seek_native_project_audio_preview, set_native_comparison_audio_volume,
-    set_native_project_audio_preview_volume, set_workspace_root, stop_native_comparison_audio,
-    stop_native_project_audio_preview, summarize_project_files, summarize_workspace_storage,
-    switch_native_comparison_candidate, update_comparison_region, update_delivery_notes,
-    update_revision_description, update_revision_notes, validate_workspace_root,
+    set_native_project_audio_preview_volume, set_workspace_root,
+    stop_native_comparison_audio, stop_native_project_audio_preview,
+    summarize_project_files, summarize_workspace_storage, switch_native_comparison_candidate,
+    update_comparison_region, update_delivery_notes, update_revision_description,
+    update_revision_notes, validate_workspace_root,
 };
 pub(crate) use commands::{
     find_project_summary, resolve_home, resolve_workspace_root, validated_project_directory,
