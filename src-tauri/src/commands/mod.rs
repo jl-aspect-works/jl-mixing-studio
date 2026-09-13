@@ -42,7 +42,8 @@ mod workspace_configuration;
 mod workspace_storage_summary;
 
 pub(super) use comparison::{
-    add_comparison_region, delete_comparison_region, get_comparison_setup, update_comparison_region,
+    add_comparison_region, analyze_comparison_loudness, delete_comparison_region,
+    get_comparison_setup, update_comparison_region,
 };
 pub(crate) use delivered_listening::{
     publish_after_delivery_creation, DeliveredListeningReconciliationState,

@@ -24,6 +24,7 @@ pub(crate) struct NativeComparisonCandidateRequest {
     client_id: String,
     project_id: String,
     relative_path: String,
+    applied_gain_db: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -219,7 +220,7 @@ pub(crate) fn prepare_native_comparison_audio(
                 relative_path: candidate.relative_path,
             };
             resolve_project_audio_file(&app, &file_request)
-                .map(|(path, _)| (candidate.blind_id, path))
+                .map(|(path, _)| (candidate.blind_id, path, candidate.applied_gain_db))
         })
         .collect::<Result<Vec<_>, _>>()?;
     audio_preview::prepare_comparison(&state, candidates, request.start_seconds)

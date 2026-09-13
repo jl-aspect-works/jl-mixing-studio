@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   add: vi.fn(),
   update: vi.fn(),
   remove: vi.fn(),
+  analyzeLoudness: vi.fn(),
   waveform: vi.fn(),
   playbackPrepare: vi.fn(),
   playbackSwitch: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock("./comparisonService", () => ({
   addComparisonRegion: mocks.add,
   updateComparisonRegion: mocks.update,
   deleteComparisonRegion: mocks.remove,
+  analyzeComparisonLoudness: mocks.analyzeLoudness,
 }));
 
 vi.mock("../project/files/audioPreviewService", () => ({
@@ -76,6 +78,12 @@ beforeEach(() => {
   mocks.add.mockReset();
   mocks.update.mockReset();
   mocks.remove.mockReset();
+  mocks.analyzeLoudness.mockReset().mockResolvedValue({
+    candidates: [
+      { revisionId: "r1", revisionNumber: 1, relativePath: "04_Revisions/Revision_01/mix.wav", integratedLufs: -18, appliedGainDb: 0, cacheState: "analyzed" },
+      { revisionId: "r2", revisionNumber: 2, relativePath: "04_Revisions/Revision_02/mix.wav", integratedLufs: -15, appliedGainDb: -3, cacheState: "analyzed" },
+    ],
+  });
   mocks.waveform.mockReset().mockResolvedValue({ durationSeconds: 120, peaks: [.1, .5, .9, .4] });
   const playback = { activeCandidateId: "A", playing: false, currentSeconds: 0, durationSeconds: 120 };
   mocks.playbackPrepare.mockReset().mockResolvedValue(playback);
@@ -100,7 +108,7 @@ describe("comparison setup", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
     fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
 
-    expect(screen.getByRole("heading", { name: "Comparison Session" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Comparison Session" })).toBeInTheDocument();
     expect(screen.getByText("2 candidates")).toBeInTheDocument();
     expect(screen.getByText("ON")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Full Song Active" })).toBeInTheDocument();
@@ -123,7 +131,7 @@ describe("comparison setup", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Intro/ }));
     fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
 
-    expect(screen.getByRole("heading", { name: "Intro: Candidate A" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Intro: Candidate A" })).toBeInTheDocument();
     expect(screen.getByLabelText("Region completion progress")).toHaveTextContent("IntroActive");
     expect(screen.getByLabelText("Region completion progress")).not.toHaveTextContent("Full Song");
   });
@@ -162,6 +170,25 @@ describe("comparison setup", () => {
     expect(screen.getByText("Make sure the selected revisions have the same song structure.")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: /Compatible project timeline/ })).not.toBeInTheDocument();
     expect(screen.getByText("Matches the loudness of the revisions being compared.")).toBeInTheDocument();
+  });
+
+  it("requires all selected candidates to analyze before starting a loudness-matched session", async () => {
+    mocks.analyzeLoudness.mockRejectedValueOnce(new Error("Revision 02 could not be analyzed."));
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Revision 02 could not be analyzed.");
+    expect(alert).toHaveTextContent("Exclude the affected revision or turn Loudness Match Off for this session.");
+    expect(screen.getByRole("heading", { name: "New Comparison" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Loudness Match/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
+    expect(screen.getByRole("heading", { name: "Comparison Session" })).toBeInTheDocument();
+    expect(mocks.analyzeLoudness).toHaveBeenCalledOnce();
   });
 
   it("places the full-width region tools below session options and sorts regions by time then duration", async () => {
@@ -244,8 +271,8 @@ describe("comparison setup", () => {
 
 const frozen: FrozenComparisonSession = {
   candidates: [
-    { revisionId: "r1", revisionNumber: 1, blindId: "A", relativePath: "04_Revisions/Revision_01/mix.wav" },
-    { revisionId: "r2", revisionNumber: 2, blindId: "B", relativePath: "04_Revisions/Revision_02/mix.wav" },
+    { revisionId: "r1", revisionNumber: 1, blindId: "A", relativePath: "04_Revisions/Revision_01/mix.wav", integratedLufs: null, appliedGainDb: null },
+    { revisionId: "r2", revisionNumber: 2, blindId: "B", relativePath: "04_Revisions/Revision_02/mix.wav", integratedLufs: null, appliedGainDb: null },
   ],
   regions: [{ regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null, builtIn: true }],
   loudnessMatch: false,
@@ -411,6 +438,24 @@ describe("blind comparison workspace shell", () => {
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
     fireEvent.keyDown(notes, { key: ".", code: "Period" });
     expect(mocks.playbackSeek).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses arrow keys for previous and next candidate transport controls", async () => {
+    render(workspace());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Next candidate" })).toBeEnabled());
+
+    fireEvent.keyDown(document.body, { key: "ArrowRight", code: "ArrowRight" });
+    await waitFor(() => expect(mocks.playbackSwitch).toHaveBeenLastCalledWith("B"));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument());
+    await act(async () => {});
+
+    fireEvent.keyDown(document.body, { key: "ArrowLeft", code: "ArrowLeft" });
+    await waitFor(() => expect(mocks.playbackSwitch).toHaveBeenLastCalledWith("A"));
+    expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
+
+    const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
+    fireEvent.keyDown(notes, { key: "ArrowRight", code: "ArrowRight" });
+    expect(mocks.playbackSwitch).toHaveBeenCalledTimes(2);
   });
 
   it("preserves candidate notes while accessible ranking controls move candidates", () => {

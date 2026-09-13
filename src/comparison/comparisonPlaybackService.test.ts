@@ -19,6 +19,8 @@ const candidates = (count: number): FrozenComparisonCandidate[] => Array.from({ 
   revisionNumber: index + 1,
   blindId: String.fromCharCode(65 + index),
   relativePath: `04_Revisions/Revision_${String(index + 1).padStart(2, "0")}/mix.wav`,
+  integratedLufs: null,
+  appliedGainDb: null,
 }));
 
 const intro: ProjectRegion = { regionId: "intro", name: "Intro", startSeconds: 10, endSeconds: 25, builtIn: false };
@@ -129,6 +131,22 @@ describe("comparison playback session", () => {
     await expect(session.prepare()).rejects.toThrow("Candidate B could not be prepared for the selected region.");
     expect(fake.provider.dispose).toHaveBeenCalled();
   });
+
+  it("passes fixed loudness gains to providers independently of user volume", async () => {
+    const fake = fakeProvider();
+    const matched = candidates(2).map((candidate, index) => ({
+      ...candidate,
+      integratedLufs: index === 0 ? -18 : -15,
+      appliedGainDb: index === 0 ? 0 : -3,
+    }));
+    const session = new ComparisonPlaybackSession("client", "project", matched, [intro], intro, () => fake.provider);
+    await session.prepare();
+
+    expect(fake.provider.prepare).toHaveBeenCalledWith([
+      expect.objectContaining({ blindId: "A", appliedGainDb: 0 }),
+      expect.objectContaining({ blindId: "B", appliedGainDb: -3 }),
+    ], 10);
+  });
 });
 
 type FakeAudio = HTMLAudioElement & { paused: boolean; ended: boolean; duration: number };
@@ -168,5 +186,23 @@ describe("web comparison audio provider", () => {
     expect(near.currentTime).toBe(30.1);
     expect(near.play).toHaveBeenCalled();
     expect(far.currentTime).toBe(30.1);
+  });
+
+  it("layers user volume over per-candidate loudness match gain", async () => {
+    const channels = [fakeAudio(), fakeAudio()];
+    const provider = new WebComparisonAudioProvider(() => channels.shift()!);
+    await provider.prepare([
+      { ...candidates(1)[0], sourceUrl: "asset://A", appliedGainDb: 0 },
+      { ...candidates(2)[1], sourceUrl: "asset://B", appliedGainDb: -6 },
+    ], 0);
+    const [a, b] = [
+      (provider as unknown as { channels: Map<string, FakeAudio> }).channels.get("A")!,
+      (provider as unknown as { channels: Map<string, FakeAudio> }).channels.get("B")!,
+    ];
+
+    await provider.setVolume(0.5);
+
+    expect(a.volume).toBeCloseTo(0.5);
+    expect(b.volume).toBeCloseTo(0.2506, 3);
   });
 });

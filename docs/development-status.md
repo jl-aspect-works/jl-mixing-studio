@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-12
+Last updated: 2026-09-13
 
 ## Current release
 
@@ -36,27 +36,28 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - Post-merge Studio CI run #1993 passed on that exact `main` commit.
 - #376 per-region ranking, ties, notes, and completion rules was approved and merged through PR #393 at `a3c8f3f7a7a101f1fd3588159e910047b0f86c08`.
 - Post-merge Studio CI run #2010 passed on that exact `main` commit.
+- #377 N-way playback coordinator, synchronized switching, and region looping was approved and merged through PR #394 at `249bf7f61d3181ba7baf096dd66c3089ae35fd15`.
+- Studio PR CI run #2019 passed before merge on PR head `9a1c8dfcda7f9aa7bff21b95bf2afc0139e792af`.
 
 ## Active work
 
-- #377 is implementing the N-way comparison playback coordinator, synchronized candidate switching, exclusive playback ownership, and region looping.
-- #378 and later issues remain blocked by the #377 implementation, CI, and approval gate.
+- #378 is implementing loudness analysis, matching gain, and the reusable derived cache.
+- #379 and later issues remain blocked by the #378 implementation, CI, and approval gate.
 
 ## Remaining release work
 
-1. Complete, validate, approve, and merge #377.
-2. Implement and approve #378–#379 in locked dependency order.
+1. Complete, validate, approve, and merge #378.
+2. Implement and approve #379 in locked dependency order.
 3. Complete #380 cross-platform, NAS-performance, and UX acceptance.
 4. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
 - Completed comparison persistence remains deferred to the reveal/results workflow in #379; #376 owns in-memory ranking and completion readiness.
-- Comparison playback coordination and looping behavior are owned by #377.
-- Loudness analysis/matching implementation is owned by #378; #375 only captures and freezes the session setting.
+- Loudness analysis/matching implementation is owned by #378; #375 only captured and froze the session setting.
 - Reveal/results, cumulative TOP integration, and history actions are owned by #379.
 - Application signing, macOS notarization, provider-specific media/cloud APIs, and generic project/client deletion remain future work.
 
 ## Immediate next action
 
-Publish the focused #377 implementation PR, complete CI and review, and do not start #378 until #377 is approved and merged.
+Publish the focused #378 implementation PR, complete CI and review, and do not start #379 until #378 is approved and merged.

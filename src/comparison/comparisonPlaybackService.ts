@@ -28,6 +28,7 @@ const playbackError = (candidateId: string, action: string) =>
 
 export class WebComparisonAudioProvider implements ComparisonAudioProvider {
   private readonly channels = new Map<string, HTMLAudioElement>();
+  private readonly matchGains = new Map<string, number>();
   private readonly failures = new Set<string>();
   private activeCandidateId = "";
   private volume = 1;
@@ -42,7 +43,8 @@ export class WebComparisonAudioProvider implements ComparisonAudioProvider {
       const audio = this.createAudio();
       audio.preload = "metadata";
       audio.src = candidate.sourceUrl;
-      audio.volume = this.volume;
+      this.matchGains.set(candidate.blindId, gainScalar(candidate.appliedGainDb));
+      audio.volume = this.effectiveVolume(candidate.blindId);
       const duration = await waitForMetadata(audio).catch(() => {
         throw playbackError(candidate.blindId, "prepared");
       });
@@ -102,7 +104,7 @@ export class WebComparisonAudioProvider implements ComparisonAudioProvider {
 
   async setVolume(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
-    this.channels.forEach((channel) => { channel.volume = this.volume; });
+    this.channels.forEach((channel, candidateId) => { channel.volume = this.effectiveVolume(candidateId); });
     return this.snapshot(this.active());
   }
 
@@ -118,6 +120,7 @@ export class WebComparisonAudioProvider implements ComparisonAudioProvider {
       channel.load();
     });
     this.channels.clear();
+    this.matchGains.clear();
     this.failures.clear();
     this.activeCandidateId = "";
   }
@@ -149,6 +152,10 @@ export class WebComparisonAudioProvider implements ComparisonAudioProvider {
     const candidateId = this.failures.values().next().value;
     if (candidateId) throw playbackError(candidateId, "played");
   }
+
+  private effectiveVolume(candidateId: string) {
+    return this.volume * (this.matchGains.get(candidateId) ?? 1);
+  }
 }
 
 type NativeCandidateStatus = { blindId: string; durationSeconds: number };
@@ -163,6 +170,7 @@ export class NativeComparisonAudioProvider implements ComparisonAudioProvider {
           clientId: this.clientId,
           projectId: this.projectId,
           relativePath: candidate.relativePath,
+          appliedGainDb: candidate.appliedGainDb,
         })),
         startSeconds,
       },
@@ -321,6 +329,9 @@ export class ComparisonPlaybackSession {
 
 const clampPosition = (seconds: number, duration: number) =>
   Math.max(0, Math.min(seconds, Number.isFinite(duration) ? duration : seconds));
+
+const gainScalar = (gainDb: number | null) =>
+  gainDb === null || !Number.isFinite(gainDb) ? 1 : 10 ** (Math.min(0, gainDb) / 20);
 
 const waitForMetadata = (audio: HTMLAudioElement) => new Promise<number>((resolve, reject) => {
   if (Number.isFinite(audio.duration) && audio.duration > 0) {

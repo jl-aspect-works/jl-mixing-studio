@@ -24,7 +24,7 @@ export const formatTimestamp = (seconds: number): string => {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 };
 
-export type ComparisonTransportShortcut = "toggle" | "back" | "forward";
+export type ComparisonTransportShortcut = "toggle" | "back" | "forward" | "previousCandidate" | "nextCandidate";
 
 const shuffled = <T,>(items: readonly T[], random: () => number): T[] => {
   const result = [...items];
@@ -42,7 +42,7 @@ const secureRandom = (): number => {
 };
 
 export const freezeComparisonSession = (
-  candidates: readonly ComparisonCandidateAvailability[],
+  candidates: readonly (ComparisonCandidateAvailability & Partial<{ integratedLufs: number; appliedGainDb: number }>)[],
   regions: readonly ProjectRegion[],
   loudnessMatch: boolean,
   random: () => number = secureRandom,
@@ -52,6 +52,8 @@ export const freezeComparisonSession = (
     revisionNumber: candidate.revisionNumber,
     blindId: String.fromCharCode(65 + index),
     relativePath: candidate.relativePath!,
+    integratedLufs: "integratedLufs" in candidate && typeof candidate.integratedLufs === "number" ? candidate.integratedLufs : null,
+    appliedGainDb: "appliedGainDb" in candidate && typeof candidate.appliedGainDb === "number" ? candidate.appliedGainDb : null,
   }));
   return Object.freeze({
     candidates: Object.freeze(randomized),
@@ -87,5 +89,7 @@ export const shortcutTransport = (
   if (event.key === " " || event.key === "Spacebar" || event.code === "Space") return "toggle";
   if (event.key === ",") return "back";
   if (event.key === ".") return "forward";
+  if (event.key === "ArrowLeft") return "previousCandidate";
+  if (event.key === "ArrowRight") return "nextCandidate";
   return null;
 };

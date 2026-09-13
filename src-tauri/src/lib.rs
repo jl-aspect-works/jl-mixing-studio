@@ -3,6 +3,7 @@ mod automation_api;
 mod cli;
 mod client_edit;
 mod commands;
+mod comparison_loudness;
 mod derived;
 mod diagnostic_log;
 mod intake;
@@ -15,9 +16,10 @@ mod workflows;
 mod workspace;
 
 use commands::{
-    add_comparison_region, add_project_reference, choose_workspace_folder,
-    delete_comparison_region, delete_project_file, delete_project_reference, delete_revision_file,
-    discover_default_workspace, get_comparison_setup, get_delivery_notes, get_jl_mixing_version,
+    add_comparison_region, add_project_reference, analyze_comparison_loudness,
+    choose_workspace_folder, delete_comparison_region, delete_project_file,
+    delete_project_reference, delete_revision_file, discover_default_workspace,
+    get_comparison_setup, get_delivery_notes, get_jl_mixing_version,
     get_native_comparison_audio_status, get_native_project_audio_preview_status,
     get_project_audio_waveform, get_revision_notes, get_system_info, get_workspace_configuration,
     list_project_files, load_native_project_audio_preview, open_folder, open_project_file,
@@ -471,6 +473,7 @@ pub fn run() {
             rename_revision_file,
             delete_revision_file,
             get_comparison_setup,
+            analyze_comparison_loudness,
             add_comparison_region,
             update_comparison_region,
             delete_comparison_region,

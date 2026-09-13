@@ -3,6 +3,7 @@ import { ActionIcon } from "../components/ActionIcon";
 import type { ClientSummary, ProjectSummary } from "../types";
 import {
   addComparisonRegion,
+  analyzeComparisonLoudness,
   deleteComparisonRegion,
   getComparisonSetup,
   updateComparisonRegion,
@@ -146,6 +147,39 @@ export function ComparisonSetup({
     }
   };
 
+  const startComparison = async () => {
+    if (!canStart) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      if (!loudnessMatch) {
+        onStart(freezeComparisonSession(selectedCandidateValues, selectedRegionValues, false));
+        return;
+      }
+      const analyzed = await analyzeComparisonLoudness({
+        clientId: client.clientId,
+        projectId: project.projectId,
+        candidates: selectedCandidateValues.map((candidate) => ({
+          revisionId: candidate.revisionId,
+          revisionNumber: candidate.revisionNumber,
+          relativePath: candidate.relativePath!,
+        })),
+      });
+      const byRevision = new Map(analyzed.candidates.map((candidate) => [candidate.revisionId, candidate]));
+      const matchedCandidates = selectedCandidateValues.map((candidate) => {
+        const match = byRevision.get(candidate.revisionId);
+        if (!match) throw new Error(`Revision ${String(candidate.revisionNumber).padStart(2, "0")} could not be loudness matched.`);
+        return { ...candidate, integratedLufs: match.integratedLufs, appliedGainDb: match.appliedGainDb };
+      });
+      onStart(freezeComparisonSession(matchedCandidates, selectedRegionValues, true));
+    } catch (reason) {
+      setError(`${errorMessage(reason, "Loudness Match could not be completed.")} Exclude the affected revision or turn Loudness Match Off for this session.`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!setup && !error) return <section className="comparison-loading" aria-live="polite">Checking revision eligibility and project regions…</section>;
   if (!setup) return <section className="comparison-loading error" role="alert">{error}<button type="button" className="secondary" onClick={onCancel}><ActionIcon name="back" />Back to Revision History</button></section>;
 
@@ -204,6 +238,6 @@ export function ComparisonSetup({
         </div>
         {pendingDelete && <div className="inline-notice warning comparison-delete-confirmation" role="alertdialog" aria-label={`Delete ${pendingDelete.name}`}><span>Delete <strong>{pendingDelete.name}</strong>? Completed comparison history will keep its saved snapshot.</span><span><button type="button" className="secondary" onClick={() => setPendingDelete(null)}><ActionIcon name="close" />Keep Region</button><button type="button" className="danger" disabled={busy} onClick={() => void removeRegion(pendingDelete)}><ActionIcon name="delete" />Delete Region</button></span></div>}
     </section>
-    <footer className="comparison-setup-footer"><span>{selectedCandidateValues.length} candidates · {selectedRegionValues.length} regions</span><button type="button" disabled={!canStart} onClick={() => onStart(freezeComparisonSession(selectedCandidateValues, selectedRegionValues, loudnessMatch))}><ActionIcon name="play" />Start Comparison</button></footer>
+    <footer className="comparison-setup-footer"><span>{selectedCandidateValues.length} candidates · {selectedRegionValues.length} regions</span><button type="button" disabled={!canStart} onClick={() => void startComparison()}><ActionIcon name="play" />{busy && loudnessMatch ? "Analyzing Loudness…" : "Start Comparison"}</button></footer>
   </section>;
 }

@@ -1,10 +1,11 @@
 use super::project_files::is_audio_extension;
 use super::{find_project_summary, resolve_workspace_root, validated_project_directory};
+use crate::comparison_loudness::{self, LoudnessAnalysisInput};
 use crate::models::comparison::{self, ComparisonDocument, ProjectRegion};
 use crate::workspace;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn comparison_source(revision_directory: &std::path::Path) -> Result<Option<PathBuf>, String> {
     let metadata = fs::symlink_metadata(revision_directory)
@@ -75,6 +76,22 @@ pub(crate) struct DeleteComparisonRegionRequest {
     region_id: String,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ComparisonLoudnessCandidateRequest {
+    revision_id: String,
+    revision_number: u32,
+    relative_path: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ComparisonLoudnessRequest {
+    client_id: String,
+    project_id: String,
+    candidates: Vec<ComparisonLoudnessCandidateRequest>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ComparisonCandidateAvailability {
@@ -92,6 +109,12 @@ pub(crate) struct ComparisonSetup {
     candidates: Vec<ComparisonCandidateAvailability>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ComparisonLoudnessResult {
+    candidates: Vec<comparison_loudness::LoudnessAnalysisCandidate>,
+}
+
 fn project_context(
     app: &tauri::AppHandle,
     client_id: &str,
@@ -106,6 +129,61 @@ fn project_context(
         validated_project_directory(&root, &snapshot, client_id.trim(), project_id.trim())
             .ok_or_else(|| "The selected project could not be resolved safely".to_owned())?;
     Ok((directory, project))
+}
+
+fn resolve_project_audio_entry(
+    project_directory: &Path,
+    relative_path: &str,
+) -> Result<(PathBuf, String), String> {
+    let normalized = normalize_relative_path(relative_path)?;
+    let project_metadata = fs::symlink_metadata(project_directory)
+        .map_err(|error| format!("Unable to inspect the project root: {error}"))?;
+    if project_metadata.file_type().is_symlink() || !project_metadata.is_dir() {
+        return Err("The selected project root is unavailable or unsafe".to_owned());
+    }
+    let canonical_project = project_directory
+        .canonicalize()
+        .map_err(|error| format!("Unable to resolve the project root: {error}"))?;
+
+    let mut current = project_directory.to_path_buf();
+    for component in normalized.split('/') {
+        current.push(component);
+        let metadata = fs::symlink_metadata(&current)
+            .map_err(|error| format!("Unable to resolve the selected project path: {error}"))?;
+        if metadata.file_type().is_symlink() {
+            return Err("Symbolic-link project paths are not allowed".to_owned());
+        }
+    }
+
+    let metadata = fs::symlink_metadata(&current)
+        .map_err(|error| format!("Unable to inspect the selected project entry: {error}"))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        return Err("Only regular project audio files can be analyzed".to_owned());
+    }
+    let canonical = current
+        .canonicalize()
+        .map_err(|error| format!("Unable to resolve the selected project entry: {error}"))?;
+    if !canonical.starts_with(&canonical_project) {
+        return Err("The selected project entry could not be resolved safely".to_owned());
+    }
+    Ok((canonical, normalized))
+}
+
+fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
+    let value = relative_path.trim();
+    if value.is_empty() {
+        return Err("A project file path is required".to_owned());
+    }
+    if value.starts_with('/') || value.contains('\\') {
+        return Err("Project file paths must be portable project-relative paths".to_owned());
+    }
+    if value
+        .split('/')
+        .any(|component| component.is_empty() || component == "." || component == "..")
+    {
+        return Err("Unsafe project file path segments are not allowed".to_owned());
+    }
+    Ok(value.to_owned())
 }
 
 fn candidate_availability(
@@ -215,9 +293,34 @@ pub(crate) fn delete_comparison_region(
     Ok(document)
 }
 
+#[tauri::command]
+pub(crate) fn analyze_comparison_loudness(
+    app: tauri::AppHandle,
+    request: ComparisonLoudnessRequest,
+) -> Result<ComparisonLoudnessResult, String> {
+    let (directory, _) = project_context(&app, &request.client_id, &request.project_id)?;
+    let inputs = request
+        .candidates
+        .into_iter()
+        .map(|candidate| {
+            let (path, relative_path) =
+                resolve_project_audio_entry(&directory, &candidate.relative_path)?;
+            Ok(LoudnessAnalysisInput {
+                revision_id: candidate.revision_id,
+                revision_number: candidate.revision_number,
+                relative_path,
+                path,
+            })
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    Ok(ComparisonLoudnessResult {
+        candidates: comparison_loudness::analyze_project_candidates(&directory, inputs)?,
+    })
+}
+
 #[cfg(test)]
 mod tests {
-    use super::comparison_source;
+    use super::{comparison_source, normalize_relative_path};
     use std::fs;
 
     #[test]
@@ -237,5 +340,16 @@ mod tests {
         fs::write(revision.path().join("Revision_Notes.md"), b"notes").unwrap();
 
         assert!(comparison_source(revision.path()).unwrap().is_none());
+    }
+
+    #[test]
+    fn loudness_analysis_rejects_unsafe_relative_paths() {
+        assert!(normalize_relative_path("../outside.wav").is_err());
+        assert!(normalize_relative_path("/absolute.wav").is_err());
+        assert!(normalize_relative_path("folder\\file.wav").is_err());
+        assert_eq!(
+            normalize_relative_path("04_Revisions/Revision_01/mix.wav").unwrap(),
+            "04_Revisions/Revision_01/mix.wav"
+        );
     }
 }
