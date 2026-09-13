@@ -42,7 +42,7 @@ const secureRandom = (): number => {
 };
 
 export const freezeComparisonSession = (
-  candidates: readonly ComparisonCandidateAvailability[],
+  candidates: readonly (ComparisonCandidateAvailability & Partial<{ integratedLufs: number; appliedGainDb: number }>)[],
   regions: readonly ProjectRegion[],
   loudnessMatch: boolean,
   random: () => number = secureRandom,
@@ -52,6 +52,8 @@ export const freezeComparisonSession = (
     revisionNumber: candidate.revisionNumber,
     blindId: String.fromCharCode(65 + index),
     relativePath: candidate.relativePath!,
+    integratedLufs: "integratedLufs" in candidate && typeof candidate.integratedLufs === "number" ? candidate.integratedLufs : null,
+    appliedGainDb: "appliedGainDb" in candidate && typeof candidate.appliedGainDb === "number" ? candidate.appliedGainDb : null,
   }));
   return Object.freeze({
     candidates: Object.freeze(randomized),

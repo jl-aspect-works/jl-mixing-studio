@@ -28,6 +28,7 @@ pub(super) struct WindowsComparisonPlayback {
     _stream: rodio::MixerDeviceSink,
     players: BTreeMap<String, rodio::Player>,
     durations: BTreeMap<String, Duration>,
+    match_gains: BTreeMap<String, f32>,
     active_candidate_id: String,
     volume: f32,
 }
@@ -83,7 +84,7 @@ impl WindowsComparisonPlayback {
 
 pub(crate) fn prepare(
     state: &NativeAudioPreviewState,
-    candidates: Vec<(String, std::path::PathBuf)>,
+    candidates: Vec<(String, std::path::PathBuf, Option<f64>)>,
     start_seconds: f64,
 ) -> Result<NativeComparisonAudioStatus, String> {
     if !start_seconds.is_finite() || start_seconds < 0.0 {
@@ -102,7 +103,8 @@ pub(crate) fn prepare(
         })?;
         let mut players = BTreeMap::new();
         let mut durations = BTreeMap::new();
-        for (blind_id, path) in &candidates {
+        let mut match_gains = BTreeMap::new();
+        for (blind_id, path, applied_gain_db) in &candidates {
             let decoder = Decoder::try_from(
                 File::open(path)
                     .map_err(|_| format!("Candidate {blind_id} could not be prepared."))?,
@@ -117,14 +119,17 @@ pub(crate) fn prepare(
             player
                 .try_seek(Duration::from_secs_f64(start_seconds).min(duration))
                 .map_err(|_| format!("Candidate {blind_id} could not be prepared."))?;
-            player.set_volume(1.0);
+            let match_gain = gain_scalar(*applied_gain_db);
+            player.set_volume(match_gain);
             players.insert(blind_id.clone(), player);
             durations.insert(blind_id.clone(), duration);
+            match_gains.insert(blind_id.clone(), match_gain);
         }
         let comparison = WindowsComparisonPlayback {
             _stream: stream,
             players,
             durations,
+            match_gains,
             active_candidate_id: candidates[0].0.clone(),
             volume: 1.0,
         };
@@ -270,10 +275,11 @@ pub(crate) fn set_volume(
     {
         return with_comparison(state, |comparison| {
             comparison.volume = volume.clamp(0.0, 1.0);
-            comparison
-                .players
-                .values()
-                .for_each(|player| player.set_volume(comparison.volume));
+            for (blind_id, player) in &comparison.players {
+                player.set_volume(
+                    comparison.volume * comparison.match_gains.get(blind_id).copied().unwrap_or(1.0),
+                );
+            }
             Ok(comparison.status(false))
         });
     }
@@ -350,4 +356,12 @@ fn with_comparison(
         .as_mut()
         .ok_or_else(|| "Comparison audio is not prepared".to_owned())?;
     operation(comparison)
+}
+
+#[cfg(target_os = "windows")]
+fn gain_scalar(gain_db: Option<f64>) -> f32 {
+    gain_db
+        .filter(|value| value.is_finite())
+        .map(|value| 10.0_f64.powf(value.min(0.0) / 20.0) as f32)
+        .unwrap_or(1.0)
 }

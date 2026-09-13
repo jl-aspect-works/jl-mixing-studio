@@ -26,10 +26,24 @@ describe("comparison session configuration", () => {
     expect(session.candidates.map((candidate) => candidate.blindId)).toEqual(["A", "B", "C"]);
     expect(new Set(session.candidates.map((candidate) => candidate.revisionId))).toEqual(new Set(["r1", "r2", "r3"]));
     expect(session.candidates.every((candidate) => candidate.relativePath.endsWith(".wav"))).toBe(true);
+    expect(session.candidates.every((candidate) => candidate.integratedLufs === null && candidate.appliedGainDb === null)).toBe(true);
     expect(session.loudnessMatch).toBe(true);
     expect(Object.isFrozen(session)).toBe(true);
     expect(Object.isFrozen(session.candidates)).toBe(true);
     expect(Object.isFrozen(session.regions[0])).toBe(true);
+  });
+
+  it("freezes analyzed loudness measurements and gains when provided", () => {
+    const matched = [
+      { ...candidates[0], integratedLufs: -18, appliedGainDb: 0 },
+      { ...candidates[1], integratedLufs: -15, appliedGainDb: -3 },
+    ];
+    const session = freezeComparisonSession(matched, regions, true, () => 0);
+
+    expect(session.candidates).toEqual([
+      expect.objectContaining({ revisionId: "r2", integratedLufs: -15, appliedGainDb: -3 }),
+      expect.objectContaining({ revisionId: "r1", integratedLufs: -18, appliedGainDb: 0 }),
+    ]);
   });
 
   it("maps A–Z shortcuts but suppresses them in text entry controls", () => {

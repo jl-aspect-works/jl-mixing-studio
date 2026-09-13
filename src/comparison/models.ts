@@ -30,12 +30,27 @@ export type FrozenComparisonCandidate = {
   revisionNumber: number;
   blindId: string;
   relativePath: string;
+  integratedLufs: number | null;
+  appliedGainDb: number | null;
 };
 
 export type FrozenComparisonSession = {
   candidates: readonly FrozenComparisonCandidate[];
   regions: readonly ProjectRegion[];
   loudnessMatch: boolean;
+};
+
+export type ComparisonLoudnessCandidate = {
+  revisionId: string;
+  revisionNumber: number;
+  relativePath: string;
+  integratedLufs: number;
+  appliedGainDb: number;
+  cacheState: "analyzed" | "reused";
+};
+
+export type ComparisonLoudnessResult = {
+  candidates: ComparisonLoudnessCandidate[];
 };
 
 export type RegionDraft = {

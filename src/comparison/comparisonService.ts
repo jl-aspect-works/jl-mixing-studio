@@ -1,5 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ComparisonDocument, ComparisonSetupData, ProjectRegion } from "./models";
+import type {
+  ComparisonDocument,
+  ComparisonLoudnessResult,
+  ComparisonSetupData,
+  ProjectRegion,
+} from "./models";
 
 type ProjectIdentity = { clientId: string; projectId: string };
 type RegionValues = ProjectIdentity & { name: string; startSeconds: number; endSeconds: number };
@@ -19,6 +24,15 @@ type StoredDocument = {
 };
 
 type StoredSetup = Omit<ComparisonSetupData, "document"> & { document: StoredDocument };
+type StoredLoudnessCandidate = {
+  revision_id: string;
+  revision_number: number;
+  relative_path: string;
+  integrated_lufs: number;
+  applied_gain_db: number;
+  cache_state: "analyzed" | "reused";
+};
+type StoredLoudnessResult = { candidates: StoredLoudnessCandidate[] };
 
 const projectRegion = (region: StoredRegion): ProjectRegion => ({
   regionId: region.region_id,
@@ -46,3 +60,17 @@ export const updateComparisonRegion = (request: RegionValues & { regionId: strin
 
 export const deleteComparisonRegion = (request: ProjectIdentity & { regionId: string }) =>
   invoke<StoredDocument>("delete_comparison_region", { request }).then(comparisonDocument);
+
+export const analyzeComparisonLoudness = (
+  request: ProjectIdentity & { candidates: { revisionId: string; revisionNumber: number; relativePath: string }[] },
+) =>
+  invoke<StoredLoudnessResult>("analyze_comparison_loudness", { request }).then((result): ComparisonLoudnessResult => ({
+    candidates: result.candidates.map((candidate) => ({
+      revisionId: candidate.revision_id,
+      revisionNumber: candidate.revision_number,
+      relativePath: candidate.relative_path,
+      integratedLufs: candidate.integrated_lufs,
+      appliedGainDb: candidate.applied_gain_db,
+      cacheState: candidate.cache_state,
+    })),
+  }));
