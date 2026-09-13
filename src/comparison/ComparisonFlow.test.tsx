@@ -440,6 +440,24 @@ describe("blind comparison workspace shell", () => {
     expect(mocks.playbackSeek).toHaveBeenCalledTimes(2);
   });
 
+  it("uses arrow keys for previous and next candidate transport controls", async () => {
+    render(workspace());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Next candidate" })).toBeEnabled());
+
+    fireEvent.keyDown(document.body, { key: "ArrowRight", code: "ArrowRight" });
+    await waitFor(() => expect(mocks.playbackSwitch).toHaveBeenLastCalledWith("B"));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument());
+    await act(async () => {});
+
+    fireEvent.keyDown(document.body, { key: "ArrowLeft", code: "ArrowLeft" });
+    await waitFor(() => expect(mocks.playbackSwitch).toHaveBeenLastCalledWith("A"));
+    expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
+
+    const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
+    fireEvent.keyDown(notes, { key: "ArrowRight", code: "ArrowRight" });
+    expect(mocks.playbackSwitch).toHaveBeenCalledTimes(2);
+  });
+
   it("preserves candidate notes while accessible ranking controls move candidates", () => {
     render(workspace());
     fireEvent.change(screen.getByRole("textbox", { name: "Notes for Candidate A" }), { target: { value: "Open top end" } });

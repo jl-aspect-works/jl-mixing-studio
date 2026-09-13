@@ -58,7 +58,10 @@ describe("comparison session configuration", () => {
     expect(shortcutTransport({ key: " ", code: "Space", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("toggle");
     expect(shortcutTransport({ key: ",", code: "Comma", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("back");
     expect(shortcutTransport({ key: ".", code: "Period", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("forward");
+    expect(shortcutTransport({ key: "ArrowLeft", code: "ArrowLeft", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("previousCandidate");
+    expect(shortcutTransport({ key: "ArrowRight", code: "ArrowRight", target: document.body, metaKey: false, ctrlKey: false, altKey: false })).toBe("nextCandidate");
     expect(shortcutTransport({ key: " ", code: "Space", target: textarea, metaKey: false, ctrlKey: false, altKey: false })).toBeNull();
+    expect(shortcutTransport({ key: "ArrowRight", code: "ArrowRight", target: textarea, metaKey: false, ctrlKey: false, altKey: false })).toBeNull();
     expect(shortcutTransport({ key: ".", code: "Period", target: document.body, metaKey: true, ctrlKey: false, altKey: false })).toBeNull();
   });
 });

@@ -24,7 +24,7 @@ export const formatTimestamp = (seconds: number): string => {
   return `${minutes}:${String(remainder).padStart(2, "0")}`;
 };
 
-export type ComparisonTransportShortcut = "toggle" | "back" | "forward";
+export type ComparisonTransportShortcut = "toggle" | "back" | "forward" | "previousCandidate" | "nextCandidate";
 
 const shuffled = <T,>(items: readonly T[], random: () => number): T[] => {
   const result = [...items];
@@ -89,5 +89,7 @@ export const shortcutTransport = (
   if (event.key === " " || event.key === "Spacebar" || event.code === "Space") return "toggle";
   if (event.key === ",") return "back";
   if (event.key === ".") return "forward";
+  if (event.key === "ArrowLeft") return "previousCandidate";
+  if (event.key === "ArrowRight") return "nextCandidate";
   return null;
 };
