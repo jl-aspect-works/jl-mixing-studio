@@ -1,13 +1,13 @@
 .revision-badge.listening {
   display: inline-flex;
   align-items: center;
-  min-height: 14px;
-  padding: 0 4px;
+  min-height: 12px;
+  padding: 0 3px;
   border: 1px solid transparent;
   border-radius: 999px;
-  font-size: .48rem;
+  font-size: .42rem;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.2;
   opacity: .68;
 }
 
