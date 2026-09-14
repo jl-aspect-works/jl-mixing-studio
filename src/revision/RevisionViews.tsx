@@ -383,6 +383,7 @@ export function RevisionsView({
     <ProjectNavigationBar
       active="revisions"
       onSelect={onSelectView}
+      actionsLayout="row"
       actions={<><button type="button" className="secondary" onClick={() => setComparisonOpen("results")} disabled={comparisonSessionCount === 0 || loading} title={comparisonSessionCount === 0 ? "Complete a blind comparison before viewing results." : "Open cumulative blind comparison results."}><ActionIcon name="search" />Comparison Results</button><button type="button" className="secondary" onClick={() => setComparisonOpen("setup")} disabled={revisions.length < 2 || loading} title={revisions.length < 2 ? "Create at least two revisions before starting a comparison." : "Compare two or more normal revisions without seeing their identities."}><ActionIcon name="add" />New Comparison</button><button type="button" onClick={onNewRevision} disabled={!creationAvailable || loading} title={creationHelp}><ActionIcon name="add" />New Revision</button></>}
     />
 
@@ -510,8 +511,7 @@ export function RevisionsView({
         </main>}
       </div>
 
-      {selected && <section className="panel revision-files-panel" aria-labelledby="revision-files-heading">
-        <div className="revision-files-heading"><h2 id="revision-files-heading">Revision Files</h2></div>
+      {selected && <section className="panel revision-files-panel" aria-label="Revision Files">
         <RevisionFileBrowser key={selected.number} clientId={client.clientId} projectId={project.projectId} revision={selected.number} />
       </section>}
     </>}
