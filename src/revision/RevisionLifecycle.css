@@ -75,7 +75,7 @@
   align-self: start;
   justify-self: end;
   max-width: 210px;
-  row-gap: 4px;
+  row-gap: 2px;
 }
 
 .revision-detail-heading-actions > button {
