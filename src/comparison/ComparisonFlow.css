@@ -11,6 +11,7 @@
 .comparison-choice-list label > span, .comparison-toggle > span { display: grid; gap: 2px; }
 .comparison-choice-list small, .comparison-toggle small { color: var(--muted-text, #748096); }
 .comparison-choice-list .unavailable { opacity: .62; }
+.comparison-select-all { display: inline-flex; align-items: center; gap: 7px; justify-self: start; min-height: 28px; padding: 4px 8px; border: 1px solid rgba(188, 202, 229, .95); border-radius: 7px; background: rgba(67, 104, 226, .07); color: #1f3f9e; font-size: .74rem; font-weight: 800; }
 .comparison-region-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; padding: 2px 5px; border-bottom: 1px solid var(--border, #dfe4ea); border-radius: 4px; font-size: .78rem; }
 .comparison-region-row label > span { display: flex; align-items: baseline; gap: 8px; }
 .comparison-region-row small { font-size: .7rem; white-space: nowrap; }
