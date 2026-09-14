@@ -218,11 +218,11 @@ export function ComparisonSetup({
     <div className="comparison-setup-grid">
       <section className="panel" aria-labelledby="comparison-candidates-title">
         <h3 id="comparison-candidates-title">1. Select revisions</h3>
-        <label className="comparison-select-all"><input type="checkbox" checked={allEligibleCandidatesSelected} disabled={!eligibleCandidateIds.length} onChange={(event) => setSelectedCandidates((current) => toggleAll(current, eligibleCandidateIds, event.target.checked))} />Select all revisions</label>
         <div className="comparison-choice-list">
+          <label className="comparison-select-all-row"><input type="checkbox" checked={allEligibleCandidatesSelected} disabled={!eligibleCandidateIds.length} onChange={(event) => setSelectedCandidates((current) => toggleAll(current, eligibleCandidateIds, event.target.checked))} /><span><strong>Select all revisions</strong></span></label>
           {candidates.map((candidate) => <label key={candidate.revisionId} className={!candidate.eligible ? "unavailable" : ""}>
             <input type="checkbox" checked={selectedCandidates.has(candidate.revisionId)} disabled={!candidate.eligible} onChange={(event) => setSelectedCandidates((current) => toggle(current, candidate.revisionId, event.target.checked))} />
-            <span><strong>Revision {String(candidate.revisionNumber).padStart(2, "0")}</strong>{revisionDescriptions.get(candidate.revisionId) && <small>{revisionDescriptions.get(candidate.revisionId)}</small>}{candidate.reason && <small>{candidate.reason}</small>}</span>
+            <span className="comparison-revision-label"><strong>Revision {String(candidate.revisionNumber).padStart(2, "0")}</strong>{revisionDescriptions.get(candidate.revisionId) && <small>{revisionDescriptions.get(candidate.revisionId)}</small>}{candidate.reason && <small>{candidate.reason}</small>}</span>
           </label>)}
         </div>
       </section>
@@ -234,7 +234,6 @@ export function ComparisonSetup({
     <section className="panel comparison-regions-panel" aria-labelledby="comparison-regions-title">
         <h3 id="comparison-regions-title">3. Select and manage regions</h3>
         <p>Select one or more regions to evaluate. Full Song is selected by default but is optional.</p>
-        <label className="comparison-select-all"><input type="checkbox" checked={allRegionsSelected} disabled={!regions.length} onChange={(event) => setSelectedRegions((current) => toggleAll(current, regions.map((region) => region.regionId), event.target.checked))} />Select all regions</label>
         <RegionPreview
           clientId={client.clientId}
           projectId={project.projectId}
@@ -253,6 +252,7 @@ export function ComparisonSetup({
           {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft())}><ActionIcon name="close" />Cancel edit</button>}
         </form>
         <div className="comparison-choice-list" role="group" aria-label="Available regions">
+          <label className="comparison-region-row comparison-select-all-row"><input type="checkbox" checked={allRegionsSelected} disabled={!regions.length} onChange={(event) => setSelectedRegions((current) => toggleAll(current, regions.map((region) => region.regionId), event.target.checked))} /><span><strong>Select all regions</strong></span></label>
           {regions.map((region) => <div key={region.regionId} className={`comparison-region-row${draft.regionId === region.regionId ? " editing" : ""}${region.builtIn ? " built-in" : ""}`} role={region.builtIn ? undefined : "button"} tabIndex={region.builtIn ? undefined : 0} onClick={() => beginEdit(region)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); beginEdit(region); } }}>
             <label>
               <input type="checkbox" checked={selectedRegions.has(region.regionId)} onClick={(event) => event.stopPropagation()} onChange={(event) => setSelectedRegions((current) => toggle(current, region.regionId, event.target.checked))} />

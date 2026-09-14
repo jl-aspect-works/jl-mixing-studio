@@ -229,7 +229,9 @@ describe("comparison setup", () => {
     expect(regionsHeading.closest(".comparison-regions-panel")).not.toBeNull();
 
     const regionList = screen.getByRole("group", { name: "Available regions" });
-    expect(within(regionList).getAllByRole("checkbox").map((checkbox) => checkbox.parentElement?.textContent)).toEqual([
+    const regionCheckboxes = within(regionList).getAllByRole("checkbox");
+    expect(regionCheckboxes[0].parentElement?.textContent).toContain("Select all regions");
+    expect(regionCheckboxes.slice(1).map((checkbox) => checkbox.parentElement?.textContent)).toEqual([
       expect.stringContaining("Full Song"),
       expect.stringContaining("Long"),
       expect.stringContaining("Short"),
