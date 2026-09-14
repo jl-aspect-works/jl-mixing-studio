@@ -1,7 +1,7 @@
 .revision-badge.closed {
-  background: #eef0f3;
-  color: #596273;
-  border: 1px solid #d9dee6;
+  background: rgba(238, 240, 243, .58);
+  color: #707b8d;
+  border-color: rgba(112, 123, 141, .18);
 }
 
 .revision-history-item.closed {

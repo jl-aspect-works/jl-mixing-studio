@@ -1,19 +1,20 @@
 .revision-badge.listening {
   display: inline-flex;
   align-items: center;
-  min-height: 18px;
-  padding: 1px 6px;
-  border: 0;
+  min-height: 14px;
+  padding: 0 4px;
+  border: 1px solid transparent;
   border-radius: 999px;
-  font-size: 0.58rem;
+  font-size: .48rem;
   font-weight: 600;
-  line-height: 1.1;
-  opacity: 0.7;
+  line-height: 1.35;
+  opacity: .68;
 }
 
 .revision-badge.listening.published {
-  background: #edf7f1;
-  color: #4c745d;
+  border-color: rgba(76, 116, 93, .12);
+  background: rgba(237, 247, 241, .58);
+  color: #637d6e;
 }
 
 .revision-badge.listening.failed {
@@ -23,8 +24,9 @@
 }
 
 .revision-badge.listening.skipped {
-  background: #f3f5f8;
-  color: #6f7988;
+  border-color: rgba(111, 121, 136, .12);
+  background: rgba(243, 245, 248, .58);
+  color: #7e8794;
 }
 
 .revision-listening-details {

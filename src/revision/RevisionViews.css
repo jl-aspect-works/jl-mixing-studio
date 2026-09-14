@@ -11,7 +11,7 @@
 .workflow-tabs-actions { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
 .workflow-tabs-actions button { min-height: 32px !important; padding: 5px 10px !important; font-size: .72rem !important; }
 .workflow-tabs-row.actions-below { display: grid; grid-template-columns: 1fr; gap: 8px; }
-.workflow-tabs-row.actions-below .workflow-tabs-actions { justify-content: flex-start; }
+.workflow-tabs-row.actions-below .workflow-tabs-actions { justify-content: flex-end; }
 .workflow-tabs-row.actions-below .workflow-tabs-actions button { min-height: 30px !important; padding: 4px 9px !important; }
 .revisions-workspace { display: grid; grid-template-columns: minmax(320px, 1.25fr) minmax(0, 1.75fr); gap: 12px; align-items: stretch; margin-bottom: 12px; }
 .revision-history { min-height: 0; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
@@ -32,10 +32,10 @@ button.revision-history-item.active:hover:not(:disabled) { background: #e8f1fb; 
 .revision-history-footer { flex: 0 0 auto; margin-top: auto; padding: 9px 12px; border-top: 1px solid rgba(0,0,0,.08); background: #fafbfd; }
 .revision-history-footer button { width: 100%; min-height: 30px !important; padding: 4px 8px !important; font-size: .68rem !important; }
 .revision-badges { display: flex; flex: 0 0 auto; max-width: 100%; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
-.revision-badge { display: inline-flex; align-items: center; min-height: 16px; padding: 0 5px; border-radius: 999px; background: #f1f4f8; color: #647086; font-size: .52rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; line-height: 1.35; }
-.revision-badge.current { background: #edf4ff; color: #3567a5; }
-.revision-badge.approved { background: #edf8f2; color: #277a52; }
-.revision-badge.delivered { background: #f7f0ff; color: #76509b; }
+.revision-badge { display: inline-flex; align-items: center; min-height: 14px; padding: 0 4px; border: 1px solid rgba(100, 112, 134, .16); border-radius: 999px; background: rgba(241, 244, 248, .56); color: #7a8495; font-size: .48rem; font-weight: 650; text-transform: uppercase; letter-spacing: .01em; line-height: 1.35; }
+.revision-badge.current { background: rgba(237, 244, 255, .58); color: #5e7da7; }
+.revision-badge.approved { background: rgba(237, 248, 242, .58); color: #568069; }
+.revision-badge.delivered { background: rgba(247, 240, 255, .58); color: #80699a; }
 .revision-detail { min-width: 0; display: grid; gap: 12px; }
 .revision-detail-header { padding: 14px 16px !important; }
 .revision-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }

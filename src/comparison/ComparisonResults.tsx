@@ -169,8 +169,12 @@ export function ComparisonResults({
         <aside className="comparison-results-sidecards" aria-label="Session details">
           <section className="panel comparison-results-key" aria-labelledby="comparison-revision-key-title">
             <h3 id="comparison-revision-key-title">Revision Key</h3>
-            <div className="comparison-revealed-map" aria-label="Revealed blind mapping">
-              {activeSession.candidates.map((candidate) => <span key={candidate.revisionId}><strong>{candidate.blindId}</strong> {"->"} {revisionLabel(candidate.revisionNumber)}</span>)}
+            <div className="comparison-revision-key-list" aria-label="Revealed blind mapping">
+              {activeSession.candidates.map((candidate) => <div key={candidate.revisionId}>
+                <strong>{candidate.blindId}</strong>
+                <span>=</span>
+                <span>{revisionLabel(candidate.revisionNumber)}</span>
+              </div>)}
             </div>
           </section>
 

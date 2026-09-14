@@ -147,9 +147,9 @@
 .revision-history-footer { padding: 6px 10px; }
 .revision-history-footer button { min-height: 28px !important; }
 .revision-badge.top {
-  border-color: #3157c4;
-  background: #3157c4;
-  color: #fff;
+  border-color: rgba(49, 87, 196, .24);
+  background: rgba(49, 87, 196, .12);
+  color: #3157c4;
 }
 .revision-badge.top.clickable {
   cursor: pointer;
