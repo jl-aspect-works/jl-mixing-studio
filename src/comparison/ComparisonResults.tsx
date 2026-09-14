@@ -155,75 +155,84 @@ export function ComparisonResults({
         </div>}
       </section>
 
-      <div className="comparison-results-region-band">
-        <section className="panel comparison-results-regions-panel" aria-labelledby="comparison-region-results-title">
-          <h3 id="comparison-region-results-title">By Region Results</h3>
-          <div className="comparison-results-region-scroll">
-            <table className="comparison-results-region-table">
-              <thead><tr><th>Region</th><th>Ranking</th><th>Notes</th></tr></thead>
-              <tbody>{activeSession.regions.map((result) => <RegionRankingRow key={result.region.regionId} result={result} candidates={candidates} />)}</tbody>
-            </table>
+      <section className="panel comparison-results-session-group" aria-labelledby="comparison-session-group-title">
+        <header className="comparison-results-group-header">
+          <div>
+            <h3 id="comparison-session-group-title">Session Results</h3>
+            <p>Review one completed comparison session at a time.</p>
           </div>
-        </section>
-
-        <aside className="comparison-results-sidecards" aria-label="Session details">
-          <section className="panel comparison-results-key" aria-labelledby="comparison-revision-key-title">
-            <h3 id="comparison-revision-key-title">Revision Key</h3>
-            <div className="comparison-revision-key-list" aria-label="Revealed blind mapping">
-              {activeSession.candidates.map((candidate) => <div key={candidate.revisionId}>
-                <strong>{candidate.blindId}</strong>
-                <span>=</span>
-                <span>{revisionLabel(candidate.revisionNumber)}</span>
-              </div>)}
-            </div>
-          </section>
-
-          <section className="panel comparison-loudness-table compact" aria-labelledby="comparison-loudness-title">
-            <h3 id="comparison-loudness-title">Loudness Match Details</h3>
-            {activeSession.loudnessMatch ? <table><thead><tr><th>Revision</th><th>LUFS</th><th>Gain</th></tr></thead><tbody>
-              {activeSession.candidates.map((candidate) => <tr key={candidate.revisionId}>
-                <td><CandidateName candidate={candidate} /></td>
-                <td>{candidate.integratedLufs === null ? "n/a" : candidate.integratedLufs.toFixed(2)}</td>
-                <td>{candidate.appliedGainDb === null ? "n/a" : `${candidate.appliedGainDb.toFixed(2)} dB`}</td>
-              </tr>)}
-            </tbody></table> : <p className="comparison-placeholder">Loudness Match was off for this session.</p>}
-          </section>
-        </aside>
-      </div>
-
-      <div className="comparison-results-bottom-grid">
-        <section className="panel comparison-results-cumulative-panel" aria-labelledby="comparison-cumulative-title">
-          <h3 id="comparison-cumulative-title">Cumulative Results</h3>
-          <StandingsTable title="Full Song Standings" standings={results.fullSongStandings} topRevisionId={topRevisionId} />
-          {results.regionalStandings.filter((region) => region.region.regionId !== "full-song").map((region) =>
-            <StandingsTable key={region.region.regionId} title={`${region.region.name} Standings`} standings={region.standings} />,
-          )}
-        </section>
-
-        <section className="panel comparison-results-history" aria-labelledby="comparison-session-history-title">
-          <h3 id="comparison-session-history-title">Completed Sessions</h3>
-          {results.document.completedSessions.map((session) => <button key={session.sessionId} type="button" className={session.sessionId === activeSession.sessionId ? "active" : "secondary"} onClick={() => setActiveSessionId(session.sessionId)}>
-            {formatDate(session.completedAt)} - {session.candidates.length} candidates
-          </button>)}
-          {deleteTarget && <div className="inline-notice warning comparison-delete-confirmation" role="alertdialog" aria-label="Delete completed comparison session">
-            <span>Delete this completed comparison session? Cumulative standings and TOP will be recomputed.</span>
-            <span><button type="button" className="secondary" onClick={() => setDeleteTarget(null)}>Keep Session</button><button type="button" className="danger" disabled={busy} onClick={() => { onDeleteSession(deleteTarget.sessionId); setDeleteTarget(null); }}><ActionIcon name="delete" />Delete Session</button></span>
-          </div>}
-          <div className="comparison-history-actions">
+          <div className="comparison-results-session-controls">
+            <label>
+              <span>Completed Session</span>
+              <select value={activeSession.sessionId} onChange={(event) => setActiveSessionId(event.target.value)}>
+                {results.document.completedSessions.map((session) => <option key={session.sessionId} value={session.sessionId}>
+                  {formatDate(session.completedAt)} - {session.candidates.length} candidates
+                </option>)}
+              </select>
+            </label>
             <button type="button" className="danger secondary" disabled={busy || !activeSession} onClick={() => setDeleteTarget(activeSession)}><ActionIcon name="delete" />Delete This Session</button>
             <button type="button" className="danger secondary" disabled={busy || results.document.completedSessions.length === 0} onClick={() => setConfirmClear(true)}><ActionIcon name="delete" />Clear Ranking History</button>
           </div>
-          {confirmClear && <div className="inline-notice warning comparison-clear-confirmation" role="alertdialog" aria-label="Clear ranking history">
-            <div>
-              <strong>Clear all blind comparison ranking history for this project?</strong>
-              <p>This permanently removes all completed comparison sessions, rankings, blind mappings, and comparison notes for this project.</p>
-              <p>Cumulative Full Song and regional standings will be cleared, and the TOP indicator will be removed.</p>
-              <p>Revision audio, approval/delivery status, and project region definitions will not be changed.</p>
+        </header>
+
+        {deleteTarget && <div className="inline-notice warning comparison-delete-confirmation" role="alertdialog" aria-label="Delete completed comparison session">
+          <span>Delete this completed comparison session? Cumulative standings and TOP will be recomputed.</span>
+          <span><button type="button" className="secondary" onClick={() => setDeleteTarget(null)}>Keep Session</button><button type="button" className="danger" disabled={busy} onClick={() => { onDeleteSession(deleteTarget.sessionId); setDeleteTarget(null); }}><ActionIcon name="delete" />Delete Session</button></span>
+        </div>}
+        {confirmClear && <div className="inline-notice warning comparison-clear-confirmation" role="alertdialog" aria-label="Clear ranking history">
+          <div>
+            <strong>Clear all blind comparison ranking history for this project?</strong>
+            <p>This permanently removes all completed comparison sessions, rankings, blind mappings, and comparison notes for this project.</p>
+            <p>Cumulative Full Song and regional standings will be cleared, and the TOP indicator will be removed.</p>
+            <p>Revision audio, approval/delivery status, and project region definitions will not be changed.</p>
+          </div>
+          <span><button type="button" className="secondary" onClick={() => setConfirmClear(false)}>Cancel</button><button type="button" className="danger" disabled={busy} onClick={() => { onClearHistory(); setConfirmClear(false); }}><ActionIcon name="delete" />Clear Ranking History</button></span>
+        </div>}
+
+        <div className="comparison-results-region-band">
+          <section className="comparison-results-regions-panel" aria-labelledby="comparison-region-results-title">
+            <h3 id="comparison-region-results-title">By Region Results</h3>
+            <div className="comparison-results-region-scroll">
+              <table className="comparison-results-region-table">
+                <thead><tr><th>Region</th><th>Ranking</th><th>Notes</th></tr></thead>
+                <tbody>{activeSession.regions.map((result) => <RegionRankingRow key={result.region.regionId} result={result} candidates={candidates} />)}</tbody>
+              </table>
             </div>
-            <span><button type="button" className="secondary" onClick={() => setConfirmClear(false)}>Cancel</button><button type="button" className="danger" disabled={busy} onClick={() => { onClearHistory(); setConfirmClear(false); }}><ActionIcon name="delete" />Clear Ranking History</button></span>
-          </div>}
-        </section>
-      </div>
+          </section>
+
+          <aside className="comparison-results-sidecards" aria-label="Session details">
+            <section className="comparison-results-key" aria-labelledby="comparison-revision-key-title">
+              <h3 id="comparison-revision-key-title">Revision Key</h3>
+              <div className="comparison-revision-key-list" aria-label="Revealed blind mapping">
+                {activeSession.candidates.map((candidate) => <div key={candidate.revisionId}>
+                  <strong>{candidate.blindId}</strong>
+                  <span>=</span>
+                  <span>{revisionLabel(candidate.revisionNumber)}</span>
+                </div>)}
+              </div>
+            </section>
+
+            <section className="comparison-loudness-table compact" aria-labelledby="comparison-loudness-title">
+              <h3 id="comparison-loudness-title">Loudness Match Details</h3>
+              {activeSession.loudnessMatch ? <table><thead><tr><th>Revision</th><th>LUFS</th><th>Gain</th></tr></thead><tbody>
+                {activeSession.candidates.map((candidate) => <tr key={candidate.revisionId}>
+                  <td><CandidateName candidate={candidate} /></td>
+                  <td>{candidate.integratedLufs === null ? "n/a" : candidate.integratedLufs.toFixed(2)}</td>
+                  <td>{candidate.appliedGainDb === null ? "n/a" : `${candidate.appliedGainDb.toFixed(2)} dB`}</td>
+                </tr>)}
+              </tbody></table> : <p className="comparison-placeholder">Loudness Match was off for this session.</p>}
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section className="panel comparison-results-cumulative-panel" aria-labelledby="comparison-cumulative-title">
+        <h3 id="comparison-cumulative-title">Cumulative Results</h3>
+        <StandingsTable title="Full Song Standings" standings={results.fullSongStandings} topRevisionId={topRevisionId} />
+        {results.regionalStandings.filter((region) => region.region.regionId !== "full-song").map((region) =>
+          <StandingsTable key={region.region.regionId} title={`${region.region.name} Standings`} standings={region.standings} />,
+        )}
+      </section>
     </div> : <section className="empty-state">
       <h3>No completed comparisons</h3>
       <p>Completed blind comparison sessions will appear here after reveal.</p>
