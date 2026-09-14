@@ -31,8 +31,10 @@ button.revision-history-item.active:hover:not(:disabled) { background: #e8f1fb; 
 .revision-history-item.active .revision-history-date { color: #6f7e94; }
 .revision-history-footer { flex: 0 0 auto; margin-top: auto; padding: 9px 12px; border-top: 1px solid rgba(0,0,0,.08); background: #fafbfd; }
 .revision-history-footer button { width: 100%; min-height: 30px !important; padding: 4px 8px !important; font-size: .68rem !important; }
-.revision-badges { display: flex; flex: 0 0 auto; max-width: 100%; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
-.revision-badge { display: inline-flex; align-items: center; min-height: 14px; padding: 0 4px; border: 1px solid rgba(100, 112, 134, .16); border-radius: 999px; background: rgba(241, 244, 248, .56); color: #7a8495; font-size: .48rem; font-weight: 650; text-transform: uppercase; letter-spacing: .01em; line-height: 1.35; }
+.revision-badges { display: flex; flex: 0 0 auto; max-width: 100%; gap: 2px; flex-wrap: wrap; justify-content: flex-end; }
+.revision-badge { display: inline-flex; align-items: center; min-height: 12px; padding: 0 3px; border: 1px solid rgba(100, 112, 134, .12); border-radius: 999px; background: rgba(241, 244, 248, .44); color: #818b9b; font-size: .42rem; font-weight: 620; text-transform: uppercase; letter-spacing: .01em; line-height: 1.2; }
+button.revision-badge { min-height: 12px; padding: 0 3px; border-radius: 999px; box-shadow: none; font-size: .42rem; line-height: 1.2; }
+button.revision-badge:hover:not(:disabled) { box-shadow: none; }
 .revision-badge.current { background: rgba(237, 244, 255, .58); color: #5e7da7; }
 .revision-badge.approved { background: rgba(237, 248, 242, .58); color: #568069; }
 .revision-badge.delivered { background: rgba(247, 240, 255, .58); color: #80699a; }
