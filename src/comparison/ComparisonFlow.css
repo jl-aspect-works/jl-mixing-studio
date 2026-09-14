@@ -126,7 +126,7 @@
 .comparison-revealed-map span, .comparison-top-pill { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 7px; border-radius: 999px; background: rgba(49, 87, 196, .12); color: #1f3f9e; font-size: .76rem; font-weight: 800; }
 .comparison-results-region-band { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 12px; align-items: start; }
 .comparison-results-sidecards { display: grid; gap: 12px; min-width: 0; }
-.comparison-results-region-scroll { overflow-x: auto; padding-bottom: 3px; }
+.comparison-results-region-scroll { box-sizing: border-box; overflow-x: auto; padding-bottom: 3px; }
 .comparison-results-region-table { min-width: 760px; }
 .comparison-results-region-table th[scope="row"] { width: 150px; vertical-align: top; }
 .comparison-results-region-table th[scope="row"] strong, .comparison-results-region-table th[scope="row"] small { display: block; }
