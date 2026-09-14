@@ -610,13 +610,16 @@ describe("blind comparison workspace shell", () => {
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} initialView="results" />);
 
     expect(await screen.findByRole("heading", { name: "Revealed Session" })).toBeInTheDocument();
-    expect(screen.getByText("A")).toBeInTheDocument();
+    const revisionKey = screen.getByLabelText("Revealed blind mapping");
+    expect(within(revisionKey).getByText("A")).toBeInTheDocument();
     expect(screen.getAllByText("Revision 01").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Revision 01 (A)").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Revision 02").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Revision 02 (B)").length).toBeGreaterThan(0);
-    expect(screen.getByText("-18.20")).toBeInTheDocument();
-    expect(screen.getByText("-2.00 dB")).toBeInTheDocument();
+    const loudnessDetails = screen.getByLabelText("Loudness matched candidate measurements");
+    expect(within(loudnessDetails).getByText("A")).toBeInTheDocument();
+    expect(within(loudnessDetails).getByText("-18.20")).toBeInTheDocument();
+    expect(within(loudnessDetails).getByText("-2.00 dB")).toBeInTheDocument();
     expect(screen.getByText("Full Song Standings")).toBeInTheDocument();
     expect(screen.getByText("Chorus Standings")).toBeInTheDocument();
     expect(screen.getByText("More balanced")).toBeInTheDocument();
