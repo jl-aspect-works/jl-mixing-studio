@@ -27,6 +27,11 @@ const emptyDraft = (): RegionDraft => ({ regionId: null, name: "", start: "0:00"
 const errorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : typeof error === "string" ? error : fallback;
 
+const nextRegionName = (regions: readonly ProjectRegion[]) => {
+  const customCount = regions.filter((region) => !region.builtIn).length + 1;
+  return `Region ${String(customCount).padStart(2, "0")}`;
+};
+
 export function ComparisonSetup({
   client,
   project,
@@ -66,6 +71,16 @@ export function ComparisonSetup({
     () => [...(setup?.candidates ?? [])].sort((left, right) => right.revisionNumber - left.revisionNumber),
     [setup?.candidates],
   );
+  const revisionDescriptions = useMemo(
+    () => new Map(project.revisions.map((revision) => [revision.revisionId, revision.description])),
+    [project.revisions],
+  );
+  const eligibleCandidateIds = useMemo(
+    () => candidates.filter((candidate) => candidate.eligible).map((candidate) => candidate.revisionId),
+    [candidates],
+  );
+  const allEligibleCandidatesSelected = eligibleCandidateIds.length > 0
+    && eligibleCandidateIds.every((revisionId) => selectedCandidates.has(revisionId));
   const selectedCandidateValues = candidates.filter((candidate) => selectedCandidates.has(candidate.revisionId));
   const regions = useMemo(
     () => [...(setup?.document.regions ?? [])].sort((left, right) => {
@@ -77,6 +92,8 @@ export function ComparisonSetup({
     }),
     [setup?.document.regions],
   );
+  const allRegionsSelected = regions.length > 0
+    && regions.every((region) => selectedRegions.has(region.regionId));
   const selectedRegionValues = regions.filter((region) => selectedRegions.has(region.regionId));
   const canStart = selectedCandidateValues.length >= 2
     && selectedCandidateValues.length <= MAX_SHORTCUT_CANDIDATES
@@ -87,6 +104,11 @@ export function ComparisonSetup({
   const toggle = (values: Set<string>, value: string, checked: boolean) => {
     const next = new Set(values);
     if (checked) next.add(value); else next.delete(value);
+    return next;
+  };
+  const toggleAll = (values: Set<string>, targetValues: readonly string[], checked: boolean) => {
+    const next = new Set(values);
+    targetValues.forEach((value) => { if (checked) next.add(value); else next.delete(value); });
     return next;
   };
 
@@ -104,7 +126,8 @@ export function ComparisonSetup({
   const saveRegion = async () => {
     const startSeconds = parseTimestamp(draft.start);
     const endSeconds = parseTimestamp(draft.end);
-    if (!draft.name.trim() || startSeconds === null || endSeconds === null || endSeconds <= startSeconds) {
+    const name = draft.name.trim() || nextRegionName(regions);
+    if (startSeconds === null || endSeconds === null || endSeconds <= startSeconds) {
       setError("Enter a region name and valid start/end timestamps with the end after the start.");
       return;
     }
@@ -114,12 +137,12 @@ export function ComparisonSetup({
     const identity = { clientId: client.clientId, projectId: project.projectId };
     try {
       const saved = draft.regionId
-        ? await updateComparisonRegion({ ...identity, regionId: draft.regionId, name: draft.name.trim(), startSeconds, endSeconds })
-        : await addComparisonRegion({ ...identity, name: draft.name.trim(), startSeconds, endSeconds });
+        ? await updateComparisonRegion({ ...identity, regionId: draft.regionId, name, startSeconds, endSeconds })
+        : await addComparisonRegion({ ...identity, name, startSeconds, endSeconds });
       const refreshed = await getComparisonSetup(identity);
       setSetup(refreshed);
       setSelectedRegions((current) => new Set(current).add(saved.regionId));
-      setDraft(emptyDraft());
+      setDraft(draft.regionId ? emptyDraft() : { regionId: null, name: "", start: formatTimestamp(saved.endSeconds ?? endSeconds), end: formatTimestamp(saved.endSeconds ?? endSeconds) });
       setNotice(draft.regionId ? "Region updated." : "Region added.");
     } catch (reason) {
       setError(errorMessage(reason, "The comparison region could not be saved."));
@@ -195,12 +218,11 @@ export function ComparisonSetup({
     <div className="comparison-setup-grid">
       <section className="panel" aria-labelledby="comparison-candidates-title">
         <h3 id="comparison-candidates-title">1. Select revisions</h3>
-        <p>Select 2 or more versions to compare. Variants and revisions without playable files are excluded from this list.</p>
-        <p><strong>Make sure the selected revisions have the same song structure.</strong></p>
+        <label className="comparison-select-all"><input type="checkbox" checked={allEligibleCandidatesSelected} disabled={!eligibleCandidateIds.length} onChange={(event) => setSelectedCandidates((current) => toggleAll(current, eligibleCandidateIds, event.target.checked))} />Select all revisions</label>
         <div className="comparison-choice-list">
           {candidates.map((candidate) => <label key={candidate.revisionId} className={!candidate.eligible ? "unavailable" : ""}>
             <input type="checkbox" checked={selectedCandidates.has(candidate.revisionId)} disabled={!candidate.eligible} onChange={(event) => setSelectedCandidates((current) => toggle(current, candidate.revisionId, event.target.checked))} />
-            <span><strong>Revision {String(candidate.revisionNumber).padStart(2, "0")}</strong>{candidate.reason && <small>{candidate.reason}</small>}</span>
+            <span><strong>Revision {String(candidate.revisionNumber).padStart(2, "0")}</strong>{revisionDescriptions.get(candidate.revisionId) && <small>{revisionDescriptions.get(candidate.revisionId)}</small>}{candidate.reason && <small>{candidate.reason}</small>}</span>
           </label>)}
         </div>
       </section>
@@ -212,6 +234,7 @@ export function ComparisonSetup({
     <section className="panel comparison-regions-panel" aria-labelledby="comparison-regions-title">
         <h3 id="comparison-regions-title">3. Select and manage regions</h3>
         <p>Select one or more regions to evaluate. Full Song is selected by default but is optional.</p>
+        <label className="comparison-select-all"><input type="checkbox" checked={allRegionsSelected} disabled={!regions.length} onChange={(event) => setSelectedRegions((current) => toggleAll(current, regions.map((region) => region.regionId), event.target.checked))} />Select all regions</label>
         <RegionPreview
           clientId={client.clientId}
           projectId={project.projectId}
@@ -223,7 +246,7 @@ export function ComparisonSetup({
         />
         <form className="comparison-region-editor" onSubmit={(event) => { event.preventDefault(); void saveRegion(); }}>
           <h4>{draft.regionId ? "Edit region" : "Add region"}</h4>
-          <label>Name<input required value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>
+          <label>Name<input value={draft.name} placeholder={nextRegionName(regions)} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>
           <label>Start<input required aria-label="Region start" placeholder="0:00" value={draft.start} onChange={(event) => setDraft((current) => ({ ...current, start: event.target.value }))} /></label>
           <label>End<input required aria-label="Region end" placeholder="0:30" value={draft.end} onChange={(event) => setDraft((current) => ({ ...current, end: event.target.value }))} /></label>
           <button type="submit" className="secondary" disabled={busy}><ActionIcon name={draft.regionId ? "save" : "add"} />{draft.regionId ? "Save Region" : "Add Region"}</button>
