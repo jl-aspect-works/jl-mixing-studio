@@ -57,7 +57,15 @@ export function RegionPreview({
   const parsedEnd = Math.min(parseTimestamp(end) ?? Math.min(30, duration), duration || Number.MAX_SAFE_INTEGER);
   const startPercent = duration ? parsedStart / duration * 100 : 0;
   const endPercent = duration ? parsedEnd / duration * 100 : 0;
-  const setStart = (seconds: number) => onBoundsChange(locatorTimestamp(Math.min(seconds, Math.max(0, parsedEnd - .1))), end);
+  const setStart = (seconds: number) => {
+    const next = Math.min(duration, Math.max(0, seconds));
+    if (next >= parsedEnd) {
+      const timestamp = locatorTimestamp(next);
+      onBoundsChange(timestamp, timestamp);
+      return;
+    }
+    onBoundsChange(locatorTimestamp(next), end);
+  };
   const setEnd = (seconds: number) => onBoundsChange(start, locatorTimestamp(Math.max(seconds, parsedStart + .1)));
   const seekPreview = (seconds: number) => {
     const next = Math.min(duration, Math.max(0, seconds));
