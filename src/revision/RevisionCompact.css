@@ -52,6 +52,13 @@
   row-gap: 2px;
 }
 
+.revision-detail-heading-actions .revision-badge {
+  min-height: 12px !important;
+  padding: 0 3px !important;
+  font-size: .42rem !important;
+  line-height: 1.2 !important;
+}
+
 .revision-detail-heading-actions > button {
   grid-column: 3;
   justify-self: end;
