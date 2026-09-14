@@ -135,9 +135,9 @@
 .comparison-results-group-header { display: flex; align-items: end; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(205, 214, 229, .9); }
 .comparison-results-group-header h3 { margin: 0; }
 .comparison-results-group-header p { margin: 2px 0 0; color: var(--muted-text, #748096); font-size: .76rem; }
-.comparison-results-session-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
-.comparison-results-session-controls select { min-width: min(290px, 100%); height: 34px; min-height: 34px; padding: 5px 30px 5px 10px; border: 1px solid var(--border, #cbd3df); border-radius: 7px; background: #fff; color: var(--text, #172033); font-size: .76rem; font-weight: 750; }
-.comparison-results-session-controls button { min-height: 34px; padding: 5px 10px; font-size: .68rem; }
+.comparison-results-session-controls { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.comparison-results-session-controls select { flex: 0 1 290px; min-width: 240px; height: 34px; min-height: 34px; padding: 5px 30px 5px 10px; border: 1px solid var(--border, #cbd3df); border-radius: 7px; background: #fff; color: var(--text, #172033); font-size: .76rem; font-weight: 750; }
+.comparison-results-session-controls button { flex: 0 0 auto; min-height: 34px; padding: 5px 10px; font-size: .68rem; white-space: nowrap; }
 .comparison-results-region-band { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 12px; align-items: start; }
 .comparison-results-sidecards { display: grid; gap: 12px; min-width: 0; }
 .comparison-results-regions-panel, .comparison-results-key, .comparison-loudness-table.compact { min-width: 0; overflow: hidden; }
@@ -199,5 +199,6 @@
   .comparison-delete-confirmation { align-items: flex-start; flex-direction: column; }
   .comparison-results-region-band, .comparison-results-stat-grid { grid-template-columns: 1fr; }
   .comparison-results-group-header { align-items: stretch; flex-direction: column; }
-  .comparison-results-session-controls { justify-content: flex-start; }
+  .comparison-results-session-controls { flex-wrap: wrap; justify-content: flex-start; }
+  .comparison-results-session-controls select { flex-basis: 100%; min-width: 0; }
 }
