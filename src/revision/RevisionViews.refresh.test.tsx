@@ -2,18 +2,24 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ClientSummary, ProjectSummary } from "../types";
 import { notifyWorkspaceRefreshed } from "../app/workspaceRefreshEvents";
+import type { ComparisonResultsData } from "../comparison/models";
 import { RevisionsView } from "./RevisionViews";
 
 const mocks = vi.hoisted(() => ({
   getRevisionNotes: vi.fn(),
   updateRevisionDescription: vi.fn(),
   updateRevisionNotes: vi.fn(),
+  getComparisonResults: vi.fn(),
 }));
 
 vi.mock("./revisionWorkspaceService", () => ({
   getRevisionNotes: mocks.getRevisionNotes,
   updateRevisionDescription: mocks.updateRevisionDescription,
   updateRevisionNotes: mocks.updateRevisionNotes,
+}));
+
+vi.mock("../comparison/comparisonService", () => ({
+  getComparisonResults: mocks.getComparisonResults,
 }));
 
 vi.mock("./RevisionFileBrowser", () => ({
@@ -82,6 +88,11 @@ beforeEach(() => {
   mocks.getRevisionNotes.mockReset();
   mocks.updateRevisionDescription.mockReset();
   mocks.updateRevisionNotes.mockReset();
+  mocks.getComparisonResults.mockReset().mockResolvedValue({
+    document: { schemaVersion: 1, regions: [], completedSessions: [] },
+    fullSongStandings: [],
+    regionalStandings: [],
+  } satisfies ComparisonResultsData);
 });
 
 afterEach(cleanup);
@@ -157,5 +168,59 @@ describe("RevisionsView revision detail actions", () => {
     renderView();
     await screen.findByText("Notes");
     expect(screen.queryByRole("button", { name: "Create Delivery" })).not.toBeInTheDocument();
+  });
+
+  it("shows cumulative TOP from comparison history and opens comparison results without approving", async () => {
+    mocks.getRevisionNotes.mockResolvedValue({ content: "Notes", maxBytes: 65_536 });
+    const onApprove = vi.fn();
+    const twoRevisionProject: ProjectSummary = {
+      ...project,
+      currentRevision: 2,
+      revisions: [
+        project.revisions[0],
+        {
+          number: 2,
+          revisionId: "revision-2",
+          createdAt: "2026-08-17T12:00:00Z",
+          description: "Second revision",
+          approvedAt: null,
+          approvedBy: null,
+        },
+      ],
+    };
+    mocks.getComparisonResults.mockResolvedValue({
+      document: {
+        schemaVersion: 1,
+        regions: [{ regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null, builtIn: true }],
+        completedSessions: [{
+          sessionId: "session-1",
+          completedAt: "2026-08-18T12:00:00Z",
+          candidates: [
+            { revisionId: "revision-1", revisionNumber: 1, blindId: "A", integratedLufs: null, appliedGainDb: null },
+            { revisionId: "revision-2", revisionNumber: 2, blindId: "B", integratedLufs: null, appliedGainDb: null },
+          ],
+          regions: [{
+            region: { regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null },
+            rankRows: [["revision-2"], ["revision-1"]],
+            notes: {},
+          }],
+          loudnessMatch: false,
+        }],
+      },
+      fullSongStandings: [
+        { revisionId: "revision-2", revisionNumber: 2, averagePlacement: 1, contributingSessions: 1 },
+        { revisionId: "revision-1", revisionNumber: 1, averagePlacement: 2, contributingSessions: 1 },
+      ],
+      regionalStandings: [],
+    } satisfies ComparisonResultsData);
+
+    renderView(twoRevisionProject, vi.fn(), onApprove);
+
+    const top = await screen.findByRole("button", { name: "TOP" });
+    expect(top.closest(".revision-detail-heading-actions")).not.toBeNull();
+    fireEvent.click(top);
+
+    expect(await screen.findByRole("heading", { name: "Revealed Session" })).toBeInTheDocument();
+    expect(onApprove).not.toHaveBeenCalled();
   });
 });

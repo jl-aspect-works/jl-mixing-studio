@@ -32,11 +32,13 @@ export function ComparisonSetup({
   project,
   onCancel,
   onStart,
+  onShowResults,
 }: {
   client: ClientSummary;
   project: ProjectSummary;
   onCancel: () => void;
   onStart: (session: FrozenComparisonSession) => void;
+  onShowResults: () => void;
 }) {
   const [setup, setSetup] = useState<ComparisonSetupData | null>(null);
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
@@ -186,7 +188,7 @@ export function ComparisonSetup({
   return <section className="comparison-setup" aria-labelledby="comparison-setup-title">
     <header className="comparison-screen-header">
       <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-setup-title">New Comparison</h2><p>{project.projectName}</p></div>
-      <button type="button" className="secondary" onClick={onCancel}><ActionIcon name="close" />Cancel</button>
+      <div className="comparison-session-facts"><button type="button" className="secondary" onClick={onShowResults} disabled={!setup.document.completedSessions.length}><ActionIcon name="search" />Comparison Results</button><button type="button" className="secondary" onClick={onCancel}><ActionIcon name="close" />Cancel</button></div>
     </header>
     {error && <div className="inline-notice error" role="alert">{error}</div>}
     {notice && <div className="inline-notice success" role="status">{notice}</div>}

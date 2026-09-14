@@ -197,11 +197,11 @@ h3 { margin: 0; font-size: 1rem; }
 .revision-list-item[aria-pressed="true"] { border-color: #9bbaf2; background: #eaf2ff; color: #174cae; }
 .revision-list-item > span:first-child { min-width: 0; display: grid; gap: 4px; }
 .revision-list-item small { color: #778399; font-weight: 650; }
-.revision-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
-.revision-badge { display: inline-flex; align-items: center; min-height: 23px; border-radius: 999px; background: #eef1f5; color: #627087; padding: 3px 8px; font-size: .62rem; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
-.revision-badge.current { background: #eaf2ff; color: #1758d5; }
-.revision-badge.approved { background: #e5f7ed; color: #207447; }
-.revision-badge.delivered { background: #efe9ff; color: #6545b5; }
+.revision-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; }
+.revision-badge { display: inline-flex; align-items: center; min-height: 12px; border-radius: 999px; background: rgba(241, 244, 248, .44); color: #818b9b; padding: 0 3px; font-size: .42rem; font-weight: 620; letter-spacing: .01em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
+.revision-badge.current { background: rgba(237, 244, 255, .58); color: #5e7da7; }
+.revision-badge.approved { background: rgba(237, 248, 242, .58); color: #568069; }
+.revision-badge.delivered { background: rgba(247, 240, 255, .58); color: #80699a; }
 .revision-badge.historical { background: #f2f4f7; color: #56647a; }
 .revision-badge.superseded { background: #f4f5f7; color: #7a8494; }
 .revision-detail { min-width: 0; }

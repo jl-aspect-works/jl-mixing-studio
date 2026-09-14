@@ -21,10 +21,12 @@ export function ProjectNavigationBar({
   active,
   onSelect,
   actions,
+  actionsLayout = "inline",
 }: {
   active: ProjectShellView;
   onSelect: (view: ProjectShellView) => void;
   actions?: ReactNode;
+  actionsLayout?: "inline" | "row";
 }) {
   const [pending, setPending] = useState<ProjectShellView | null>(null);
 
@@ -39,7 +41,7 @@ export function ProjectNavigationBar({
   };
 
   return (
-    <div className="workflow-tabs-row">
+    <div className={`workflow-tabs-row${actionsLayout === "row" ? " actions-below" : ""}`}>
       <nav className="workflow-tabs" aria-label="Project navigation" aria-busy={pending ? "true" : undefined}>
         {projectNavigationItems.map(([view, label]) => {
           if (pending === view) {

@@ -49,7 +49,14 @@
   align-self: center;
   justify-self: start;
   max-width: 100%;
-  row-gap: 4px;
+  row-gap: 2px;
+}
+
+.revision-detail-heading-actions .revision-badge {
+  min-height: 12px !important;
+  padding: 0 3px !important;
+  font-size: .42rem !important;
+  line-height: 1.2 !important;
 }
 
 .revision-detail-heading-actions > button {
@@ -146,6 +153,17 @@
 .revision-history-item { padding: 8px 10px; flex: 0 0 auto; }
 .revision-history-footer { padding: 6px 10px; }
 .revision-history-footer button { min-height: 28px !important; }
+.revision-badge.top {
+  border-color: rgba(49, 87, 196, .24);
+  background: rgba(49, 87, 196, .12);
+  color: #3157c4;
+}
+.revision-badge.top.clickable {
+  cursor: pointer;
+}
+.revision-badge.top.clickable:hover {
+  filter: brightness(.95);
+}
 .revisions-workspace { gap: 10px; margin-bottom: 9px; }
 .revision-files-heading { padding-top: 9px; }
 .revision-files { margin-top: 7px; }

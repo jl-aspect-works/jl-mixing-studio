@@ -10,7 +10,10 @@
 .workflow-tabs-row .workflow-tabs { min-width: 0; flex: 1 1 auto; margin-bottom: 0 !important; }
 .workflow-tabs-actions { flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
 .workflow-tabs-actions button { min-height: 32px !important; padding: 5px 10px !important; font-size: .72rem !important; }
-.revisions-workspace { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 12px; align-items: stretch; margin-bottom: 12px; }
+.workflow-tabs-row.actions-below { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.workflow-tabs-row.actions-below .workflow-tabs-actions { justify-content: flex-end; }
+.workflow-tabs-row.actions-below .workflow-tabs-actions button { min-height: 30px !important; padding: 4px 9px !important; }
+.revisions-workspace { display: grid; grid-template-columns: minmax(320px, 1.25fr) minmax(0, 1.75fr); gap: 12px; align-items: stretch; margin-bottom: 12px; }
 .revision-history { min-height: 0; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
 .revision-history-header { flex: 0 0 auto; padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.08); }
 .revision-history-header h2 { margin: 0; font-size: .95rem; }
@@ -28,11 +31,13 @@ button.revision-history-item.active:hover:not(:disabled) { background: #e8f1fb; 
 .revision-history-item.active .revision-history-date { color: #6f7e94; }
 .revision-history-footer { flex: 0 0 auto; margin-top: auto; padding: 9px 12px; border-top: 1px solid rgba(0,0,0,.08); background: #fafbfd; }
 .revision-history-footer button { width: 100%; min-height: 30px !important; padding: 4px 8px !important; font-size: .68rem !important; }
-.revision-badges { display: flex; flex: 0 0 auto; max-width: 100%; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-.revision-badge { display: inline-flex; align-items: center; min-height: 18px; padding: 1px 6px; border-radius: 999px; background: #f1f4f8; color: #647086; font-size: .56rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
-.revision-badge.current { background: #edf4ff; color: #3567a5; }
-.revision-badge.approved { background: #edf8f2; color: #277a52; }
-.revision-badge.delivered { background: #f7f0ff; color: #76509b; }
+.revision-badges { display: flex; flex: 0 0 auto; max-width: 100%; gap: 2px; flex-wrap: wrap; justify-content: flex-end; }
+.revision-badge { display: inline-flex; align-items: center; min-height: 12px; padding: 0 3px; border: 1px solid rgba(100, 112, 134, .12); border-radius: 999px; background: rgba(241, 244, 248, .44); color: #818b9b; font-size: .42rem; font-weight: 620; text-transform: uppercase; letter-spacing: .01em; line-height: 1.2; }
+button.revision-badge { min-height: 12px; padding: 0 3px; border-radius: 999px; box-shadow: none; font-size: .42rem; line-height: 1.2; }
+button.revision-badge:hover:not(:disabled) { box-shadow: none; }
+.revision-badge.current { background: rgba(237, 244, 255, .58); color: #5e7da7; }
+.revision-badge.approved { background: rgba(237, 248, 242, .58); color: #568069; }
+.revision-badge.delivered { background: rgba(247, 240, 255, .58); color: #80699a; }
 .revision-detail { min-width: 0; display: grid; gap: 12px; }
 .revision-detail-header { padding: 14px 16px !important; }
 .revision-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -52,7 +57,7 @@ button.revision-history-item.active:hover:not(:disabled) { background: #e8f1fb; 
 .revision-files-panel { width: 100%; padding: 0 !important; overflow: hidden; }
 .revision-files-heading { padding: 12px 14px 0; }
 .revision-files-heading h2 { margin: 0; font-size: .95rem; }
-.revision-files { margin-top: 10px; }
+.revision-files { margin-top: 0; }
 .revision-files .shared-managed-folder-toolbar { box-sizing: border-box; padding-left: 12px; padding-right: 12px; }
 .revision-files-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid rgba(0,0,0,.07); border-bottom: 1px solid rgba(0,0,0,.07); }
 .revision-files-toolbar code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .7rem; }
@@ -84,5 +89,5 @@ button.revision-history-item.active:hover:not(:disabled) { background: #e8f1fb; 
 .revision-row-menu-popover .revision-delete, .revision-row-menu-popover .revision-delete-confirm { color: #b42318; }
 .revision-muted { color: var(--muted, #667085); }
 .revision-files-empty { text-align: center; color: var(--muted, #667085); padding: 28px 12px !important; }
-@media (max-width: 1050px) { .revisions-workspace { grid-template-columns: minmax(230px, 1fr) minmax(0, 2fr); } }
+@media (max-width: 1050px) { .revisions-workspace { grid-template-columns: minmax(290px, 1.15fr) minmax(0, 1.85fr); } }
 @media (max-width: 850px) { .workflow-tabs-row { align-items: stretch; flex-direction: column; } .workflow-tabs-actions { justify-content: flex-end; } .revisions-summary-row, .revisions-workspace { grid-template-columns: 1fr; } .revisions-context, .revisions-quick-actions { min-height: 0; } .revision-history-list { max-height: 260px; } }
