@@ -150,7 +150,7 @@ describe("comparison setup", () => {
 
   it("adds consecutive custom regions and selects them", async () => {
     const verse = { regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false };
-    const chorus = { regionId: "chorus", name: "Chorus", startSeconds: 0, endSeconds: 30, builtIn: false };
+    const chorus = { regionId: "chorus", name: "Chorus", startSeconds: 30, endSeconds: 60, builtIn: false };
     mocks.get
       .mockResolvedValueOnce(setup)
       .mockResolvedValueOnce({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse] } })
@@ -167,20 +167,30 @@ describe("comparison setup", () => {
     expect(await screen.findByRole("checkbox", { name: /Verse/ })).toBeChecked();
 
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Chorus" } });
+    expect(screen.getByLabelText("Region start")).toHaveValue("0:30");
+    expect(screen.getByLabelText("Region end")).toHaveValue("0:30");
+    fireEvent.change(screen.getByLabelText("Region end"), { target: { value: "1:00" } });
     fireEvent.click(screen.getByRole("button", { name: "Add Region" }));
 
     await waitFor(() => expect(mocks.add).toHaveBeenCalledTimes(2));
-    expect(mocks.add).toHaveBeenLastCalledWith(expect.objectContaining({ name: "Chorus", startSeconds: 0, endSeconds: 30 }));
+    expect(mocks.add).toHaveBeenLastCalledWith(expect.objectContaining({ name: "Chorus", startSeconds: 30, endSeconds: 60 }));
     expect(await screen.findByRole("checkbox", { name: /Chorus/ })).toBeChecked();
   });
 
-  it("uses guidance instead of a timeline confirmation gate", async () => {
+  it("shows revision descriptions and select-all controls without setup guidance copy", async () => {
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     await screen.findByRole("heading", { name: "New Comparison" });
 
-    expect(screen.getByText("Select 2 or more versions to compare. Variants and revisions without playable files are excluded from this list.")).toBeInTheDocument();
-    expect(screen.getByText("Make sure the selected revisions have the same song structure.")).toBeInTheDocument();
+    expect(screen.queryByText("Select 2 or more versions to compare. Variants and revisions without playable files are excluded from this list.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Make sure the selected revisions have the same song structure.")).not.toBeInTheDocument();
+    expect(screen.getByText("Revision 1")).toBeInTheDocument();
+    expect(screen.getByText("Revision 2")).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: /Compatible project timeline/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all revisions" }));
+    expect(screen.getByRole("checkbox", { name: /Revision 01/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Revision 02/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Revision 03/ })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select all regions" })).toBeChecked();
     expect(screen.getByText("Matches the loudness of the revisions being compared.")).toBeInTheDocument();
   });
 
@@ -247,6 +257,30 @@ describe("comparison setup", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview playback" }));
     fireEvent.click(screen.getByRole("button", { name: "Set end to playhead" }));
     expect(screen.getByLabelText("End")).toHaveValue("0:42");
+  });
+
+  it("moves start and end to the playhead when setting start past the current region end", async () => {
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.change(await screen.findByRole("slider", { name: "Preview playhead" }), { target: { value: "45" } });
+    fireEvent.click(screen.getByRole("button", { name: "Set start to playhead" }));
+
+    expect(screen.getByLabelText("Start")).toHaveValue("0:45");
+    expect(screen.getByLabelText("End")).toHaveValue("0:45");
+  });
+
+  it("generates a sequential region name when the name field is blank", async () => {
+    const generated = { regionId: "region-1", name: "Region 01", startSeconds: 0, endSeconds: 30, builtIn: false };
+    mocks.get
+      .mockResolvedValueOnce(setup)
+      .mockResolvedValueOnce({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, generated] } });
+    mocks.add.mockResolvedValueOnce(generated);
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.click(screen.getByRole("button", { name: "Add Region" }));
+
+    await waitFor(() => expect(mocks.add).toHaveBeenCalledWith(expect.objectContaining({ name: "Region 01", startSeconds: 0, endSeconds: 30 })));
+    expect(await screen.findByRole("checkbox", { name: /Region 01/ })).toBeChecked();
   });
 
   it("uses the region row to edit and optionally moves the playhead to its start", async () => {
