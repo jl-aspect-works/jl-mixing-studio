@@ -162,14 +162,15 @@ export function ComparisonResults({
             <p>Review one completed comparison session at a time.</p>
           </div>
           <div className="comparison-results-session-controls">
-            <label>
-              <span>Completed Session</span>
-              <select value={activeSession.sessionId} onChange={(event) => setActiveSessionId(event.target.value)}>
-                {results.document.completedSessions.map((session) => <option key={session.sessionId} value={session.sessionId}>
-                  {formatDate(session.completedAt)} - {session.candidates.length} candidates
-                </option>)}
-              </select>
-            </label>
+            <select
+              aria-label="Completed Session"
+              value={activeSession.sessionId}
+              onChange={(event) => setActiveSessionId(event.target.value)}
+            >
+              {results.document.completedSessions.map((session) => <option key={session.sessionId} value={session.sessionId}>
+                {formatDate(session.completedAt)} - {session.candidates.length} candidates
+              </option>)}
+            </select>
             <button type="button" className="danger secondary" disabled={busy || !activeSession} onClick={() => setDeleteTarget(activeSession)}><ActionIcon name="delete" />Delete This Session</button>
             <button type="button" className="danger secondary" disabled={busy || results.document.completedSessions.length === 0} onClick={() => setConfirmClear(true)}><ActionIcon name="delete" />Clear Ranking History</button>
           </div>
