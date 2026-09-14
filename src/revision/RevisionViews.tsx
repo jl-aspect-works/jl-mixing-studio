@@ -52,6 +52,7 @@ export function RevisionBadges({
   lifecycle = "open",
   top = false,
   onTopClick,
+  bare = false,
 }: {
   project: ProjectSummary;
   number: number;
@@ -59,6 +60,7 @@ export function RevisionBadges({
   lifecycle?: "open" | "closed";
   top?: boolean;
   onTopClick?: () => void;
+  bare?: boolean;
 }) {
   const badges: Array<[string, string]> = [];
   if (number === project.currentRevision) badges.push(["Current", "current"]);
@@ -67,12 +69,13 @@ export function RevisionBadges({
   if (lifecycle === "closed") badges.push(["Closed", "closed"]);
   if (historicallyApproved && number !== project.approvedRevision) badges.push(["Previously approved", "approved"]);
   if (badges.length === 0 && number < project.currentRevision) badges.push(["Superseded", ""]);
-  return <span className="revision-badges">
+  const badgeNodes = <>
     {top && (onTopClick
       ? <button type="button" className="revision-badge top clickable" onClick={onTopClick} title="Open cumulative blind comparison results">TOP</button>
       : <span className="revision-badge top">TOP</span>)}
     {badges.map(([label, className]) => <span key={label} className={`revision-badge ${className}`}>{label}</span>)}
-  </span>;
+  </>;
+  return bare ? badgeNodes : <span className="revision-badges">{badgeNodes}</span>;
 }
 
 type NotesState =
@@ -426,7 +429,7 @@ export function RevisionsView({
               </div>
               <div className="revision-detail-heading-actions">
                 <span className="revision-badges">
-                  <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} top={selected.revisionId === topRevisionId} onTopClick={() => setComparisonOpen("results")} />
+                  <RevisionBadges project={project} number={selected.number} lifecycle={selectedLifecycle} historicallyApproved={selected.approvedAt !== null} top={selected.revisionId === topRevisionId} onTopClick={() => setComparisonOpen("results")} bare />
                   <RevisionListeningBadge summary={listeningSummary} />
                 </span>
                 {(!selectedApproved || !selectedDelivered) && <button
