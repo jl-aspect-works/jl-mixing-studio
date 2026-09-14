@@ -618,6 +618,8 @@ describe("blind comparison workspace shell", () => {
     expect(screen.getAllByText("Revision 02 (B)").length).toBeGreaterThan(0);
     const loudnessDetails = screen.getByLabelText("Loudness matched candidate measurements");
     expect(within(loudnessDetails).getByText("A")).toBeInTheDocument();
+    expect(within(loudnessDetails).getAllByText("LUFS")).toHaveLength(1);
+    expect(within(loudnessDetails).getAllByText("Gain")).toHaveLength(1);
     expect(within(loudnessDetails).getByText("-18.20")).toBeInTheDocument();
     expect(within(loudnessDetails).getByText("-2.00 dB")).toBeInTheDocument();
     expect(screen.getByText("Full Song Standings")).toBeInTheDocument();
