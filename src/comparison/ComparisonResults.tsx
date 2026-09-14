@@ -215,10 +215,15 @@ export function ComparisonResults({
             <section className="comparison-loudness-table compact" aria-labelledby="comparison-loudness-title">
               <h3 id="comparison-loudness-title">Loudness Match Details</h3>
               {activeSession.loudnessMatch ? <div className="comparison-loudness-list" aria-label="Loudness matched candidate measurements">
-                {activeSession.candidates.map((candidate) => <div key={candidate.revisionId}>
+                <div className="comparison-loudness-heading" aria-hidden="true">
+                  <span />
+                  <span>LUFS</span>
+                  <span>Gain</span>
+                </div>
+                {activeSession.candidates.map((candidate) => <div className="comparison-loudness-row" key={candidate.revisionId}>
                   <strong>{candidate.blindId}</strong>
-                  <span><small>LUFS</small>{candidate.integratedLufs === null ? "n/a" : candidate.integratedLufs.toFixed(2)}</span>
-                  <span><small>Gain</small>{candidate.appliedGainDb === null ? "n/a" : `${candidate.appliedGainDb.toFixed(2)} dB`}</span>
+                  <span>{candidate.integratedLufs === null ? "n/a" : candidate.integratedLufs.toFixed(2)}</span>
+                  <span>{candidate.appliedGainDb === null ? "n/a" : `${candidate.appliedGainDb.toFixed(2)} dB`}</span>
                 </div>)}
               </div> : <p className="comparison-placeholder">Loudness Match was off for this session.</p>}
             </section>
