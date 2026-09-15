@@ -179,6 +179,14 @@ describe("comparison setup", () => {
     await waitFor(() => expect(mocks.playbackPrepare).toHaveBeenCalledTimes(1));
   });
 
+  it("does not duplicate initial results loading under Strict Mode", async () => {
+    mocks.results.mockResolvedValue(comparisonResults());
+    render(<StrictMode><ComparisonFlow client={client} project={project} onClose={vi.fn()} initialView="results" /></StrictMode>);
+
+    expect(await screen.findByRole("heading", { name: "Revealed Session" })).toBeInTheDocument();
+    expect(mocks.results).toHaveBeenCalledTimes(1);
+  });
+
   it("excludes ineligible candidates and freezes selected setup on start", async () => {
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     expect(await screen.findByRole("heading", { name: "New Comparison" })).toBeInTheDocument();
