@@ -78,9 +78,7 @@ pub(crate) struct ComparisonPlaybackLogRequest {
 // Playback diagnostics intentionally include revision identity for acceptance troubleshooting,
 // but accept no paths or free-form error text from the frontend.
 #[tauri::command]
-pub(crate) fn log_comparison_playback(
-    request: ComparisonPlaybackLogRequest,
-) -> Result<(), String> {
+pub(crate) fn log_comparison_playback(request: ComparisonPlaybackLogRequest) -> Result<(), String> {
     let valid_action = matches!(
         request.action.as_str(),
         "session_ready"
@@ -100,7 +98,10 @@ pub(crate) fn log_comparison_playback(
             .all(|character| character.is_ascii_digit() || character == '-');
     let valid_blind_id = |value: &Option<String>| {
         value.as_ref().is_none_or(|candidate| {
-            candidate.len() == 1 && candidate.chars().all(|character| character.is_ascii_uppercase())
+            candidate.len() == 1
+                && candidate
+                    .chars()
+                    .all(|character| character.is_ascii_uppercase())
         })
     };
     let valid_revision_id = |value: &Option<String>| {
@@ -108,8 +109,7 @@ pub(crate) fn log_comparison_playback(
             !revision.is_empty()
                 && revision.len() <= 128
                 && revision.chars().all(|character| {
-                    character.is_ascii_alphanumeric()
-                        || matches!(character, '-' | '_' | '.')
+                    character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.')
                 })
         })
     };
@@ -137,7 +137,10 @@ pub(crate) fn log_comparison_playback(
             ("revision_number", json!(request.revision_number)),
             ("blind_id", json!(request.blind_id)),
             ("target_revision_id", json!(request.target_revision_id)),
-            ("target_revision_number", json!(request.target_revision_number)),
+            (
+                "target_revision_number",
+                json!(request.target_revision_number),
+            ),
             ("target_blind_id", json!(request.target_blind_id)),
             ("candidate_count", json!(request.candidate_count)),
             ("loop_enabled", json!(request.loop_enabled)),
