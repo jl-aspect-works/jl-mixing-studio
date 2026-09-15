@@ -1,3 +1,6 @@
+mod comparison_sources;
+mod waveform_cache;
+pub(super) use comparison_sources::prepare_comparison_sources;
 mod comparison_performance;
 pub(super) use comparison_performance::log_comparison_performance;
 #[path = "comparison_command.rs"]

@@ -74,7 +74,8 @@ export function ComparisonWorkspace({
     let cancelled = false;
     const shouldApply = () => !cancelled && playbackSessionRef.current === playbackSession;
     playbackSessionRef.current = playbackSession;
-    void preparePlayback(playbackSession, shouldApply);
+    // Strict Mode tears down its probe before this microtask; do not start abandoned I/O.
+    queueMicrotask(() => { if (shouldApply()) void preparePlayback(playbackSession, shouldApply); });
     return () => {
       cancelled = true;
       if (playbackSessionRef.current === playbackSession) playbackSessionRef.current = null;

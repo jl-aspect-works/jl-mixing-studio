@@ -1,7 +1,7 @@
 import { measureComparison } from "./performance";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { claimExclusiveAudioPlayback, releaseAudioPlayback } from "../project/files/audioPlaybackController";
-import { prepareProjectAudioPreview } from "../project/files/audioPreviewService";
+import type { ProjectAudioPreviewResult } from "../project/files/audioPreviewService";
 import type { FrozenComparisonCandidate, ProjectRegion } from "./models";
 
 export type ComparisonPlaybackSnapshot = {
@@ -211,22 +211,31 @@ export class ComparisonPlaybackSession {
     this.activeRegion = initialRegion;
   }
 
-  async prepare(onProgress?: (text: string) => void) {
-    let preparedCount = 0;
+  private preparation: Promise<ComparisonPlaybackSnapshot> | null = null;
+
+  prepare(onProgress?: (text: string) => void): Promise<ComparisonPlaybackSnapshot> {
+    if (this.preparation) return this.preparation;
+    this.preparation = this.prepareOnce(onProgress).finally(() => { this.preparation = null; });
+    return this.preparation;
+  }
+
+  private async prepareOnce(onProgress?: (text: string) => void) {
     onProgress?.(`Resolving audio sources: 0 of ${this.candidates.length}…`);
     if (this.disposed) throw new Error("Comparison playback session is closed.");
     await claimExclusiveAudioPlayback(this.ownershipId, () => this.stopProvider());
     try {
-      const prepared = await Promise.all(this.candidates.map(async (candidate) => {
-        const audio = await measureComparison("candidate_source", () => prepareProjectAudioPreview({
-          clientId: this.clientId,
-          projectId: this.projectId,
-          relativePath: candidate.relativePath,
-        }));
-        if (!audio) throw playbackError(candidate.blindId, "prepared");
-        onProgress?.(`Resolving audio sources: ${++preparedCount} of ${this.candidates.length}…`);
-        return { ...candidate, sourceUrl: audio.sourceUrl, provider: audio.provider };
-      }));
+      if (this.disposed) throw new Error("Comparison playback session is closed.");
+      const sources = await measureComparison("candidate_source", () => invoke<ProjectAudioPreviewResult[]>("prepare_comparison_sources", {
+        request: { clientId: this.clientId, projectId: this.projectId,
+          candidates: this.candidates.map(({ blindId, relativePath }) => ({ blindId, relativePath })) },
+      }), this.candidates.length);
+      const prepared = this.candidates.map((candidate, index) => {
+        const source = sources[index];
+        if (!source || source.relativePath !== candidate.relativePath) throw playbackError(candidate.blindId, "prepared");
+        return { ...candidate, sourceUrl: source.supported && source.filePath ? convertFileSrc(source.filePath) : null,
+          provider: source.supported ? "web" as const : "native" as const };
+      });
+      onProgress?.(`Resolved all ${prepared.length} audio sources…`);
       if (this.disposed) throw new Error("Comparison playback session is closed.");
       const providerKind = prepared[0]?.provider;
       if (!providerKind || prepared.some((candidate) => candidate.provider !== providerKind)) {

@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef } from "react";
+import { StrictMode, forwardRef, useImperativeHandle, useRef } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ClientSummary, ProjectSummary } from "../types";
@@ -166,6 +166,17 @@ describe("comparison setup", () => {
     await act(async () => reject(new Error("Results unavailable")));
     expect(screen.getByRole("alert")).toHaveTextContent("Results unavailable");
     expect(screen.queryByRole("progressbar", { name: /Loading Comparison Results/ })).not.toBeInTheDocument();
+  });
+
+  it("does not duplicate setup, waveform, or playback preparation under Strict Mode", async () => {
+    render(<StrictMode><ComparisonFlow client={client} project={project} onClose={vi.fn()} /></StrictMode>);
+    await screen.findByRole("slider", { name: "Region start locator" });
+    expect(mocks.get).toHaveBeenCalledTimes(1);
+    expect(mocks.waveform).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all revisions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
+    await screen.findByRole("heading", { name: "Comparison Session" });
+    await waitFor(() => expect(mocks.playbackPrepare).toHaveBeenCalledTimes(1));
   });
 
   it("excludes ineligible candidates and freezes selected setup on start", async () => {

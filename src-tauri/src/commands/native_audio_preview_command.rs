@@ -1,22 +1,19 @@
 use super::resolve_workspace_root;
-use super::workspace_command_support::validated_project_directory;
+use super::waveform_cache::{ProjectAudioWaveform, WaveformCache};
 use crate::audio_preview::{
     self, NativeAudioPreviewState, NativeAudioPreviewStatus, NativeComparisonAudioStatus,
 };
-use crate::models::{ProjectFileMutationRequest, WorkspaceStatus};
+use crate::models::ProjectFileMutationRequest;
 use crate::workspace;
 use rodio::{Decoder, Source};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::OnceLock;
+use std::time::Instant;
 use tauri::Manager;
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ProjectAudioWaveform {
-    duration_seconds: f64,
-    peaks: Vec<f32>,
-}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -40,16 +37,8 @@ fn resolve_project_audio_file(
     request: &ProjectFileMutationRequest,
 ) -> Result<(PathBuf, String), String> {
     let root = resolve_workspace_root(app)?;
-    let snapshot = workspace::discover_workspace_at(&root);
-    if !matches!(
-        snapshot.status,
-        WorkspaceStatus::Healthy | WorkspaceStatus::Empty | WorkspaceStatus::Partial
-    ) {
-        return Err("The configured workspace is unavailable; reconnect it and try again".into());
-    }
-    let project_directory = validated_project_directory(
+    let project_directory = workspace::find_validated_project_path(
         &root,
-        &snapshot,
         request.client_id.trim(),
         request.project_id.trim(),
     )
@@ -126,8 +115,57 @@ fn get_project_audio_waveform_blocking(
     app: tauri::AppHandle,
     request: ProjectFileMutationRequest,
 ) -> Result<ProjectAudioWaveform, String> {
+    static CACHE: OnceLock<WaveformCache> = OnceLock::new();
+    static REQUEST_SEQUENCE: AtomicU64 = AtomicU64::new(1);
+    let request_id = REQUEST_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let lookup_started = Instant::now();
+    let source = resolve_project_audio_file(&app, &request);
+    log_waveform_phase(request_id, "lookup", lookup_started, source.is_ok(), "none");
+    let (path, _) = source?;
+    let cache_started = Instant::now();
+    let result = CACHE.get_or_init(WaveformCache::default).get(&path, || {
+        let decode_started = Instant::now();
+        let result = decode_waveform(&path);
+        log_waveform_phase(request_id, "decode", decode_started, result.is_ok(), "miss");
+        result
+    });
+    let cache_state = match &result {
+        Ok((_, true)) => "hit",
+        Ok((_, false)) => "miss",
+        Err(_) => "error",
+    };
+    log_waveform_phase(
+        request_id,
+        "cache",
+        cache_started,
+        result.is_ok(),
+        cache_state,
+    );
+    result.map(|(waveform, _)| waveform)
+}
+
+fn log_waveform_phase(
+    request_id: u64,
+    phase: &str,
+    started: Instant,
+    success: bool,
+    cache_state: &str,
+) {
+    crate::diagnostic_log::log(
+        "info",
+        "comparison_waveform",
+        &[
+            ("request_id", json!(request_id)),
+            ("phase", json!(phase)),
+            ("elapsed_ms", json!(started.elapsed().as_millis())),
+            ("outcome", json!(if success { "success" } else { "error" })),
+            ("cache_state", json!(cache_state)),
+        ],
+    );
+}
+
+fn decode_waveform(path: &Path) -> Result<ProjectAudioWaveform, String> {
     const PEAK_COUNT: usize = 480;
-    let (path, _) = resolve_project_audio_file(&app, &request)?;
     let decoder = Decoder::try_from(
         fs::File::open(path).map_err(|error| format!("Unable to open waveform source: {error}"))?,
     )
@@ -232,16 +270,24 @@ fn prepare_native_comparison_audio_blocking(
     if !cfg!(target_os = "windows") {
         return audio_preview::comparison_status(&state);
     }
+    let first = request
+        .candidates
+        .first()
+        .ok_or("No comparison candidates selected")?;
+    if request.candidates.iter().any(|candidate| {
+        candidate.client_id != first.client_id || candidate.project_id != first.project_id
+    }) {
+        return Err("Comparison candidates must belong to one project".into());
+    }
+    let root = resolve_workspace_root(&app)?;
+    let directory =
+        workspace::find_validated_project_path(&root, &first.client_id, &first.project_id)
+            .ok_or("Comparison project could not be resolved safely")?;
     let candidates = request
         .candidates
         .into_iter()
         .map(|candidate| {
-            let file_request = ProjectFileMutationRequest {
-                client_id: candidate.client_id,
-                project_id: candidate.project_id,
-                relative_path: candidate.relative_path,
-            };
-            resolve_project_audio_file(&app, &file_request)
+            resolve_project_entry(&directory, &candidate.relative_path)
                 .map(|(path, _)| (candidate.blind_id, path, candidate.applied_gain_db))
         })
         .collect::<Result<Vec<_>, _>>()?;

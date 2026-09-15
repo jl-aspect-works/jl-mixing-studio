@@ -67,9 +67,12 @@ export function ComparisonSetup({
 
   useEffect(() => {
     let cancelled = false;
-    measureComparison("setup", () => getComparisonSetup({ clientId: client.clientId, projectId: project.projectId }))
-      .then((value) => { if (!cancelled) setSetup(value); })
-      .catch((reason) => { if (!cancelled) setError(errorMessage(reason, "Comparison setup could not be loaded.")); });
+    queueMicrotask(() => {
+      if (cancelled) return;
+      measureComparison("setup", () => getComparisonSetup({ clientId: client.clientId, projectId: project.projectId }))
+        .then((value) => { if (!cancelled) setSetup(value); })
+        .catch((reason) => { if (!cancelled) setError(errorMessage(reason, "Comparison setup could not be loaded.")); });
+    });
     return () => { cancelled = true; };
   }, [client.clientId, project.projectId]);
 

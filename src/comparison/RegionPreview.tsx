@@ -55,11 +55,16 @@ export function RegionPreview({
     setPlayhead(0);
     setError(null);
     if (!candidate?.relativePath) return () => { cancelled = true; };
-    const finish = startComparisonTiming("waveform");
-    getProjectAudioWaveform({ clientId, projectId, relativePath: candidate.relativePath })
-      .then((value) => { if (!cancelled) { setWaveform(value); finish(); } })
-      .catch((reason) => { if (!cancelled) { setError(reason instanceof Error ? reason.message : String(reason)); finish("error"); } });
-    return () => { cancelled = true; finish("cancelled"); };
+    const relativePath = candidate.relativePath;
+    let finish: ReturnType<typeof startComparisonTiming> | undefined;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      finish = startComparisonTiming("waveform");
+      getProjectAudioWaveform({ clientId, projectId, relativePath })
+        .then((value) => { if (!cancelled) { setWaveform(value); finish?.(); } })
+        .catch((reason) => { if (!cancelled) { setError(reason instanceof Error ? reason.message : String(reason)); finish?.("error"); } });
+    });
+    return () => { cancelled = true; finish?.("cancelled"); };
   }, [candidate?.relativePath, clientId, projectId]);
 
   const duration = waveform?.durationSeconds ?? 0;

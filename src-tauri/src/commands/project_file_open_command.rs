@@ -100,7 +100,7 @@ fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
     Ok(value.to_owned())
 }
 
-fn resolve_project_entry(
+pub(super) fn resolve_project_entry(
     project_directory: &Path,
     relative_path: &str,
 ) -> Result<(PathBuf, String), String> {
