@@ -23,6 +23,7 @@ const candidates = (count: number): FrozenComparisonCandidate[] => Array.from({ 
 
 const intro: ProjectRegion = { regionId: "intro", name: "Intro", startSeconds: 10, endSeconds: 25, builtIn: false };
 const verse: ProjectRegion = { regionId: "verse", name: "Verse", startSeconds: 40, endSeconds: 55, builtIn: false };
+const fullSong: ProjectRegion = { regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null, builtIn: true };
 
 const snapshot = (values: Partial<ComparisonPlaybackSnapshot> = {}): ComparisonPlaybackSnapshot => ({
   activeCandidateId: "A",
@@ -51,13 +52,15 @@ const fakeProvider = () => {
 };
 
 beforeEach(() => {
-  vi.mocked(invoke).mockReset().mockImplementation(async (_command, args) => {
+  vi.mocked(invoke).mockReset().mockImplementation(async (command, args) => {
+    if (command === "log_comparison_playback") return undefined;
     const request = args as { request: { candidates: { relativePath: string }[] } };
     return request.request.candidates.map(({ relativePath }) => ({ supported: false, relativePath, filePath: null }));
   });
 });
 
 afterEach(async () => {
+  delete (window as typeof window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
   await stopActiveAudioPlayback();
 });
 
@@ -121,6 +124,28 @@ describe("comparison playback session", () => {
     const result = await session.refresh();
     expect(fake.provider.seek).toHaveBeenLastCalledWith(10);
     expect(result.playing).toBe(true);
+  });
+
+  it("logs revision-aware switch and loop-boundary diagnostics without polling events", async () => {
+    (window as typeof window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = {};
+    const fake = fakeProvider();
+    const session = new ComparisonPlaybackSession("client", "project", candidates(2), [fullSong], fullSong, () => fake.provider);
+    await session.prepare();
+    await session.toggle();
+    fake.setStatus(snapshot({ playing: false, currentSeconds: 120, providerPaused: true, providerEnded: true, readyState: 4, networkState: 1 }));
+    await session.refresh();
+    await session.switchCandidate("B");
+
+    const events = vi.mocked(invoke).mock.calls
+      .filter(([command]) => command === "log_comparison_playback")
+      .map(([, args]) => (args as { request: Record<string, unknown> }).request);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: "loop_restart", outcome: "started", revisionId: "revision-1", revisionNumber: 1, blindId: "A", fullSong: true, atRegionEnd: true, providerEnded: true }),
+      expect.objectContaining({ action: "loop_restart", outcome: "success", revisionId: "revision-1", revisionNumber: 1, blindId: "A" }),
+      expect.objectContaining({ action: "candidate_switch", outcome: "started", targetRevisionId: "revision-2", targetRevisionNumber: 2, targetBlindId: "B" }),
+      expect.objectContaining({ action: "candidate_switch", outcome: "success", revisionId: "revision-2", revisionNumber: 2, blindId: "B" }),
+    ]));
+    expect(events.filter((event) => event.action === "status")).toHaveLength(0);
   });
 
   it("keeps refresh polling active after playback is requested while provider position advances", async () => {

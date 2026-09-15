@@ -15,7 +15,7 @@ mod studio_edit;
 mod workflows;
 mod workspace;
 
-use commands::log_comparison_performance;
+use commands::{log_comparison_performance, log_comparison_playback};
 use commands::prepare_comparison_sources;
 use commands::{
     add_comparison_region, add_project_reference, analyze_comparison_loudness,
@@ -476,6 +476,7 @@ pub fn run() {
             rename_revision_file,
             delete_revision_file,
             log_comparison_performance,
+            log_comparison_playback,
             prepare_comparison_sources,
             get_comparison_setup,
             get_comparison_results,
