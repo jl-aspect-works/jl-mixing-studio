@@ -113,7 +113,9 @@ mod tests {
         assert!(!cache.get(&path, || Ok(waveform())).unwrap().1);
         assert!(cache.get(&path, || panic!("must reuse")).unwrap().1);
         let modified = SystemTime::now() + Duration::from_secs(5);
-        fs::File::open(&path)
+        fs::OpenOptions::new()
+            .write(true)
+            .open(&path)
             .unwrap()
             .set_modified(modified)
             .unwrap();
