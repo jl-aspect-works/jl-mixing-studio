@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
-import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
+import { AudioPreviewPlayer, type AudioPreviewPlayerHandle } from "../project/files/AudioPreviewPlayer";
 import { getProjectAudioWaveform, type ProjectAudioWaveform } from "../project/files/audioPreviewService";
 import type { ComparisonCandidateAvailability } from "./models";
 import { parseTimestamp } from "./session";
@@ -10,6 +10,12 @@ const locatorTimestamp = (seconds: number) => {
   const remainder = seconds - minutes * 60;
   const display = Number.isInteger(remainder) ? String(remainder) : remainder.toFixed(1);
   return `${minutes}:${display.padStart(2, "0")}`;
+};
+
+const isEditableShortcutTarget = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(target.closest("input:not([type='range']), textarea, select, [contenteditable='true']"))
+    || Boolean(target.closest("button, input") && !target.closest(".comparison-region-preview"));
 };
 
 export function RegionPreview({
@@ -34,6 +40,7 @@ export function RegionPreview({
   const [seekRequest, setSeekRequest] = useState<{ id: number; seconds: number } | null>(null);
   const [seekToRegionStart, setSeekToRegionStart] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const previewRef = useRef<AudioPreviewPlayerHandle | null>(null);
   const candidate = available.find((item) => item.revisionId === revisionId) ?? available[0] ?? null;
 
   useEffect(() => {
@@ -78,6 +85,24 @@ export function RegionPreview({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editRequest, duration]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing || isEditableShortcutTarget(event.target)) return;
+      if (event.key === " " || event.code === "Space") {
+        event.preventDefault();
+        if (!event.repeat) previewRef.current?.togglePlayback();
+      } else if (event.key === "," || event.code === "Comma") {
+        event.preventDefault();
+        previewRef.current?.seekBy(-5);
+      } else if (event.key === "." || event.code === "Period") {
+        event.preventDefault();
+        previewRef.current?.seekBy(5);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   if (!candidate?.relativePath) {
     return <div className="comparison-region-preview disabled" aria-disabled="true"><strong>Region preview</strong><p>No playable normal revision is available.</p></div>;
   }
@@ -92,7 +117,7 @@ export function RegionPreview({
         <input className="comparison-region-locator end" type="range" aria-label="Region end locator" min="0" max={duration} step="0.1" value={parsedEnd} onChange={(event) => setEnd(Number(event.target.value))} /></> : <span>{error ? "Waveform unavailable" : "Loading waveform…"}</span>}
         <input className="comparison-playhead-locator" type="range" aria-label="Preview playhead" min="0" max={duration} step="0.1" value={Math.min(playhead, duration)} onChange={(event) => seekPreview(Number(event.target.value))} />
     </div>
-    <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} seekRequest={seekRequest} />
+    <AudioPreviewPlayer ref={previewRef} clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} seekRequest={seekRequest} />
     {error && <small className="comparison-preview-error">{error}</small>}
   </div>;
 }

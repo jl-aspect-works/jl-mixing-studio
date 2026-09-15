@@ -16,6 +16,7 @@
 .comparison-choice-list .comparison-select-all-row { align-items: center; min-height: 28px; padding: 2px 5px; border-bottom: 1px solid var(--border, #dfe4ea); border-radius: 4px; color: #1f3f9e; font-size: .78rem; font-weight: 800; }
 .comparison-choice-list .comparison-select-all-row > span { display: block; }
 .comparison-region-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; padding: 2px 5px; border-bottom: 1px solid var(--border, #dfe4ea); border-radius: 4px; font-size: .78rem; }
+.comparison-region-row.comparison-select-all-row { justify-content: flex-start; }
 .comparison-region-row label > span { display: flex; align-items: baseline; gap: 8px; }
 .comparison-region-row small { font-size: .7rem; white-space: nowrap; }
 .comparison-region-row .text-button { min-height: 22px; padding: 1px 4px; font-size: .7rem; }

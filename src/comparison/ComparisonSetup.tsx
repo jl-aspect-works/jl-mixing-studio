@@ -32,6 +32,9 @@ const nextRegionName = (regions: readonly ProjectRegion[]) => {
   return `Region ${String(customCount).padStart(2, "0")}`;
 };
 
+const isRegionPreviewTarget = (target: EventTarget | null) =>
+  target instanceof HTMLElement && Boolean(target.closest(".comparison-region-preview"));
+
 export function ComparisonSetup({
   client,
   project,
@@ -100,6 +103,9 @@ export function ComparisonSetup({
     && selectedCandidateValues.every((candidate) => candidate.relativePath)
     && selectedRegionValues.length > 0
     && !busy;
+  const parsedDraftStart = parseTimestamp(draft.start);
+  const parsedDraftEnd = parseTimestamp(draft.end);
+  const canSaveRegion = parsedDraftStart !== null && parsedDraftEnd !== null && parsedDraftEnd > parsedDraftStart && !busy;
 
   const toggle = (values: Set<string>, value: string, checked: boolean) => {
     const next = new Set(values);
@@ -231,7 +237,11 @@ export function ComparisonSetup({
         <label className="comparison-toggle"><input type="checkbox" checked={loudnessMatch} onChange={(event) => setLoudnessMatch(event.target.checked)} /><span><strong>Loudness Match</strong><small>Matches the loudness of the revisions being compared.</small></span></label>
       </section>
     </div>
-    <section className="panel comparison-regions-panel" aria-labelledby="comparison-regions-title">
+    <section className="panel comparison-regions-panel" aria-labelledby="comparison-regions-title" onKeyDown={(event) => {
+      if (event.key !== "Enter" || event.repeat || event.nativeEvent.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || pendingDelete || !canSaveRegion || !isRegionPreviewTarget(event.target)) return;
+      event.preventDefault();
+      void saveRegion();
+    }}>
         <h3 id="comparison-regions-title">3. Select and manage regions</h3>
         <p>Select one or more regions to evaluate. Full Song is selected by default but is optional.</p>
         <RegionPreview
@@ -248,7 +258,7 @@ export function ComparisonSetup({
           <label>Name<input value={draft.name} placeholder={nextRegionName(regions)} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} /></label>
           <label>Start<input required aria-label="Region start" placeholder="0:00" value={draft.start} onChange={(event) => setDraft((current) => ({ ...current, start: event.target.value }))} /></label>
           <label>End<input required aria-label="Region end" placeholder="0:30" value={draft.end} onChange={(event) => setDraft((current) => ({ ...current, end: event.target.value }))} /></label>
-          <button type="submit" className="secondary" disabled={busy}><ActionIcon name={draft.regionId ? "save" : "add"} />{draft.regionId ? "Save Region" : "Add Region"}</button>
+          <button type="submit" className="secondary" disabled={!canSaveRegion}><ActionIcon name={draft.regionId ? "save" : "add"} />{draft.regionId ? "Save Region" : "Add Region"}</button>
           {draft.regionId && <button type="button" className="text-button" onClick={() => setDraft(emptyDraft())}><ActionIcon name="close" />Cancel edit</button>}
         </form>
         <div className="comparison-choice-list" role="group" aria-label="Available regions">

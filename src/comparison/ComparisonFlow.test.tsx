@@ -1,3 +1,4 @@
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ClientSummary, ProjectSummary } from "../types";
@@ -45,8 +46,17 @@ vi.mock("../project/files/audioPreviewService", () => ({
 }));
 
 vi.mock("../project/files/AudioPreviewPlayer", () => ({
-  AudioPreviewPlayer: ({ onPositionChange, seekRequest }: { onPositionChange?: (seconds: number) => void; seekRequest?: { seconds: number } | null }) =>
-    <button type="button" aria-label="Preview playback" data-seek-position={seekRequest?.seconds ?? ""} onClick={() => onPositionChange?.(42)}>Preview playback</button>,
+  AudioPreviewPlayer: forwardRef(function PreviewMock({ onPositionChange, seekRequest }: { onPositionChange?: (seconds: number) => void; seekRequest?: { seconds: number } | null }, ref) {
+    const position = useRef(0);
+    useImperativeHandle(ref, () => ({
+      seekBy: (offset: number) => {
+        position.current = Math.max(0, position.current + offset);
+        onPositionChange?.(position.current);
+      },
+      togglePlayback: mocks.playbackToggle,
+    }));
+    return <button type="button" aria-label="Preview playback" data-seek-position={seekRequest?.seconds ?? ""} onClick={() => onPositionChange?.(42)}>Preview playback</button>;
+  }),
 }));
 
 vi.mock("./comparisonPlaybackService", () => ({
@@ -259,6 +269,44 @@ describe("comparison setup", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview playback" }));
     fireEvent.click(screen.getByRole("button", { name: "Set end to playhead" }));
     expect(screen.getByLabelText("End")).toHaveValue("0:42");
+  });
+
+  it("supports preview transport shortcuts without intercepting typing or modified keys", async () => {
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    const playhead = await screen.findByRole("slider", { name: "Preview playhead" });
+    await screen.findByRole("slider", { name: "Region start locator" });
+    const preview = screen.getByRole("button", { name: "Preview playback" });
+    fireEvent.keyDown(preview, { key: " " });
+    expect(mocks.playbackToggle).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(preview, { key: " ", repeat: true });
+    expect(mocks.playbackToggle).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(preview, { key: "." });
+    expect(playhead).toHaveValue("5");
+    fireEvent.keyDown(playhead, { key: "," });
+    expect(playhead).toHaveValue("0");
+    fireEvent.keyDown(screen.getByLabelText("Name"), { key: "." });
+    fireEvent.keyDown(document.body, { key: ".", metaKey: true });
+    expect(playhead).toHaveValue("0");
+  });
+
+  it("adds a valid region with Enter after setting bounds at the playhead", async () => {
+    const region = { regionId: "new", name: "Region 01", startSeconds: 45, endSeconds: 60, builtIn: false };
+    mocks.add.mockResolvedValue(region);
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    const playhead = await screen.findByRole("slider", { name: "Preview playhead" });
+    await screen.findByRole("slider", { name: "Region start locator" });
+    fireEvent.change(playhead, { target: { value: "45" } });
+    const setStart = screen.getByRole("button", { name: "Set start to playhead" });
+    fireEvent.click(setStart);
+    fireEvent.keyDown(setStart, { key: "Enter" });
+    expect(mocks.add).not.toHaveBeenCalled();
+    fireEvent.change(playhead, { target: { value: "60" } });
+    const setEnd = screen.getByRole("button", { name: "Set end to playhead" });
+    fireEvent.click(setEnd);
+    fireEvent.keyDown(setEnd, { key: "Enter" });
+    await waitFor(() => expect(mocks.add).toHaveBeenCalledWith(expect.objectContaining({ name: "Region 01", startSeconds: 45, endSeconds: 60 })));
+    await waitFor(() => expect(screen.getByLabelText("Start")).toHaveValue("1:00"));
+    expect(screen.getByLabelText("End")).toHaveValue("1:00");
   });
 
   it("moves start and end to the playhead when setting start past the current region end", async () => {

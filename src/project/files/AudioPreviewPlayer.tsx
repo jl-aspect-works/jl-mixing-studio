@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { ActionIcon } from "../../components/ActionIcon";
 import { claimAudioPlayback, releaseAudioPlayback, stopAudioPlayback } from "./audioPlaybackController";
 import {
@@ -41,15 +41,12 @@ const VolumeIcon = ({ muted }: { muted: boolean }) => <svg className="shared-aud
   {muted && <path d="M15.5 9.5l4 5m0-5l-4 5" />}
 </svg>;
 
-export function AudioPreviewPlayer({
-  clientId,
-  projectId,
-  entry,
-  durationSeconds = 0,
-  standardTransport = false,
-  onPositionChange,
-  seekRequest,
-}: {
+export type AudioPreviewPlayerHandle = {
+  seekBy: (offsetSeconds: number) => void;
+  togglePlayback: () => void;
+};
+
+export const AudioPreviewPlayer = forwardRef<AudioPreviewPlayerHandle, {
   clientId: string;
   projectId: string;
   entry: Pick<ProjectFileEntry, "relativePath" | "displayName">;
@@ -57,7 +54,15 @@ export function AudioPreviewPlayer({
   standardTransport?: boolean;
   onPositionChange?: (seconds: number) => void;
   seekRequest?: { id: number; seconds: number } | null;
-}) {
+}>(function AudioPreviewPlayer({
+  clientId,
+  projectId,
+  entry,
+  durationSeconds = 0,
+  standardTransport = false,
+  onPositionChange,
+  seekRequest,
+}, ref) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const preparePromiseRef = useRef<Promise<PreparedAudioPreview | null> | null>(null);
   const nativeLoadedRef = useRef(false);
@@ -275,6 +280,11 @@ export function AudioPreviewPlayer({
     if (audioRef.current) audioRef.current.muted = nextMuted;
   };
 
+  useImperativeHandle(ref, () => ({
+    seekBy: (offsetSeconds: number) => seek(Math.min(duration || 0, Math.max(0, currentTime + offsetSeconds))),
+    togglePlayback: () => { void togglePlayback(); },
+  }));
+
   return <div className={`shared-audio-preview-inline${standardTransport ? " standard-transport" : ""}`} aria-label={`Preview ${entry.displayName}`} aria-busy={loading}>
     <audio
       ref={audioRef}
@@ -289,4 +299,4 @@ export function AudioPreviewPlayer({
     {standardTransport ? <><div className="shared-audio-preview-transport"><button type="button" className="shared-audio-preview-skip icon-only" aria-label="Back 5 seconds" title="Back 5 seconds" disabled={!duration} onClick={() => seek(Math.max(0, currentTime - 5))}><ActionIcon name="skipBack" /></button><button type="button" className="shared-audio-preview-play icon-only" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : <ActionIcon name={playing ? "pause" : "play"} />}</button><button type="button" className="shared-audio-preview-skip icon-only" aria-label="Forward 5 seconds" title="Forward 5 seconds" disabled={!duration} onClick={() => seek(Math.min(duration, currentTime + 5))}><ActionIcon name="skipForward" /></button></div><span className="shared-audio-preview-time">{formatPreviewTime(currentTime)} / {formatPreviewTime(duration)}</span><div className="shared-audio-preview-volume-cluster"><button type="button" className="shared-audio-preview-mute" aria-label={muted ? `Unmute ${entry.displayName}` : `Mute ${entry.displayName}`} title={muted ? "Unmute" : "Mute"} onClick={toggleMute}><VolumeIcon muted={muted || volume === 0} /></button><input className="shared-audio-preview-volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} aria-label={`Volume ${entry.displayName}`} onChange={(event) => changeVolume(Number(event.target.value))} /></div></> : <><button type="button" className="shared-audio-preview-play icon-only" aria-label={playing ? `Pause ${entry.displayName}` : `Play ${entry.displayName}`} title={playing ? "Pause" : "Play"} disabled={loading} onClick={() => void togglePlayback()}>{loading ? "…" : <ActionIcon name={playing ? "pause" : "play"} />}</button><span className="shared-audio-preview-time">{formatPreviewTime(currentTime)}</span><input className="shared-audio-preview-seek" type="range" min="0" max={duration || 0} step="0.1" value={Math.min(currentTime, duration || 0)} aria-label={`Seek ${entry.displayName}`} disabled={!duration} onChange={(event) => seek(Number(event.target.value))} /><span className="shared-audio-preview-time">{formatPreviewTime(duration)}</span><button type="button" className="shared-audio-preview-mute" aria-label={muted ? `Unmute ${entry.displayName}` : `Mute ${entry.displayName}`} title={muted ? "Unmute" : "Mute"} onClick={toggleMute}><VolumeIcon muted={muted || volume === 0} /></button><input className="shared-audio-preview-volume" type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume} aria-label={`Volume ${entry.displayName}`} onChange={(event) => changeVolume(Number(event.target.value))} /></>}
     {error && <span className="shared-audio-preview-error" title={error}>!</span>}
   </div>;
-}
+});
