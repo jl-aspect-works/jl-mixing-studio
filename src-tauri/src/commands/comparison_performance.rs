@@ -22,7 +22,10 @@ pub(crate) fn log_comparison_performance(
             | "results"
             | "save_session"
     );
-    let valid_outcome = matches!(outcome.as_str(), "started" | "success" | "error" | "cancelled");
+    let valid_outcome = matches!(
+        outcome.as_str(),
+        "started" | "success" | "error" | "cancelled"
+    );
     if !valid_phase
         || !valid_outcome
         || operation_id.len() > 64
