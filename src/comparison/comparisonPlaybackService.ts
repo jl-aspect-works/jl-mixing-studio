@@ -1,3 +1,4 @@
+import { measureComparison } from "./performance";
 import { invoke } from "@tauri-apps/api/core";
 import { claimExclusiveAudioPlayback, releaseAudioPlayback } from "../project/files/audioPlaybackController";
 import { prepareProjectAudioPreview } from "../project/files/audioPreviewService";
@@ -210,17 +211,20 @@ export class ComparisonPlaybackSession {
     this.activeRegion = initialRegion;
   }
 
-  async prepare() {
+  async prepare(onProgress?: (text: string) => void) {
+    let preparedCount = 0;
+    onProgress?.(`Resolving audio sources: 0 of ${this.candidates.length}…`);
     if (this.disposed) throw new Error("Comparison playback session is closed.");
     await claimExclusiveAudioPlayback(this.ownershipId, () => this.stopProvider());
     try {
       const prepared = await Promise.all(this.candidates.map(async (candidate) => {
-        const audio = await prepareProjectAudioPreview({
+        const audio = await measureComparison("candidate_source", () => prepareProjectAudioPreview({
           clientId: this.clientId,
           projectId: this.projectId,
           relativePath: candidate.relativePath,
-        });
+        }));
         if (!audio) throw playbackError(candidate.blindId, "prepared");
+        onProgress?.(`Resolving audio sources: ${++preparedCount} of ${this.candidates.length}…`);
         return { ...candidate, sourceUrl: audio.sourceUrl, provider: audio.provider };
       }));
       if (this.disposed) throw new Error("Comparison playback session is closed.");
@@ -230,7 +234,8 @@ export class ComparisonPlaybackSession {
       }
       this.provider = this.providerFactory?.(providerKind)
         ?? (providerKind === "web" ? new WebComparisonAudioProvider() : new NativeComparisonAudioProvider(this.clientId, this.projectId));
-      const durations = await this.provider.prepare(prepared, this.activeRegion.startSeconds);
+      onProgress?.(`Loading audio and checking durations for all ${prepared.length} candidates…`);
+      const durations = await measureComparison("audio_prepare", () => this.provider!.prepare(prepared, this.activeRegion.startSeconds), prepared.length);
       this.regions.forEach((region) => validateRegionDurations(this.candidates, region, durations));
       return this.provider.status();
     } catch (error) {
@@ -254,7 +259,7 @@ export class ComparisonPlaybackSession {
   }
 
   async switchCandidate(candidateId: string) {
-    return this.normalizePlaybackState(await this.requireProvider().switchCandidate(candidateId));
+    return this.normalizePlaybackState(await measureComparison("candidate_switch", () => this.requireProvider().switchCandidate(candidateId)));
   }
 
   async seek(seconds: number) {

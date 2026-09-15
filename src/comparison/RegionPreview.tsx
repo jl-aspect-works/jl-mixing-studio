@@ -1,3 +1,5 @@
+import { ComparisonLoading } from "./ComparisonLoading";
+import { startComparisonTiming } from "./performance";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import { AudioPreviewPlayer, type AudioPreviewPlayerHandle } from "../project/files/AudioPreviewPlayer";
@@ -53,10 +55,11 @@ export function RegionPreview({
     setPlayhead(0);
     setError(null);
     if (!candidate?.relativePath) return () => { cancelled = true; };
+    const finish = startComparisonTiming("waveform");
     getProjectAudioWaveform({ clientId, projectId, relativePath: candidate.relativePath })
-      .then((value) => { if (!cancelled) setWaveform(value); })
-      .catch((reason) => { if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason)); });
-    return () => { cancelled = true; };
+      .then((value) => { if (!cancelled) { setWaveform(value); finish(); } })
+      .catch((reason) => { if (!cancelled) { setError(reason instanceof Error ? reason.message : String(reason)); finish("error"); } });
+    return () => { cancelled = true; finish("cancelled"); };
   }, [candidate?.relativePath, clientId, projectId]);
 
   const duration = waveform?.durationSeconds ?? 0;
@@ -109,7 +112,8 @@ export function RegionPreview({
   const label = `Revision ${String(candidate.revisionNumber).padStart(2, "0")}`;
 
   return <div className="comparison-region-preview">
-    <div className="comparison-region-preview-heading"><strong>Region preview</strong><div className="comparison-locator-actions"><button type="button" className="secondary" disabled={!duration} onClick={() => setStart(playhead)}><ActionIcon name="previous" />Set start to playhead</button><button type="button" className="secondary" disabled={!duration} onClick={() => setEnd(playhead)}><ActionIcon name="next" />Set end to playhead</button><label><input type="checkbox" checked={seekToRegionStart} onChange={(event) => setSeekToRegionStart(event.target.checked)} />Set playhead to region start</label></div><label>Preview revision<select aria-label="Preview revision" value={candidate.revisionId} onChange={(event) => setRevisionId(event.target.value)}>{available.map((item) => <option key={item.revisionId} value={item.revisionId}>Revision {String(item.revisionNumber).padStart(2, "0")}</option>)}</select></label></div>
+    <div className="comparison-region-preview-heading"><strong>Region preview</strong><div className="comparison-locator-actions"><button type="button" className="secondary" disabled={!duration} onClick={() => setStart(playhead)}><ActionIcon name="previous" />Set start to playhead</button><button type="button" className="secondary" disabled={!duration} onClick={() => setEnd(playhead)}><ActionIcon name="next" />Set end to playhead</button><label><input type="checkbox" checked={seekToRegionStart} onChange={(event) => setSeekToRegionStart(event.target.checked)} />Set playhead to region start</label></div><label>Preview revision<select aria-label="Preview revision" value={candidate.revisionId} onChange={(event) => { setRevisionId(event.target.value); setWaveform(null); setError(null); setSeekRequest(null); }}>{available.map((item) => <option key={item.revisionId} value={item.revisionId}>Revision {String(item.revisionNumber).padStart(2, "0")}</option>)}</select></label></div>
+    {!waveform && !error && <ComparisonLoading text={`Loading waveform for ${label}…`} />}
     <div className="comparison-waveform" aria-label={`Waveform for ${label}`}>
       {waveform ? <><svg viewBox={`0 0 ${waveform.peaks.length || 1} 100`} preserveAspectRatio="none" role="img">{waveform.peaks.map((peak, index) => <line key={index} x1={index + .5} x2={index + .5} y1={50 - peak * 48} y2={50 + peak * 48} />)}</svg>
         <span className="comparison-region-selection" style={{ left: `${startPercent}%`, width: `${Math.max(0, endPercent - startPercent)}%` }} />
@@ -117,7 +121,7 @@ export function RegionPreview({
         <input className="comparison-region-locator end" type="range" aria-label="Region end locator" min="0" max={duration} step="0.1" value={parsedEnd} onChange={(event) => setEnd(Number(event.target.value))} /></> : <span>{error ? "Waveform unavailable" : "Loading waveform…"}</span>}
         <input className="comparison-playhead-locator" type="range" aria-label="Preview playhead" min="0" max={duration} step="0.1" value={Math.min(playhead, duration)} onChange={(event) => seekPreview(Number(event.target.value))} />
     </div>
-    <AudioPreviewPlayer ref={previewRef} clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} seekRequest={seekRequest} />
+    <AudioPreviewPlayer key={candidate.revisionId} ref={previewRef} clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} seekRequest={seekRequest} />
     {error && <small className="comparison-preview-error">{error}</small>}
   </div>;
 }

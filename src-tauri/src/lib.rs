@@ -15,6 +15,7 @@ mod studio_edit;
 mod workflows;
 mod workspace;
 
+use commands::log_comparison_performance;
 use commands::{
     add_comparison_region, add_project_reference, analyze_comparison_loudness,
     choose_workspace_folder, clear_comparison_history, complete_comparison_session,
@@ -473,6 +474,7 @@ pub fn run() {
             delete_project_reference,
             rename_revision_file,
             delete_revision_file,
+            log_comparison_performance,
             get_comparison_setup,
             get_comparison_results,
             analyze_comparison_loudness,

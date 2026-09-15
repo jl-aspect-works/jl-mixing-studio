@@ -122,6 +122,52 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 describe("comparison setup", () => {
+  it("shows setup and waveform progress, updates the selection immediately, and ignores stale waveforms", async () => {
+    let resolveSetup!: (value: ComparisonSetupData) => void;
+    let oldWave!: (value: { durationSeconds: number; peaks: number[] }) => void;
+    let newWave!: (value: { durationSeconds: number; peaks: number[] }) => void;
+    mocks.get.mockReturnValue(new Promise((resolve) => { resolveSetup = resolve; }));
+    mocks.waveform.mockReturnValueOnce(new Promise((resolve) => { oldWave = resolve; }))
+      .mockReturnValueOnce(new Promise((resolve) => { newWave = resolve; }));
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    expect(screen.getByRole("progressbar", { name: /Loading New Comparison/ })).toBeInTheDocument();
+    await act(async () => resolveSetup(setup));
+    expect(screen.getByRole("progressbar", { name: /waveform for Revision 02/ })).toBeInTheDocument();
+    const selector = screen.getByRole("combobox", { name: "Preview revision" });
+    fireEvent.change(selector, { target: { value: "r1" } });
+    expect(selector).toHaveValue("r1");
+    expect(screen.getByRole("progressbar", { name: /waveform for Revision 01/ })).toBeInTheDocument();
+    await act(async () => newWave({ durationSeconds: 120, peaks: [.2] }));
+    await act(async () => oldWave({ durationSeconds: 900, peaks: [.9] }));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: "Preview playhead" })).toHaveAttribute("max", "120");
+  });
+
+  it("keeps preparation status visible until every candidate is ready", async () => {
+    let ready!: (value: { activeCandidateId: string; playing: boolean; currentSeconds: number; durationSeconds: number }) => void;
+    mocks.playbackPrepare.mockReturnValue(new Promise((resolve) => { ready = resolve; }));
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select all revisions" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
+    expect(await screen.findByRole("progressbar", { name: /Preparing comparison playback/ })).toBeInTheDocument();
+    await act(async () => ready({ activeCandidateId: "A", playing: false, currentSeconds: 0, durationSeconds: 120 }));
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+  it("shows progress while entering results from setup and replaces it with an error on failure", async () => {
+    mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, completedSessions: [completedSession] } });
+    let reject!: (error: Error) => void;
+    mocks.results.mockReturnValue(new Promise((_, fail) => { reject = fail; }));
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.click(screen.getByRole("button", { name: "Comparison Results" }));
+    expect(screen.getByRole("progressbar", { name: /Loading Comparison Results/ })).toBeInTheDocument();
+    await act(async () => reject(new Error("Results unavailable")));
+    expect(screen.getByRole("alert")).toHaveTextContent("Results unavailable");
+    expect(screen.queryByRole("progressbar", { name: /Loading Comparison Results/ })).not.toBeInTheDocument();
+  });
+
   it("excludes ineligible candidates and freezes selected setup on start", async () => {
     render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
     expect(await screen.findByRole("heading", { name: "New Comparison" })).toBeInTheDocument();

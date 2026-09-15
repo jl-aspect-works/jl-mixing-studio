@@ -9,6 +9,7 @@ use rodio::{Decoder, Source};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
+use tauri::Manager;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -112,7 +113,16 @@ fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub(crate) fn get_project_audio_waveform(
+pub(crate) async fn get_project_audio_waveform(
+    app: tauri::AppHandle,
+    request: ProjectFileMutationRequest,
+) -> Result<ProjectAudioWaveform, String> {
+    tauri::async_runtime::spawn_blocking(move || get_project_audio_waveform_blocking(app, request))
+        .await
+        .map_err(|_| "Comparison loading task could not complete".to_owned())?
+}
+
+fn get_project_audio_waveform_blocking(
     app: tauri::AppHandle,
     request: ProjectFileMutationRequest,
 ) -> Result<ProjectAudioWaveform, String> {
@@ -202,7 +212,19 @@ pub(crate) fn get_native_project_audio_preview_status(
 }
 
 #[tauri::command]
-pub(crate) fn prepare_native_comparison_audio(
+pub(crate) async fn prepare_native_comparison_audio(
+    app: tauri::AppHandle,
+    request: NativeComparisonPrepareRequest,
+) -> Result<NativeComparisonAudioStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<NativeAudioPreviewState>();
+        prepare_native_comparison_audio_blocking(app.clone(), state, request)
+    })
+    .await
+    .map_err(|_| "Comparison audio preparation could not complete".to_owned())?
+}
+
+fn prepare_native_comparison_audio_blocking(
     app: tauri::AppHandle,
     state: tauri::State<'_, NativeAudioPreviewState>,
     request: NativeComparisonPrepareRequest,

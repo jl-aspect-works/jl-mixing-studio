@@ -1,3 +1,5 @@
+mod comparison_performance;
+pub(super) use comparison_performance::log_comparison_performance;
 #[path = "comparison_command.rs"]
 mod comparison;
 #[path = "delivered_listening_command.rs"]

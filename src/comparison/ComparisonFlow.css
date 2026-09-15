@@ -207,3 +207,7 @@
   .comparison-results-session-controls { flex-wrap: wrap; justify-content: flex-start; }
   .comparison-results-session-controls select { flex-basis: 100%; min-width: 0; }
 }
+
+.comparison-load-progress { display: grid; gap: 8px; padding: 16px; margin: 10px 0; border: 1px solid #bfcef1; border-radius: 10px; background: #f0f5ff; color: #263b60; }
+.comparison-load-progress progress { width: 100%; height: 8px; accent-color: #326bdb; }
+.comparison-load-progress small { color: #465b7c; }
