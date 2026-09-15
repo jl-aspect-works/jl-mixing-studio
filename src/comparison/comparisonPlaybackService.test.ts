@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { claimAudioPlayback, stopActiveAudioPlayback } from "../project/files/audioPlaybackController";
-import { prepareProjectAudioPreview } from "../project/files/audioPreviewService";
+import { invoke } from "@tauri-apps/api/core";
 import {
   ComparisonPlaybackSession,
   WebComparisonAudioProvider,
@@ -10,9 +10,7 @@ import {
 } from "./comparisonPlaybackService";
 import type { FrozenComparisonCandidate, ProjectRegion } from "./models";
 
-vi.mock("../project/files/audioPreviewService", () => ({
-  prepareProjectAudioPreview: vi.fn(),
-}));
+vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), convertFileSrc: (path: string) => path }));
 
 const candidates = (count: number): FrozenComparisonCandidate[] => Array.from({ length: count }, (_, index) => ({
   revisionId: `revision-${index + 1}`,
@@ -25,6 +23,7 @@ const candidates = (count: number): FrozenComparisonCandidate[] => Array.from({ 
 
 const intro: ProjectRegion = { regionId: "intro", name: "Intro", startSeconds: 10, endSeconds: 25, builtIn: false };
 const verse: ProjectRegion = { regionId: "verse", name: "Verse", startSeconds: 40, endSeconds: 55, builtIn: false };
+const fullSong: ProjectRegion = { regionId: "full-song", name: "Full Song", startSeconds: 0, endSeconds: null, builtIn: true };
 
 const snapshot = (values: Partial<ComparisonPlaybackSnapshot> = {}): ComparisonPlaybackSnapshot => ({
   activeCandidateId: "A",
@@ -53,14 +52,15 @@ const fakeProvider = () => {
 };
 
 beforeEach(() => {
-  vi.mocked(prepareProjectAudioPreview).mockReset().mockImplementation(async ({ relativePath }) => ({
-    provider: "native",
-    relativePath,
-    sourceUrl: null,
-  }));
+  vi.mocked(invoke).mockReset().mockImplementation(async (command, args) => {
+    if (command === "log_comparison_playback") return undefined;
+    const request = args as { request: { candidates: { relativePath: string }[] } };
+    return request.request.candidates.map(({ relativePath }) => ({ supported: false, relativePath, filePath: null }));
+  });
 });
 
 afterEach(async () => {
+  delete (window as typeof window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__;
   await stopActiveAudioPlayback();
 });
 
@@ -74,11 +74,27 @@ describe("comparison playback session", () => {
       expect.objectContaining({ blindId: "A" }),
       expect.objectContaining({ blindId: "E" }),
     ]), 10);
-    expect(prepareProjectAudioPreview).toHaveBeenCalledTimes(5);
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(invoke).toHaveBeenCalledWith("prepare_comparison_sources", expect.objectContaining({ request: expect.objectContaining({ candidates: expect.arrayContaining([expect.objectContaining({ blindId: "E" })]) }) }));
     expect(await claimAudioPlayback("ordinary-preview", vi.fn())).toBe(false);
 
     await session.dispose();
     expect(await claimAudioPlayback("ordinary-preview", vi.fn())).toBe(true);
+  });
+
+  it("joins overlapping preparation requests and skips I/O when disposed during ownership acquisition", async () => {
+    const fake = fakeProvider();
+    const session = new ComparisonPlaybackSession("client", "project", candidates(4), [intro], intro, () => fake.provider);
+    await Promise.all([session.prepare(), session.prepare()]);
+    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(fake.provider.prepare).toHaveBeenCalledTimes(1);
+    await session.dispose();
+    vi.mocked(invoke).mockClear();
+    const abandoned = new ComparisonPlaybackSession("client", "project", candidates(4), [intro], intro, () => fake.provider);
+    const pending = abandoned.prepare();
+    await abandoned.dispose();
+    await expect(pending).rejects.toThrow("closed");
+    expect(invoke).not.toHaveBeenCalled();
   });
 
   it("runs a custom-region-only session and resets Loop On when regions change", async () => {
@@ -108,6 +124,28 @@ describe("comparison playback session", () => {
     const result = await session.refresh();
     expect(fake.provider.seek).toHaveBeenLastCalledWith(10);
     expect(result.playing).toBe(true);
+  });
+
+  it("logs revision-aware switch and loop-boundary diagnostics without polling events", async () => {
+    (window as typeof window & { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = {};
+    const fake = fakeProvider();
+    const session = new ComparisonPlaybackSession("client", "project", candidates(2), [fullSong], fullSong, () => fake.provider);
+    await session.prepare();
+    await session.toggle();
+    fake.setStatus(snapshot({ playing: false, currentSeconds: 120, providerPaused: true, providerEnded: true, readyState: 4, networkState: 1 }));
+    await session.refresh();
+    await session.switchCandidate("B");
+
+    const events = vi.mocked(invoke).mock.calls
+      .filter(([command]) => command === "log_comparison_playback")
+      .map(([, args]) => (args as { request: Record<string, unknown> }).request);
+    expect(events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ action: "loop_restart", outcome: "started", revisionId: "revision-1", revisionNumber: 1, blindId: "A", fullSong: true, atRegionEnd: true, providerEnded: true }),
+      expect.objectContaining({ action: "loop_restart", outcome: "success", revisionId: "revision-1", revisionNumber: 1, blindId: "A" }),
+      expect.objectContaining({ action: "candidate_switch", outcome: "started", targetRevisionId: "revision-2", targetRevisionNumber: 2, targetBlindId: "B" }),
+      expect.objectContaining({ action: "candidate_switch", outcome: "success", revisionId: "revision-2", revisionNumber: 2, blindId: "B" }),
+    ]));
+    expect(events.filter((event) => event.action === "status")).toHaveLength(0);
   });
 
   it("keeps refresh polling active after playback is requested while provider position advances", async () => {

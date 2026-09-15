@@ -1,3 +1,5 @@
+import { ComparisonLoading } from "./ComparisonLoading";
+import { measureComparison } from "./performance";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import { ComparisonPlaybackSession, type ComparisonPlaybackSnapshot } from "./comparisonPlaybackService";
@@ -31,6 +33,7 @@ export function ComparisonWorkspace({
   const [completionError, setCompletionError] = useState<string | null>(null);
   const [completionBusy, setCompletionBusy] = useState(false);
   const [playback, setPlayback] = useState<ComparisonPlaybackSnapshot | null>(null);
+  const [preparationStatus, setPreparationStatus] = useState(`Preparing comparison playback: loading all ${session.candidates.length} candidates…`);
   const [playbackBusy, setPlaybackBusy] = useState(true);
   const [playbackError, setPlaybackError] = useState<{ candidateId: string; message: string } | null>(null);
   const [volume, setVolume] = useState(1);
@@ -51,7 +54,7 @@ export function ComparisonWorkspace({
       setPlaybackError(null);
     }
     try {
-      const next = await playbackSession.prepare();
+      const next = await measureComparison("session_prepare", () => playbackSession.prepare((text) => { if (shouldApply()) setPreparationStatus(text); }), session.candidates.length);
       if (shouldApply()) setPlayback(next);
     } catch (error) {
       if (shouldApply()) {
@@ -71,7 +74,8 @@ export function ComparisonWorkspace({
     let cancelled = false;
     const shouldApply = () => !cancelled && playbackSessionRef.current === playbackSession;
     playbackSessionRef.current = playbackSession;
-    void preparePlayback(playbackSession, shouldApply);
+    // Strict Mode tears down its probe before this microtask; do not start abandoned I/O.
+    queueMicrotask(() => { if (shouldApply()) void preparePlayback(playbackSession, shouldApply); });
     return () => {
       cancelled = true;
       if (playbackSessionRef.current === playbackSession) playbackSessionRef.current = null;
@@ -197,7 +201,7 @@ export function ComparisonWorkspace({
     setPlaybackBusy(true);
     setPlaybackError(null);
     try {
-      const next = playback ? await playbackSession.retry() : await playbackSession.prepare();
+      const next = playback ? await playbackSession.retry() : await measureComparison("session_prepare", () => playbackSession.prepare(), session.candidates.length);
       setPlayback(next);
     } catch (error) {
       await playbackFailure(activeCandidate, error);
@@ -284,6 +288,8 @@ export function ComparisonWorkspace({
       <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-workspace-title">Comparison Session</h2></div>
       <div className="comparison-session-facts"><span>{session.candidates.length} candidates</span><span>Loudness Match: <strong>{session.loudnessMatch ? "ON" : "OFF"}</strong></span><button type="button" className="secondary" onClick={cancel}><ActionIcon name="close" />Cancel</button></div>
     </header>
+    {playbackBusy && !playback && !playbackError && <ComparisonLoading text={preparationStatus} />}
+    {completionBusy && <ComparisonLoading text="Saving comparison and loading results…" />}
     {cancelConfirmation && <div className="inline-notice warning comparison-cancel-confirmation" role="alertdialog" aria-label="Discard unfinished comparison">
       <span>Discard this unfinished comparison? No session results will be saved.</span>
       <span><button type="button" className="danger" onClick={onCancel}><ActionIcon name="delete" />Discard Comparison</button><button type="button" className="secondary" onClick={() => setCancelConfirmation(false)}><ActionIcon name="back" />Keep Comparing</button></span>
