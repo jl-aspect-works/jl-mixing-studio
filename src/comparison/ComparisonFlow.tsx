@@ -1,6 +1,6 @@
 import { ComparisonLoading } from "./ComparisonLoading";
 import { measureComparison } from "./performance";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ClientSummary, ProjectSummary } from "../types";
 import type { CompletedComparisonSession, ComparisonResultsData, FrozenComparisonSession } from "./models";
 import { ComparisonSetup } from "./ComparisonSetup";
@@ -29,18 +29,29 @@ export function ComparisonFlow({
   const [revealedSession, setRevealedSession] = useState<CompletedComparisonSession | null>(null);
   const [resultsBusy, setResultsBusy] = useState(false);
   const [resultsError, setResultsError] = useState<string | null>(null);
+  const resultsRequest = useRef<Promise<ComparisonResultsData> | null>(null);
+  const readResults = useCallback(() => {
+    if (resultsRequest.current) return resultsRequest.current;
+    const request = measureComparison("results", () => getComparisonResults({ clientId: client.clientId, projectId: project.projectId }));
+    resultsRequest.current = request;
+    const clearRequest = () => {
+      if (resultsRequest.current === request) resultsRequest.current = null;
+    };
+    void request.then(clearRequest, clearRequest);
+    return request;
+  }, [client.clientId, project.projectId]);
   const loadResults = useCallback(async () => {
     setResultsBusy(true);
     setResultsError(null);
     try {
-      setResults(await measureComparison("results", () => getComparisonResults({ clientId: client.clientId, projectId: project.projectId })));
+      setResults(await readResults());
       setSession(null);
     } catch (error) {
       setResultsError(error instanceof Error ? error.message : "Comparison results could not be loaded.");
     } finally {
       setResultsBusy(false);
     }
-  }, [client.clientId, project.projectId]);
+  }, [readResults]);
   useEffect(() => {
     if (initialView === "results" && !results && !session) void loadResults();
   }, [initialView, loadResults, results, session]);
