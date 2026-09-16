@@ -592,6 +592,7 @@ describe("blind comparison workspace shell", () => {
   it("keeps mapping stable and suppresses candidate shortcuts while notes have focus", async () => {
     render(workspace());
     await waitFor(() => expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" })).toBeEnabled());
+    await act(async () => {});
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
     fireEvent.keyDown(notes, { key: "B" });
     expect(screen.getByRole("heading", { name: "Full Song: Candidate A" })).toBeInTheDocument();
@@ -644,11 +645,13 @@ describe("blind comparison workspace shell", () => {
   it("uses number shortcuts to place the active candidate while preserving text entry", async () => {
     render(workspace());
     await waitFor(() => expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" })).toBeEnabled());
+    await act(async () => {});
     fireEvent.keyDown(window, { key: "2" });
     expect(within(screen.getByLabelText("Rank slot 2")).getByTitle("Select Candidate A")).toBeInTheDocument();
 
     fireEvent.keyDown(window, { key: "B" });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument());
+    await act(async () => {});
     fireEvent.keyDown(window, { key: "1" });
     await waitFor(() => expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument());
 
@@ -661,6 +664,7 @@ describe("blind comparison workspace shell", () => {
     mocks.playbackToggle.mockResolvedValueOnce({ activeCandidateId: "A", playing: false, currentSeconds: 0, durationSeconds: 120 });
     render(workspace());
     await waitFor(() => expect(screen.getByRole("button", { name: "Play" })).toBeEnabled());
+    await act(async () => {});
 
     fireEvent.keyDown(document.body, { key: " ", code: "Space" });
     await waitFor(() => expect(mocks.playbackToggle).toHaveBeenCalledOnce());
@@ -689,6 +693,7 @@ describe("blind comparison workspace shell", () => {
   it("uses arrow keys for previous and next candidate transport controls", async () => {
     render(workspace());
     await waitFor(() => expect(screen.getByRole("button", { name: "Next candidate" })).toBeEnabled());
+    await act(async () => {});
 
     fireEvent.keyDown(document.body, { key: "ArrowRight", code: "ArrowRight" });
     await waitFor(() => expect(mocks.playbackSwitch).toHaveBeenLastCalledWith("B"));
