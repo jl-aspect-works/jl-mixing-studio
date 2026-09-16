@@ -26,6 +26,17 @@ import {
 
 const emptyDraft = (): RegionDraft => ({ regionId: null, name: "", start: "0:00", end: "0:30" });
 
+const sameDraft = (left: RegionDraft, right: RegionDraft) =>
+  left.regionId === right.regionId
+  && left.name === right.name
+  && left.start === right.start
+  && left.end === right.end;
+
+const upsertRegion = (regions: readonly ProjectRegion[], saved: ProjectRegion) =>
+  regions.some((region) => region.regionId === saved.regionId)
+    ? regions.map((region) => region.regionId === saved.regionId ? saved : region)
+    : [...regions, saved];
+
 const errorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : typeof error === "string" ? error : fallback;
 
@@ -136,27 +147,34 @@ export function ComparisonSetup({
   };
 
   const saveRegion = async () => {
-    const startSeconds = parseTimestamp(draft.start);
-    const endSeconds = parseTimestamp(draft.end);
-    const name = draft.name.trim() || nextRegionName(regions);
+    const submittedDraft = draft;
+    const startSeconds = parseTimestamp(submittedDraft.start);
+    const endSeconds = parseTimestamp(submittedDraft.end);
+    const name = submittedDraft.name.trim() || nextRegionName(regions);
     if (startSeconds === null || endSeconds === null || endSeconds <= startSeconds) {
       setError("Enter a region name and valid start/end timestamps with the end after the start.");
       return;
     }
+    const continuationDraft = submittedDraft.regionId
+      ? emptyDraft()
+      : { regionId: null, name: "", start: formatTimestamp(endSeconds), end: formatTimestamp(endSeconds) };
     setBusy(true);
     setError(null);
     setNotice(null);
+    setDraft(continuationDraft);
     const identity = { clientId: client.clientId, projectId: project.projectId };
     try {
-      const saved = draft.regionId
-        ? await updateComparisonRegion({ ...identity, regionId: draft.regionId, name, startSeconds, endSeconds })
+      const saved = submittedDraft.regionId
+        ? await updateComparisonRegion({ ...identity, regionId: submittedDraft.regionId, name, startSeconds, endSeconds })
         : await addComparisonRegion({ ...identity, name, startSeconds, endSeconds });
-      const refreshed = await getComparisonSetup(identity);
-      setSetup(refreshed);
+      setSetup((current) => current ? {
+        ...current,
+        document: { ...current.document, regions: upsertRegion(current.document.regions, saved) },
+      } : current);
       setSelectedRegions((current) => new Set(current).add(saved.regionId));
-      setDraft(draft.regionId ? emptyDraft() : { regionId: null, name: "", start: formatTimestamp(saved.endSeconds ?? endSeconds), end: formatTimestamp(saved.endSeconds ?? endSeconds) });
-      setNotice(draft.regionId ? "Region updated." : "Region added.");
+      setNotice(submittedDraft.regionId ? "Region updated." : "Region added.");
     } catch (reason) {
+      setDraft((current) => sameDraft(current, continuationDraft) ? submittedDraft : current);
       setError(errorMessage(reason, "The comparison region could not be saved."));
     } finally {
       setBusy(false);
@@ -172,8 +190,7 @@ export function ComparisonSetup({
         projectId: project.projectId,
         regionId: region.regionId,
       });
-      const refreshed = await getComparisonSetup({ clientId: client.clientId, projectId: project.projectId });
-      setSetup({ ...refreshed, document });
+      setSetup((current) => current ? { ...current, document } : current);
       setSelectedRegions((current) => toggle(current, region.regionId, false));
       if (draft.regionId === region.regionId) setDraft(emptyDraft());
       setPendingDelete(null);

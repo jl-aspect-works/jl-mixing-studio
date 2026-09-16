@@ -127,6 +127,7 @@ export function RegionPreview({
         <input className="comparison-playhead-locator" type="range" aria-label="Preview playhead" min="0" max={duration} step="0.1" value={Math.min(playhead, duration)} onChange={(event) => seekPreview(Number(event.target.value))} />
     </div>
     <AudioPreviewPlayer key={candidate.revisionId} ref={previewRef} clientId={clientId} projectId={projectId} entry={{ relativePath: candidate.relativePath, displayName: label }} durationSeconds={duration} standardTransport onPositionChange={setPlayhead} seekRequest={seekRequest} />
+    <div className="comparison-transport-shortcuts" aria-label="Preview transport keyboard shortcuts"><span><kbd>Space</kbd> Play/Pause</span><span><kbd>,</kbd> Back 5s</span><span><kbd>.</kbd> Forward 5s</span></div>
     {error && <small className="comparison-preview-error">{error}</small>}
   </div>;
 }

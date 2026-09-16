@@ -226,10 +226,6 @@ describe("comparison setup", () => {
   it("adds consecutive custom regions and selects them", async () => {
     const verse = { regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false };
     const chorus = { regionId: "chorus", name: "Chorus", startSeconds: 30, endSeconds: 60, builtIn: false };
-    mocks.get
-      .mockResolvedValueOnce(setup)
-      .mockResolvedValueOnce({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse] } })
-      .mockResolvedValueOnce({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, verse, chorus] } });
     mocks.add
       .mockResolvedValueOnce(verse)
       .mockResolvedValueOnce(chorus);
@@ -250,6 +246,28 @@ describe("comparison setup", () => {
     await waitFor(() => expect(mocks.add).toHaveBeenCalledTimes(2));
     expect(mocks.add).toHaveBeenLastCalledWith(expect.objectContaining({ name: "Chorus", startSeconds: 30, endSeconds: 60 }));
     expect(await screen.findByRole("checkbox", { name: /Chorus/ })).toBeChecked();
+    expect(mocks.get).toHaveBeenCalledOnce();
+  });
+
+  it("clears the region editor immediately and keeps it usable while a region is saving", async () => {
+    const verse = { regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false };
+    let finishSave!: (value: typeof verse) => void;
+    mocks.add.mockReturnValue(new Promise((resolve) => { finishSave = resolve; }));
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Verse" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Region" }));
+
+    expect(screen.getByLabelText("Name")).toHaveValue("");
+    expect(screen.getByLabelText("Region start")).toHaveValue("0:30");
+    expect(screen.getByLabelText("Region end")).toHaveValue("0:30");
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Chorus" } });
+    expect(screen.getByLabelText("Name")).toHaveValue("Chorus");
+
+    await act(async () => finishSave(verse));
+    expect(await screen.findByRole("checkbox", { name: /Verse/ })).toBeChecked();
+    expect(screen.getByLabelText("Name")).toHaveValue("Chorus");
+    expect(mocks.get).toHaveBeenCalledOnce();
   });
 
   it("shows revision descriptions and select-all controls without setup guidance copy", async () => {
@@ -352,6 +370,14 @@ describe("comparison setup", () => {
     fireEvent.keyDown(screen.getByLabelText("Name"), { key: "." });
     fireEvent.keyDown(document.body, { key: ".", metaKey: true });
     expect(playhead).toHaveValue("0");
+  });
+
+  it("shows the preview transport shortcut legend", async () => {
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    const legend = await screen.findByLabelText("Preview transport keyboard shortcuts");
+    expect(legend).toHaveTextContent("Space Play/Pause");
+    expect(legend).toHaveTextContent(", Back 5s");
+    expect(legend).toHaveTextContent(". Forward 5s");
   });
 
   it("adds a valid region with Enter after setting bounds at the playhead", async () => {
@@ -649,6 +675,15 @@ describe("blind comparison workspace shell", () => {
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate A" });
     fireEvent.keyDown(notes, { key: ".", code: "Period" });
     expect(mocks.playbackSeek).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows the comparison transport shortcut legend", async () => {
+    render(workspace());
+    const legend = await screen.findByLabelText("Comparison transport keyboard shortcuts");
+    expect(legend).toHaveTextContent("Space Play/Pause");
+    expect(legend).toHaveTextContent(", Back 5s");
+    expect(legend).toHaveTextContent(". Forward 5s");
+    expect(legend).toHaveTextContent("←→ Previous/Next candidate");
   });
 
   it("uses arrow keys for previous and next candidate transport controls", async () => {

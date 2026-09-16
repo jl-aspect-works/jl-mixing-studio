@@ -73,6 +73,9 @@
 .comparison-transport { justify-content: center; gap: 6px; }
 .comparison-transport button.icon-only { width: 30px; min-width: 30px; height: 30px; min-height: 30px; padding: 0; }
 .comparison-transport .action-icon { width: 15px; height: 15px; }
+.comparison-transport-shortcuts { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 5px 13px; color: var(--muted-text, #748096); font-size: .68rem; }
+.comparison-transport-shortcuts span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.comparison-transport-shortcuts kbd { min-width: 20px; padding: 1px 5px; border: 1px solid var(--border, #cbd3df); border-bottom-width: 2px; border-radius: 4px; background: rgba(255,255,255,.9); color: var(--text, #172033); font: inherit; font-weight: 800; line-height: 1.35; text-align: center; }
 .comparison-volume { display: flex; align-items: center; gap: 6px; margin-left: 8px; color: var(--muted-text, #748096); font-size: .72rem; font-weight: 700; }
 .comparison-volume input { width: 92px; accent-color: var(--blue, #4368e2); }
 .comparison-playback-status { color: var(--muted-text, #748096); font-size: .78rem; text-align: center; }
