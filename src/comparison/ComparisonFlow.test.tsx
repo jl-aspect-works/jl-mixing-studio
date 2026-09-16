@@ -650,7 +650,7 @@ describe("blind comparison workspace shell", () => {
     fireEvent.keyDown(window, { key: "B" });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Full Song: Candidate B" })).toBeInTheDocument());
     fireEvent.keyDown(window, { key: "1" });
-    expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument();
+    await waitFor(() => expect(within(screen.getByLabelText("Rank slot 1")).getByTitle("Select Candidate B")).toBeInTheDocument());
 
     const notes = screen.getByRole("textbox", { name: "Notes for Candidate B" });
     fireEvent.keyDown(notes, { key: "2" });
