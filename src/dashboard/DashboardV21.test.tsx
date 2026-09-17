@@ -46,10 +46,10 @@ describe("DashboardV21", () => {
   it("uses decorative scalable artwork for the Today’s Work empty state", () => {
     const { container } = render(<DashboardV21 {...baseProps()} />);
 
+    expect(screen.getByText("You’re all caught up.")).toBeInTheDocument();
     expect(screen.getByText("Nothing needs your attention right now.")).toBeInTheDocument();
-    expect(screen.getByText("Refresh anytime to check for new work.")).toBeInTheDocument();
     const artwork = container.querySelector(".dashboard-v21-work-empty-artwork");
-    expect(artwork).toHaveAttribute("viewBox", "0 0 1200 260");
+    expect(artwork).toHaveAttribute("viewBox", "0 0 1200 420");
     expect(artwork).toHaveAttribute("aria-hidden", "true");
   });
 
