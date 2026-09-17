@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import type { ResourceState } from "../AppShellViews";
 import type { ActivityEvent, ClientSummary, DerivedTask, ProjectSummary, VersionCheck, WorkspaceSnapshot } from "../types";
 import type { WorkspaceStorageState, WorkspaceStorageSummary } from "../app/useWorkspaceStorageSummary";
 import { AudioHeroArtwork } from "./HeroArtwork";
+import { DashboardIcon, type DashboardIconName } from "./DashboardIcon";
+import { TodayWorkEmptyState } from "./TodayWorkEmptyState";
 import { deriveDashboardWorkflowSummary } from "./dashboardWorkflowSummary";
 import { loadRecentProject, type RecentProjectReference } from "./recentProject";
 import "./DashboardV21.css";
@@ -56,25 +57,6 @@ const activityLabel: Record<ActivityEvent["eventType"], string> = {
   revisionApproved: "Mix approved",
   deliveryCreated: "Delivery created",
 };
-
-type DashboardIconName = "alert" | "check" | "clock" | "folder" | "package" | "person" | "review" | "revision" | "storage" | "up" | "wave";
-
-function DashboardIcon({ name }: { name: DashboardIconName }) {
-  const paths: Record<DashboardIconName, ReactNode> = {
-    alert: <><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v4M12 17h.01"/></>,
-    check: <><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16.5 8.5"/></>,
-    clock: <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
-    folder: <><path d="M3 7h7l2 2h9v10H3z"/><path d="M3 7V5h7l2 2"/></>,
-    package: <><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></>,
-    person: <><circle cx="12" cy="8" r="3"/><path d="M5 21a7 7 0 0 1 14 0"/></>,
-    review: <><path d="M4 5h16v12H8l-4 4V5Z"/><path d="M8 9h8M8 13h5"/></>,
-    revision: <><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5M10 12h6M10 16h6"/></>,
-    storage: <><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></>,
-    up: <><path d="M12 20V5"/><path d="m6 11 6-6 6 6"/></>,
-    wave: <><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4M22 12h-1"/></>,
-  };
-  return <svg className="dashboard-v21-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>;
-}
 
 export function resolveRecentProject(snapshot: WorkspaceSnapshot, reference: RecentProjectReference | null): ResolvedRecentProject | null {
   if (!reference) return null;
@@ -221,7 +203,7 @@ export function DashboardV21(props: DashboardV21Props) {
         <div className="dashboard-v21-primary-column">
           <section className="dashboard-v21-card dashboard-v21-work" aria-labelledby="dashboard-work-heading">
             <div className="dashboard-v21-card-heading"><div><h2 id="dashboard-work-heading">Today’s Work</h2><p>What needs your attention</p></div><button type="button" className="table-link" onClick={props.onTasks}>View all</button></div>
-            {snapshot && snapshot.tasks.length > 0 ? <div className="dashboard-v21-task-list">{snapshot.tasks.slice(0, 4).map((task) => <TodayTask key={task.id} task={task} onOpenProject={props.onOpenProject} />)}</div> : <div className="dashboard-v21-empty"><span className="dashboard-v21-empty-icon positive"><DashboardIcon name="check" /></span><div><strong>Nothing needs your attention right now.</strong><p>Refresh anytime to check for new work.</p></div></div>}
+            {snapshot && snapshot.tasks.length > 0 ? <div className="dashboard-v21-task-list">{snapshot.tasks.slice(0, 4).map((task) => <TodayTask key={task.id} task={task} onOpenProject={props.onOpenProject} />)}</div> : <TodayWorkEmptyState />}
           </section>
 
           <section className="dashboard-v21-card dashboard-v21-activity" aria-labelledby="dashboard-activity-heading">
