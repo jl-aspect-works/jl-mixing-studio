@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { healthyWorkspace, version } from "../App.testSupport";
 import type { WorkspaceStorageState } from "../app/useWorkspaceStorageSummary";
 import { DashboardV21, resolveRecentProject } from "./DashboardV21";
@@ -30,6 +30,8 @@ const baseProps = () => ({
   onOpenProject: vi.fn(),
 });
 
+afterEach(cleanup);
+
 describe("DashboardV21", () => {
   beforeEach(() => window.localStorage.clear());
 
@@ -39,6 +41,41 @@ describe("DashboardV21", () => {
     expect(screen.getByRole("heading", { name: "No recent project yet" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Go to Projects" }));
     expect(props.onProjects).toHaveBeenCalledOnce();
+  });
+
+  it("uses decorative scalable artwork for the Today’s Work empty state", () => {
+    const { container } = render(<DashboardV21 {...baseProps()} />);
+
+    expect(screen.getByText("You’re all caught up.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing needs your attention right now.")).toBeInTheDocument();
+    const artwork = container.querySelector(".dashboard-v21-work-empty-artwork");
+    expect(artwork).toHaveAttribute("viewBox", "0 0 1200 420");
+    expect(artwork).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("leaves the populated Today’s Work task presentation unchanged", () => {
+    const props = baseProps();
+    props.workspace.value = {
+      ...props.workspace.value,
+      tasks: [{
+        id: "review-blue-sky",
+        priority: "review",
+        title: "Review Blue Sky revision",
+        reason: "A revision is awaiting approval",
+        recommendedAction: "Review the current revision",
+        clientId: "acme",
+        clientName: "Acme Records",
+        projectId: "blue-sky",
+        projectName: "Blue Sky",
+        deadline: null,
+      }],
+    };
+
+    const { container } = render(<DashboardV21 {...props} />);
+    expect(screen.getByText("Review Blue Sky revision")).toBeInTheDocument();
+    expect(container.querySelector(".dashboard-v21-work-empty-artwork")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open Project" }));
+    expect(props.onOpenProject).toHaveBeenCalledWith("acme", "blue-sky");
   });
 
   it("resolves and opens the machine-local recent project", () => {

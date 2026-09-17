@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-13
+Last updated: 2026-09-17
 
 ## Current release
 
@@ -9,13 +9,13 @@ Last updated: 2026-09-13
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **Blind Revision Comparison implementation is in progress**
+- Status: **v2.3 final polish is in progress**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
 ## Studio 2.3 release scope
 
-The current planned workstream is Blind Revision Comparison (#370), implemented one sequenced high-level issue at a time:
+The Blind Revision Comparison workstream (#370) was implemented one sequenced high-level issue at a time:
 
 1. #374 — persistence model, regions, sessions, and cumulative standings;
 2. #375 — setup flow, region management, and blind session shell;
@@ -24,6 +24,8 @@ The current planned workstream is Blind Revision Comparison (#370), implemented 
 5. #378 — loudness analysis, matching gain, and reusable cache;
 6. #379 — reveal, results, TOP integration, and history actions;
 7. #380 — cross-platform acceptance, NAS performance, and polish.
+
+The remaining v2.3 polish sequence is #385, #383, #368, then #337. Per-region loudness matching (#396) remains deferred until after v2.3.
 
 The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved comparison/reveal layout guidance is recorded in `docs/BLIND_REVISION_COMPARISON_WIREFRAMES.md` and its SVG reference.
 
@@ -38,26 +40,25 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - Post-merge Studio CI run #2010 passed on that exact `main` commit.
 - #377 N-way playback coordinator, synchronized switching, and region looping was approved and merged through PR #394 at `249bf7f61d3181ba7baf096dd66c3089ae35fd15`.
 - Studio PR CI run #2019 passed before merge on PR head `9a1c8dfcda7f9aa7bff21b95bf2afc0139e792af`.
+- #378 loudness analysis, matching gain, and reusable derived cache was merged through PR #395 at `b762fea292f470bd59d0dca63ea9b9f1f17db7f1`.
+- #379 reveal and results workflow was merged through PR #397 at `a2d2d0877af75fb572385180ce01119e7e35799b`.
+- #380 cross-platform acceptance and polish was merged through PR #398 at `55fa3847eaf54de63ad628bbebda49c4895cdb6a`; post-merge CI run #2058 passed.
 
 ## Active work
 
-- #378 is implementing loudness analysis, matching gain, and the reusable derived cache.
-- #379 and later issues remain blocked by the #378 implementation, CI, and approval gate.
+- #385 is implementing the approved Option 3 empty-state treatment for the Dashboard Today’s Work card.
 
 ## Remaining release work
 
-1. Complete, validate, approve, and merge #378.
-2. Implement and approve #379 in locked dependency order.
-3. Complete #380 cross-platform, NAS-performance, and UX acceptance.
-4. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Complete, validate, approve, and merge #385.
+2. Implement and approve #383, #368, and #337 in that order.
+3. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
-- Completed comparison persistence remains deferred to the reveal/results workflow in #379; #376 owns in-memory ranking and completion readiness.
-- Loudness analysis/matching implementation is owned by #378; #375 only captured and froze the session setting.
-- Reveal/results, cumulative TOP integration, and history actions are owned by #379.
+- Per-region loudness matching (#396) remains deferred until after v2.3; v2.3 retains fixed full-source gain per candidate.
 - Application signing, macOS notarization, provider-specific media/cloud APIs, and generic project/client deletion remain future work.
 
 ## Immediate next action
 
-Publish the focused #378 implementation PR, complete CI and review, and do not start #379 until #378 is approved and merged.
+Publish the focused #385 implementation PR, complete CI and user visual acceptance, and do not start #383 until #385 is approved and merged.
