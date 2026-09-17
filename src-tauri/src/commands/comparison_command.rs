@@ -291,7 +291,16 @@ fn candidate_availability(
 }
 
 #[tauri::command]
-pub(crate) fn get_comparison_setup(
+pub(crate) async fn get_comparison_setup(
+    app: tauri::AppHandle,
+    request: ComparisonProjectRequest,
+) -> Result<ComparisonSetup, String> {
+    tauri::async_runtime::spawn_blocking(move || get_comparison_setup_blocking(app, request))
+        .await
+        .map_err(|_| "Comparison loading task could not complete".to_owned())?
+}
+
+fn get_comparison_setup_blocking(
     app: tauri::AppHandle,
     request: ComparisonProjectRequest,
 ) -> Result<ComparisonSetup, String> {
@@ -358,7 +367,16 @@ pub(crate) fn delete_comparison_region(
 }
 
 #[tauri::command]
-pub(crate) fn analyze_comparison_loudness(
+pub(crate) async fn analyze_comparison_loudness(
+    app: tauri::AppHandle,
+    request: ComparisonLoudnessRequest,
+) -> Result<ComparisonLoudnessResult, String> {
+    tauri::async_runtime::spawn_blocking(move || analyze_comparison_loudness_blocking(app, request))
+        .await
+        .map_err(|_| "Comparison loading task could not complete".to_owned())?
+}
+
+fn analyze_comparison_loudness_blocking(
     app: tauri::AppHandle,
     request: ComparisonLoudnessRequest,
 ) -> Result<ComparisonLoudnessResult, String> {
@@ -383,7 +401,16 @@ pub(crate) fn analyze_comparison_loudness(
 }
 
 #[tauri::command]
-pub(crate) fn get_comparison_results(
+pub(crate) async fn get_comparison_results(
+    app: tauri::AppHandle,
+    request: ComparisonProjectRequest,
+) -> Result<ComparisonResults, String> {
+    tauri::async_runtime::spawn_blocking(move || get_comparison_results_blocking(app, request))
+        .await
+        .map_err(|_| "Comparison loading task could not complete".to_owned())?
+}
+
+fn get_comparison_results_blocking(
     app: tauri::AppHandle,
     request: ComparisonProjectRequest,
 ) -> Result<ComparisonResults, String> {

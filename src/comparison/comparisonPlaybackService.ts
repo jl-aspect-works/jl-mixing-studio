@@ -1,6 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
+import { measureComparison } from "./performance";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { claimExclusiveAudioPlayback, releaseAudioPlayback } from "../project/files/audioPlaybackController";
-import { prepareProjectAudioPreview } from "../project/files/audioPreviewService";
+import type { ProjectAudioPreviewResult } from "../project/files/audioPreviewService";
 import type { FrozenComparisonCandidate, ProjectRegion } from "./models";
 
 export type ComparisonPlaybackSnapshot = {
@@ -8,6 +9,10 @@ export type ComparisonPlaybackSnapshot = {
   playing: boolean;
   currentSeconds: number;
   durationSeconds: number;
+  providerPaused?: boolean;
+  providerEnded?: boolean;
+  readyState?: number;
+  networkState?: number;
 };
 
 export type PreparedCandidate = FrozenComparisonCandidate & { sourceUrl: string | null };
@@ -25,6 +30,51 @@ export interface ComparisonAudioProvider {
 
 const playbackError = (candidateId: string, action: string) =>
   new Error(`Candidate ${candidateId} could not be ${action}.`);
+
+type PlaybackDiagnosticAction = "session_ready" | "toggle" | "candidate_switch" | "loop_restart" | "playback_end" | "retry" | "status";
+type PlaybackDiagnosticOutcome = "started" | "success" | "error";
+type PlaybackProviderKind = "web" | "native" | "unknown";
+type PlaybackDiagnosticFields = {
+  provider: PlaybackProviderKind;
+  revisionId?: string;
+  revisionNumber?: number;
+  blindId?: string;
+  targetRevisionId?: string;
+  targetRevisionNumber?: number;
+  targetBlindId?: string;
+  candidateCount: number;
+  loopEnabled: boolean;
+  playRequested: boolean;
+  providerPlaying: boolean;
+  fullSong: boolean;
+  atRegionEnd: boolean;
+  positionMs: number;
+  regionEndMs: number;
+  providerPaused?: boolean;
+  providerEnded?: boolean;
+  readyState?: number;
+  networkState?: number;
+};
+let playbackDiagnosticSequence = 0;
+
+const writePlaybackDiagnostic = (
+  action: PlaybackDiagnosticAction,
+  outcome: PlaybackDiagnosticOutcome,
+  operationId: string,
+  fields: PlaybackDiagnosticFields,
+) => {
+  if (!("__TAURI_INTERNALS__" in window)) return;
+  void invoke("log_comparison_playback", { request: { action, outcome, operationId, ...fields } }).catch(() => {
+    // Diagnostics are best-effort and must never interrupt playback.
+  });
+};
+
+const startPlaybackDiagnostic = (action: PlaybackDiagnosticAction, fields: PlaybackDiagnosticFields) => {
+  const operationId = `${Date.now()}-${++playbackDiagnosticSequence}`;
+  writePlaybackDiagnostic(action, "started", operationId, fields);
+  return (outcome: Exclude<PlaybackDiagnosticOutcome, "started">, finalFields: PlaybackDiagnosticFields) =>
+    writePlaybackDiagnostic(action, outcome, operationId, finalFields);
+};
 
 export class WebComparisonAudioProvider implements ComparisonAudioProvider {
   private readonly channels = new Map<string, HTMLAudioElement>();
@@ -137,6 +187,10 @@ export class WebComparisonAudioProvider implements ComparisonAudioProvider {
       playing: !active.paused && !active.ended,
       currentSeconds: active.currentTime,
       durationSeconds: Number.isFinite(active.duration) ? active.duration : 0,
+      providerPaused: active.paused,
+      providerEnded: active.ended,
+      readyState: active.readyState,
+      networkState: active.networkState,
     };
   }
 
@@ -198,6 +252,8 @@ export class ComparisonPlaybackSession {
   private loop = true;
   private playRequested = false;
   private disposed = false;
+  private providerKind: PlaybackProviderKind = "unknown";
+  private lastStatus: ComparisonPlaybackSnapshot | null = null;
 
   constructor(
     private readonly clientId: string,
@@ -210,19 +266,31 @@ export class ComparisonPlaybackSession {
     this.activeRegion = initialRegion;
   }
 
-  async prepare() {
+  private preparation: Promise<ComparisonPlaybackSnapshot> | null = null;
+
+  prepare(onProgress?: (text: string) => void): Promise<ComparisonPlaybackSnapshot> {
+    if (this.preparation) return this.preparation;
+    this.preparation = this.prepareOnce(onProgress).finally(() => { this.preparation = null; });
+    return this.preparation;
+  }
+
+  private async prepareOnce(onProgress?: (text: string) => void) {
+    onProgress?.(`Resolving audio sources: 0 of ${this.candidates.length}…`);
     if (this.disposed) throw new Error("Comparison playback session is closed.");
     await claimExclusiveAudioPlayback(this.ownershipId, () => this.stopProvider());
     try {
-      const prepared = await Promise.all(this.candidates.map(async (candidate) => {
-        const audio = await prepareProjectAudioPreview({
-          clientId: this.clientId,
-          projectId: this.projectId,
-          relativePath: candidate.relativePath,
-        });
-        if (!audio) throw playbackError(candidate.blindId, "prepared");
-        return { ...candidate, sourceUrl: audio.sourceUrl, provider: audio.provider };
-      }));
+      if (this.disposed) throw new Error("Comparison playback session is closed.");
+      const sources = await measureComparison("candidate_source", () => invoke<ProjectAudioPreviewResult[]>("prepare_comparison_sources", {
+        request: { clientId: this.clientId, projectId: this.projectId,
+          candidates: this.candidates.map(({ blindId, relativePath }) => ({ blindId, relativePath })) },
+      }), this.candidates.length);
+      const prepared = this.candidates.map((candidate, index) => {
+        const source = sources[index];
+        if (!source || source.relativePath !== candidate.relativePath) throw playbackError(candidate.blindId, "prepared");
+        return { ...candidate, sourceUrl: source.supported && source.filePath ? convertFileSrc(source.filePath) : null,
+          provider: source.supported ? "web" as const : "native" as const };
+      });
+      onProgress?.(`Resolved all ${prepared.length} audio sources…`);
       if (this.disposed) throw new Error("Comparison playback session is closed.");
       const providerKind = prepared[0]?.provider;
       if (!providerKind || prepared.some((candidate) => candidate.provider !== providerKind)) {
@@ -230,9 +298,13 @@ export class ComparisonPlaybackSession {
       }
       this.provider = this.providerFactory?.(providerKind)
         ?? (providerKind === "web" ? new WebComparisonAudioProvider() : new NativeComparisonAudioProvider(this.clientId, this.projectId));
-      const durations = await this.provider.prepare(prepared, this.activeRegion.startSeconds);
+      this.providerKind = providerKind;
+      onProgress?.(`Loading audio and checking durations for all ${prepared.length} candidates…`);
+      const durations = await measureComparison("audio_prepare", () => this.provider!.prepare(prepared, this.activeRegion.startSeconds), prepared.length);
       this.regions.forEach((region) => validateRegionDurations(this.candidates, region, durations));
-      return this.provider.status();
+      const status = this.remember(await this.provider.status());
+      this.logDiagnostic("session_ready", "success", status);
+      return status;
     } catch (error) {
       await this.stopProvider();
       releaseAudioPlayback(this.ownershipId);
@@ -242,23 +314,38 @@ export class ComparisonPlaybackSession {
 
   async toggle() {
     const provider = this.requireProvider();
-    const status = await provider.status();
-    this.playRequested = !status.playing;
-    const next = status.playing ? await provider.pause() : await provider.play();
-    return this.normalizePlaybackState(next);
+    const finish = this.startDiagnostic("toggle");
+    try {
+      const status = this.remember(await provider.status());
+      this.playRequested = !status.playing;
+      const next = this.remember(this.normalizePlaybackState(status.playing ? await provider.pause() : await provider.play()));
+      finish("success", this.diagnosticFields(next));
+      return next;
+    } catch (error) {
+      finish("error", this.diagnosticFields());
+      throw error;
+    }
   }
 
-  pause() {
+  async pause() {
     this.playRequested = false;
-    return this.requireProvider().pause();
+    return this.remember(await this.requireProvider().pause());
   }
 
   async switchCandidate(candidateId: string) {
-    return this.normalizePlaybackState(await this.requireProvider().switchCandidate(candidateId));
+    const finish = this.startDiagnostic("candidate_switch", candidateId);
+    try {
+      const next = this.remember(this.normalizePlaybackState(await measureComparison("candidate_switch", () => this.requireProvider().switchCandidate(candidateId))));
+      finish("success", this.diagnosticFields(next, candidateId));
+      return next;
+    } catch (error) {
+      finish("error", this.diagnosticFields(undefined, candidateId));
+      throw error;
+    }
   }
 
   async seek(seconds: number) {
-    return this.requireProvider().seek(this.boundPosition(seconds));
+    return this.remember(await this.requireProvider().seek(this.boundPosition(seconds)));
   }
 
   async setRegion(region: ProjectRegion) {
@@ -266,31 +353,56 @@ export class ComparisonPlaybackSession {
     this.loop = true;
     const provider = this.requireProvider();
     const next = await provider.seek(region.startSeconds);
-    if (this.playRequested) return this.normalizePlaybackState(await provider.play());
-    return this.normalizePlaybackState(next);
+    if (this.playRequested) return this.remember(this.normalizePlaybackState(await provider.play()));
+    return this.remember(this.normalizePlaybackState(next));
   }
 
   setLoop(loop: boolean) { this.loop = loop; }
 
-  setVolume(volume: number) { return this.requireProvider().setVolume(volume); }
+  async setVolume(volume: number) { return this.remember(await this.requireProvider().setVolume(volume)); }
 
   async refresh() {
     const provider = this.requireProvider();
-    const status = await provider.status();
+    let status: ComparisonPlaybackSnapshot;
+    try {
+      status = this.remember(await provider.status());
+    } catch (error) {
+      this.logDiagnostic("status", "error");
+      throw error;
+    }
     const end = this.activeRegion.endSeconds ?? status.durationSeconds;
     if (this.playRequested && this.loop && end > this.activeRegion.startSeconds && status.currentSeconds >= end - 0.04) {
-      await provider.seek(this.activeRegion.startSeconds);
-      return this.normalizePlaybackState(await provider.play());
+      const finish = this.startDiagnostic("loop_restart");
+      try {
+        await provider.seek(this.activeRegion.startSeconds);
+        const next = this.remember(this.normalizePlaybackState(await provider.play()));
+        finish("success", this.diagnosticFields(next));
+        return next;
+      } catch (error) {
+        finish("error", this.diagnosticFields());
+        throw error;
+      }
     }
-    if (!status.playing && status.currentSeconds >= end - 0.04) this.playRequested = false;
-    return this.normalizePlaybackState(status);
+    if (!status.playing && status.currentSeconds >= end - 0.04) {
+      this.playRequested = false;
+      this.logDiagnostic("playback_end", "success", status);
+    }
+    return this.remember(this.normalizePlaybackState(status));
   }
 
   async retry() {
     const provider = this.requireProvider();
-    await provider.seek(this.boundPosition((await provider.status()).currentSeconds));
-    this.playRequested = true;
-    return this.normalizePlaybackState(await provider.play());
+    const finish = this.startDiagnostic("retry");
+    try {
+      await provider.seek(this.boundPosition((await provider.status()).currentSeconds));
+      this.playRequested = true;
+      const next = this.remember(this.normalizePlaybackState(await provider.play()));
+      finish("success", this.diagnosticFields(next));
+      return next;
+    } catch (error) {
+      finish("error", this.diagnosticFields());
+      throw error;
+    }
   }
 
   async dispose() {
@@ -314,6 +426,50 @@ export class ComparisonPlaybackSession {
     const provider = this.provider;
     this.provider = null;
     if (provider) await provider.dispose();
+    this.providerKind = "unknown";
+    this.lastStatus = null;
+  }
+
+  private remember(status: ComparisonPlaybackSnapshot) {
+    this.lastStatus = status;
+    return status;
+  }
+
+  private diagnosticFields(status = this.lastStatus ?? undefined, targetCandidateId?: string): PlaybackDiagnosticFields {
+    const activeCandidate = this.candidates.find((candidate) => candidate.blindId === status?.activeCandidateId);
+    const targetCandidate = this.candidates.find((candidate) => candidate.blindId === targetCandidateId);
+    const end = this.activeRegion.endSeconds ?? status?.durationSeconds ?? 0;
+    const position = status?.currentSeconds ?? 0;
+    return {
+      provider: this.providerKind,
+      revisionId: activeCandidate?.revisionId,
+      revisionNumber: activeCandidate?.revisionNumber,
+      blindId: activeCandidate?.blindId,
+      targetRevisionId: targetCandidate?.revisionId,
+      targetRevisionNumber: targetCandidate?.revisionNumber,
+      targetBlindId: targetCandidate?.blindId,
+      candidateCount: this.candidates.length,
+      loopEnabled: this.loop,
+      playRequested: this.playRequested,
+      providerPlaying: status?.playing ?? false,
+      fullSong: this.activeRegion.builtIn,
+      atRegionEnd: end > this.activeRegion.startSeconds && position >= end - 0.04,
+      positionMs: milliseconds(position),
+      regionEndMs: milliseconds(end),
+      providerPaused: status?.providerPaused,
+      providerEnded: status?.providerEnded,
+      readyState: status?.readyState,
+      networkState: status?.networkState,
+    };
+  }
+
+  private startDiagnostic(action: PlaybackDiagnosticAction, targetCandidateId?: string) {
+    return startPlaybackDiagnostic(action, this.diagnosticFields(undefined, targetCandidateId));
+  }
+
+  private logDiagnostic(action: PlaybackDiagnosticAction, outcome: Exclude<PlaybackDiagnosticOutcome, "started">, status?: ComparisonPlaybackSnapshot) {
+    const operationId = `${Date.now()}-${++playbackDiagnosticSequence}`;
+    writePlaybackDiagnostic(action, outcome, operationId, this.diagnosticFields(status));
   }
 
   private normalizePlaybackState(status: ComparisonPlaybackSnapshot): ComparisonPlaybackSnapshot {
@@ -329,6 +485,9 @@ export class ComparisonPlaybackSession {
 
 const clampPosition = (seconds: number, duration: number) =>
   Math.max(0, Math.min(seconds, Number.isFinite(duration) ? duration : seconds));
+
+const milliseconds = (seconds: number) =>
+  Math.max(0, Math.round((Number.isFinite(seconds) ? seconds : 0) * 1000));
 
 const gainScalar = (gainDb: number | null) =>
   gainDb === null || !Number.isFinite(gainDb) ? 1 : 10 ** (Math.min(0, gainDb) / 20);

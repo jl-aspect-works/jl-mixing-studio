@@ -1,3 +1,5 @@
+import { ComparisonLoading } from "./ComparisonLoading";
+import { measureComparison } from "./performance";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import { ComparisonPlaybackSession, type ComparisonPlaybackSnapshot } from "./comparisonPlaybackService";
@@ -31,6 +33,7 @@ export function ComparisonWorkspace({
   const [completionError, setCompletionError] = useState<string | null>(null);
   const [completionBusy, setCompletionBusy] = useState(false);
   const [playback, setPlayback] = useState<ComparisonPlaybackSnapshot | null>(null);
+  const [preparationStatus, setPreparationStatus] = useState(`Preparing comparison playback: loading all ${session.candidates.length} candidates…`);
   const [playbackBusy, setPlaybackBusy] = useState(true);
   const [playbackError, setPlaybackError] = useState<{ candidateId: string; message: string } | null>(null);
   const [volume, setVolume] = useState(1);
@@ -51,7 +54,7 @@ export function ComparisonWorkspace({
       setPlaybackError(null);
     }
     try {
-      const next = await playbackSession.prepare();
+      const next = await measureComparison("session_prepare", () => playbackSession.prepare((text) => { if (shouldApply()) setPreparationStatus(text); }), session.candidates.length);
       if (shouldApply()) setPlayback(next);
     } catch (error) {
       if (shouldApply()) {
@@ -71,7 +74,8 @@ export function ComparisonWorkspace({
     let cancelled = false;
     const shouldApply = () => !cancelled && playbackSessionRef.current === playbackSession;
     playbackSessionRef.current = playbackSession;
-    void preparePlayback(playbackSession, shouldApply);
+    // Strict Mode tears down its probe before this microtask; do not start abandoned I/O.
+    queueMicrotask(() => { if (shouldApply()) void preparePlayback(playbackSession, shouldApply); });
     return () => {
       cancelled = true;
       if (playbackSessionRef.current === playbackSession) playbackSessionRef.current = null;
@@ -197,7 +201,7 @@ export function ComparisonWorkspace({
     setPlaybackBusy(true);
     setPlaybackError(null);
     try {
-      const next = playback ? await playbackSession.retry() : await playbackSession.prepare();
+      const next = playback ? await playbackSession.retry() : await measureComparison("session_prepare", () => playbackSession.prepare(), session.candidates.length);
       setPlayback(next);
     } catch (error) {
       await playbackFailure(activeCandidate, error);
@@ -284,6 +288,8 @@ export function ComparisonWorkspace({
       <div><p className="eyebrow">Blind Revision Comparison</p><h2 id="comparison-workspace-title">Comparison Session</h2></div>
       <div className="comparison-session-facts"><span>{session.candidates.length} candidates</span><span>Loudness Match: <strong>{session.loudnessMatch ? "ON" : "OFF"}</strong></span><button type="button" className="secondary" onClick={cancel}><ActionIcon name="close" />Cancel</button></div>
     </header>
+    {playbackBusy && !playback && !playbackError && <ComparisonLoading text={preparationStatus} />}
+    {completionBusy && <ComparisonLoading text="Saving comparison and loading results…" />}
     {cancelConfirmation && <div className="inline-notice warning comparison-cancel-confirmation" role="alertdialog" aria-label="Discard unfinished comparison">
       <span>Discard this unfinished comparison? No session results will be saved.</span>
       <span><button type="button" className="danger" onClick={onCancel}><ActionIcon name="delete" />Discard Comparison</button><button type="button" className="secondary" onClick={() => setCancelConfirmation(false)}><ActionIcon name="back" />Keep Comparing</button></span>
@@ -298,6 +304,7 @@ export function ComparisonWorkspace({
       <div className="comparison-seek-shell"><span>{formatTimestamp(playback?.currentSeconds ?? region.startSeconds)}</span><input type="range" min={region.startSeconds} max={region.endSeconds ?? playback?.durationSeconds ?? region.startSeconds} step="0.05" value={playback?.currentSeconds ?? region.startSeconds} aria-label="Comparison playback position" disabled={!playback || playbackBusy || !!playbackError} onChange={(event) => void seekPlayback(Number(event.target.value))} /><span>{formatTimestamp(region.endSeconds ?? playback?.durationSeconds ?? 0)}</span></div>
       <div className="comparison-playback-row">
         <div className="comparison-transport" aria-label="Comparison transport"><button type="button" className="icon-only" aria-label="Previous candidate" title="Previous candidate (Left Arrow)" disabled={!playback || playbackBusy || !!playbackError} onClick={() => stepCandidate(-1)}><ActionIcon name="previous" /></button><button type="button" className="icon-only" aria-label="Back 5 seconds" title="Back 5 seconds (,)" disabled={!playback || playbackBusy || !!playbackError} onClick={() => void seekPlayback((playback?.currentSeconds ?? region.startSeconds) - 5)}><ActionIcon name="skipBack" /></button><button type="button" className="icon-only" aria-label={playback?.playing ? "Pause" : "Play"} title={playback?.playing ? "Pause (Space)" : "Play (Space)"} disabled={!playback || playbackBusy || !!playbackError} onClick={() => void togglePlayback()}><ActionIcon name={playback?.playing ? "pause" : "play"} /></button><button type="button" className="icon-only" aria-label="Forward 5 seconds" title="Forward 5 seconds (.)" disabled={!playback || playbackBusy || !!playbackError} onClick={() => void seekPlayback((playback?.currentSeconds ?? region.startSeconds) + 5)}><ActionIcon name="skipForward" /></button><button type="button" className="icon-only" aria-label="Next candidate" title="Next candidate (Right Arrow)" disabled={!playback || playbackBusy || !!playbackError} onClick={() => stepCandidate(1)}><ActionIcon name="next" /></button><button type="button" className={`${loop ? "" : "secondary"} icon-only`} aria-label={`Loop ${loop ? "on" : "off"}`} title={`Loop ${loop ? "on" : "off"}`} disabled={!playback || playbackBusy || !!playbackError} onClick={changeLoop}><ActionIcon name="loop" /></button><label className="comparison-volume">Volume<input type="range" min="0" max="1" step="0.05" value={volume} aria-label="Comparison volume" disabled={!playback || playbackBusy || !!playbackError} onChange={(event) => void changeVolume(Number(event.target.value))} /></label></div>
+        <div className="comparison-transport-shortcuts" aria-label="Comparison transport keyboard shortcuts"><span><kbd>Space</kbd> Play/Pause</span><span><kbd>,</kbd> Back 5s</span><span><kbd>.</kbd> Forward 5s</span><span><kbd>←</kbd><kbd>→</kbd> Previous/Next candidate</span></div>
       </div>
       {playbackBusy && <p className="comparison-playback-status" role="status">Preparing {session.candidates.length} candidates…</p>}
       <div className={`comparison-session-control-grid ${session.regions.length <= 5 ? "side-by-side" : "stacked"}`}>

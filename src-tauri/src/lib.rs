@@ -15,6 +15,7 @@ mod studio_edit;
 mod workflows;
 mod workspace;
 
+use commands::prepare_comparison_sources;
 use commands::{
     add_comparison_region, add_project_reference, analyze_comparison_loudness,
     choose_workspace_folder, clear_comparison_history, complete_comparison_session,
@@ -41,6 +42,7 @@ pub(crate) use commands::{
 use commands::{
     intake_directory, read_delivery_notes, write_delivery_notes, DELIVERY_NOTES_MAX_BYTES,
 };
+use commands::{log_comparison_performance, log_comparison_playback};
 use managed_client_files::{AudioPrepResetRequest, ManagedImportRequest, ManagedOperationResult};
 use models::{
     ApprovalOperationResult, ClientCreationRequest, ClientEditInfo, ClientOperationResult,
@@ -473,6 +475,9 @@ pub fn run() {
             delete_project_reference,
             rename_revision_file,
             delete_revision_file,
+            log_comparison_performance,
+            log_comparison_playback,
+            prepare_comparison_sources,
             get_comparison_setup,
             get_comparison_results,
             analyze_comparison_loudness,

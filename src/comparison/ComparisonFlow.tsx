@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { ComparisonLoading } from "./ComparisonLoading";
+import { measureComparison } from "./performance";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ClientSummary, ProjectSummary } from "../types";
 import type { CompletedComparisonSession, ComparisonResultsData, FrozenComparisonSession } from "./models";
 import { ComparisonSetup } from "./ComparisonSetup";
@@ -27,30 +29,41 @@ export function ComparisonFlow({
   const [revealedSession, setRevealedSession] = useState<CompletedComparisonSession | null>(null);
   const [resultsBusy, setResultsBusy] = useState(false);
   const [resultsError, setResultsError] = useState<string | null>(null);
+  const resultsRequest = useRef<Promise<ComparisonResultsData> | null>(null);
+  const readResults = useCallback(() => {
+    if (resultsRequest.current) return resultsRequest.current;
+    const request = measureComparison("results", () => getComparisonResults({ clientId: client.clientId, projectId: project.projectId }));
+    resultsRequest.current = request;
+    const clearRequest = () => {
+      if (resultsRequest.current === request) resultsRequest.current = null;
+    };
+    void request.then(clearRequest, clearRequest);
+    return request;
+  }, [client.clientId, project.projectId]);
   const loadResults = useCallback(async () => {
     setResultsBusy(true);
     setResultsError(null);
     try {
-      setResults(await getComparisonResults({ clientId: client.clientId, projectId: project.projectId }));
+      setResults(await readResults());
       setSession(null);
     } catch (error) {
       setResultsError(error instanceof Error ? error.message : "Comparison results could not be loaded.");
     } finally {
       setResultsBusy(false);
     }
-  }, [client.clientId, project.projectId]);
+  }, [readResults]);
   useEffect(() => {
     if (initialView === "results" && !results && !session) void loadResults();
   }, [initialView, loadResults, results, session]);
   const finishSession = async (draft: CompletedComparisonSession) => {
-    const completed = await completeComparisonSession({
+    const completed = await measureComparison("save_session", () => completeComparisonSession({
       clientId: client.clientId,
       projectId: project.projectId,
       candidates: draft.candidates,
       regions: draft.regions,
       loudnessMatch: draft.loudnessMatch,
-    });
-    const nextResults = await getComparisonResults({ clientId: client.clientId, projectId: project.projectId });
+    }));
+    const nextResults = await measureComparison("results", () => getComparisonResults({ clientId: client.clientId, projectId: project.projectId }));
     setRevealedSession(completed);
     setResults(nextResults);
     setSession(null);
@@ -80,11 +93,12 @@ export function ComparisonFlow({
       setResultsBusy(false);
     }
   };
-  if (initialView === "results" && !results && !session) return <section className="comparison-loading" aria-labelledby="comparison-results-loading-title">
+  if (resultsBusy && !results) return <ComparisonLoading text="Loading Comparison Results: reading completed sessions and calculating standings…" />;
+  if ((initialView === "results" || resultsError) && !results && !session) return <section className="comparison-loading" aria-labelledby="comparison-results-loading-title">
     <h2 id="comparison-results-loading-title">Comparison Results</h2>
     {resultsError
       ? <><div className="inline-notice error" role="alert">{resultsError}</div><button type="button" className="secondary" onClick={onClose}>Back to Revision History</button></>
-      : <p>Loading comparison results...</p>}
+      : <ComparisonLoading text="Loading Comparison Results: reading completed sessions and calculating standings…" />}
   </section>;
   if (results) return <ComparisonResults
     project={project}
