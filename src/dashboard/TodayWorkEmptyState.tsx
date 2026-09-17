@@ -3,27 +3,31 @@ import { DashboardIcon } from "./DashboardIcon";
 export function TodayWorkEmptyState() {
   return (
     <div className="dashboard-v21-empty dashboard-v21-work-empty">
-      <svg className="dashboard-v21-work-empty-artwork" viewBox="0 0 1200 260" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <svg className="dashboard-v21-work-empty-artwork" viewBox="0 0 1200 420" preserveAspectRatio="none" aria-hidden="true" focusable="false">
         <defs>
           <linearGradient id="today-work-wave-back" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#dce9ff" stopOpacity=".72" />
-            <stop offset="1" stopColor="#edf4ff" stopOpacity=".2" />
+            <stop offset="0" stopColor="#e9f0ff" stopOpacity=".78" />
+            <stop offset="1" stopColor="#f6f8ff" stopOpacity=".28" />
+          </linearGradient>
+          <linearGradient id="today-work-wave-middle" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#e0e9fb" stopOpacity=".7" />
+            <stop offset="1" stopColor="#f4f7fd" stopOpacity=".22" />
           </linearGradient>
           <linearGradient id="today-work-wave-front" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#bed3ff" stopOpacity=".55" />
-            <stop offset="1" stopColor="#e8f0ff" stopOpacity=".18" />
+            <stop offset="0" stopColor="#d6e2f9" stopOpacity=".62" />
+            <stop offset="1" stopColor="#f7f9fd" stopOpacity=".18" />
           </linearGradient>
         </defs>
-        <path className="wave-fill wave-back" d="M0 84C72 24 126 190 236 151S385 61 492 145s178 27 258-32 145-21 210 31 133 9 240-47v163H0Z" />
-        <path className="wave-fill wave-middle" d="M0 209c104 4 135-122 245-118s144 120 257 122 142-112 254-119 153 91 244 80 106-111 200-99v185H0Z" />
-        <path className="wave-fill wave-front" d="M0 221c126 11 166-77 273-91s154 97 260 89 147-142 259-124 147 109 244 101 99-86 164-65v129H0Z" />
-        <path className="wave-line wave-line-one" d="M0 142c91-73 157 90 253 45s127-118 227-53 154 116 253 60 142-96 242-30 136-87 225-76" />
-        <path className="wave-line wave-line-two" d="M0 172c94-61 158-18 245 54s157-44 245-5 149-85 249-65 139 86 232 23 140-62 229-19" />
+        <path className="wave-fill wave-back" d="M0 146C85 88 150 263 286 265c145 2 185-105 322-86 127 18 170 121 309 91 130-28 173-153 283-112v262H0Z" />
+        <path className="wave-fill wave-middle" d="M0 363c147 7 168-128 313-126 150 2 177 120 321 123 139 3 177-160 327-155 125 4 153 121 239 126v89H0Z" />
+        <path className="wave-fill wave-front" d="M0 386c132-1 187-83 322-82 142 1 191 91 329 73 139-18 176-115 325-104 116 9 151 80 224 83v64H0Z" />
+        <path className="wave-line wave-line-one" d="M0 258c104-69 166 64 284 60 126-5 159-110 286-77 112 30 158 132 291 86 125-43 178-113 339-61" />
+        <path className="wave-line wave-line-two" d="M0 302c128-11 173-82 292-27 119 56 163 122 297 97 134-25 171-112 301-80 118 29 178 100 310 48" />
       </svg>
       <div className="dashboard-v21-work-empty-message">
         <span className="dashboard-v21-empty-icon positive"><DashboardIcon name="check" /></span>
-        <strong>Nothing needs your attention right now.</strong>
-        <p>Refresh anytime to check for new work.</p>
+        <strong>You’re all caught up.</strong>
+        <p>Nothing needs your attention right now.</p>
       </div>
     </div>
   );
