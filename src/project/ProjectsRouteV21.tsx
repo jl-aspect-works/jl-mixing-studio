@@ -6,6 +6,7 @@ import { ActionIcon } from "../components/ActionIcon";
 import { RouteIssues, WorkspaceContent, type ResourceState } from "../AppShellViews";
 import { copy as productCopy } from "../resources/copy";
 import { ValidationProgress } from "../intake/ValidationProgress";
+import { CompactAudioPreview } from "./files/CompactAudioPreview";
 import type { IntakeOperationResult } from "../types";
 import type { IntakeValidationProgress } from "../intake/models";
 import "./ProjectsRouteV21.css";
@@ -343,7 +344,7 @@ export function ProjectsRouteV21({
 
     {filteredEntries.length > 0 && <div className="projects-v21-grid">
       <section className="projects-v21-list" aria-label="Project directory">
-        <div className="projects-v21-list-head"><span>Name / Client</span><span>Revisions</span><span>Status</span></div>
+        <div className="projects-v21-list-head"><span>Name / Client</span><span>Preview</span><span>Revisions</span><span>Status</span></div>
         {filteredEntries.map((entry) => {
           const active = entryKey(entry) === selectedKey;
           const hasAttention = currentSnapshot.tasks.some((task) => task.clientId === entry.client.clientId && task.projectId === entry.project.projectId);
@@ -351,6 +352,7 @@ export function ProjectsRouteV21({
           const selectEntry = () => setSelectedKey(entryKey(entry));
           return <div key={entryKey(entry)} className={`projects-v21-row${active ? " selected" : ""}`} data-selected={active ? "true" : "false"} onClick={selectEntry} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectEntry(); } }} tabIndex={0}>
             <span className="projects-v21-row-main"><a href="#project-overview" className="projects-v21-project-link" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</a><span className="projects-v21-row-client">{entry.client.clientName}</span></span>
+            <CompactAudioPreview clientId={entry.client.clientId} projectId={entry.project.projectId} revision={entry.project.currentRevision} label={`${entry.project.projectName} current revision`} />
             <span className="projects-v21-cad" title={revisionTooltip(entry.project)} aria-label={revisionTooltip(entry.project)}>{compactRevision(entry.project.currentRevision)} / {compactRevision(entry.project.approvedRevision)} / {compactRevision(entry.project.deliveredRevision)}</span>
             <span className={`projects-v21-status projects-v21-status-${status.toLocaleLowerCase().replaceAll(" ", "-")}`}>{status}</span>
           </div>;

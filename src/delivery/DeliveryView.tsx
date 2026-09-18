@@ -11,6 +11,7 @@ import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import { ActionIcon } from "../components/ActionIcon";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
+import { CompactAudioPreview } from "../project/files/CompactAudioPreview";
 import type { ProjectShellView } from "../project/ProjectView";
 import {
   DeliveredListeningBadge,
@@ -242,6 +243,7 @@ export function DeliveryView({
           <p className="delivery-heading-copy">Prepare, verify, document and package the approved mix.</p>
         </div>
         {(delivery || !delivery) && <div className="delivery-heading-actions">
+          {delivery && <CompactAudioPreview clientId={clientId} projectId={project.projectId} delivery label="Final Delivery" />}
           <DeliveredListeningBadge summary={listeningSummary} />
           {!delivery && <button type="button" onClick={onCreate} disabled={!creationAvailable || loading}>
             <ActionIcon name="add" />{loading ? "Checking…" : "Create Delivery"}

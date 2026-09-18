@@ -314,8 +314,8 @@
     grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
   }
 
-  .client-projects-table th:nth-child(5),
-  .client-projects-table td:nth-child(5) {
+  .client-projects-table th:nth-child(6),
+  .client-projects-table td:nth-child(6) {
     display: none;
   }
 }
@@ -387,8 +387,8 @@
     grid-template-columns: 1fr;
   }
 
-  .client-projects-table th:nth-child(4),
-  .client-projects-table td:nth-child(4) {
+  .client-projects-table th:nth-child(5),
+  .client-projects-table td:nth-child(5) {
     display: none;
   }
 }

@@ -149,6 +149,7 @@ describe("Client v2.1 directory and editing", () => {
     const search = screen.getByRole("searchbox", { name: "Search projects" });
     fireEvent.change(search, { target: { value: "guest" } });
     expect(screen.getByText("Night Drive")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play Night Drive current revision" })).toBeInTheDocument();
     expect(screen.queryByText("Blue Sky")).not.toBeInTheDocument();
 
     fireEvent.change(search, { target: { value: "blue-sky" } });

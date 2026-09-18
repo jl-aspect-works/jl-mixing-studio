@@ -12,7 +12,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-fn comparison_source(revision_directory: &std::path::Path) -> Result<Option<PathBuf>, String> {
+pub(crate) fn comparison_source(
+    revision_directory: &std::path::Path,
+) -> Result<Option<PathBuf>, String> {
     let metadata = fs::symlink_metadata(revision_directory)
         .map_err(|error| format!("Could not inspect the revision folder: {error}"))?;
     if metadata.file_type().is_symlink() || !metadata.is_dir() {

@@ -137,6 +137,7 @@ describe("RevisionsView revision detail actions", () => {
     renderView(project, vi.fn(), onApprove);
 
     const button = await screen.findByRole("button", { name: "Approve Revision" });
+    expect(screen.getByRole("button", { name: "Play Revision 1" })).toBeInTheDocument();
     expect(button.closest(".revision-detail-heading-actions")).not.toBeNull();
     fireEvent.click(button);
     expect(onApprove).toHaveBeenCalledWith(project.revisions[0]);

@@ -15,6 +15,7 @@ import { getComparisonResults } from "../comparison/comparisonService";
 import type { CumulativeStanding } from "../comparison/models";
 import { MarkdownDocumentEditor } from "../components/MarkdownDocumentEditor";
 import { ProjectNavigationBar } from "../project/ProjectNavigationBar";
+import { CompactAudioPreview } from "../project/files/CompactAudioPreview";
 import type { ProjectShellView } from "../project/ProjectView";
 import { RevisionFileBrowser } from "./RevisionFileBrowser";
 import {
@@ -400,20 +401,20 @@ export function RevisionsView({
         <nav className="panel revision-history" aria-label="Revision history">
           <div className="revision-history-header"><h2>Revision History</h2></div>
           <div className="revision-history-list">
-            {revisions.map((revision) => <button
+            {revisions.map((revision) => <div
               key={revision.revisionId}
-              type="button"
               className={`revision-history-item${revision.number === selected?.number ? " active" : ""}${lifecycleOf(revision) === "closed" ? " closed" : ""}`}
-              aria-current={revision.number === selected?.number ? "true" : undefined}
-              onClick={() => setSelectedNumber(revision.number)}
             >
-              <span className="revision-history-title">
-                <strong>Revision {String(revision.number).padStart(2, "0")}</strong>
-                <RevisionBadges project={project} number={revision.number} lifecycle={lifecycleOf(revision)} historicallyApproved={revision.approvedAt !== null} top={revision.revisionId === topRevisionId} />
-              </span>
-              <span className="revision-history-description">{revision.description}</span>
-              <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
-            </button>)}
+              <button type="button" className="revision-history-select" aria-current={revision.number === selected?.number ? "true" : undefined} onClick={() => setSelectedNumber(revision.number)}>
+                <span className="revision-history-title">
+                  <strong>Revision {String(revision.number).padStart(2, "0")}</strong>
+                  <RevisionBadges project={project} number={revision.number} lifecycle={lifecycleOf(revision)} historicallyApproved={revision.approvedAt !== null} top={revision.revisionId === topRevisionId} />
+                </span>
+                <span className="revision-history-description">{revision.description}</span>
+                <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
+              </button>
+              <CompactAudioPreview clientId={client.clientId} projectId={project.projectId} revision={revision.number} label={`Revision ${revision.number}`} />
+            </div>)}
           </div>
           <div className="revision-history-footer">
             <button type="button" className="secondary" onClick={() => void openRevisionsFolder()}><ActionIcon name="folder" />Open Revisions Folder</button>

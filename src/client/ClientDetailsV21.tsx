@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { ClientSummary } from "../types";
 import { FolderControl } from "../AppShellViews";
 import { ActionIcon } from "../components/ActionIcon";
+import { CompactAudioPreview } from "../project/files/CompactAudioPreview";
 import { copy as productCopy } from "../resources/copy";
 import "./ClientViews.css";
 
@@ -245,11 +246,11 @@ export function ClientDetails({
         ) : (
           <div className="table-scroll client-projects-table">
             <table>
-              <thead><tr><th scope="col">Project</th><th scope="col">Artist</th><th scope="col">Current</th><th scope="col">Approved</th><th scope="col">Delivered</th></tr></thead>
+              <thead><tr><th scope="col">Project</th><th scope="col">Artist</th><th scope="col">Preview</th><th scope="col">Current</th><th scope="col">Approved</th><th scope="col">Delivered</th></tr></thead>
               <tbody>{filteredProjects.map((project) => (
                 <tr key={project.projectId}>
                   <td><button type="button" className="table-link" onClick={() => onSelectProject(project.projectId)}>{project.projectName}</button><span className="client-project-id">{project.projectId}</span></td>
-                  <td>{project.artist || productCopy.common.notSet}</td><td>{revisionLabel(project.currentRevision)}</td><td>{revisionLabel(project.approvedRevision)}</td><td>{revisionLabel(project.deliveredRevision)}</td>
+                  <td>{project.artist || productCopy.common.notSet}</td><td><CompactAudioPreview clientId={client.clientId} projectId={project.projectId} revision={project.currentRevision} label={`${project.projectName} current revision`} /></td><td>{revisionLabel(project.currentRevision)}</td><td>{revisionLabel(project.approvedRevision)}</td><td>{revisionLabel(project.deliveredRevision)}</td>
                 </tr>
               ))}</tbody>
             </table>

@@ -97,6 +97,7 @@ describe("DeliveryView workspace refresh", () => {
 
     renderView();
     await screen.findByText("Original notes");
+    expect(screen.getByRole("button", { name: "Play Final Delivery" })).toBeInTheDocument();
 
     notifyWorkspaceRefreshed();
 
