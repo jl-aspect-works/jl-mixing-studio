@@ -201,7 +201,7 @@ export function CompactAudioPreview({
     />
     <button
       type="button"
-      className="compact-audio-preview-button icon-only"
+      className="compact-audio-preview-button"
       aria-label={accessibleLabel}
       aria-describedby={status ? statusId : undefined}
       aria-busy={loading || sourceState.status === "resolving"}

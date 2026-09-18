@@ -19,7 +19,7 @@ export function ProjectOverviewRecentRevisions({ clientId, project, onRevisions 
       {revisions.length === 0 ? <p className="overview-empty-copy">No revisions have been created yet.</p> : <div className="overview-revision-list">
         {revisions.map((revision) => {
           const labels = statusLabels(project, revision);
-          return <article key={revision.revisionId}><div className="overview-revision-number">{String(revision.number).padStart(2, "0")}</div><div><strong>Revision {revision.number}</strong><p>{revision.description || "No revision description"}</p></div><CompactAudioPreview clientId={clientId} projectId={project.projectId} revision={revision.number} label={`Revision ${revision.number}`} /><div className="overview-revision-meta"><span>{formatOverviewDateTime(overviewString(revision, "createdAt"))}</span><div>{labels.map((label) => <small key={label} className={`overview-revision-badge ${label.toLowerCase()}`}>{label}</small>)}</div></div></article>;
+          return <article key={revision.revisionId}><div className="overview-revision-controls"><div className="overview-revision-number">{String(revision.number).padStart(2, "0")}</div><CompactAudioPreview clientId={clientId} projectId={project.projectId} revision={revision.number} label={`Revision ${revision.number}`} /></div><div><strong>Revision {revision.number}</strong><p>{revision.description || "No revision description"}</p></div><div className="overview-revision-meta"><span>{formatOverviewDateTime(overviewString(revision, "createdAt"))}</span><div>{labels.map((label) => <small key={label} className={`overview-revision-badge ${label.toLowerCase()}`}>{label}</small>)}</div></div></article>;
         })}
       </div>}
     </section>

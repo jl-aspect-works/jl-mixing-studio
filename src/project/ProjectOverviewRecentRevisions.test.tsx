@@ -45,5 +45,7 @@ it("adds an independent compact preview to every recent revision", () => {
 
   expect(screen.getByRole("button", { name: "Play Revision 1" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Play Revision 2" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Play Revision 1" }).closest(".overview-revision-controls")).toHaveTextContent("01");
+  expect(screen.getByRole("button", { name: "Play Revision 2" }).closest(".overview-revision-controls")).toHaveTextContent("02");
   expect(screen.queryByRole("slider")).not.toBeInTheDocument();
 });

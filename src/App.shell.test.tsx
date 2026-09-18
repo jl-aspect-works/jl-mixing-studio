@@ -131,7 +131,7 @@ describe("JL Mixing Studio — shell and routes", () => {
       fireEvent.click(screen.getByRole("button", { name: "Clients" }));
       fireEvent.click(screen.getByRole("button", { name: "Acme Records" }));
       expect(screen.getByRole("heading", { name: "Acme Records", level: 1 })).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Blue Sky" }));
+      fireEvent.click(screen.getByRole("link", { name: "Blue Sky" }));
       expect(screen.getByRole("heading", { name: "Blue Sky", level: 1 })).toBeInTheDocument();
       const projectNavigation = screen.getByRole("navigation", { name: "Project navigation" });
       expect(within(projectNavigation).getByText("Overview").closest('[aria-current="page"]')).toBeInTheDocument();
