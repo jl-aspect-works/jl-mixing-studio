@@ -34,6 +34,14 @@ button.compact-audio-preview-button {
 
 .compact-audio-preview-button .action-icon { width: 13px; height: 13px; }
 
+button.compact-audio-preview-button[aria-busy="true"]::before {
+  display: none;
+}
+
+button.compact-audio-preview-button[aria-busy="true"] > .action-icon {
+  display: inline-block;
+}
+
 .compact-audio-preview-alert {
   position: absolute;
   right: -3px;

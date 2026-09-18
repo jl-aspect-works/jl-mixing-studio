@@ -405,6 +405,7 @@ export function RevisionsView({
               key={revision.revisionId}
               className={`revision-history-item${revision.number === selected?.number ? " active" : ""}${lifecycleOf(revision) === "closed" ? " closed" : ""}`}
             >
+              <CompactAudioPreview clientId={client.clientId} projectId={project.projectId} revision={revision.number} label={`Revision ${revision.number}`} />
               <button type="button" className="revision-history-select" aria-current={revision.number === selected?.number ? "true" : undefined} onClick={() => setSelectedNumber(revision.number)}>
                 <span className="revision-history-title">
                   <strong>Revision {String(revision.number).padStart(2, "0")}</strong>
@@ -413,7 +414,6 @@ export function RevisionsView({
                 <span className="revision-history-description">{revision.description}</span>
                 <span className="revision-history-date">{formatRevisionTimestamp(revision.createdAt)}</span>
               </button>
-              <CompactAudioPreview clientId={client.clientId} projectId={project.projectId} revision={revision.number} label={`Revision ${revision.number}`} />
             </div>)}
           </div>
           <div className="revision-history-footer">
