@@ -103,6 +103,8 @@ describe("ProjectsRouteV21", () => {
     const search = screen.getByRole("searchbox", { name: "Search projects" });
     fireEvent.change(search, { target: { value: "guest artist" } });
     expect(screen.getByRole("link", { name: /Night Drive/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play Night Drive current revision" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Revisions: current=1, approved=none, delivered=none")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Blue Sky/ })).not.toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Night Drive" })).toBeInTheDocument();
   });

@@ -149,6 +149,9 @@ describe("Client v2.1 directory and editing", () => {
     const search = screen.getByRole("searchbox", { name: "Search projects" });
     fireEvent.change(search, { target: { value: "guest" } });
     expect(screen.getByText("Night Drive")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play Night Drive current revision" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Revisions: current=1, approved=none, delivered=none")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Night Drive" }).closest(".projects-v21-row")).toHaveTextContent("Acme Records");
     expect(screen.queryByText("Blue Sky")).not.toBeInTheDocument();
 
     fireEvent.change(search, { target: { value: "blue-sky" } });

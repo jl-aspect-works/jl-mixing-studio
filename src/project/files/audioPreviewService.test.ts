@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { prepareProjectAudioPreview } from "./audioPreviewService";
+import { prepareProjectAudioPreview, resolveCompactAudioSource } from "./audioPreviewService";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -95,5 +95,26 @@ describe("prepareProjectAudioPreview", () => {
       relativePath: "01_Client_Files/Original_Delivery/Lead.wav",
     })).resolves.toBeNull();
     expect(mockedConvertFileSrc).not.toHaveBeenCalled();
+  });
+});
+
+describe("resolveCompactAudioSource", () => {
+  it("passes an explicit delivery target to the compact-source resolver", async () => {
+    mockedInvoke.mockResolvedValue({
+      available: true,
+      relativePath: "05_Final_Delivery/Mix.wav",
+      displayName: "Mix.wav",
+      reason: "Audio preview is available.",
+    });
+
+    await expect(resolveCompactAudioSource({
+      clientId: "acme",
+      projectId: "blue-sky",
+      revision: null,
+      delivery: true,
+    })).resolves.toMatchObject({ available: true, relativePath: "05_Final_Delivery/Mix.wav" });
+    expect(mockedInvoke).toHaveBeenCalledWith("resolve_compact_audio_source", {
+      request: { clientId: "acme", projectId: "blue-sky", revision: null, delivery: true },
+    });
   });
 });

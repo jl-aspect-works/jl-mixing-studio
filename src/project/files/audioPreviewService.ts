@@ -17,6 +17,23 @@ export type NativeAudioPreviewStatus = {
 
 export type ProjectAudioWaveform = { durationSeconds: number; peaks: number[] };
 
+export type CompactAudioSourceRequest = {
+  clientId: string;
+  projectId: string;
+  revision: number | null;
+  delivery: boolean;
+};
+
+export type CompactAudioSourceResult = {
+  available: boolean;
+  relativePath: string | null;
+  displayName: string | null;
+  reason: string;
+};
+
+export const resolveCompactAudioSource = (request: CompactAudioSourceRequest) =>
+  invoke<CompactAudioSourceResult>("resolve_compact_audio_source", { request });
+
 export const getProjectAudioWaveform = (request: ProjectFileMutationRequest) =>
   invoke<ProjectAudioWaveform>("get_project_audio_waveform", { request });
 

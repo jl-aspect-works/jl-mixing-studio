@@ -18,7 +18,7 @@ export function ProjectOverviewDetails({ client, project, tasks, intakeReport, l
         <ProjectOverviewQuickActions client={client} project={project} loading={loading} revisionCreationAvailable={revisionCreationAvailable} revisionApprovalAvailable={revisionApprovalAvailable} onNewRevision={onNewRevision} onApproveRevision={onApproveRevision} onRevisions={onRevisions} />
       </div>
       <div className="overview-bottom-grid">
-        <ProjectOverviewRecentRevisions project={project} onRevisions={onRevisions} />
+        <ProjectOverviewRecentRevisions clientId={client.clientId} project={project} onRevisions={onRevisions} />
         <ProjectOverviewFileSystem fileIndex={fileIndex} />
       </div>
     </div>

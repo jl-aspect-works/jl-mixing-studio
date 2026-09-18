@@ -137,9 +137,21 @@ describe("RevisionsView revision detail actions", () => {
     renderView(project, vi.fn(), onApprove);
 
     const button = await screen.findByRole("button", { name: "Approve Revision" });
+    expect(screen.getByRole("button", { name: "Play Revision 1" })).toBeInTheDocument();
     expect(button.closest(".revision-detail-heading-actions")).not.toBeNull();
     fireEvent.click(button);
     expect(onApprove).toHaveBeenCalledWith(project.revisions[0]);
+  });
+
+  it("places revision playback before the revision selection content", async () => {
+    mocks.getRevisionNotes.mockResolvedValue({ content: "Notes", maxBytes: 65_536 });
+    renderView();
+
+    const history = screen.getByRole("navigation", { name: "Revision history" });
+    const play = await screen.findByRole("button", { name: "Play Revision 1" });
+    const select = screen.getByRole("button", { name: /Revision 01/ });
+    expect(history.contains(play)).toBe(true);
+    expect(play.compareDocumentPosition(select) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   });
 
   it("shows Create Delivery only for the approved revision and invokes the delivery handoff", async () => {

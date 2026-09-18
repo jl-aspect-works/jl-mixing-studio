@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { ClientSummary } from "../types";
+import type { ClientSummary, DerivedTask } from "../types";
 import { FolderControl } from "../AppShellViews";
 import { ActionIcon } from "../components/ActionIcon";
+import { ProjectDirectoryList, type ProjectDirectoryEntry } from "../project/ProjectDirectoryList";
 import { copy as productCopy } from "../resources/copy";
 import "./ClientViews.css";
 
@@ -60,9 +61,6 @@ const DELIVERABLES = [
   ["master", "Master"],
 ] as const;
 
-const revisionLabel = (revision: number | null) =>
-  revision === null ? productCopy.common.notSet : `${productCopy.projects.revisionPrefix} ${revision}`;
-
 const friendlyDeliverable = (value: string) =>
   DELIVERABLES.find(([key]) => key === value)?.[1] ?? value.replace(/_/g, " ");
 
@@ -101,6 +99,7 @@ export function ClientDetails({
   loading,
   projectCreationAvailable,
   projectCreationHelp,
+  tasks = [],
 }: {
   client: ClientSummary;
   onBack: () => void;
@@ -111,6 +110,7 @@ export function ClientDetails({
   loading: boolean;
   projectCreationAvailable: boolean;
   projectCreationHelp: string;
+  tasks?: DerivedTask[];
 }) {
   const [editInfo, setEditInfo] = useState<ClientEditInfo | null>(null);
   const [editInfoError, setEditInfoError] = useState<string | null>(null);
@@ -155,6 +155,11 @@ export function ClientDetails({
     ? client.projects.filter((project) => [project.projectName, project.projectId, project.artist]
       .some((value) => value.toLocaleLowerCase().includes(normalizedProjectQuery)))
     : client.projects;
+  const projectEntries: ProjectDirectoryEntry[] = filteredProjects.map((project) => ({
+    client,
+    project,
+    hasAttention: tasks.some((task) => task.clientId === client.clientId && task.projectId === project.projectId),
+  }));
 
   const beginEdit = () => {
     if (!editInfo?.updateSupported) return;
@@ -243,17 +248,7 @@ export function ClientDetails({
         ) : filteredProjects.length === 0 ? (
           <div className="planned-message compact client-project-no-results" role="status"><strong>No projects match “{projectQuery.trim()}”</strong><p>Try a different project name, ID, or artist.</p><button type="button" className="secondary" onClick={() => setProjectQuery("")}><ActionIcon name="close" />Clear Search</button></div>
         ) : (
-          <div className="table-scroll client-projects-table">
-            <table>
-              <thead><tr><th scope="col">Project</th><th scope="col">Artist</th><th scope="col">Current</th><th scope="col">Approved</th><th scope="col">Delivered</th></tr></thead>
-              <tbody>{filteredProjects.map((project) => (
-                <tr key={project.projectId}>
-                  <td><button type="button" className="table-link" onClick={() => onSelectProject(project.projectId)}>{project.projectName}</button><span className="client-project-id">{project.projectId}</span></td>
-                  <td>{project.artist || productCopy.common.notSet}</td><td>{revisionLabel(project.currentRevision)}</td><td>{revisionLabel(project.approvedRevision)}</td><td>{revisionLabel(project.deliveredRevision)}</td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
+          <ProjectDirectoryList entries={projectEntries} ariaLabel={`${client.clientName} project directory`} onOpenProject={(entry) => onSelectProject(entry.project.projectId)} />
         )}
       </section>
 

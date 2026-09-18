@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { ClientSummary, ProjectSummary, WorkspaceSnapshot } from "../types";
+import type { WorkspaceSnapshot } from "../types";
 import { ActionIcon } from "../components/ActionIcon";
 import { RouteIssues, WorkspaceContent, type ResourceState } from "../AppShellViews";
 import { copy as productCopy } from "../resources/copy";
 import { ValidationProgress } from "../intake/ValidationProgress";
+import { ProjectDirectoryList, type ProjectDirectoryEntry } from "./ProjectDirectoryList";
 import type { IntakeOperationResult } from "../types";
 import type { IntakeValidationProgress } from "../intake/models";
 import "./ProjectsRouteV21.css";
@@ -63,10 +64,7 @@ interface ProjectEditForm {
   creativeDirection: string;
 }
 
-interface ProjectEntry {
-  client: ClientSummary;
-  project: ProjectSummary;
-}
+type ProjectEntry = ProjectDirectoryEntry;
 
 type ProjectFilter = "all" | "attention" | "inProgress" | "approved" | "delivered";
 
@@ -79,17 +77,6 @@ const DELIVERABLES = [
   ["stems", "Stems"],
   ["master", "Master"],
 ] as const;
-
-const compactRevision = (revision: number | null) => revision === null ? "—" : String(revision);
-const revisionTooltipValue = (revision: number | null) => revision === null ? "none" : String(revision);
-const revisionTooltip = (project: ProjectSummary) => `Revisions: current=${revisionTooltipValue(project.currentRevision)}, approved=${revisionTooltipValue(project.approvedRevision)}, delivered=${revisionTooltipValue(project.deliveredRevision)}`;
-
-const projectStatus = (project: ProjectSummary, hasAttention: boolean) => {
-  if (hasAttention) return "Needs Attention";
-  if (project.deliveredRevision !== null) return "Delivered";
-  if (project.approvedRevision !== null && project.currentRevision === project.approvedRevision) return "Approved";
-  return "In Progress";
-};
 
 const friendlyDeliverable = (value: string) =>
   DELIVERABLES.find(([key]) => key === value)?.[1] ?? value.replace(/_/g, " ");
@@ -186,7 +173,10 @@ export function ProjectsRouteV21({
   const filteredEntries = entries.filter((entry) => {
     const searchable = [entry.project.projectName, entry.project.projectId, entry.client.clientName, entry.client.clientId, entry.project.artist];
     return (!normalizedQuery || searchable.some((value) => value.toLocaleLowerCase().includes(normalizedQuery))) && matchesFilter(entry);
-  });
+  }).map((entry) => ({
+    ...entry,
+    hasAttention: snapshot?.tasks.some((task) => task.clientId === entry.client.clientId && task.projectId === entry.project.projectId) ?? false,
+  }));
 
   useEffect(() => {
     if (filteredEntries.length === 0) {
@@ -342,20 +332,7 @@ export function ProjectsRouteV21({
     {entries.length > 0 && filteredEntries.length === 0 && <div className="planned-message projects-v21-no-results" role="status"><strong>No projects match the current search and filter.</strong><p>Clear the search or choose a different status filter.</p><button type="button" className="secondary" onClick={() => { setQuery(""); setFilter("all"); }}><ActionIcon name="close" />Clear Search and Filter</button></div>}
 
     {filteredEntries.length > 0 && <div className="projects-v21-grid">
-      <section className="projects-v21-list" aria-label="Project directory">
-        <div className="projects-v21-list-head"><span>Name / Client</span><span>Revisions</span><span>Status</span></div>
-        {filteredEntries.map((entry) => {
-          const active = entryKey(entry) === selectedKey;
-          const hasAttention = currentSnapshot.tasks.some((task) => task.clientId === entry.client.clientId && task.projectId === entry.project.projectId);
-          const status = projectStatus(entry.project, hasAttention);
-          const selectEntry = () => setSelectedKey(entryKey(entry));
-          return <div key={entryKey(entry)} className={`projects-v21-row${active ? " selected" : ""}`} data-selected={active ? "true" : "false"} onClick={selectEntry} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); selectEntry(); } }} tabIndex={0}>
-            <span className="projects-v21-row-main"><a href="#project-overview" className="projects-v21-project-link" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onSelectProject(entry.client.clientId, entry.project.projectId); }}>{entry.project.projectName}</a><span className="projects-v21-row-client">{entry.client.clientName}</span></span>
-            <span className="projects-v21-cad" title={revisionTooltip(entry.project)} aria-label={revisionTooltip(entry.project)}>{compactRevision(entry.project.currentRevision)} / {compactRevision(entry.project.approvedRevision)} / {compactRevision(entry.project.deliveredRevision)}</span>
-            <span className={`projects-v21-status projects-v21-status-${status.toLocaleLowerCase().replaceAll(" ", "-")}`}>{status}</span>
-          </div>;
-        })}
-      </section>
+      <ProjectDirectoryList entries={filteredEntries} ariaLabel="Project directory" selectedKey={selectedKey} onSelectEntry={(entry) => setSelectedKey(entryKey(entry))} onOpenProject={(entry) => onSelectProject(entry.client.clientId, entry.project.projectId)} />
 
       {selected && <aside className="projects-v21-inspector" aria-label="Selected Project Details">
         <div className="projects-v21-inspector-heading"><div><p className="kicker">Selected Project</p><h3>{editInfo?.projectName ?? selected.project.projectName}</h3><p>{selected.client.clientName}</p></div><div className="projects-v21-inspector-actions">{editing ? <><button type="button" className="secondary" onClick={cancelEdit} disabled={saving}><ActionIcon name="close" />Cancel</button><button type="button" onClick={save} disabled={saving || !dirty}><ActionIcon name="save" />{saving ? "Saving…" : "Save Changes"}</button></> : <button type="button" onClick={beginEdit} disabled={!editingAvailable || loading} title={!editingAvailable ? editUnavailableHelp : undefined}><ActionIcon name="edit" />Edit Project</button>}</div></div>

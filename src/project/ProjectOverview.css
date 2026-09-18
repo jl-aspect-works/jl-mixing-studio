@@ -59,7 +59,8 @@
 
 .overview-compact-button { min-height: 32px; padding: 6px 10px; font-size: .7rem; }
 .overview-revision-list { display: grid; margin-top: 12px; }
-.overview-revision-list article { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #edf0f4; }
+.overview-revision-list article { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid #edf0f4; }
+.overview-revision-controls { display: grid; grid-template-columns: 34px 20px; gap: 8px; align-items: center; }
 .overview-revision-number { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 7px; background: #eef3fb; color: #2b5fc5; font-size: .72rem; font-weight: 900; }
 .overview-revision-list strong { font-size: .75rem; }
 .overview-revision-list p { margin: 3px 0 0; color: #6e7b91; font-size: .68rem; }

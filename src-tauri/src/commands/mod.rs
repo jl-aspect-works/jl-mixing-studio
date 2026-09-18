@@ -1,5 +1,7 @@
+mod compact_audio_source_command;
 mod comparison_sources;
 mod waveform_cache;
+pub(super) use compact_audio_source_command::resolve_compact_audio_source;
 pub(super) use comparison_sources::prepare_comparison_sources;
 mod comparison_performance;
 pub(super) use comparison_performance::{log_comparison_performance, log_comparison_playback};
