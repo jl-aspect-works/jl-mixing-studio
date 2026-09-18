@@ -72,12 +72,9 @@ fn resolve_source(
         return Err("Choose exactly one compact audio source target".into());
     }
     let root = resolve_workspace_root(app)?;
-    let (project_directory, project) = workspace::discover_project_at(
-        &root,
-        request.client_id.trim(),
-        request.project_id.trim(),
-    )
-    .ok_or_else(|| "The selected project could not be resolved safely".to_owned())?;
+    let (project_directory, project) =
+        workspace::discover_project_at(&root, request.client_id.trim(), request.project_id.trim())
+            .ok_or_else(|| "The selected project could not be resolved safely".to_owned())?;
 
     if request.delivery {
         return Ok(resolve_delivery_source(&project_directory, &project));
