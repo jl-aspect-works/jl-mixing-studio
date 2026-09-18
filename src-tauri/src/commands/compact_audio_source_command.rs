@@ -1,7 +1,7 @@
 use super::comparison::comparison_source;
 use super::project_file_open::resolve_project_entry;
 use super::project_files::is_audio_extension;
-use super::{find_project_summary, resolve_workspace_root, validated_project_directory};
+use super::resolve_workspace_root;
 use crate::models::ProjectSummary;
 use crate::workspace;
 use serde::{Deserialize, Serialize};
@@ -72,17 +72,8 @@ fn resolve_source(
         return Err("Choose exactly one compact audio source target".into());
     }
     let root = resolve_workspace_root(app)?;
-    let snapshot = workspace::discover_workspace_at(&root);
-    let project = find_project_summary(
-        &snapshot,
-        request.client_id.trim(),
-        request.project_id.trim(),
-    )
-    .cloned()
-    .ok_or_else(|| "The selected project could not be resolved safely".to_owned())?;
-    let project_directory = validated_project_directory(
+    let (project_directory, project) = workspace::discover_project_at(
         &root,
-        &snapshot,
         request.client_id.trim(),
         request.project_id.trim(),
     )

@@ -17,7 +17,7 @@ import "./CompactAudioPreview.css";
 let compactPreviewSequence = 0;
 
 type SourceState =
-  | { status: "resolving" }
+  | { status: "idle" }
   | { status: "ready"; source: CompactAudioSourceResult & { relativePath: string; displayName: string } }
   | { status: "unavailable"; reason: string };
 
@@ -45,14 +45,15 @@ export function CompactAudioPreview({
   const nativeLoadedRef = useRef(false);
   const sessionIdRef = useRef(`compact-audio-preview-${compactPreviewSequence += 1}`);
   const statusId = useId();
-  const [sourceState, setSourceState] = useState<SourceState>({ status: "resolving" });
+  const [sourceState, setSourceState] = useState<SourceState>(() => !delivery && revision === null
+    ? { status: "unavailable", reason: "No current revision is available." }
+    : { status: "idle" });
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const sessionId = sessionIdRef.current;
 
   useEffect(() => {
-    let cancelled = false;
     preparedRef.current = null;
     nativeLoadedRef.current = false;
     setPlaying(false);
@@ -60,22 +61,9 @@ export function CompactAudioPreview({
     if (!delivery && revision === null) {
       setSourceState({ status: "unavailable", reason: "No current revision is available." });
     } else {
-      setSourceState({ status: "resolving" });
-      void resolveCompactAudioSource({ clientId, projectId, revision, delivery })
-        .then((source) => {
-          if (cancelled) return;
-          if (source.available && source.relativePath && source.displayName) {
-            setSourceState({ status: "ready", source: { ...source, relativePath: source.relativePath, displayName: source.displayName } });
-          } else {
-            setSourceState({ status: "unavailable", reason: source.reason || "Audio preview is unavailable." });
-          }
-        })
-        .catch((error: unknown) => {
-          if (!cancelled) setSourceState({ status: "unavailable", reason: previewError(error) });
-        });
+      setSourceState({ status: "idle" });
     }
     return () => {
-      cancelled = true;
       void stopAudioPlayback(sessionId);
     };
   }, [clientId, projectId, revision, delivery, sessionId]);
@@ -118,11 +106,21 @@ export function CompactAudioPreview({
   };
 
   const togglePlayback = async () => {
-    if (sourceState.status !== "ready" || loading) return;
-    const request = { clientId, projectId, relativePath: sourceState.source.relativePath };
+    if (sourceState.status === "unavailable" || loading) return;
     setFailure(null);
     setLoading(true);
     try {
+      let source = sourceState.status === "ready" ? sourceState.source : null;
+      if (!source) {
+        const resolved = await resolveCompactAudioSource({ clientId, projectId, revision, delivery });
+        if (!resolved.available || !resolved.relativePath || !resolved.displayName) {
+          setSourceState({ status: "unavailable", reason: resolved.reason || "Audio preview is unavailable." });
+          return;
+        }
+        source = { ...resolved, relativePath: resolved.relativePath, displayName: resolved.displayName };
+        setSourceState({ status: "ready", source });
+      }
+      const request = { clientId, projectId, relativePath: source.relativePath };
       if (!preparedRef.current) preparedRef.current = await prepareProjectAudioPreview(request);
       const prepared = preparedRef.current;
       if (!prepared) {
@@ -177,7 +175,7 @@ export function CompactAudioPreview({
 
   const unavailable = sourceState.status === "unavailable";
   const status = failure
-    ?? (sourceState.status === "resolving" ? "Checking audio preview…" : unavailable ? sourceState.reason : null);
+    ?? (loading ? "Preparing audio preview…" : unavailable ? sourceState.reason : null);
   const accessibleLabel = playing ? `Pause ${label}` : `Play ${label}`;
 
   return <span
@@ -204,11 +202,11 @@ export function CompactAudioPreview({
       className="compact-audio-preview-button"
       aria-label={accessibleLabel}
       aria-describedby={status ? statusId : undefined}
-      aria-busy={loading || sourceState.status === "resolving"}
-      disabled={loading || sourceState.status !== "ready"}
+      aria-busy={loading}
+      disabled={loading || unavailable}
       onClick={() => void togglePlayback()}
     >
-      {loading || sourceState.status === "resolving" ? <span className="compact-audio-preview-spinner" aria-hidden="true" /> : <ActionIcon name={playing ? "pause" : "play"} />}
+      <ActionIcon name={playing ? "pause" : "play"} />
     </button>
     {status && <span id={statusId} className="compact-audio-preview-status">{status}</span>}
     {failure && <span className="compact-audio-preview-alert" role="status" aria-label={failure}>!</span>}

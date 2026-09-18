@@ -33,14 +33,6 @@ button.compact-audio-preview-button {
 }
 
 .compact-audio-preview-button .action-icon { width: 13px; height: 13px; }
-.compact-audio-preview-spinner {
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid #c5ccd6;
-  border-top-color: #315fba;
-  border-radius: 50%;
-  animation: compact-audio-preview-spin .7s linear infinite;
-}
 
 .compact-audio-preview-alert {
   position: absolute;
@@ -66,10 +58,4 @@ button.compact-audio-preview-button {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-@keyframes compact-audio-preview-spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .compact-audio-preview-spinner { animation: none; }
 }

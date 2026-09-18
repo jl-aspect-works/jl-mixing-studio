@@ -30,6 +30,22 @@ afterEach(async () => {
 });
 
 describe("CompactAudioPreview", () => {
+  it("keeps the play triangle visible while the clicked source is being prepared", () => {
+    mockedInvoke.mockReturnValue(new Promise(() => undefined));
+
+    render(<CompactAudioPreview clientId="acme" projectId="mix" revision={2} label="Revision 2" />);
+
+    const play = screen.getByRole("button", { name: "Play Revision 2" });
+    expect(play).toBeEnabled();
+    expect(play).toHaveAttribute("aria-busy", "false");
+    expect(mockedInvoke).not.toHaveBeenCalled();
+    fireEvent.click(play);
+    expect(play).toBeDisabled();
+    expect(play).toHaveAttribute("aria-busy", "true");
+    expect(play.querySelector(".action-icon")).toBeInTheDocument();
+    expect(play.querySelector(".compact-audio-preview-spinner")).not.toBeInTheDocument();
+  });
+
   it("resolves the requested revision and exposes one play/pause button", async () => {
     mockedInvoke.mockImplementation((command) => {
       if (command === "resolve_compact_audio_source") return Promise.resolve({
@@ -47,8 +63,7 @@ describe("CompactAudioPreview", () => {
     });
 
     render(<CompactAudioPreview clientId="acme" projectId="mix" revision={2} label="Revision 2" />);
-    const play = await screen.findByRole("button", { name: "Play Revision 2" });
-    await waitFor(() => expect(play).toBeEnabled());
+    const play = screen.getByRole("button", { name: "Play Revision 2" });
     fireEvent.click(play);
 
     expect(await screen.findByRole("button", { name: "Pause Revision 2" })).toBeInTheDocument();
@@ -67,7 +82,8 @@ describe("CompactAudioPreview", () => {
     });
 
     render(<CompactAudioPreview clientId="acme" projectId="mix" revision={3} label="Revision 3" />);
-    const play = await screen.findByRole("button", { name: "Play Revision 3" });
+    const play = screen.getByRole("button", { name: "Play Revision 3" });
+    fireEvent.click(play);
     await waitFor(() => expect(play).toBeDisabled());
     expect(play.parentElement).toHaveAttribute("title", "No supported audio file was found in this revision.");
   });
@@ -85,8 +101,7 @@ describe("CompactAudioPreview", () => {
     });
 
     render(<CompactAudioPreview clientId="acme" projectId="mix" revision={3} label="Revision 3" />);
-    const play = await screen.findByRole("button", { name: "Play Revision 3" });
-    await waitFor(() => expect(play).toBeEnabled());
+    const play = screen.getByRole("button", { name: "Play Revision 3" });
     fireEvent.click(play);
 
     expect(await screen.findByRole("status", { name: "Decoder failed." })).toBeInTheDocument();
@@ -115,10 +130,8 @@ describe("CompactAudioPreview", () => {
       <CompactAudioPreview clientId="acme" projectId="mix" revision={1} label="Revision 1" />
       <CompactAudioPreview clientId="acme" projectId="mix" revision={2} label="Revision 2" />
     </>);
-    const first = await screen.findByRole("button", { name: "Play Revision 1" });
-    const second = await screen.findByRole("button", { name: "Play Revision 2" });
-    await waitFor(() => expect(first).toBeEnabled());
-    await waitFor(() => expect(second).toBeEnabled());
+    const first = screen.getByRole("button", { name: "Play Revision 1" });
+    const second = screen.getByRole("button", { name: "Play Revision 2" });
     fireEvent.click(first);
     expect(await screen.findByRole("button", { name: "Pause Revision 1" })).toBeInTheDocument();
     fireEvent.click(second);
