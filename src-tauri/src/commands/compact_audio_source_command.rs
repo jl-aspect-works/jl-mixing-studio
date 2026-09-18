@@ -101,7 +101,10 @@ fn resolve_source(
         .join("04_Revisions")
         .join(format!("Revision_{revision:02}"));
     match comparison_source(&revision_directory) {
-        Ok(Some(path)) => Ok(CompactAudioSourceResult::available(&project_directory, path)),
+        Ok(Some(path)) => Ok(CompactAudioSourceResult::available(
+            &project_directory,
+            path,
+        )),
         Ok(None) => Ok(CompactAudioSourceResult::unavailable(
             "No supported audio file was found in this revision.",
         )),
@@ -114,9 +117,7 @@ fn resolve_delivery_source(
     project: &ProjectSummary,
 ) -> CompactAudioSourceResult {
     let Some(delivery) = project.delivery.as_ref() else {
-        return CompactAudioSourceResult::unavailable(
-            "No Final Delivery has been recorded.",
-        );
+        return CompactAudioSourceResult::unavailable("No Final Delivery has been recorded.");
     };
     if project.delivered_revision != Some(delivery.revision) {
         return CompactAudioSourceResult::unavailable(
@@ -157,9 +158,7 @@ fn resolve_delivery_source(
         if !supported {
             continue;
         }
-        if has_source_provenance
-            && file.source_path.as_deref() != primary_source_name.as_deref()
-        {
+        if has_source_provenance && file.source_path.as_deref() != primary_source_name.as_deref() {
             continue;
         }
         if file.deliverable_type == "main_mix" {
@@ -190,11 +189,7 @@ fn resolve_delivery_source(
     } else {
         &mut fallback
     };
-    candidates.sort_by(|left, right| {
-        left.0
-            .cmp(&right.0)
-            .then_with(|| left.1.cmp(&right.1))
-    });
+    candidates.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| left.1.cmp(&right.1)));
     match candidates.pop() {
         Some((_, path)) => CompactAudioSourceResult::available(project_directory, path),
         None => CompactAudioSourceResult::unavailable(
@@ -292,11 +287,7 @@ mod tests {
     fn delivery_never_falls_back_to_a_revision_file() {
         let root = tempfile::tempdir().unwrap();
         fs::create_dir_all(root.path().join("04_Revisions/Revision_01")).unwrap();
-        fs::write(
-            root.path().join("04_Revisions/Revision_01/Mix.wav"),
-            b"mix",
-        )
-        .unwrap();
+        fs::write(root.path().join("04_Revisions/Revision_01/Mix.wav"), b"mix").unwrap();
         let project = delivery(Vec::new());
 
         let result = resolve_delivery_source(root.path(), &project);
