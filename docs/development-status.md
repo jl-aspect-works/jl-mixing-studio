@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-18
+Last updated: 2026-09-21
 
 ## Current release
 
@@ -45,16 +45,16 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #380 cross-platform acceptance and polish was merged through PR #398 at `55fa3847eaf54de63ad628bbebda49c4895cdb6a`; post-merge CI run #2058 passed.
 - #385 Dashboard Today’s Work empty-state polish was approved and merged through PR #399 at `6410a1b`.
 - #383 compact play controls were approved and merged through PR #400 at `82ecb2e181c82784156754de1bc5b73f56ab2237`; post-merge CI run #2069 passed.
+- #368 Project Files rename/delete actions were manually accepted and merged through PR #402 at `a97f33fdd3a860ddd16a4204aed5ed7549dd27b8`; PR CI run #2073 passed across frontend, Rust, macOS, and Windows jobs.
 
 ## Active work
 
-- #368 is fixing Project Files rename/delete actions, including native confirmation UX, authoritative refresh, error feedback, and mutation diagnostics.
+- No active implementation; #368 is complete and #337 remains the next v2.3 issue.
 
 ## Remaining release work
 
-1. Complete, validate, approve, and merge #368.
-2. Implement and approve #337.
-3. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Implement and approve #337.
+2. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
@@ -63,4 +63,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Publish the focused #368 implementation PR, complete CI and user acceptance, and do not start #337 until #368 is approved and merged.
+Close out #368 documentation. Begin #337 in a separate authorized work session; #396 remains deferred until after v2.3.
