@@ -3,6 +3,7 @@ import { ActionIcon } from "../../components/ActionIcon";
 import { AudioPreviewPlayer } from "./AudioPreviewPlayer";
 import { FileViewControls, ManagedFolderToolbar } from "./FileUiPrimitives";
 import { ProjectFileList } from "./ProjectFileList";
+import { ProjectFileMutationDialog, type ProjectFileMutation } from "./ProjectFileMutationDialog";
 import { canNavigateProjectFilesUp, projectFilePathUp } from "./projectFileNavigation";
 import {
   presentProjectFileListing,
@@ -52,14 +53,16 @@ export function ProjectFileBrowser({
   onPreview?: (entry: ProjectFileEntry) => void;
   onOpen?: (entry: ProjectFileEntry) => void;
   onReveal?: (entry: ProjectFileEntry) => void;
-  onRename?: (entry: ProjectFileEntry) => void | Promise<void>;
+  onRename?: (entry: ProjectFileEntry, newStem: string) => void | Promise<void>;
   onDelete?: (entry: ProjectFileEntry) => void | Promise<void>;
 }) {
   const [relativePath, setRelativePath] = useState(initialPath);
   const [history, setHistory] = useState<string[]>([initialPath]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [pendingMutation, setPendingMutation] = useState<ProjectFileMutation | null>(null);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ProjectFileKindFilter>("all");
   const [sort, setSort] = useState<ProjectFileSort>("name");
@@ -70,7 +73,9 @@ export function ProjectFileBrowser({
     setHistory([initialPath]);
     setHistoryIndex(0);
     setActionError(null);
+    setActionSuccess(null);
     setActionBusy(null);
+    setPendingMutation(null);
     setQuery("");
     setKind("all");
     setSort("name");
@@ -105,6 +110,7 @@ export function ProjectFileBrowser({
   const navigateTo = (nextPath: string) => {
     if (actionsDisabled || nextPath === relativePath) return;
     setActionError(null);
+    setActionSuccess(null);
     setQuery("");
     setRelativePath(nextPath);
     setHistory((current) => [...current.slice(0, historyIndex + 1), nextPath]);
@@ -115,6 +121,7 @@ export function ProjectFileBrowser({
     if (!canNavigateBack) return;
     const nextIndex = historyIndex - 1;
     setActionError(null);
+    setActionSuccess(null);
     setQuery("");
     setHistoryIndex(nextIndex);
     setRelativePath(history[nextIndex]);
@@ -135,24 +142,6 @@ export function ProjectFileBrowser({
     setActionBusy(busyMessage);
     try {
       await action({ clientId, projectId, relativePath: entry.relativePath });
-    } catch (error) {
-      setActionError(actionErrorMessage(error));
-    } finally {
-      setActionBusy(null);
-    }
-  };
-
-  const runManagedMutation = async (
-    action: ((entry: ProjectFileEntry) => void | Promise<void>) | undefined,
-    entry: ProjectFileEntry,
-    busyMessage: string,
-  ) => {
-    if (!action || actionsDisabled) return;
-    setActionError(null);
-    setActionBusy(busyMessage);
-    try {
-      await action(entry);
-      await refresh();
     } catch (error) {
       setActionError(actionErrorMessage(error));
     } finally {
@@ -256,6 +245,8 @@ export function ProjectFileBrowser({
         </section>
       )}
 
+      {actionSuccess && <section className="notice success" role="status" aria-live="polite">{actionSuccess}</section>}
+
       {actionBusy && <section className="notice" role="status" aria-live="polite">{actionBusy}</section>}
 
       {state.status === "loading" && state.listing === null && (
@@ -274,10 +265,40 @@ export function ProjectFileBrowser({
             <AudioPreviewPlayer clientId={clientId} projectId={projectId} entry={entry} />
           )}
           onReveal={revealEntry}
-          onRename={onRename ? (entry) => void runManagedMutation(onRename, entry, `Renaming ${entry.displayName}…`) : undefined}
-          onDelete={onDelete ? (entry) => void runManagedMutation(onDelete, entry, `Deleting ${entry.displayName}…`) : undefined}
+          onRename={onRename ? (entry) => {
+            setActionError(null);
+            setActionSuccess(null);
+            setPendingMutation({ kind: "rename", entry });
+          } : undefined}
+          onDelete={onDelete ? (entry) => {
+            setActionError(null);
+            setActionSuccess(null);
+            setPendingMutation({ kind: "delete", entry });
+          } : undefined}
         />
       )}
+
+      {pendingMutation && <ProjectFileMutationDialog
+        mutation={pendingMutation}
+        onRename={onRename}
+        onDelete={onDelete}
+        onClose={() => setPendingMutation(null)}
+        onCompleted={async () => {
+          const completed = pendingMutation;
+          setActionBusy(completed.kind === "rename" ? `Refreshing after renaming ${completed.entry.displayName}…` : `Refreshing after deleting ${completed.entry.displayName}…`);
+          try {
+            const refreshed = await refresh();
+            setPendingMutation(null);
+            if (refreshed) {
+              setActionSuccess(completed.kind === "rename" ? `${completed.entry.displayName} was renamed.` : `${completed.entry.displayName} was deleted.`);
+            } else {
+              setActionError("The file action completed, but the folder could not be refreshed. Reconnect the workspace and use Refresh to verify the current files.");
+            }
+          } finally {
+            setActionBusy(null);
+          }
+        }}
+      />}
     </section>
   );
 }

@@ -10,6 +10,8 @@ type BrowserProps = {
   enhancedNavigation?: boolean;
   breadcrumbRootLabel?: string;
   pathDescription?: (relativePath: string) => string;
+  onRename?: (entry: import("./projectFileService").ProjectFileEntry, newStem: string) => Promise<void>;
+  onDelete?: (entry: import("./projectFileService").ProjectFileEntry) => Promise<void>;
 };
 
 vi.mock("./ProjectFileBrowser", () => ({

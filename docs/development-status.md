@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 
 ## Current release
 
@@ -43,15 +43,17 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #378 loudness analysis, matching gain, and reusable derived cache was merged through PR #395 at `b762fea292f470bd59d0dca63ea9b9f1f17db7f1`.
 - #379 reveal and results workflow was merged through PR #397 at `a2d2d0877af75fb572385180ce01119e7e35799b`.
 - #380 cross-platform acceptance and polish was merged through PR #398 at `55fa3847eaf54de63ad628bbebda49c4895cdb6a`; post-merge CI run #2058 passed.
+- #385 Dashboard Today’s Work empty-state polish was approved and merged through PR #399 at `6410a1b`.
+- #383 compact play controls were approved and merged through PR #400 at `82ecb2e181c82784156754de1bc5b73f56ab2237`; post-merge CI run #2069 passed.
 
 ## Active work
 
-- #385 is implementing the approved Option 3 empty-state treatment for the Dashboard Today’s Work card.
+- #368 is fixing Project Files rename/delete actions, including native confirmation UX, authoritative refresh, error feedback, and mutation diagnostics.
 
 ## Remaining release work
 
-1. Complete, validate, approve, and merge #385.
-2. Implement and approve #383, #368, and #337 in that order.
+1. Complete, validate, approve, and merge #368.
+2. Implement and approve #337.
 3. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
@@ -61,4 +63,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Publish the focused #385 implementation PR, complete CI and user visual acceptance, and do not start #383 until #385 is approved and merged.
+Publish the focused #368 implementation PR, complete CI and user acceptance, and do not start #337 until #368 is approved and merged.

@@ -30,6 +30,7 @@ mod project_file_open;
 mod project_file_summary;
 #[path = "project_file_command.rs"]
 mod project_files;
+mod project_file_diagnostics;
 #[path = "project_reference_command.rs"]
 mod project_references;
 #[path = "project_revision_file_command.rs"]

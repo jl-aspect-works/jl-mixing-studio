@@ -75,13 +75,15 @@ export function useProjectFiles({
       if (requestSequence.current !== sequence) return;
       listingCache.set(cacheKey, listing);
       setState({ status: "ready", listing, message: null });
+      return true;
     } catch (error) {
-      if (requestSequence.current !== sequence) return;
+      if (requestSequence.current !== sequence) return false;
       setState((current) => ({
         status: "error",
         listing: current.listing ?? cached,
         message: errorMessage(error),
       }));
+      return false;
     }
   }, [cacheKey, clientId, projectId, relativePath]);
 

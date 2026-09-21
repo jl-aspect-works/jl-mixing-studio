@@ -11,14 +11,6 @@ import {
 } from "./projectFileService";
 import "./ProjectFilesWorkspace.css";
 
-const filenameStem = (entry: ProjectFileEntry) => {
-  if (!entry.extension) return entry.displayName;
-  const suffix = `.${entry.extension}`;
-  return entry.displayName.toLowerCase().endsWith(suffix.toLowerCase())
-    ? entry.displayName.slice(0, -suffix.length)
-    : entry.displayName;
-};
-
 const policyText = (path: string) => {
   if (path.startsWith(projectFilePaths.originalDelivery)) {
     return "Original Delivery is read-only. Files may be inspected, opened, revealed, and previewed where supported.";
@@ -47,11 +39,7 @@ export function ProjectFilesWorkspace({ clientId, projectId }: { clientId: strin
     await openProjectFile({ clientId, projectId, relativePath });
   };
 
-  const renameEntry = async (entry: ProjectFileEntry) => {
-    const currentStem = filenameStem(entry);
-    const nextStem = window.prompt(`Rename ${entry.displayName}`, currentStem)?.trim();
-    if (!nextStem || nextStem === currentStem) return;
-
+  const renameEntry = async (entry: ProjectFileEntry, nextStem: string) => {
     const request = { clientId, projectId, relativePath: entry.relativePath };
     if (entry.area === "audioPreparation") {
       await renameAudioPrepFile(request, nextStem);
@@ -65,8 +53,6 @@ export function ProjectFilesWorkspace({ clientId, projectId }: { clientId: strin
   };
 
   const deleteEntry = async (entry: ProjectFileEntry) => {
-    if (!window.confirm(`Delete ${entry.displayName}? This action cannot be undone.`)) return;
-
     const request = { clientId, projectId, relativePath: entry.relativePath };
     if (entry.area === "audioPreparation") {
       await deleteAudioPrepFile(request);
