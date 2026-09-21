@@ -37,8 +37,8 @@ pub(crate) fn rename_revision_file(
         None,
     );
     let project_directory =
-        resolve_project_directory(&app, &request.client_id, &request.project_id).map_err(
-            |error| {
+        resolve_project_directory(&app, &request.client_id, &request.project_id).inspect_err(
+            |_| {
                 record_mutation(
                     "rename",
                     "revisions",
@@ -46,7 +46,6 @@ pub(crate) fn rename_revision_file(
                     "failed",
                     Some("project_resolution"),
                 );
-                error
             },
         )?;
     let relative_path = rename_managed_revision_file(
@@ -54,7 +53,7 @@ pub(crate) fn rename_revision_file(
         &request.relative_path,
         &request.new_name,
     )
-    .map_err(|error| {
+    .inspect_err(|_| {
         record_mutation(
             "rename",
             "revisions",
@@ -62,7 +61,6 @@ pub(crate) fn rename_revision_file(
             "failed",
             Some("validation_or_filesystem"),
         );
-        error
     })?;
     record_mutation(
         "rename",
@@ -87,8 +85,8 @@ pub(crate) fn delete_revision_file(
         None,
     );
     let project_directory =
-        resolve_project_directory(&app, &request.client_id, &request.project_id).map_err(
-            |error| {
+        resolve_project_directory(&app, &request.client_id, &request.project_id).inspect_err(
+            |_| {
                 record_mutation(
                     "delete",
                     "revisions",
@@ -96,11 +94,10 @@ pub(crate) fn delete_revision_file(
                     "failed",
                     Some("project_resolution"),
                 );
-                error
             },
         )?;
     let relative_path = delete_managed_revision_file(&project_directory, &request.relative_path)
-        .map_err(|error| {
+        .inspect_err(|_| {
             record_mutation(
                 "delete",
                 "revisions",
@@ -108,7 +105,6 @@ pub(crate) fn delete_revision_file(
                 "failed",
                 Some("validation_or_filesystem"),
             );
-            error
         })?;
     record_mutation(
         "delete",
