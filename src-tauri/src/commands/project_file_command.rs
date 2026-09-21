@@ -33,17 +33,19 @@ pub(crate) fn rename_project_file(
         "attempted",
         None,
     );
-    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)
-        .map_err(|error| {
-            record_mutation(
-                "rename",
-                "audioPreparation",
-                &request.relative_path,
-                "failed",
-                Some("project_resolution"),
-            );
-            error
-        })?;
+    let project_directory =
+        resolve_project_directory(&app, &request.client_id, &request.project_id).map_err(
+            |error| {
+                record_mutation(
+                    "rename",
+                    "audioPreparation",
+                    &request.relative_path,
+                    "failed",
+                    Some("project_resolution"),
+                );
+                error
+            },
+        )?;
     let relative_path = rename_audio_preparation_file(
         &project_directory,
         &request.relative_path,
@@ -81,28 +83,30 @@ pub(crate) fn delete_project_file(
         "attempted",
         None,
     );
-    let project_directory = resolve_project_directory(&app, &request.client_id, &request.project_id)
-        .map_err(|error| {
-            record_mutation(
-                "delete",
-                "audioPreparation",
-                &request.relative_path,
-                "failed",
-                Some("project_resolution"),
-            );
-            error
-        })?;
+    let project_directory =
+        resolve_project_directory(&app, &request.client_id, &request.project_id).map_err(
+            |error| {
+                record_mutation(
+                    "delete",
+                    "audioPreparation",
+                    &request.relative_path,
+                    "failed",
+                    Some("project_resolution"),
+                );
+                error
+            },
+        )?;
     let relative_path = delete_audio_preparation_file(&project_directory, &request.relative_path)
         .map_err(|error| {
-            record_mutation(
-                "delete",
-                "audioPreparation",
-                &request.relative_path,
-                "failed",
-                Some("validation_or_filesystem"),
-            );
-            error
-        })?;
+        record_mutation(
+            "delete",
+            "audioPreparation",
+            &request.relative_path,
+            "failed",
+            Some("validation_or_filesystem"),
+        );
+        error
+    })?;
     record_mutation(
         "delete",
         "audioPreparation",
