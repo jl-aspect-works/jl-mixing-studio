@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
 import { FileViewControls, ManagedFolderToolbar, RowActionMenu } from "../project/files/FileUiPrimitives";
+import { ProjectFileMutationDialog } from "../project/files/ProjectFileMutationDialog";
 import {
   deleteRevisionFile,
   formatProjectFileModified,
@@ -42,9 +44,10 @@ export function RevisionFileBrowser({
   const [query, setQuery] = useState("");
   const [editingPath, setEditingPath] = useState<string | null>(null);
   const [renameStem, setRenameStem] = useState("");
-  const [confirmDeletePath, setConfirmDeletePath] = useState<string | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<ProjectFileEntry | null>(null);
   const [busyPath, setBusyPath] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const { state, refresh } = useProjectFiles({ clientId, projectId, relativePath });
 
   const entries = useMemo(() => {
@@ -58,8 +61,9 @@ export function RevisionFileBrowser({
     setRelativePath(path);
     setQuery("");
     setEditingPath(null);
-    setConfirmDeletePath(null);
+    setDeleteCandidate(null);
     setActionError(null);
+    setActionSuccess(null);
   };
 
   const runFileAction = async (action: "open" | "reveal", entry: ProjectFileEntry) => {
@@ -109,20 +113,6 @@ export function RevisionFileBrowser({
     }
   };
 
-  const deleteEntry = async (entry: ProjectFileEntry) => {
-    setBusyPath(entry.relativePath);
-    setActionError(null);
-    try {
-      await deleteRevisionFile({ clientId, projectId, relativePath: entry.relativePath });
-      setConfirmDeletePath(null);
-      await refresh();
-    } catch (error) {
-      setActionError(errorMessage(error));
-    } finally {
-      setBusyPath(null);
-    }
-  };
-
   const canNavigateUp = canNavigateProjectFilesUp(relativePath, rootPath);
 
   return <section className="revision-files" aria-label={`Revision ${revision} files`}>
@@ -152,6 +142,7 @@ export function RevisionFileBrowser({
     />
 
     {actionError && <div className="inline-notice error" role="alert">{actionError}</div>}
+    {actionSuccess && <div className="inline-notice" role="status">{actionSuccess}</div>}
     {state.status === "error" && <div className="inline-notice error" role="alert">{state.message}</div>}
 
     <div className="revision-files-table-wrap">
@@ -160,15 +151,11 @@ export function RevisionFileBrowser({
         <tbody>
           {entries.map((entry) => {
             const editing = editingPath === entry.relativePath;
-            const confirming = confirmDeletePath === entry.relativePath;
             const busy = busyPath === entry.relativePath;
-            const actions = confirming ? [
-              { label: "Confirm Delete", onSelect: () => void deleteEntry(entry), disabled: busy, destructive: true },
-              { label: "Cancel", onSelect: () => setConfirmDeletePath(null), disabled: busy },
-            ] : [
+            const actions = [
               entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runFileAction("open", entry), disabled: busy } : null,
               entry.permissions.canReveal ? { label: "Reveal", onSelect: () => void runFileAction("reveal", entry), disabled: busy } : null,
-              entry.entryType === "file" && entry.permissions.canDelete ? { label: "Delete", onSelect: () => setConfirmDeletePath(entry.relativePath), disabled: busy, destructive: true } : null,
+              entry.entryType === "file" && entry.permissions.canDelete ? { label: "Delete", onSelect: () => { setActionError(null); setActionSuccess(null); setDeleteCandidate(entry); }, disabled: busy, destructive: true } : null,
             ].filter((action): action is NonNullable<typeof action> => action !== null);
             return <tr key={entry.id}>
               <td className={`revision-file-name-cell${entry.entryType === "directory" ? " revision-folder-name-cell" : ""}`}>
@@ -212,5 +199,19 @@ export function RevisionFileBrowser({
         </tbody>
       </table>
     </div>
+    {deleteCandidate && createPortal(<ProjectFileMutationDialog
+      mutation={{ kind: "delete", entry: deleteCandidate }}
+      onDelete={async (entry) => {
+        await deleteRevisionFile({ clientId, projectId, relativePath: entry.relativePath });
+      }}
+      onCompleted={async () => {
+        const deletedName = deleteCandidate.displayName;
+        const refreshed = await refresh();
+        setDeleteCandidate(null);
+        if (refreshed) setActionSuccess(`${deletedName} was deleted.`);
+        else setActionError("The file was deleted, but the folder could not be refreshed. Reconnect the storage and refresh to verify its contents.");
+      }}
+      onClose={() => setDeleteCandidate(null)}
+    />, document.body)}
   </section>;
 }

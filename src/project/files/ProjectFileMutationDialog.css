@@ -1,0 +1,7 @@
+.project-file-mutation-dialog .dialog-intro strong { overflow-wrap: anywhere; }
+.project-file-rename-field { display: flex; align-items: center; }
+.project-file-rename-field input { min-width: 0; border-radius: 8px 0 0 8px; }
+.project-file-rename-field span { min-height: 42px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid #c7d0dd; border-left: 0; border-radius: 0 8px 8px 0; background: #f3f5f8; color: #5f6b7d; font-weight: 700; }
+.project-file-delete-warning { margin: 14px 0 0; padding: 12px 14px; border-left: 3px solid #c84f4f; background: #fff7f7; color: #7f3030; }
+.project-file-mutation-dialog button.destructive { border-color: #a93b3b; background: #a93b3b; }
+.project-file-mutation-dialog button.destructive:hover:not(:disabled) { border-color: #852c2c; background: #852c2c; }

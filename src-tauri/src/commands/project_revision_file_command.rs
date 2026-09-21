@@ -1,4 +1,5 @@
 use super::os_metadata::is_ignored_os_metadata_path;
+use super::project_file_diagnostics::record_mutation;
 use super::resolve_workspace_root;
 use super::workspace_command_support::validated_project_directory;
 use crate::models::{
@@ -28,13 +29,46 @@ pub(crate) fn rename_revision_file(
     app: tauri::AppHandle,
     request: ProjectFileRenameRequest,
 ) -> Result<ProjectFileMutationResult, String> {
+    record_mutation(
+        "rename",
+        "revisions",
+        &request.relative_path,
+        "attempted",
+        None,
+    );
     let project_directory =
-        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+        resolve_project_directory(&app, &request.client_id, &request.project_id).inspect_err(
+            |_| {
+                record_mutation(
+                    "rename",
+                    "revisions",
+                    &request.relative_path,
+                    "failed",
+                    Some("project_resolution"),
+                );
+            },
+        )?;
     let relative_path = rename_managed_revision_file(
         &project_directory,
         &request.relative_path,
         &request.new_name,
-    )?;
+    )
+    .inspect_err(|_| {
+        record_mutation(
+            "rename",
+            "revisions",
+            &request.relative_path,
+            "failed",
+            Some("validation_or_filesystem"),
+        );
+    })?;
+    record_mutation(
+        "rename",
+        "revisions",
+        &request.relative_path,
+        "succeeded",
+        None,
+    );
     Ok(ProjectFileMutationResult { relative_path })
 }
 
@@ -43,9 +77,42 @@ pub(crate) fn delete_revision_file(
     app: tauri::AppHandle,
     request: ProjectFileMutationRequest,
 ) -> Result<ProjectFileMutationResult, String> {
+    record_mutation(
+        "delete",
+        "revisions",
+        &request.relative_path,
+        "attempted",
+        None,
+    );
     let project_directory =
-        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
-    let relative_path = delete_managed_revision_file(&project_directory, &request.relative_path)?;
+        resolve_project_directory(&app, &request.client_id, &request.project_id).inspect_err(
+            |_| {
+                record_mutation(
+                    "delete",
+                    "revisions",
+                    &request.relative_path,
+                    "failed",
+                    Some("project_resolution"),
+                );
+            },
+        )?;
+    let relative_path = delete_managed_revision_file(&project_directory, &request.relative_path)
+        .inspect_err(|_| {
+            record_mutation(
+                "delete",
+                "revisions",
+                &request.relative_path,
+                "failed",
+                Some("validation_or_filesystem"),
+            );
+        })?;
+    record_mutation(
+        "delete",
+        "revisions",
+        &request.relative_path,
+        "succeeded",
+        None,
+    );
     Ok(ProjectFileMutationResult { relative_path })
 }
 

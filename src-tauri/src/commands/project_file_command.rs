@@ -1,4 +1,5 @@
 use super::os_metadata::is_ignored_os_metadata_path;
+use super::project_file_diagnostics::record_mutation;
 use super::resolve_workspace_root;
 use crate::models::{
     ProjectFileArea, ProjectFileEntry, ProjectFileEntryType, ProjectFileListRequest,
@@ -25,13 +26,46 @@ pub(crate) fn rename_project_file(
     app: tauri::AppHandle,
     request: ProjectFileRenameRequest,
 ) -> Result<ProjectFileMutationResult, String> {
+    record_mutation(
+        "rename",
+        "audioPreparation",
+        &request.relative_path,
+        "attempted",
+        None,
+    );
     let project_directory =
-        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+        resolve_project_directory(&app, &request.client_id, &request.project_id).inspect_err(
+            |_| {
+                record_mutation(
+                    "rename",
+                    "audioPreparation",
+                    &request.relative_path,
+                    "failed",
+                    Some("project_resolution"),
+                );
+            },
+        )?;
     let relative_path = rename_audio_preparation_file(
         &project_directory,
         &request.relative_path,
         &request.new_name,
-    )?;
+    )
+    .inspect_err(|_| {
+        record_mutation(
+            "rename",
+            "audioPreparation",
+            &request.relative_path,
+            "failed",
+            Some("validation_or_filesystem"),
+        );
+    })?;
+    record_mutation(
+        "rename",
+        "audioPreparation",
+        &request.relative_path,
+        "succeeded",
+        None,
+    );
     Ok(ProjectFileMutationResult { relative_path })
 }
 
@@ -40,9 +74,42 @@ pub(crate) fn delete_project_file(
     app: tauri::AppHandle,
     request: ProjectFileMutationRequest,
 ) -> Result<ProjectFileMutationResult, String> {
+    record_mutation(
+        "delete",
+        "audioPreparation",
+        &request.relative_path,
+        "attempted",
+        None,
+    );
     let project_directory =
-        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
-    let relative_path = delete_audio_preparation_file(&project_directory, &request.relative_path)?;
+        resolve_project_directory(&app, &request.client_id, &request.project_id).inspect_err(
+            |_| {
+                record_mutation(
+                    "delete",
+                    "audioPreparation",
+                    &request.relative_path,
+                    "failed",
+                    Some("project_resolution"),
+                );
+            },
+        )?;
+    let relative_path = delete_audio_preparation_file(&project_directory, &request.relative_path)
+        .inspect_err(|_| {
+        record_mutation(
+            "delete",
+            "audioPreparation",
+            &request.relative_path,
+            "failed",
+            Some("validation_or_filesystem"),
+        );
+    })?;
+    record_mutation(
+        "delete",
+        "audioPreparation",
+        &request.relative_path,
+        "succeeded",
+        None,
+    );
     Ok(ProjectFileMutationResult { relative_path })
 }
 
@@ -660,6 +727,41 @@ mod tests {
         )
         .is_err());
         assert!(original.join("source.wav").is_file());
+    }
+
+    #[test]
+    fn unavailable_mutation_target_returns_an_actionable_error() {
+        let project = TestDirectory::new();
+        fs::create_dir_all(project.path().join("02_Audio_Preparation/Working_Audio"))
+            .expect("create prep");
+
+        let error = delete_audio_preparation_file(
+            project.path(),
+            "02_Audio_Preparation/Working_Audio/Missing.wav",
+        )
+        .expect_err("missing shared-storage file must fail");
+        assert!(error.contains("Unable to resolve the selected project path"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_symlink_file_mutations_without_touching_the_target() {
+        use std::os::unix::fs::symlink;
+
+        let project = TestDirectory::new();
+        let outside = TestDirectory::new();
+        let prep = project.path().join("02_Audio_Preparation/Working_Audio");
+        fs::create_dir_all(&prep).expect("create prep");
+        let target = outside.path().join("outside.wav");
+        fs::write(&target, b"audio").expect("write outside target");
+        symlink(&target, prep.join("link.wav")).expect("create symlink");
+
+        assert!(delete_audio_preparation_file(
+            project.path(),
+            "02_Audio_Preparation/Working_Audio/link.wav",
+        )
+        .is_err());
+        assert!(target.is_file());
     }
 
     #[cfg(unix)]
