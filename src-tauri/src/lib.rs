@@ -9,6 +9,7 @@ mod diagnostic_log;
 mod intake;
 mod managed_client_files;
 mod models;
+mod project_delete;
 mod project_edit;
 mod revision_lifecycle;
 mod studio_edit;
@@ -156,6 +157,29 @@ fn get_project_edit_info(
 #[tauri::command]
 fn update_project(app: tauri::AppHandle, request: ProjectUpdateRequest) -> ProjectUpdateResult {
     project_edit::update_project(&app, request)
+}
+
+#[tauri::command]
+fn get_project_delete_support(app: tauri::AppHandle) -> bool {
+    project_delete::supported(&app)
+}
+
+#[tauri::command]
+fn plan_project_deletion(
+    app: tauri::AppHandle,
+    request: project_delete::ProjectDeleteRequest,
+) -> project_delete::ProjectDeleteResult {
+    project_delete::plan(&app, request)
+}
+
+#[tauri::command]
+async fn execute_project_deletion(
+    app: tauri::AppHandle,
+    request: project_delete::ProjectDeleteRequest,
+) -> Result<project_delete::ProjectDeleteResult, String> {
+    tauri::async_runtime::spawn_blocking(move || project_delete::execute(&app, request))
+        .await
+        .map_err(|error| format!("Project deletion task failed: {error}"))
 }
 
 #[tauri::command]
@@ -526,6 +550,9 @@ pub fn run() {
             create_project,
             get_project_edit_info,
             update_project,
+            get_project_delete_support,
+            plan_project_deletion,
+            execute_project_deletion,
             choose_managed_import_sources,
             plan_managed_client_import,
             execute_managed_client_import,

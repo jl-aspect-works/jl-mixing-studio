@@ -7,6 +7,8 @@ import { RouteIssues, WorkspaceContent, type ResourceState } from "../AppShellVi
 import { copy as productCopy } from "../resources/copy";
 import { ValidationProgress } from "../intake/ValidationProgress";
 import { ProjectDirectoryList, type ProjectDirectoryEntry } from "./ProjectDirectoryList";
+import { ProjectDeleteDialog } from "./ProjectDeleteDialog";
+import { getProjectDeleteSupport } from "./projectDeleteService";
 import type { IntakeOperationResult } from "../types";
 import type { IntakeValidationProgress } from "../intake/models";
 import "./ProjectsRouteV21.css";
@@ -129,6 +131,7 @@ export function ProjectsRouteV21({
   onSelectProject,
   onNewProject,
   onRefresh,
+  onDeleted,
   onSaveSuccess,
   loading,
   projectCreationAvailable,
@@ -138,6 +141,7 @@ export function ProjectsRouteV21({
   onSelectProject: (clientId: string, projectId: string) => void;
   onNewProject: () => void;
   onRefresh: () => void;
+  onDeleted: () => void;
   onSaveSuccess: (message: string | null) => void;
   loading: boolean;
   projectCreationAvailable: boolean;
@@ -154,6 +158,16 @@ export function ProjectsRouteV21({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [validationProgress, setValidationProgress] = useState<IntakeValidationProgress | null>(null);
+  const [deleteSupported, setDeleteSupported] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void getProjectDeleteSupport().then((value) => {
+      if (active) setDeleteSupported(value);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
 
   const snapshot = workspace.status === "ready" ? workspace.value : null;
   const entries = useMemo<ProjectEntry[]>(() => snapshot
@@ -201,6 +215,7 @@ export function ProjectsRouteV21({
   }, [selected?.client.clientId, selected?.project.projectId]);
 
   useEffect(() => {
+    setDeleting(false);
     setEditing(false);
     setForm(null);
     setEditExpectedLastModifiedAt(null);
@@ -371,8 +386,12 @@ export function ProjectsRouteV21({
 
         <section className="projects-v21-inspector-section metadata"><h4>Project Information</h4><dl><div><dt>Project ID</dt><dd><code>{selected.project.projectId}</code></dd></div><div><dt>Path</dt><dd><code>{editInfo?.projectPath ?? "Checking…"}</code></dd></div><div><dt>Created</dt><dd>{editInfo ? formatTimestamp(editInfo.createdAt) : formatTimestamp(selected.project.createdAt)}</dd></div><div><dt>Last Modified</dt><dd>{editInfo ? formatTimestamp(editInfo.lastModifiedAt) : "Checking…"}</dd></div><div><dt>Schema</dt><dd>{editInfo?.schemaVersion ?? selected.project.schemaVersion}</dd></div><div><dt>Document ID</dt><dd><code>{editInfo?.documentId ?? "Checking…"}</code></dd></div></dl></section>
 
-        <button type="button" className="projects-v21-open" onClick={() => onSelectProject(selected.client.clientId, selected.project.projectId)}><ActionIcon name="open" />Open Project</button>
+        <div className="projects-v21-project-actions">
+          <button type="button" className="projects-v21-open" onClick={() => onSelectProject(selected.client.clientId, selected.project.projectId)}><ActionIcon name="open" />Open Project</button>
+          {deleteSupported && <button type="button" onClick={() => setDeleting(true)} disabled={loading || editing || saving}><ActionIcon name="delete" />Delete Project</button>}
+        </div>
         <p className="projects-v21-forward-note">Project edits update requirements going forward. Existing audio, revisions, approvals, and delivery artifacts are not rewritten automatically.</p>
+        {deleting && <ProjectDeleteDialog client={selected.client} project={selected.project} onClose={() => setDeleting(false)} onDeleted={onDeleted} />}
       </aside>}
     </div>}
 

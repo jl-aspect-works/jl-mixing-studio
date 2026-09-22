@@ -429,8 +429,15 @@
   overflow-wrap: anywhere;
 }
 
-.projects-v21-open {
+.projects-v21-project-actions {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
   margin: 16px 18px 8px;
+}
+
+.projects-v21-project-actions .projects-v21-open {
+  margin: 0;
 }
 
 .projects-v21-forward-note {

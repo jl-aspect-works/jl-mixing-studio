@@ -11,7 +11,7 @@ use serde_json::json;
 use std::collections::{hash_map::Entry, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{Emitter, Manager};
@@ -109,6 +109,7 @@ struct MonitorData {
     revision_diagnostic: Option<DiagnosticOutcome>,
     delivered_diagnostic: Option<DiagnosticOutcome>,
     delivery_identity: Option<Option<DeliveryIdentity>>,
+    scans_in_flight: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -131,9 +132,57 @@ enum DiagnosticTransition {
     Recovered,
 }
 
-#[derive(Default)]
 pub(crate) struct RevisionListeningMonitorState {
     inner: Mutex<MonitorData>,
+    idle: Condvar,
+}
+
+impl Default for RevisionListeningMonitorState {
+    fn default() -> Self {
+        Self {
+            inner: Mutex::new(MonitorData::default()),
+            idle: Condvar::new(),
+        }
+    }
+}
+
+impl RevisionListeningMonitorState {
+    fn stop_project_and_wait(&self, client_id: &str, project_id: &str) -> Result<(), String> {
+        let mut monitor = self
+            .inner
+            .lock()
+            .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
+        if monitor
+            .active_project
+            .as_ref()
+            .is_some_and(|active| active.client_id == client_id && active.project_id == project_id)
+        {
+            monitor.active_project = None;
+            monitor.generation = monitor.generation.wrapping_add(1);
+            monitor.destinations.clear();
+            monitor.delivery_identity = None;
+        }
+        while monitor.scans_in_flight > 0 {
+            monitor = self
+                .idle
+                .wait(monitor)
+                .map_err(|_| "Revision Listening monitor state is unavailable".to_owned())?;
+        }
+        Ok(())
+    }
+}
+
+struct ScanGuard<'a> {
+    state: &'a RevisionListeningMonitorState,
+}
+
+impl Drop for ScanGuard<'_> {
+    fn drop(&mut self) {
+        if let Ok(mut monitor) = self.state.inner.lock() {
+            monitor.scans_in_flight = monitor.scans_in_flight.saturating_sub(1);
+            self.state.idle.notify_all();
+        }
+    }
 }
 
 #[tauri::command]
@@ -178,6 +227,15 @@ pub(crate) fn set_revision_listening_project(
         );
     }
     Ok(())
+}
+
+pub(crate) fn stop_project_and_wait(
+    app: &tauri::AppHandle,
+    client_id: &str,
+    project_id: &str,
+) -> Result<(), String> {
+    let state = app.state::<RevisionListeningMonitorState>();
+    state.stop_project_and_wait(client_id, project_id)
 }
 
 pub(crate) fn start_revision_listening_monitor(app: tauri::AppHandle) {
@@ -264,9 +322,11 @@ fn scan_active_project(app: &tauri::AppHandle) -> Result<(), String> {
         let Some(active) = monitor.active_project.clone() else {
             return Ok(());
         };
+        monitor.scans_in_flight += 1;
         monitor.scan_number = monitor.scan_number.wrapping_add(1);
         (active, monitor.generation, monitor.scan_number)
     };
+    let _scan_guard = ScanGuard { state: &state };
 
     let scan_started = Instant::now();
     let configuration_started = Instant::now();
@@ -1007,6 +1067,7 @@ fn revision_target_name(
 mod tests {
     use super::*;
     use crate::models::{ListeningArtworkPolicy, ListeningMetadataPolicy};
+    use std::sync::Arc;
     use tempfile::tempdir;
 
     fn state_with_project() -> RevisionListeningMonitorState {
@@ -1020,6 +1081,27 @@ mod tests {
             monitor.generation = 1;
         }
         state
+    }
+
+    #[test]
+    fn project_deletion_detaches_monitor_and_waits_for_active_scan() {
+        let state = Arc::new(state_with_project());
+        state.inner.lock().expect("state").scans_in_flight = 1;
+        let completing = Arc::clone(&state);
+        let worker = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(20));
+            let mut monitor = completing.inner.lock().expect("state");
+            monitor.scans_in_flight = 0;
+            completing.idle.notify_all();
+        });
+        state
+            .stop_project_and_wait("client", "project")
+            .expect("stop monitor");
+        worker.join().expect("worker");
+        let monitor = state.inner.lock().expect("state");
+        assert!(monitor.active_project.is_none());
+        assert_eq!(monitor.scans_in_flight, 0);
+        assert_eq!(monitor.generation, 2);
     }
 
     fn fingerprint(path: &Path, size: u64, modified_at_ms: u128) -> SourceFingerprint {

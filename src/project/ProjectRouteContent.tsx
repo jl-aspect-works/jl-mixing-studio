@@ -15,7 +15,7 @@ export interface ProjectRouteContentProps {
   intakeReport: IntakeReportState; intakeActionError: string | null; intakeValidationAvailable: boolean; intakeValidationHelp: string; intakeLoading: boolean; intakeProgress: IntakeValidationProgress | null;
   revisionActionError: string | null; revisionCreationAvailable: boolean; revisionCreationHelp: string; revisionApprovalAvailable: boolean; revisionApprovalHelp: string;
   deliveryActionError: string | null; deliveryCreationAvailable: boolean; deliveryCreationHelp: string; deliveryLoading: boolean;
-  onProjects: () => void; onRefresh: () => void; onIntakeRefresh: () => void; onStructuredValidationRefresh: () => void; onSelectView: (view: ProjectShellView) => void; onOpenIntake: () => void; onRecheckIntake: () => void; onOpenRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onCreateDelivery: () => void;
+  onProjects: () => void; onRefresh: () => void; onProjectDeleted: () => void; onIntakeRefresh: () => void; onStructuredValidationRefresh: () => void; onSelectView: (view: ProjectShellView) => void; onOpenIntake: () => void; onRecheckIntake: () => void; onOpenRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onCreateDelivery: () => void;
 }
 
 export function ProjectRouteContent(p: ProjectRouteContentProps) {
