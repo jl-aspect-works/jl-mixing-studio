@@ -9,7 +9,7 @@ Last updated: 2026-09-22
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **v2.3 implementation scope is complete; release preparation is next**
+- Status: **v2.3 additional approved scope is in progress**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -25,7 +25,7 @@ The Blind Revision Comparison workstream (#370) was implemented one sequenced hi
 6. #379 — reveal, results, TOP integration, and history actions;
 7. #380 — cross-platform acceptance, NAS performance, and polish.
 
-All planned v2.3 polish issues are complete. Per-region loudness matching (#396) remains deferred until after v2.3.
+The initial v2.3 polish sequence (#385, #383, #368, and #337) is complete. The v2.3 scope now also includes #366, #367, #391, #392, and #401. Per-region loudness matching (#396) remains deferred until after v2.3.
 
 The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved comparison/reveal layout guidance is recorded in `docs/BLIND_REVISION_COMPARISON_WIREFRAMES.md` and its SVG reference.
 
@@ -50,11 +50,16 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Active work
 
-- No high-level implementation issue is active.
+- #367 safe project deletion is next, with Automation #195 as a prerequisite. The policy is permanent deletion, preservation of external Listening copies, and an authoritative pre-delete summary with typed Project Name confirmation. #366 follows for testing against the project-deletion flow.
 
 ## Remaining release work
 
-1. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Implement, verify, and approve #367 safe project deletion.
+2. Implement, verify, and approve #366 safe empty-client deletion.
+3. Implement, verify, and approve #391 dialog Enter-key defaults.
+4. Implement, verify, and approve #392 multiline Creative Direction persistence.
+5. Implement, verify, and approve #401 generated Client IDs.
+6. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
@@ -63,4 +68,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Prepare the `v2.3.0` release from the approved `main` commits, with #396 remaining deferred until after v2.3.
+Implement Automation #195 and Studio #367 using the locked deletion policy, then verify and obtain approval before starting #366. #396 remains deferred until after v2.3.
