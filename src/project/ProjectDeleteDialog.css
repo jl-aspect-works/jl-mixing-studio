@@ -1,4 +1,4 @@
-.project-delete-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; }
+.project-delete-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; border: 1px solid #cfd8e4; border-radius: 14px; background: #fff; padding: 27px; box-shadow: 0 28px 90px rgba(12, 24, 44, .34); }
 .project-delete-warning { border-left: 4px solid #b42318; background: #fff2f0; color: #7a271a; padding: 12px 14px; }
 .project-delete-summary { display: grid; gap: 8px; margin: 16px 0; }
 .project-delete-summary div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; }

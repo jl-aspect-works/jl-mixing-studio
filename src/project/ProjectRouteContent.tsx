@@ -39,5 +39,5 @@ export function ProjectRouteContent(p: ProjectRouteContentProps) {
   if (p.view === "files") {
     return <ProjectFilesShellView client={p.client} project={p.project} {...common} />;
   }
-  return <ProjectOverviewShell client={p.client} project={p.project} projectTasks={p.projectTasks} intakeReport={p.intakeReport} loading={p.loading} revisionCreationAvailable={p.revisionCreationAvailable} revisionApprovalAvailable={p.revisionApprovalAvailable} onProjects={p.onProjects} onRefresh={p.onRefresh} onRevisions={p.onOpenRevisions} onNewRevision={p.onNewRevision} onApproveRevision={p.onApproveRevision} onSelectView={p.onSelectView} onDeleted={p.onProjectDeleted} />;
+  return <ProjectOverviewShell client={p.client} project={p.project} projectTasks={p.projectTasks} intakeReport={p.intakeReport} loading={p.loading} revisionCreationAvailable={p.revisionCreationAvailable} revisionApprovalAvailable={p.revisionApprovalAvailable} onProjects={p.onProjects} onRefresh={p.onRefresh} onRevisions={p.onOpenRevisions} onNewRevision={p.onNewRevision} onApproveRevision={p.onApproveRevision} onSelectView={p.onSelectView} />;
 }

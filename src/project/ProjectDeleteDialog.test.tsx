@@ -17,6 +17,7 @@ describe("ProjectDeleteDialog", () => {
     vi.mocked(executeProjectDeletion).mockResolvedValue({ ok: true, status: "success", message: "", data: { summary, deleted: true } });
     const onDeleted = vi.fn();
     render(<ProjectDeleteDialog client={client} project={project} onClose={vi.fn()} onDeleted={onDeleted} />);
+    expect(screen.getByRole("dialog", { name: "Delete Project" })).toHaveClass("project-delete-dialog");
     expect(await screen.findByText(summary.project.path)).toBeInTheDocument();
     expect(screen.getByText(/External Revision and Delivered Listening copies will remain/)).toBeInTheDocument();
     const confirm = screen.getByLabelText("Type Project Name to confirm deletion");

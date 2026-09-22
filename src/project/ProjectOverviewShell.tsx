@@ -9,7 +9,7 @@ import "./ProjectOverview.css";
 
 const SECONDARY_TAB_PREFETCH_DELAY_MS = 1500;
 
-export function ProjectOverviewShell({ client, project, projectTasks, intakeReport, loading, revisionCreationAvailable, revisionApprovalAvailable, onRevisions, onNewRevision, onApproveRevision, onSelectView, onDeleted }: { client: ClientSummary; project: ProjectSummary; projectTasks: DerivedTask[]; intakeReport: IntakeReportState; loading: boolean; revisionCreationAvailable: boolean; revisionApprovalAvailable: boolean; onProjects: () => void; onRefresh: () => void; onRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onSelectView: (view: ProjectShellView) => void; onDeleted: () => void }) {
+export function ProjectOverviewShell({ client, project, projectTasks, intakeReport, loading, revisionCreationAvailable, revisionApprovalAvailable, onRevisions, onNewRevision, onApproveRevision, onSelectView }: { client: ClientSummary; project: ProjectSummary; projectTasks: DerivedTask[]; intakeReport: IntakeReportState; loading: boolean; revisionCreationAvailable: boolean; revisionApprovalAvailable: boolean; onProjects: () => void; onRefresh: () => void; onRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onSelectView: (view: ProjectShellView) => void }) {
   useEffect(() => {
     if (loading || intakeReport.status === "loading" || intakeReport.status === "idle") return;
     const timer = window.setTimeout(() => {
@@ -21,7 +21,7 @@ export function ProjectOverviewShell({ client, project, projectTasks, intakeRepo
   return (
     <>
       <ProjectNavigationBar active="overview" onSelect={onSelectView} />
-      <ProjectOverviewDetails client={client} project={project} tasks={projectTasks} intakeReport={intakeReport} loading={loading} revisionCreationAvailable={revisionCreationAvailable} revisionApprovalAvailable={revisionApprovalAvailable} onNewRevision={onNewRevision} onApproveRevision={onApproveRevision} onRevisions={onRevisions} onDeleted={onDeleted} />
+      <ProjectOverviewDetails client={client} project={project} tasks={projectTasks} intakeReport={intakeReport} loading={loading} revisionCreationAvailable={revisionCreationAvailable} revisionApprovalAvailable={revisionApprovalAvailable} onNewRevision={onNewRevision} onApproveRevision={onApproveRevision} onRevisions={onRevisions} />
     </>
   );
 }

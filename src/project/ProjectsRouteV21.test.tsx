@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import type { WorkspaceSnapshot } from "../types";
@@ -73,6 +73,7 @@ const props = {
   onSelectProject: vi.fn(),
   onNewProject: vi.fn(),
   onRefresh: vi.fn(),
+  onDeleted: vi.fn(),
   onSaveSuccess: vi.fn(),
   loading: false,
   projectCreationAvailable: true,
@@ -85,12 +86,29 @@ describe("ProjectsRouteV21", () => {
   beforeEach(() => {
     mockedInvoke.mockReset();
     props.onRefresh.mockReset();
+    props.onDeleted.mockReset();
     props.onSaveSuccess.mockReset();
     mockedInvoke.mockImplementation((command, args) => {
       if (command === "get_project_edit_info") {
         const projectId = (args as { projectId: string }).projectId;
         return Promise.resolve({ ...editInfo, projectId, projectName: projectId === "night-drive" ? "Night Drive" : "Blue Sky", clientId: projectId === "night-drive" ? "north" : "acme" });
       }
+      if (command === "get_project_delete_support") return Promise.resolve(true);
+      if (command === "plan_project_deletion") return Promise.resolve({
+        ok: true,
+        status: "planned",
+        message: "",
+        data: { summary: {
+          client: { id: "acme", name: "Acme Records" },
+          project: { id: "blue-sky", name: "Blue Sky", path: "/workspace/Clients/Acme/Projects/Blue Sky", document_id: "project-blue-sky" },
+          file_count: 12,
+          total_bytes: 2048,
+          includes: [],
+          recoverable: false,
+          external_listening_copies: "retained",
+          fingerprint: "a".repeat(64),
+        } },
+      });
       if (command === "update_project") return Promise.resolve({ ok: true, code: "updated", message: "Project settings were updated and verified." });
       if (command === "refresh_client_files_validation") return Promise.resolve({ ok: true, code: "validated", message: "Validation refreshed." });
       return Promise.reject(new Error(`Unexpected command: ${command}`));
@@ -126,6 +144,20 @@ describe("ProjectsRouteV21", () => {
     expect(props.onRefresh).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Open Project" }));
     expect(props.onSelectProject).toHaveBeenCalledWith("acme", "blue-sky");
+  });
+
+  it("places the standard Delete Project action below Open Project on the selected-project card", async () => {
+    render(<ProjectsRouteV21 {...props} />);
+    const open = await screen.findByRole("button", { name: "Open Project" });
+    const remove = await screen.findByRole("button", { name: "Delete Project" });
+    expect(open.parentElement).toBe(remove.parentElement);
+    expect(open.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(remove).not.toHaveClass("danger");
+
+    fireEvent.click(remove);
+    const dialog = await screen.findByRole("dialog", { name: "Delete Project" });
+    expect(dialog).toBeInTheDocument();
+    expect(await within(dialog).findByText("/workspace/Clients/Acme/Projects/Blue Sky")).toBeInTheDocument();
   });
 
   it("keeps validation progress visible before refreshing after validation-relevant settings change", async () => {
