@@ -18,6 +18,7 @@ const IMPORT_PROGRESS_CAPABILITY: &str = "client.files.import.progress";
 const MANAGED_STDIN_CAPABILITY: &str = "managed.requests.stdinjson";
 const RESET_PLAN_OPERATION: &str = "audio.prep.reset.plan";
 const RESET_EXECUTE_OPERATION: &str = "audio.prep.reset.execute";
+const RESET_PROGRESS_CAPABILITY: &str = "audio.prep.reset.progress";
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -492,7 +493,14 @@ pub fn plan_reset(app: &AppHandle, request: AudioPrepResetRequest) -> ManagedOpe
     }
 }
 
-pub fn execute_reset(app: &AppHandle, request: AudioPrepResetRequest) -> ManagedOperationResult {
+pub fn execute_reset_with_progress<F>(
+    app: &AppHandle,
+    request: AudioPrepResetRequest,
+    on_progress: F,
+) -> ManagedOperationResult
+where
+    F: FnMut(IntakeProgressEvent) + Send + 'static,
+{
     let project = match project_directory(app, &request.client_id, &request.project_id) {
         Ok(value) => value,
         Err(message) => return request_error(message),
@@ -501,16 +509,43 @@ pub fn execute_reset(app: &AppHandle, request: AudioPrepResetRequest) -> Managed
         Ok(value) => value,
         Err(message) => return request_error(message),
     };
+    let progress = capabilities(&home)
+        .iter()
+        .any(|value| value == RESET_PROGRESS_CAPABILITY);
     if supports_managed_stdin(&home) {
         match reset_stdin_request(&request, true) {
-            Ok((arguments, payload)) => {
-                call_api_with_stdin(app, &project, RESET_EXECUTE_OPERATION, arguments, &payload)
+            Ok((mut arguments, payload)) => {
+                if progress {
+                    arguments.push("--progress=stderr-json".into());
+                }
+                let arguments = with_project_argument(&project, arguments);
+                match invoke_with_progress_input(
+                    &home,
+                    &arguments,
+                    RESET_EXECUTE_OPERATION,
+                    Some(&payload),
+                    on_progress,
+                ) {
+                    Ok(response) => finish_streaming_response(response),
+                    Err(error) => request_error(error.message()),
+                }
             }
             Err(message) => request_error(message),
         }
     } else {
         match reset_arguments(&request, true) {
-            Ok(arguments) => call_api(app, &project, RESET_EXECUTE_OPERATION, arguments),
+            Ok(mut arguments) => {
+                if !progress {
+                    return call_api(app, &project, RESET_EXECUTE_OPERATION, arguments);
+                }
+                arguments.push("--progress=stderr-json".into());
+                let arguments = with_project_argument(&project, arguments);
+                match invoke_with_progress(&home, &arguments, RESET_EXECUTE_OPERATION, on_progress)
+                {
+                    Ok(response) => finish_streaming_response(response),
+                    Err(error) => request_error(error.message()),
+                }
+            }
             Err(message) => request_error(message),
         }
     }

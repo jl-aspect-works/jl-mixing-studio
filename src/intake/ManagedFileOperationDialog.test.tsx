@@ -197,4 +197,39 @@ describe("ManagedFileOperationDialog", () => {
     render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="audioPrepReset" relativePaths={["vocal.wav"]} onClose={vi.fn()} onCompleted={vi.fn()} />);
     expect(await screen.findByText("Matched: Lead Vox.wav")).toBeInTheDocument();
   });
+
+  it("changes from reset setup spinner to a monotonic count bar and waits for command success", async () => {
+    const resetPlan = {
+      ...importPlan,
+      operation: "audio.prep.reset",
+      source_kind: "original_delivery",
+      sources: ["vocal.wav"],
+      items: [{ ...importPlan.items[1], conflict: false, action: "create" }],
+    };
+    mocked(planAudioPrepReset).mockResolvedValue({ ok: true, status: "planned", message: "", data: { plan: resetPlan } });
+    let publish: ((event: { clientId: string; projectId: string; phase: "planning" | "staging" | "importing" | "complete"; completed: number; total: number; overallCompleted: number; overallTotal: number; active: string[] }) => void) | undefined;
+    let finish: ((result: { ok: true; status: string; message: string; data: { result: { items: never[]; invalidations: never[] } } }) => void) | undefined;
+    mocked(executeAudioPrepReset).mockImplementation((_request, onProgress) => {
+      publish = onProgress;
+      return new Promise((resolve) => { finish = resolve; });
+    });
+    const completed = vi.fn();
+    render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="audioPrepReset" relativePaths={["vocal.wav"]} onClose={vi.fn()} onCompleted={completed} />);
+    await screen.findByRole("table");
+    fireEvent.click(screen.getByRole("button", { name: "Copy to Audio Prep" }));
+    expect(screen.getByText("Updating Audio Prep…")).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    publish!({ clientId: "client", projectId: "project", phase: "planning", completed: 0, total: 1, overallCompleted: 0, overallTotal: 4, active: [] });
+    expect(await screen.findByText("Preparing 0 of 1")).toBeInTheDocument();
+    publish!({ clientId: "client", projectId: "project", phase: "importing", completed: 1, total: 1, overallCompleted: 3, overallTotal: 4, active: [] });
+    expect(await screen.findByText("Processing 1 of 1")).toBeInTheDocument();
+    publish!({ clientId: "client", projectId: "project", phase: "staging", completed: 1, total: 1, overallCompleted: 2, overallTotal: 4, active: [] });
+    expect(screen.getByRole("progressbar")).toHaveAttribute("value", "3");
+    publish!({ clientId: "client", projectId: "project", phase: "complete", completed: 1, total: 1, overallCompleted: 4, overallTotal: 4, active: [] });
+    expect(screen.getByRole("progressbar")).toHaveAttribute("value", "3");
+    expect(completed).not.toHaveBeenCalled();
+    finish!({ ok: true, status: "success", message: "", data: { result: { items: [], invalidations: [] } } });
+    expect(await screen.findByText("Audio Prep updated")).toBeInTheDocument();
+    expect(completed).toHaveBeenCalledOnce();
+  });
 });

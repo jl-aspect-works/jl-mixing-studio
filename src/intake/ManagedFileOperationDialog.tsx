@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import { managedImportProgressPresentation } from "./managedImportProgress";
+import { audioPrepResetProgressPresentation } from "./audioPrepResetProgress";
 import type { IntakeValidationProgress, ManagedImportProgress } from "./models";
 import {
   chooseManagedImportSources,
@@ -89,6 +90,7 @@ export function ManagedFileOperationDialog({
   const [decisions, setDecisions] = useState<Record<string, ManagedConflictDecision>>({});
   const [selections, setSelections] = useState<Record<string, ImportSelection>>({});
   const [importProgress, setImportProgress] = useState<ManagedImportProgress | null>(null);
+  const [resetProgress, setResetProgress] = useState<ManagedImportProgress | null>(null);
   const followupObserved = useRef(false);
 
   useEffect(() => {
@@ -194,6 +196,7 @@ export function ManagedFileOperationDialog({
       ? Object.fromEntries(activeConflicts.flatMap((item) => decisions[item.id] ? [[item.id, decisions[item.id]]] : []))
       : decisions;
     setImportProgress(null);
+    setResetProgress(null);
     setState({ status: "executing", plan: review.plan, sourceKind: review.sourceKind, sources: review.sources });
     try {
       const result = mode === "import"
@@ -201,7 +204,11 @@ export function ManagedFileOperationDialog({
           { clientId, projectId, sourceKind: review.sourceKind!, sources: review.sources!, planId: review.plan.plan_id, decisions: activeDecisions, selectedRelativePaths },
           setImportProgress,
         )
-        : await executeAudioPrepReset({ clientId, projectId, relativePaths, planId: review.plan.plan_id, decisions: activeDecisions });
+        : await executeAudioPrepReset(
+          { clientId, projectId, relativePaths, planId: review.plan.plan_id, decisions: activeDecisions },
+          (event) => setResetProgress((current) => current && current.overallTotal === event.overallTotal
+            && (current.overallCompleted ?? 0) > (event.overallCompleted ?? 0) ? current : event),
+        );
       if (!result.ok) { setState({ status: "error", message: messageFrom(result, "The managed file operation could not be completed.") }); return; }
       if (mode === "import") {
         setState({ status: "finalizing", result });
@@ -218,6 +225,7 @@ export function ManagedFileOperationDialog({
   const pending = state.status === "planning" || state.status === "executing" || state.status === "finalizing";
   const dialogTitle = title ?? (mode === "import" ? "Import Client Files" : "Copy to Audio Prep");
   const importProgressUi = importProgress ? managedImportProgressPresentation(importProgress, selectedRelativePaths.length) : null;
+  const resetProgressUi = audioPrepResetProgressPresentation(resetProgress);
   const finalizingProgress = followupProgress;
 
   return <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape" && !pending) onClose(); }}>
@@ -237,7 +245,7 @@ export function ManagedFileOperationDialog({
         <div className="managed-review-table-wrap"><table className={`managed-review-table ${mode === "import" ? "managed-review-table-import" : ""}`}><thead><tr><th>File</th>{mode === "import" && <th>Import</th>}<th>Client Files</th><th>Audio Prep</th></tr></thead><tbody>{rows.map((row) => <tr key={row.sourcePath}><td><strong>{row.sourcePath}</strong></td>{mode === "import" && <td><select aria-label={`Import selection for ${row.sourcePath}`} value={selections[row.sourcePath] ?? "add"} onChange={(event) => setSelection(row.sourcePath, event.target.value)}><option value="add">Add</option><option value="skip">Skip</option></select></td>}<td>{mode === "audioPrepReset" ? <span className="managed-action-static source">Source</span> : actionCell(row.original, "original")}</td><td>{actionCell(row.audio, "audio")}</td></tr>)}</tbody></table></div>
         <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />{mode === "import" ? "Cancel Import" : "Cancel"}</button><button type="button" onClick={() => void execute()} disabled={unresolved.length > 0 || (mode === "import" && selectedRelativePaths.length === 0)}><ActionIcon name="check" />{mode === "import" ? "Import Files" : "Copy to Audio Prep"}</button></div></>}
 
-      {state.status === "executing" && (mode === "import" && importProgress && importProgressUi ? <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite"><strong>{importProgressUi.label}</strong>{importProgressUi.determinate ? <progress aria-label={importProgressUi.ariaLabel} value={importProgressUi.value} max={importProgressUi.max} /> : <progress aria-label={importProgressUi.ariaLabel} />}{importProgress.active.length > 0 && <small>Processing: {importProgress.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small>}</div> : <div className="managed-operation-progress managed-operation-progress-primary" role="status"><span className="client-files-spinner" aria-hidden="true" />{mode === "import" ? "Importing client files…" : "Updating Audio Prep…"}</div>)}
+      {state.status === "executing" && (mode === "import" && importProgress && importProgressUi ? <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite"><strong>{importProgressUi.label}</strong>{importProgressUi.determinate ? <progress aria-label={importProgressUi.ariaLabel} value={importProgressUi.value} max={importProgressUi.max} /> : <progress aria-label={importProgressUi.ariaLabel} />}{importProgress.active.length > 0 && <small>Processing: {importProgress.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small>}</div> : mode === "audioPrepReset" && resetProgressUi ? <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite"><strong>{resetProgressUi.label}</strong><progress aria-label={resetProgressUi.label} value={resetProgressUi.value} max={resetProgressUi.max} />{resetProgressUi.active.length > 0 && <small>Processing: {resetProgressUi.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small>}</div> : <div className="managed-operation-progress managed-operation-progress-primary" role="status"><span className="client-files-spinner" aria-hidden="true" />{mode === "import" ? "Importing client files…" : "Updating Audio Prep…"}</div>)}
 
       {state.status === "finalizing" && <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite">
         <strong>{finalizingProgress?.phase === "finalizing" ? "Finalizing project…" : finalizingProgress?.total ? `Checking imported files… ${finalizingProgress.completed} of ${finalizingProgress.total}` : "Checking imported files…"}</strong>
