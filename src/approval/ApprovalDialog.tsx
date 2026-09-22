@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef } from "react";
 import type { ProjectSummary } from "../types";
 import type { ApprovalFormValues, ApprovalWorkflowState } from "../AppWorkflowModels";
 import { ActionIcon } from "../components/ActionIcon";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import { copy as productCopy } from "../resources/copy";
 
 export function ApprovalDialog({
@@ -35,7 +36,12 @@ export function ApprovalDialog({
   }, [state.status]);
 
   return (
-    <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape" && !pending) onClose(); }}>
+    <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, {
+      defaultDisabled: pending,
+      escapeDisabled: pending,
+      onDefault: state.status === "confirming" ? onConfirm : state.status === "uncertain" ? onClose : undefined,
+      onEscape: onClose,
+    })}>
       <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="approval-dialog-title">
         <p className="kicker">{productCopy.approval.guided}</p>
         <h2 id="approval-dialog-title">
@@ -76,7 +82,7 @@ export function ApprovalDialog({
           </div>
         )}
         {state.status === "uncertain" && (
-          <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.approval.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></div>
+          <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.approval.uncertainHelp}</p><div className="dialog-actions"><button type="button" autoFocus onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></div>
         )}
       </section>
     </div>

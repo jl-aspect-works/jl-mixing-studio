@@ -10,6 +10,7 @@ import type {
 } from "../types";
 import { addWorkspaceRefreshListener } from "../app/workspaceRefreshEvents";
 import { ActionIcon } from "../components/ActionIcon";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import { ComparisonFlow } from "../comparison";
 import { getComparisonResults } from "../comparison/comparisonService";
 import type { CumulativeStanding } from "../comparison/models";
@@ -520,7 +521,12 @@ export function RevisionsView({
       </section>}
     </>}
 
-    {pendingMutation && <div className="client-dialog-backdrop" role="presentation">
+    {pendingMutation && <div className="client-dialog-backdrop" role="presentation" onKeyDown={(event) => handleDialogKeyDown(event, {
+      defaultDisabled: mutationBusy,
+      escapeDisabled: mutationBusy,
+      onDefault: () => void confirmMutation(),
+      onEscape: () => { setPendingMutation(null); setMutationError(null); },
+    })}>
       <section className="client-dialog revision-lifecycle-dialog" role="dialog" aria-modal="true" aria-labelledby="revision-lifecycle-heading">
         <h2 id="revision-lifecycle-heading">{
           pendingMutation.action === "close" ? "Close Revision" : pendingMutation.action === "reopen" ? "Reopen Revision" : "Unapprove Revision"
@@ -533,7 +539,7 @@ export function RevisionsView({
         {mutationError && <div className="inline-notice error" role="alert">{mutationError}</div>}
         <div className="client-dialog-actions">
           <button type="button" className="secondary" disabled={mutationBusy} onClick={() => { setPendingMutation(null); setMutationError(null); }}>Cancel</button>
-          <button type="button" disabled={mutationBusy} aria-busy={mutationBusy} onClick={() => void confirmMutation()}> {
+          <button type="button" autoFocus disabled={mutationBusy} aria-busy={mutationBusy} onClick={() => void confirmMutation()}> {
             mutationBusy ? "Updating…" : pendingMutation.action === "close" ? "Close Revision" : pendingMutation.action === "reopen" ? "Reopen Revision" : "Unapprove Revision"
           }</button>
         </div>

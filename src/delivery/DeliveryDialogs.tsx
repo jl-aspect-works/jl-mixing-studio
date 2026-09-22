@@ -1,4 +1,5 @@
 import { ActionIcon } from "../components/ActionIcon";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import type { DeliveryWorkflowState } from "./models";
 import "./DeliveryDialogs.css";
 
@@ -31,7 +32,7 @@ export function DeliveryOptionsDialog({
   const deliveryNoteTooLarge = deliveryNoteBytes > deliveryNoteMaxBytes;
   const buildDisabled = deliveryNoteLoading || deliveryNoteTooLarge;
 
-  return <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}>
+  return <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, { defaultDisabled: buildDisabled, onDefault: onBuild, onEscape: onClose })}>
     <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="delivery-options-title">
       <p className="kicker">Delivery package</p>
       <h2 id="delivery-options-title">Build Package</h2>
@@ -65,7 +66,7 @@ export function DeliveryOptionsDialog({
       </label>}
       <div className="dialog-actions">
         <button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />Cancel</button>
-        <button type="button" onClick={onBuild} disabled={buildDisabled}><ActionIcon name="download" />Build Package</button>
+        <button type="button" autoFocus onClick={onBuild} disabled={buildDisabled}><ActionIcon name="download" />Build Package</button>
       </div>
     </section>
   </div>;
@@ -88,14 +89,19 @@ export function DeliveryDialog({
       ? "Cleaning generated ZIPs, then creating and verifying the new package…"
       : "Creating and verifying the new package…";
 
-  return <div className="dialog-backdrop">
+  return <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, {
+    defaultDisabled: pending,
+    escapeDisabled: pending,
+    onDefault: state.status === "uncertain" ? onClose : undefined,
+    onEscape: state.status === "uncertain" ? onClose : undefined,
+  })}>
     <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="delivery-dialog-title">
       <p className="kicker">Delivery package</p>
       {state.status === "uncertain" ? <>
         <h2 id="delivery-dialog-title">Package Needs Verification</h2>
         <div className="form-error" role="alert">{state.message}</div>
         <p className="dialog-intro">Refresh Delivery and verify the package state before trying again.</p>
-        <div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />Close</button></div>
+        <div className="dialog-actions"><button type="button" autoFocus onClick={onClose}><ActionIcon name="close" />Close</button></div>
       </> : <>
         <h2 id="delivery-dialog-title">Building Package…</h2>
         <p className="dialog-intro">Building package from <strong>Approved Revision {String(revision).padStart(2, "0")}</strong>…</p>

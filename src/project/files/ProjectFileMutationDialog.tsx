@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ActionIcon } from "../../components/ActionIcon";
+import { handleDialogKeyDown } from "../../components/dialogKeyboard";
 import type { ProjectFileEntry } from "./projectFileService";
 import "./ProjectFileMutationDialog.css";
 
@@ -75,9 +76,12 @@ export function ProjectFileMutationDialog({
 
   return <div
     className="dialog-backdrop"
-    onKeyDown={(event) => {
-      if (event.key === "Escape" && !pending) onClose();
-    }}
+    onKeyDown={(event) => handleDialogKeyDown(event, {
+      defaultDisabled: pending,
+      escapeDisabled: pending,
+      onDefault: kind === "delete" ? () => void submit() : undefined,
+      onEscape: onClose,
+    })}
   >
     <section className="client-dialog project-file-mutation-dialog" role="dialog" aria-modal="true" aria-labelledby="project-file-mutation-title">
       <p className="kicker">Project files</p>

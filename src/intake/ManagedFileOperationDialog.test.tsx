@@ -95,6 +95,21 @@ describe("ManagedFileOperationDialog", () => {
     expect(completed).toHaveBeenCalledOnce();
   });
 
+  it("uses the enabled review action as the Enter-key default", async () => {
+    render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" onClose={vi.fn()} onCompleted={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /Files/ }));
+    await screen.findByRole("table");
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Enter" });
+    expect(executeManagedImport).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText("Client Files action for vocal.wav"), { target: { value: "replace" } });
+    fireEvent.change(screen.getByLabelText("Audio Prep action for vocal.wav"), { target: { value: "skip" } });
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Enter" });
+
+    await waitFor(() => expect(executeManagedImport).toHaveBeenCalledOnce());
+  });
+
   it("shows Project ready only after follow-up validation starts and finishes", async () => {
     const completed = vi.fn();
     const view = render(<ManagedFileOperationDialog clientId="client" projectId="project" mode="import" followupRunning={false} onClose={vi.fn()} onCompleted={completed} />);

@@ -5,6 +5,7 @@ import { FolderControl, RouteIssues, type ResourceState } from "../AppViews";
 import { copy as productCopy } from "../resources/copy";
 import type { StudioFormValues, StudioWorkflowState } from "../AppWorkflowModels";
 import { ActionIcon } from "../components/ActionIcon";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 
 interface StudioEditInfo {
   updateSupported: boolean;
@@ -242,8 +243,13 @@ export function StudioDialog({ state, values, onChange, onChooseLocation, onCrea
   onClose: () => void;
 }) {
   const pending = state.status === "preflighting" || state.status === "creating";
-  return <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape" && !pending) onClose(); }}><section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="studio-dialog-title"><p className="kicker">{productCopy.studio.guidedSetup}</p><h2 id="studio-dialog-title">{state.status === "uncertain" ? productCopy.studio.creationVerification : "Create new workspace"}</h2>
+  return <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, {
+    defaultDisabled: pending,
+    escapeDisabled: pending,
+    onDefault: state.status === "uncertain" ? onClose : undefined,
+    onEscape: onClose,
+  })}><section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="studio-dialog-title"><p className="kicker">{productCopy.studio.guidedSetup}</p><h2 id="studio-dialog-title">{state.status === "uncertain" ? productCopy.studio.creationVerification : "Create new workspace"}</h2>
     {(state.status === "editing" || state.status === "preflighting" || state.status === "creating") && <form onSubmit={onCreate} noValidate><p className="dialog-intro">Choose a location and enter the studio details. Studio will create a <code>Mixes</code> workspace there and make it active automatically.</p>{state.status === "editing" && state.error && <div className="form-error" role="alert">{state.error}</div>}<div className="field"><span>Workspace location</span><div className="folder-control"><code>{values.workspaceRoot || "No location selected"}</code><div className="directory-actions"><button type="button" className="secondary" onClick={onChooseLocation} disabled={pending}><ActionIcon name="folder" />Choose Location…</button></div></div></div><label>{productCopy.studio.studioName}<input aria-label={productCopy.studio.studioName} value={values.studioName} onChange={(e) => onChange({...values, studioName:e.target.value})} required disabled={pending}/></label><label>{productCopy.studio.mixEngineer} <span>{productCopy.studio.optional}</span><input aria-label={productCopy.studio.mixEngineer} value={values.mixEngineer} onChange={(e) => onChange({...values, mixEngineer:e.target.value})} disabled={pending}/></label><label>{productCopy.studio.sampleRate}<select aria-label={productCopy.studio.sampleRate} value={values.sampleRate} onChange={(e) => onChange({...values, sampleRate:e.target.value})} disabled={pending}>{[44100,48000,88200,96000,176400,192000].map(v=><option key={v} value={v}>{v.toLocaleString()} Hz</option>)}</select></label><label>{productCopy.studio.bitDepth}<select aria-label={productCopy.studio.bitDepth} value={values.bitDepth} onChange={(e) => onChange({...values, bitDepth:e.target.value})} disabled={pending}>{[16,24,32].map(v=><option key={v} value={v}>{v}-bit</option>)}</select></label><label>{productCopy.studio.fileFormat}<select aria-label={productCopy.studio.fileFormat} value={values.fileFormat} onChange={(e) => onChange({...values, fileFormat:e.target.value})} disabled={pending}><option>WAV</option><option>AIFF</option></select></label><div className="dialog-actions"><button type="button" className="secondary" onClick={onClose} disabled={pending}><ActionIcon name="close" />{productCopy.common.cancel}</button><button type="submit" disabled={pending || !values.workspaceRoot.trim()} aria-busy={pending}><ActionIcon name="add" />{state.status === "preflighting" ? "Checking…" : state.status === "creating" ? "Creating…" : "Create Workspace"}</button></div></form>}
-    {state.status === "uncertain" && <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.studio.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></div>}
+    {state.status === "uncertain" && <div><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.studio.uncertainHelp}</p><div className="dialog-actions"><button type="button" autoFocus onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></div>}
   </section></div>;
 }

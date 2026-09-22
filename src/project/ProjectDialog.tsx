@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef } from "react";
 import type { ClientSummary } from "../types";
 import type { ProjectFormValues, ProjectWorkflowState } from "../AppWorkflowModels";
 import { ActionIcon } from "../components/ActionIcon";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import { copy as productCopy } from "../resources/copy";
 
 export interface ProjectDialogProps {
@@ -43,9 +44,12 @@ export function ProjectDialog({
   return (
     <div
       className="dialog-backdrop"
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && !pending) onClose();
-      }}
+      onKeyDown={(event) => handleDialogKeyDown(event, {
+        defaultDisabled: pending,
+        escapeDisabled: pending,
+        onDefault: state.status === "confirming" ? onConfirm : state.status === "uncertain" ? onClose : undefined,
+        onEscape: onClose,
+      })}
     >
       <section
         className="client-dialog"
@@ -144,7 +148,7 @@ export function ProjectDialog({
           <div>
             <div className="form-error" role="alert">{state.message}</div>
             <p className="dialog-intro">{productCopy.projects.uncertainHelp}</p>
-            <div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div>
+            <div className="dialog-actions"><button type="button" autoFocus onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div>
           </div>
         )}
       </section>

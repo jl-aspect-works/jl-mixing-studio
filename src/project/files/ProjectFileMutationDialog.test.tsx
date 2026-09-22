@@ -95,4 +95,20 @@ describe("ProjectFileMutationDialog", () => {
     await waitFor(() => expect(onDelete).toHaveBeenCalledWith(entry));
     expect(onCompleted).toHaveBeenCalledTimes(1);
   });
+
+  it("uses Delete file as the enabled Enter-key default", async () => {
+    const onDelete = vi.fn().mockResolvedValue(undefined);
+
+    render(<ProjectFileMutationDialog
+      mutation={{ kind: "delete", entry }}
+      onRename={vi.fn()}
+      onDelete={onDelete}
+      onCompleted={vi.fn().mockResolvedValue(undefined)}
+      onClose={vi.fn()}
+    />);
+
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Enter" });
+
+    await waitFor(() => expect(onDelete).toHaveBeenCalledWith(entry));
+  });
 });
