@@ -34,9 +34,7 @@ pub fn supported(app: &AppHandle) -> bool {
         .and_then(|home| advertised_capabilities(&home, &SystemProcessRunner))
         .is_some_and(|capabilities| {
             capabilities.iter().any(|value| value == PLAN_CAPABILITY)
-                && capabilities
-                    .iter()
-                    .any(|value| value == EXECUTE_CAPABILITY)
+                && capabilities.iter().any(|value| value == EXECUTE_CAPABILITY)
         })
 }
 
