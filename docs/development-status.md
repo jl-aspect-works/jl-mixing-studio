@@ -49,7 +49,7 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Active work
 
-- No active implementation; #368 is complete and #337 remains the next v2.3 issue.
+- #337 adds real count-based progress to Audio Prep Reset. It requires an additive Automation progress capability; Studio retains the indeterminate fallback for older Automation installations.
 
 ## Remaining release work
 
@@ -63,4 +63,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Close out #368 documentation. Begin #337 in a separate authorized work session; #396 remains deferred until after v2.3.
+Complete #337 Automation and Studio PRs, validate CI and local/NAS behavior, and obtain user acceptance before release preparation. #396 remains deferred until after v2.3.

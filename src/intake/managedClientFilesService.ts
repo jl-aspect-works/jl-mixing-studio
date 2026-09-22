@@ -92,9 +92,14 @@ export const executeManagedImport = async (
 export const planAudioPrepReset = (request: AudioPrepResetRequest) =>
   invoke<ManagedOperationResult>("plan_audio_prep_reset", { request });
 
-export const executeAudioPrepReset = async (request: AudioPrepResetRequest) => {
+export const executeAudioPrepReset = async (
+  request: AudioPrepResetRequest,
+  onProgress?: (progress: ManagedImportProgress) => void,
+) => {
   await stopActiveAudioPlayback();
-  return invoke<ManagedOperationResult>("execute_audio_prep_reset", { request });
+  const progress = new Channel<ManagedImportProgress>();
+  if (onProgress) progress.onmessage = onProgress;
+  return invoke<ManagedOperationResult>("execute_audio_prep_reset", { request, progress });
 };
 
 export const sourceRelativePathFromOriginalDelivery = (relativePath: string) => {

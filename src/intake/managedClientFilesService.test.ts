@@ -21,7 +21,7 @@ vi.mock("../project/files/audioPlaybackController", () => ({
   stopActiveAudioPlayback: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { executeManagedImport } from "./managedClientFilesService";
+import { executeAudioPrepReset, executeManagedImport } from "./managedClientFilesService";
 
 describe("executeManagedImport", () => {
   beforeEach(() => {
@@ -58,5 +58,28 @@ describe("executeManagedImport", () => {
     expect(core.channels).toHaveLength(1);
     expect(onProgress).toHaveBeenCalledOnce();
     expect(onProgress).toHaveBeenCalledWith(progress);
+  });
+});
+
+describe("executeAudioPrepReset", () => {
+  beforeEach(() => {
+    core.invoke.mockReset();
+    core.channels.length = 0;
+  });
+
+  it("passes real reset progress through its Tauri channel", async () => {
+    const onProgress = vi.fn();
+    const event: ManagedImportProgress = {
+      clientId: "client", projectId: "project", phase: "importing", completed: 12,
+      total: 82, overallCompleted: 94, overallTotal: 246, active: ["Kick.wav"],
+    };
+    core.invoke.mockImplementation(async (command: string, args: { progress: { onmessage: (message: ManagedImportProgress) => void } }) => {
+      expect(command).toBe("execute_audio_prep_reset");
+      args.progress.onmessage(event);
+      return { ok: true, status: "success", message: "", data: {} };
+    });
+
+    await executeAudioPrepReset({ clientId: "client", projectId: "project", relativePaths: ["Kick.wav"] }, onProgress);
+    expect(onProgress).toHaveBeenCalledWith(event);
   });
 });
