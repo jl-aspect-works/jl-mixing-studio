@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-21
+Last updated: 2026-09-22
 
 ## Current release
 
@@ -9,7 +9,7 @@ Last updated: 2026-09-21
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **v2.3 final polish is in progress**
+- Status: **v2.3 additional approved scope is in progress**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -25,7 +25,7 @@ The Blind Revision Comparison workstream (#370) was implemented one sequenced hi
 6. #379 — reveal, results, TOP integration, and history actions;
 7. #380 — cross-platform acceptance, NAS performance, and polish.
 
-The remaining v2.3 polish sequence is #385, #383, #368, then #337. Per-region loudness matching (#396) remains deferred until after v2.3.
+The initial v2.3 polish sequence (#385, #383, #368, and #337) is complete. The v2.3 scope now also includes #366, #367, #391, #392, and #401. Per-region loudness matching (#396) remains deferred until after v2.3.
 
 The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved comparison/reveal layout guidance is recorded in `docs/BLIND_REVISION_COMPARISON_WIREFRAMES.md` and its SVG reference.
 
@@ -46,15 +46,20 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #385 Dashboard Today’s Work empty-state polish was approved and merged through PR #399 at `6410a1b`.
 - #383 compact play controls were approved and merged through PR #400 at `82ecb2e181c82784156754de1bc5b73f56ab2237`; post-merge CI run #2069 passed.
 - #368 Project Files rename/delete actions were manually accepted and merged through PR #402 at `a97f33fdd3a860ddd16a4204aed5ed7549dd27b8`; PR CI run #2073 passed across frontend, Rust, macOS, and Windows jobs.
+- #337 Audio Prep Reset progress was manually accepted and merged through Automation PR #200 at `e8fb920316ef96a9d87289de7f9098e59b9dbee9` and Studio PR #404 at `1dd66e319823b027dc94843edaa3af239ff4ae8b`. Post-merge Automation CI run #1539 and Studio CI run #2080 passed. Studio presents real count-based progress with an indeterminate compatibility fallback for older Automation installations.
 
 ## Active work
 
-- #337 adds real count-based progress to Audio Prep Reset. It requires an additive Automation progress capability; Studio retains the indeterminate fallback for older Automation installations.
+- #367 safe project deletion is next, with Automation #195 as a prerequisite. The policy is permanent deletion, preservation of external Listening copies, and an authoritative pre-delete summary with typed Project Name confirmation. #366 follows for testing against the project-deletion flow.
 
 ## Remaining release work
 
-1. Implement and approve #337.
-2. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Implement, verify, and approve #367 safe project deletion.
+2. Implement, verify, and approve #366 safe empty-client deletion.
+3. Implement, verify, and approve #391 dialog Enter-key defaults.
+4. Implement, verify, and approve #392 multiline Creative Direction persistence.
+5. Implement, verify, and approve #401 generated Client IDs.
+6. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
@@ -63,4 +68,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Complete #337 Automation and Studio PRs, validate CI and local/NAS behavior, and obtain user acceptance before release preparation. #396 remains deferred until after v2.3.
+Implement Automation #195 and Studio #367 using the locked deletion policy, then verify and obtain approval before starting #366. #396 remains deferred until after v2.3.
