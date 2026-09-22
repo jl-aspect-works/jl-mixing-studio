@@ -20,4 +20,10 @@ describe("Audio Prep reset progress", () => {
   it("keeps the spinner for setup before the total is known", () => {
     expect(audioPrepResetProgressPresentation({ ...event("planning", 0, 0), total: null, overallTotal: null })).toBeNull();
   });
+
+  it("shows planning as soon as reset knows the selected file count", () => {
+    expect(audioPrepResetProgressPresentation(event("planning", 0, 0))).toMatchObject({
+      label: "Preparing 0 of 82", value: 0, max: 246,
+    });
+  });
 });
