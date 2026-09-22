@@ -15,7 +15,7 @@ export interface ProjectRouteContentProps {
   intakeReport: IntakeReportState; intakeActionError: string | null; intakeValidationAvailable: boolean; intakeValidationHelp: string; intakeLoading: boolean; intakeProgress: IntakeValidationProgress | null;
   revisionActionError: string | null; revisionCreationAvailable: boolean; revisionCreationHelp: string; revisionApprovalAvailable: boolean; revisionApprovalHelp: string;
   deliveryActionError: string | null; deliveryCreationAvailable: boolean; deliveryCreationHelp: string; deliveryLoading: boolean;
-  onProjects: () => void; onRefresh: () => void; onIntakeRefresh: () => void; onStructuredValidationRefresh: () => void; onSelectView: (view: ProjectShellView) => void; onOpenIntake: () => void; onRecheckIntake: () => void; onOpenRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onCreateDelivery: () => void;
+  onProjects: () => void; onRefresh: () => void; onProjectDeleted: () => void; onIntakeRefresh: () => void; onStructuredValidationRefresh: () => void; onSelectView: (view: ProjectShellView) => void; onOpenIntake: () => void; onRecheckIntake: () => void; onOpenRevisions: () => void; onNewRevision: () => void; onApproveRevision: (revision: RevisionSummary) => void; onCreateDelivery: () => void;
 }
 
 export function ProjectRouteContent(p: ProjectRouteContentProps) {
@@ -39,5 +39,5 @@ export function ProjectRouteContent(p: ProjectRouteContentProps) {
   if (p.view === "files") {
     return <ProjectFilesShellView client={p.client} project={p.project} {...common} />;
   }
-  return <ProjectOverviewShell client={p.client} project={p.project} projectTasks={p.projectTasks} intakeReport={p.intakeReport} loading={p.loading} revisionCreationAvailable={p.revisionCreationAvailable} revisionApprovalAvailable={p.revisionApprovalAvailable} onProjects={p.onProjects} onRefresh={p.onRefresh} onRevisions={p.onOpenRevisions} onNewRevision={p.onNewRevision} onApproveRevision={p.onApproveRevision} onSelectView={p.onSelectView} />;
+  return <ProjectOverviewShell client={p.client} project={p.project} projectTasks={p.projectTasks} intakeReport={p.intakeReport} loading={p.loading} revisionCreationAvailable={p.revisionCreationAvailable} revisionApprovalAvailable={p.revisionApprovalAvailable} onProjects={p.onProjects} onRefresh={p.onRefresh} onRevisions={p.onOpenRevisions} onNewRevision={p.onNewRevision} onApproveRevision={p.onApproveRevision} onSelectView={p.onSelectView} onDeleted={p.onProjectDeleted} />;
 }

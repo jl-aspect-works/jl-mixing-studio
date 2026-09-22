@@ -1,0 +1,11 @@
+.project-delete-dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto; }
+.project-delete-warning { border-left: 4px solid #b42318; background: #fff2f0; color: #7a271a; padding: 12px 14px; }
+.project-delete-summary { display: grid; gap: 8px; margin: 16px 0; }
+.project-delete-summary div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; }
+.project-delete-summary dt { color: #68758a; font-weight: 800; }
+.project-delete-summary dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.project-delete-confirm { display: grid; gap: 7px; margin-top: 18px; }
+.project-delete-confirm input { width: 100%; }
+.project-delete-dialog .danger { background: #b42318; border-color: #b42318; color: white; }
+.project-delete-dialog .danger:disabled { opacity: .5; }
+@media (max-width: 620px) { .project-delete-summary div { grid-template-columns: 1fr; gap: 2px; } }
