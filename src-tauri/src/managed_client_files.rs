@@ -540,12 +540,8 @@ where
                 }
                 arguments.push("--progress=stderr-json".into());
                 let arguments = with_project_argument(&project, arguments);
-                match invoke_with_progress(
-                    &home,
-                    &arguments,
-                    RESET_EXECUTE_OPERATION,
-                    on_progress,
-                ) {
+                match invoke_with_progress(&home, &arguments, RESET_EXECUTE_OPERATION, on_progress)
+                {
                     Ok(response) => finish_streaming_response(response),
                     Err(error) => request_error(error.message()),
                 }
