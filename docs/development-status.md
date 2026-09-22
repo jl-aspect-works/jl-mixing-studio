@@ -47,25 +47,25 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #383 compact play controls were approved and merged through PR #400 at `82ecb2e181c82784156754de1bc5b73f56ab2237`; post-merge CI run #2069 passed.
 - #368 Project Files rename/delete actions were manually accepted and merged through PR #402 at `a97f33fdd3a860ddd16a4204aed5ed7549dd27b8`; PR CI run #2073 passed across frontend, Rust, macOS, and Windows jobs.
 - #337 Audio Prep Reset progress was manually accepted and merged through Automation PR #200 at `e8fb920316ef96a9d87289de7f9098e59b9dbee9` and Studio PR #404 at `1dd66e319823b027dc94843edaa3af239ff4ae8b`. Post-merge Automation CI run #1539 and Studio CI run #2080 passed. Studio presents real count-based progress with an indeterminate compatibility fallback for older Automation installations.
+- #367 safe permanent project deletion was manually accepted and merged through Automation PR #201 at `a41d17666a941ab6d8af2d71cb8cf1b26549b067` and Studio PR #406 at `5f3cace2a6c2d4c4a81997b82177d7f33c064fc1`. Post-merge Automation CI run #1547 and Studio CI run #2087 passed. Deletion uses an authoritative summary and exact typed Project Name, retains external Listening copies, and is exposed on the selected-project card.
 
 ## Active work
 
-- #367 safe project deletion is next, with Automation #195 as a prerequisite. The policy is permanent deletion, preservation of external Listening copies, and an authoritative pre-delete summary with typed Project Name confirmation. #366 follows for testing against the project-deletion flow.
+- #366 safe empty-client deletion is next, with Automation #196 as a prerequisite. The completed #367 project-deletion flow is available to make empty-client eligibility and testing practical.
 
 ## Remaining release work
 
-1. Implement, verify, and approve #367 safe project deletion.
-2. Implement, verify, and approve #366 safe empty-client deletion.
-3. Implement, verify, and approve #391 dialog Enter-key defaults.
-4. Implement, verify, and approve #392 multiline Creative Direction persistence.
-5. Implement, verify, and approve #401 generated Client IDs.
-6. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Implement, verify, and approve #366 safe empty-client deletion.
+2. Implement, verify, and approve #391 dialog Enter-key defaults.
+3. Implement, verify, and approve #392 multiline Creative Direction persistence.
+4. Implement, verify, and approve #401 generated Client IDs.
+5. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
 - Per-region loudness matching (#396) remains deferred until after v2.3; v2.3 retains fixed full-source gain per candidate.
-- Application signing, macOS notarization, provider-specific media/cloud APIs, and generic project/client deletion remain future work.
+- Application signing, macOS notarization, provider-specific media/cloud APIs, and cascading deletion of non-empty clients remain future work.
 
 ## Immediate next action
 
-Implement Automation #195 and Studio #367 using the locked deletion policy, then verify and obtain approval before starting #366. #396 remains deferred until after v2.3.
+Review and implement Automation #196 and Studio #366 for safe empty-client deletion, then verify and obtain approval before starting #391. #396 remains deferred until after v2.3.
