@@ -63,6 +63,7 @@ const detailsProps = {
   onNewProject: vi.fn(),
   onRefresh: vi.fn(),
   onSaveSuccess: vi.fn(),
+  onDeleted: vi.fn(),
   loading: false,
   projectCreationAvailable: true,
   projectCreationHelp: "Project creation is available.",
@@ -75,6 +76,7 @@ describe("Client v2.1 directory and editing", () => {
     mockedInvoke.mockReset();
     detailsProps.onRefresh.mockReset();
     detailsProps.onSaveSuccess.mockReset();
+    detailsProps.onDeleted.mockReset();
   });
 
   it("filters loaded clients case-insensitively by name or ID and clears search", () => {
@@ -157,6 +159,41 @@ describe("Client v2.1 directory and editing", () => {
     fireEvent.change(search, { target: { value: "blue-sky" } });
     expect(screen.getByText("Blue Sky")).toBeInTheDocument();
     expect(screen.queryByText("Night Drive")).not.toBeInTheDocument();
+  });
+
+  it("shows the standard iconed Delete Client action only when supported and disables it for clients with projects", async () => {
+    mockedInvoke.mockImplementation((command) => {
+      if (command === "get_client_edit_info") return Promise.resolve(editInfo);
+      if (command === "get_client_delete_support") return Promise.resolve(true);
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+    const clientWithProject: ClientSummary = {
+      ...client,
+      projects: [{
+        projectId: "song",
+        projectName: "Song",
+        artist: "Artist",
+        schemaVersion: "1.1.0",
+        createdWith: "jl-mixing",
+        createdAt: "2026-01-01T00:00:00Z",
+        deadline: null,
+        sampleRate: 48000,
+        bitDepth: 24,
+        fileFormat: "WAV",
+        deliveryMethod: "Cloud",
+        currentRevision: 1,
+        approvedRevision: null,
+        deliveredRevision: null,
+        delivery: null,
+        revisions: [],
+      }],
+    };
+    render(<ClientDetails {...detailsProps} client={clientWithProject} />);
+    const remove = await screen.findByRole("button", { name: "Delete Client" });
+    expect(remove).toBeDisabled();
+    expect(remove).not.toHaveClass("danger");
+    expect(remove.querySelector(".action-icon")).toBeInTheDocument();
+    expect(screen.getByText("Delete all projects before deleting this client.")).toBeInTheDocument();
   });
 
   it("saves editable defaults through Automation with the edit-session conflict token", async () => {

@@ -1,6 +1,7 @@
 mod audio_preview;
 mod automation_api;
 mod cli;
+mod client_delete;
 mod client_edit;
 mod commands;
 mod comparison_loudness;
@@ -127,6 +128,29 @@ fn get_client_edit_info(
 #[tauri::command]
 fn update_client(app: tauri::AppHandle, request: ClientUpdateRequest) -> ClientUpdateResult {
     client_edit::update_client(&app, request)
+}
+
+#[tauri::command]
+fn get_client_delete_support(app: tauri::AppHandle) -> bool {
+    client_delete::supported(&app)
+}
+
+#[tauri::command]
+fn plan_client_deletion(
+    app: tauri::AppHandle,
+    request: client_delete::ClientDeleteRequest,
+) -> client_delete::ClientDeleteResult {
+    client_delete::plan(&app, request)
+}
+
+#[tauri::command]
+async fn execute_client_deletion(
+    app: tauri::AppHandle,
+    request: client_delete::ClientDeleteRequest,
+) -> Result<client_delete::ClientDeleteResult, String> {
+    tauri::async_runtime::spawn_blocking(move || client_delete::execute(&app, request))
+        .await
+        .map_err(|error| format!("Client deletion task failed: {error}"))
 }
 
 #[tauri::command]
@@ -546,6 +570,9 @@ pub fn run() {
             create_client,
             get_client_edit_info,
             update_client,
+            get_client_delete_support,
+            plan_client_deletion,
+            execute_client_deletion,
             preflight_project_creation,
             create_project,
             get_project_edit_info,
