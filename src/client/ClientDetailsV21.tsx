@@ -5,6 +5,8 @@ import { FolderControl } from "../AppShellViews";
 import { ActionIcon } from "../components/ActionIcon";
 import { ProjectDirectoryList, type ProjectDirectoryEntry } from "../project/ProjectDirectoryList";
 import { copy as productCopy } from "../resources/copy";
+import { ClientDeleteDialog } from "./ClientDeleteDialog";
+import { getClientDeleteSupport } from "./clientDeleteService";
 import "./ClientViews.css";
 
 interface ClientEditInfo {
@@ -96,6 +98,7 @@ export function ClientDetails({
   onNewProject,
   onRefresh,
   onSaveSuccess,
+  onDeleted,
   loading,
   projectCreationAvailable,
   projectCreationHelp,
@@ -107,6 +110,7 @@ export function ClientDetails({
   onNewProject: () => void;
   onRefresh: () => void;
   onSaveSuccess: (message: string | null) => void;
+  onDeleted: () => void;
   loading: boolean;
   projectCreationAvailable: boolean;
   projectCreationHelp: string;
@@ -120,6 +124,8 @@ export function ClientDetails({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [projectQuery, setProjectQuery] = useState("");
+  const [deleteSupported, setDeleteSupported] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +141,14 @@ export function ClientDetails({
         }
       });
     return () => { cancelled = true; };
+  }, [client.clientId]);
+
+  useEffect(() => {
+    let active = true;
+    void getClientDeleteSupport()
+      .then((supported) => { if (active) setDeleteSupported(supported); })
+      .catch(() => { if (active) setDeleteSupported(false); });
+    return () => { active = false; };
   }, [client.clientId]);
 
   const editingAvailable = editInfo?.updateSupported === true;
@@ -281,9 +295,14 @@ export function ClientDetails({
           </dl>
           <FolderControl location="client" clientId={client.clientId} label="Open Client Folder" />
         </article>
+
+        {deleteSupported && <article className="client-section client-delete-actions"><div className="client-section-heading"><div><h3>Client Actions</h3><p>{client.projects.length === 0 ? "Permanently remove this project-free client." : "Delete all projects before deleting this client."}</p></div></div>
+          <button type="button" onClick={() => setDeleting(true)} disabled={client.projects.length > 0 || loading || editing || saving} title={client.projects.length > 0 ? "Delete all projects before deleting this client." : undefined}><ActionIcon name="delete" />Delete Client</button>
+        </article>}
       </aside>
     </div>
 
     <p className="client-inheritance-note">Changes to Client defaults apply to future projects only. Existing projects, revisions, and deliveries are not rewritten.</p>
+    {deleting && <ClientDeleteDialog client={client} onClose={() => setDeleting(false)} onDeleted={onDeleted} />}
   </div>;
 }
