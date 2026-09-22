@@ -48,18 +48,18 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #368 Project Files rename/delete actions were manually accepted and merged through PR #402 at `a97f33fdd3a860ddd16a4204aed5ed7549dd27b8`; PR CI run #2073 passed across frontend, Rust, macOS, and Windows jobs.
 - #337 Audio Prep Reset progress was manually accepted and merged through Automation PR #200 at `e8fb920316ef96a9d87289de7f9098e59b9dbee9` and Studio PR #404 at `1dd66e319823b027dc94843edaa3af239ff4ae8b`. Post-merge Automation CI run #1539 and Studio CI run #2080 passed. Studio presents real count-based progress with an indeterminate compatibility fallback for older Automation installations.
 - #367 safe permanent project deletion was manually accepted and merged through Automation PR #201 at `a41d17666a941ab6d8af2d71cb8cf1b26549b067` and Studio PR #406 at `5f3cace2a6c2d4c4a81997b82177d7f33c064fc1`. Post-merge Automation CI run #1547 and Studio CI run #2087 passed. Deletion uses an authoritative summary and exact typed Project Name, retains external Listening copies, and is exposed on the selected-project card.
+- #366 safe permanent empty-client deletion was manually accepted and merged through Automation PR #202 at `8cd98565cc83768e24bac5a1f1f02b67040203b1` and Studio PR #408 at `4a3e53801eed652819f306121dc8b64e41e68450`. Post-merge Automation CI run #1553 and Studio CI run #2091 passed. Deletion is limited to authoritatively project-free clients, summarizes remaining client content, requires the exact typed Client Name, and provides no recovery or cascading project deletion.
 
 ## Active work
 
-- #366 safe empty-client deletion is next, with Automation #196 as a prerequisite. The completed #367 project-deletion flow is available to make empty-client eligibility and testing practical.
+- #391 dialog Enter-key defaults is next. #366 and its Automation #196 prerequisite are complete.
 
 ## Remaining release work
 
-1. Implement, verify, and approve #366 safe empty-client deletion.
-2. Implement, verify, and approve #391 dialog Enter-key defaults.
-3. Implement, verify, and approve #392 multiline Creative Direction persistence.
-4. Implement, verify, and approve #401 generated Client IDs.
-5. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Implement, verify, and approve #391 dialog Enter-key defaults.
+2. Implement, verify, and approve #392 multiline Creative Direction persistence.
+3. Implement, verify, and approve #401 generated Client IDs.
+4. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
@@ -68,4 +68,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Review and implement Automation #196 and Studio #366 for safe empty-client deletion, then verify and obtain approval before starting #391. #396 remains deferred until after v2.3.
+Review and implement #391 dialog Enter-key defaults, then verify and obtain approval before starting #392. #396 remains deferred until after v2.3.
