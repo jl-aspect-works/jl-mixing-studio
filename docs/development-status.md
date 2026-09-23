@@ -49,17 +49,17 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #337 Audio Prep Reset progress was manually accepted and merged through Automation PR #200 at `e8fb920316ef96a9d87289de7f9098e59b9dbee9` and Studio PR #404 at `1dd66e319823b027dc94843edaa3af239ff4ae8b`. Post-merge Automation CI run #1539 and Studio CI run #2080 passed. Studio presents real count-based progress with an indeterminate compatibility fallback for older Automation installations.
 - #367 safe permanent project deletion was manually accepted and merged through Automation PR #201 at `a41d17666a941ab6d8af2d71cb8cf1b26549b067` and Studio PR #406 at `5f3cace2a6c2d4c4a81997b82177d7f33c064fc1`. Post-merge Automation CI run #1547 and Studio CI run #2087 passed. Deletion uses an authoritative summary and exact typed Project Name, retains external Listening copies, and is exposed on the selected-project card.
 - #366 safe permanent empty-client deletion was manually accepted and merged through Automation PR #202 at `8cd98565cc83768e24bac5a1f1f02b67040203b1` and Studio PR #408 at `4a3e53801eed652819f306121dc8b64e41e68450`. Post-merge Automation CI run #1553 and Studio CI run #2091 passed. Deletion is limited to authoritatively project-free clients, summarizes remaining client content, requires the exact typed Client Name, and provides no recovery or cascading project deletion.
+- #391 dialog Enter-key defaults was manually accepted and merged through PR #410 at `4bf43800e1d9140a2b01999aada9a0326173d4af`. Post-merge CI run #2096 passed after a targeted rerun of an unrelated intermittent comparison test. Enabled primary actions now respond consistently to Enter while multiline controls, disabled actions, and explicit typed-name deletion confirmations retain their intended behavior.
 
 ## Active work
 
-- #391 dialog Enter-key defaults is next. #366 and its Automation #196 prerequisite are complete.
+- #392 multiline Creative Direction persistence is next. #391 is complete.
 
 ## Remaining release work
 
-1. Implement, verify, and approve #391 dialog Enter-key defaults.
-2. Implement, verify, and approve #392 multiline Creative Direction persistence.
-3. Implement, verify, and approve #401 generated Client IDs.
-4. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Implement, verify, and approve #392 multiline Creative Direction persistence.
+2. Implement, verify, and approve #401 generated Client IDs.
+3. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
@@ -68,4 +68,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Review and implement #391 dialog Enter-key defaults, then verify and obtain approval before starting #392. #396 remains deferred until after v2.3.
+Review and implement #392 multiline Creative Direction persistence, then verify and obtain approval before starting #401. #396 remains deferred until after v2.3.
