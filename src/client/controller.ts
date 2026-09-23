@@ -9,6 +9,7 @@ import type {
 } from "../types";
 import {
   clientIdPattern,
+  deriveClientId,
   emptyClientForm,
   type ClientFormValues,
   type ClientWorkflowState,
@@ -52,20 +53,21 @@ export function useClientWorkflow({
     event.preventDefault();
     if (state.status !== "editing") return;
 
+    const clientName = form.clientName.trim();
     const request: ClientCreationRequest = {
-      clientId: form.clientId.trim(),
-      clientName: form.clientName.trim(),
+      clientId: deriveClientId(clientName),
+      clientName,
       defaultArtist: form.defaultArtist.trim() || null,
     };
+    if (!request.clientName) {
+      setState({ status: "editing", error: "Display name is required." });
+      return;
+    }
     if (!clientIdPattern.test(request.clientId)) {
       setState({
         status: "editing",
-        error: "Client ID must use lowercase letters and numbers separated by single hyphens.",
+        error: "Display name does not produce a usable Client ID.",
       });
-      return;
-    }
-    if (!request.clientName) {
-      setState({ status: "editing", error: "Display name is required." });
       return;
     }
 

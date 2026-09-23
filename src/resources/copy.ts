@@ -162,7 +162,7 @@ export const copy = {
     creationVerification: "Creation needs verification",
     inheritDefaults: "Audio and delivery settings will inherit the current studio defaults.",
     clientId: "Client ID",
-    clientIdHelp: "Lowercase letters and numbers separated by single hyphens.",
+    clientIdHelp: "Generated from the display name using lowercase letters, numbers, and single hyphens.",
     displayName: "Display name",
     defaultArtist: "Default artist",
     optional: "(optional)",
