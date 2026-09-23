@@ -1,0 +1,56 @@
+# JL Mixing Studio 2.3 Release Acceptance Record
+
+This record separates completed issue-level/manual and CI evidence from acceptance of the published `v2.3.0` packages. It is a preparation record; no v2.3 packaged result is represented as Pass before it is run.
+
+## Evidence available before release
+
+| Scope | Evidence | State |
+| --- | --- | --- |
+| Blind Comparison #374–#380 | Sequenced merged PRs, cross-platform acceptance and NAS performance work in #380 | Complete at feature level; packaged v2.3 retest pending |
+| Dashboard #385 and compact playback #383 | Approved and merged PRs #399 and #400 | Complete at feature level |
+| Project Files #368, Audio Prep Reset #337 | Manually accepted and merged; coordinated Automation PR #200, Studio PRs #402/#404 | Complete at feature level |
+| Project deletion #367, empty-client deletion #366 | Manually accepted; Automation PRs #201/#202 and Studio PRs #406/#408 | Complete at feature level |
+| Enter defaults #391, multiline Creative Direction #392, generated Client ID #401 | Manually accepted; Studio PRs #410/#412/#414 and Automation PR #204 | Complete at feature level |
+| Latest Studio main | `f7ac6dad646f1a61fc5d66f61c642c349df67ae5`; CI #2106 | Pass — implementation baseline |
+| Latest Automation main | `fe7251c0d81419af50315c4fb59d9a6e819469e6`; CI #1557 | Pass — implementation baseline |
+| Release preparation PR CI | Record exact commit and run after PRs open | Not run |
+
+Issue-level acceptance is not a claim that a `v2.3.0` installer has been installed. Keep Windows and macOS results independent. **Not run** means no packaged test; **Deferred** requires a stated reason and supporting evidence; **Pass** requires an actual result on the named platform.
+
+## Packaged acceptance
+
+Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/date, OS versions, and local/NAS workspace paths when executed. Use a fresh install or upgrade from 2.2 as appropriate. Automation is published first, then Studio.
+
+| ID | Test | Windows x64 | macOS Intel | macOS Apple Silicon | Evidence / finding |
+| --- | --- | --- | --- | --- | --- |
+| A01 | Verify both checksums, install/upgrade, launch, and exact `2.3.0` versions | Not run | Not run | Not run | |
+| A02 | Existing workspace/settings, Automation discovery/API/capabilities, navigation, restart persistence | Not run | Not run | Not run | |
+| A03 | Existing ordinary preview, revision, delivery, and Listening paths | Not run | Not run | Not run | |
+| B01 | Create comparison with 2+ revisions, custom-only and optional Full Song, multiple regions, waveform/transport | Not run | Not run | Not run | |
+| B02 | Candidate switching, region loop/seek, A–Z and transport shortcuts, no identity leak | Not run | Not run | Not run | |
+| B03 | Loudness Match on/off, fixed full-source attenuation, analysis/cache reuse, no source change | Not run | Not run | Not run | |
+| B04 | Rank every candidate, ties/No Preference, incomplete-region guard, notes, reveal/results/history, TOP | Not run | Not run | Not run | |
+| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Not run | Not run | Not run | |
+| C01 | Audio Prep Reset progress with Automation 2.3, safe failure/rollback, prior-provider fallback | Not run | Not run | Not run | |
+| C02 | Project Files rename/delete, permanent project deletion summary/exact name, Listening copies retained | Not run | Not run | Not run | |
+| C03 | Empty-client-only deletion summary/exact name and nonempty-client rejection | Not run | Not run | Not run | |
+| C04 | Dialog Enter defaults, multiline Creative Direction save/reload, generated Client ID/collision | Not run | Not run | Not run | |
+| C05 | Compact playback controls, Dashboard empty/populated Today’s Work | Not run | Not run | Not run | |
+
+## Release gates
+
+- [x] Approved implementation scope merged; #396 explicitly deferred beyond 2.3.
+- [x] Implementation baseline CI evidence recorded above.
+- [ ] Release preparation PRs pass their complete CI matrices and merge.
+- [ ] Automation Release workflow on approved `main` succeeds; four platform packages, checksums, inventories, and tag/release verified.
+- [ ] Studio Release workflow on approved `main` succeeds; three platform installers, `SHA256SUMS.txt`, and tag/release verified.
+- [ ] Packaged Windows and available macOS acceptance completed or explicitly deferred with evidence.
+- [ ] Stable package smoke verification and any blockers recorded with exact builds.
+
+## Findings and disposition
+
+| Platform | Issue | Finding | Disposition |
+| --- | --- | --- | --- |
+| — | — | No v2.3 packaged test executed yet | Pending release workflows and acceptance |
+
+**Decision:** Release preparation only. Update this record from actual workflow and manual results before declaring packaged qualification complete.
