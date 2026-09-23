@@ -125,7 +125,7 @@ pub struct ProjectUpdateResult {
     pub message: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum ProjectUpdateCode {
     Updated,

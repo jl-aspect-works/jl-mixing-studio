@@ -146,6 +146,19 @@ describe("ProjectsRouteV21", () => {
     expect(props.onSelectProject).toHaveBeenCalledWith("acme", "blue-sky");
   });
 
+  it("passes multiline Creative Direction to the authoritative update without flattening line breaks", async () => {
+    render(<ProjectsRouteV21 {...props} />);
+    const edit = await screen.findByRole("button", { name: "Edit Project" });
+    await waitFor(() => expect(edit).toBeEnabled());
+    fireEvent.click(edit);
+    fireEvent.change(screen.getByLabelText("Creative Direction"), { target: { value: "Intimate verse\nWide chorus\nKeep dynamics" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => expect(mockedInvoke).toHaveBeenCalledWith("update_project", { request: expect.objectContaining({
+      creativeDirection: "Intimate verse\nWide chorus\nKeep dynamics",
+    }) }));
+  });
+
   it("places the standard Delete Project action below Open Project on the selected-project card", async () => {
     render(<ProjectsRouteV21 {...props} />);
     const open = await screen.findByRole("button", { name: "Open Project" });
