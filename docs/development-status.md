@@ -9,7 +9,7 @@ Last updated: 2026-09-23
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **v2.3 additional approved scope is in progress**
+- Status: **v2.3 implementation complete; release preparation is next**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -51,15 +51,15 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #366 safe permanent empty-client deletion was manually accepted and merged through Automation PR #202 at `8cd98565cc83768e24bac5a1f1f02b67040203b1` and Studio PR #408 at `4a3e53801eed652819f306121dc8b64e41e68450`. Post-merge Automation CI run #1553 and Studio CI run #2091 passed. Deletion is limited to authoritatively project-free clients, summarizes remaining client content, requires the exact typed Client Name, and provides no recovery or cascading project deletion.
 - #391 dialog Enter-key defaults was manually accepted and merged through PR #410 at `4bf43800e1d9140a2b01999aada9a0326173d4af`. Post-merge CI run #2096 passed after a targeted rerun of an unrelated intermittent comparison test. Enabled primary actions now respond consistently to Enter while multiline controls, disabled actions, and explicit typed-name deletion confirmations retain their intended behavior.
 - #392 multiline Creative Direction persistence was manually accepted and merged through Automation PR #204 at `fe7251c0d81419af50315c4fb59d9a6e819469e6` and Studio PR #412 at `1b9d29efc21ef8152dae2b67287167032f0ffba3`. Post-merge Automation CI run #1557 passed. Studio post-merge CI run #2100 passed after a targeted rerun of the same unrelated intermittent comparison timing test seen in run #2096. Multiline UTF-8 text now crosses the Windows launcher safely and preserves LF/CRLF line breaks, while empty and single-line values retain their established behavior.
+- #401 generated Client IDs was manually accepted and merged through PR #414 at `b59c0fe8670b0eda486eb42e5c5ce255fbcd0a98`; post-merge CI run #2104 passed. New Client now derives and previews a read-only filesystem-safe ID from the display name while preserving Automation’s authoritative validation and collision checks.
 
 ## Active work
 
-- #401 generated Client IDs is next. #392 is complete.
+- v2.3 implementation is complete. Release preparation is next.
 
 ## Remaining release work
 
-1. Implement, verify, and approve #401 generated Client IDs.
-2. Prepare and publish `v2.3.0` through the repository release workflow.
+1. Prepare and publish `v2.3.0` through the repository release workflow.
 
 ## Known and deferred items
 
@@ -68,4 +68,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Review and implement #401 generated Client IDs, then verify and obtain approval before preparing the v2.3 release. #396 remains deferred until after v2.3.
+Prepare and publish the v2.3 release. #396 remains deferred until after v2.3.
