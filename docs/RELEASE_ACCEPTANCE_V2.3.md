@@ -13,7 +13,7 @@ This record separates completed issue-level/manual and CI evidence from acceptan
 | Enter defaults #391, multiline Creative Direction #392, generated Client ID #401 | Manually accepted; Studio PRs #410/#412/#414 and Automation PR #204 | Complete at feature level |
 | Studio implementation baseline | `f7ac6dad646f1a61fc5d66f61c642c349df67ae5`; CI #2106 | Pass — implementation baseline |
 | Automation implementation baseline | `fe7251c0d81419af50315c4fb59d9a6e819469e6`; CI #1557 | Pass — implementation baseline |
-| Automation release preparation PR #205 | `08af9ed9806d70fa4bd5f83abb5ad0818a702903`; Tests and ShellCheck #1560 | Pass — PR; merge pending |
+| Automation release preparation PR #205 | `08af9ed9806d70fa4bd5f83abb5ad0818a702903`; Tests and ShellCheck #1560 | Pass — merged as `8f6ef06da98e78e20dba0b8d4518eaee5b8951d5`; post-merge Tests and ShellCheck #1561 passed |
 | Studio release preparation PR #416 | `63c881d3cee2ae23ce697cf235e1e5acd1d60526`; complete CI #2107 | Pass — merged as `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; post-merge CI #2108 passed |
 
 Issue-level acceptance is not a claim that a `v2.3.0` installer has been installed. Keep Windows and macOS results independent. **Not run** means no packaged test; **Deferred** requires a stated reason and supporting evidence; **Pass** requires an actual result on the named platform.
@@ -42,7 +42,7 @@ Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/
 
 - [x] Approved implementation scope merged; #396 explicitly deferred beyond 2.3.
 - [x] Implementation baseline CI evidence recorded above.
-- [ ] Release preparation PRs pass their complete CI matrices and merge.
+- [x] Release preparation PRs pass their complete CI matrices and merge (Automation #205; Studio #416 and status #417).
 - [ ] Automation Release workflow on approved `main` succeeds; four platform packages, checksums, inventories, and tag/release verified.
 - [ ] Studio Release workflow on approved `main` succeeds; three platform installers, `SHA256SUMS.txt`, and tag/release verified.
 - [ ] Packaged Windows and available macOS acceptance completed or explicitly deferred with evidence.
