@@ -16,3 +16,14 @@ export interface ClientFormValues {
 
 export const emptyClientForm: ClientFormValues = { clientId: "", clientName: "", defaultArtist: "" };
 export const clientIdPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export const deriveClientId = (clientName: string): string => {
+  const asciiName = Array.from(clientName.normalize("NFKD"))
+    .filter((character) => character.charCodeAt(0) <= 0x7f)
+    .join("");
+
+  return asciiName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+};

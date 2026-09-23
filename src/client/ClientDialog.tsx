@@ -3,6 +3,7 @@ import type { ClientFormValues, ClientWorkflowState } from "../AppWorkflowModels
 import { ActionIcon } from "../components/ActionIcon";
 import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import { copy as productCopy } from "../resources/copy";
+import { deriveClientId } from "./models";
 
 export interface ClientDialogProps {
   state: Exclude<ClientWorkflowState, { status: "closed" }>;
@@ -23,12 +24,12 @@ export function ClientDialog({
   onBack,
   onClose,
 }: ClientDialogProps) {
-  const clientIdInput = useRef<HTMLInputElement>(null);
+  const clientNameInput = useRef<HTMLInputElement>(null);
   const confirmButton = useRef<HTMLButtonElement>(null);
   const pending = state.status === "preflighting" || state.status === "creating";
 
   useEffect(() => {
-    if (state.status === "editing") clientIdInput.current?.focus();
+    if (state.status === "editing") clientNameInput.current?.focus();
     if (state.status === "confirming") confirmButton.current?.focus();
   }, [state.status]);
 
@@ -64,33 +65,34 @@ export function ClientDialog({
               <div className="form-error" role="alert">{state.error}</div>
             )}
             <label>
-              {productCopy.clients.clientId}
-              <input
-                ref={clientIdInput}
-                name="clientId"
-                value={values.clientId}
-                onChange={(event) => onChange({ ...values, clientId: event.target.value })}
-                placeholder="acme-records"
-                autoComplete="off"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                disabled={pending}
-                required
-              />
-              <small>{productCopy.clients.clientIdHelp}</small>
-            </label>
-            <label>
               {productCopy.clients.displayName}
               <input
+                ref={clientNameInput}
+                aria-label={productCopy.clients.displayName}
                 name="clientName"
                 value={values.clientName}
-                onChange={(event) => onChange({ ...values, clientName: event.target.value })}
+                onChange={(event) => {
+                  const clientName = event.target.value;
+                  onChange({ ...values, clientName, clientId: deriveClientId(clientName) });
+                }}
                 placeholder="Acme Records"
                 autoComplete="organization"
                 disabled={pending}
                 required
               />
+            </label>
+            <label>
+              {productCopy.clients.clientId}
+              <input
+                aria-label={productCopy.clients.clientId}
+                name="clientId"
+                value={values.clientId}
+                placeholder="acme-records"
+                autoComplete="off"
+                disabled={pending}
+                readOnly
+              />
+              <small>{productCopy.clients.clientIdHelp}</small>
             </label>
             <label>
               {productCopy.clients.defaultArtist} <span>{productCopy.clients.optional}</span>

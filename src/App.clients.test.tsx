@@ -22,22 +22,34 @@ describe("JL Mixing Studio — client workflow", () => {
       await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
-      const idInput = screen.getByLabelText(/client id/i);
-      expect(idInput).toHaveFocus();
-      expect(idInput).toHaveAttribute("autocapitalize", "none");
-      expect(idInput).toHaveAttribute("autocorrect", "off");
-      expect(idInput).toHaveAttribute("spellcheck", "false");
-      fireEvent.change(idInput, { target: { value: "Not Valid" } });
-      fireEvent.change(screen.getByLabelText(/display name/i), {
-        target: { value: "New Client" },
-      });
+      const nameInput = screen.getByRole("textbox", { name: "Display name" });
+      const idInput = screen.getByRole("textbox", { name: "Client ID" });
+      expect(nameInput).toHaveFocus();
+      expect(idInput).toHaveAttribute("readonly");
+      fireEvent.change(nameInput, { target: { value: "🎚️" } });
+      expect(idInput).toHaveValue("");
       fireEvent.click(screen.getByRole("button", { name: "Review client" }));
 
-      expect(screen.getByRole("alert")).toHaveTextContent(/lowercase letters and numbers/i);
+      expect(screen.getByRole("alert")).toHaveTextContent(/does not produce a usable client id/i);
       expect(mockedInvoke).not.toHaveBeenCalledWith(
         "preflight_client_creation",
         expect.anything(),
       );
+    });
+
+  it("generates and updates a normalized client ID from the display name", async () => {
+      render(<App />);
+      await waitForDashboardReady();
+
+      fireEvent.click(screen.getByRole("button", { name: "New client" }));
+      const nameInput = screen.getByRole("textbox", { name: "Display name" });
+      const idInput = screen.getByRole("textbox", { name: "Client ID" });
+
+      fireEvent.change(nameInput, { target: { value: "  Café & Sons, LLC  " } });
+      expect(idInput).toHaveValue("cafe-sons-llc");
+
+      fireEvent.change(nameInput, { target: { value: "O'Connor Audio" } });
+      expect(idInput).toHaveValue("o-connor-audio");
     });
 
   it("preflights, focuses confirmation, and cancels without creating", async () => {
@@ -51,10 +63,7 @@ describe("JL Mixing Studio — client workflow", () => {
       await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
-      fireEvent.change(screen.getByLabelText(/client id/i), {
-        target: { value: "new-client" },
-      });
-      fireEvent.change(screen.getByLabelText(/display name/i), {
+      fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
         target: { value: " New Client " },
       });
       fireEvent.change(screen.getByLabelText(/default artist/i), {
@@ -76,6 +85,40 @@ describe("JL Mixing Studio — client workflow", () => {
 
       fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(mockedInvoke).not.toHaveBeenCalledWith("create_client", expect.anything());
+    });
+
+  it("shows authoritative preflight collision errors without creating", async () => {
+      mockedInvoke.mockImplementation((command) => {
+        if (command === "discover_default_workspace") return Promise.resolve(healthyWorkspace());
+        if (command === "get_jl_mixing_version") return Promise.resolve(version);
+        if (command === "preflight_client_creation") {
+          return Promise.resolve({
+            ok: false,
+            code: "collision",
+            message: "Client destination already exists",
+            client: preflightResult.client,
+          } satisfies ClientOperationResult);
+        }
+        return Promise.reject(new Error("Unexpected command"));
+      });
+      render(<App />);
+      await waitForDashboardReady();
+
+      fireEvent.click(screen.getByRole("button", { name: "New client" }));
+      fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
+        target: { value: "New Client" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Review client" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(/already exists/i);
+      expect(mockedInvoke).toHaveBeenCalledWith("preflight_client_creation", {
+        request: {
+          clientId: "new-client",
+          clientName: "New Client",
+          defaultArtist: null,
+        },
+      });
       expect(mockedInvoke).not.toHaveBeenCalledWith("create_client", expect.anything());
     });
 
@@ -106,10 +149,7 @@ describe("JL Mixing Studio — client workflow", () => {
       await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
-      fireEvent.change(screen.getByLabelText(/client id/i), {
-        target: { value: "new-client" },
-      });
-      fireEvent.change(screen.getByLabelText(/display name/i), {
+      fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
         target: { value: "New Client" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Review client" }));
@@ -147,10 +187,7 @@ describe("JL Mixing Studio — client workflow", () => {
       await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
-      fireEvent.change(screen.getByLabelText(/client id/i), {
-        target: { value: "new-client" },
-      });
-      fireEvent.change(screen.getByLabelText(/display name/i), {
+      fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
         target: { value: "New Client" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Review client" }));
@@ -158,8 +195,8 @@ describe("JL Mixing Studio — client workflow", () => {
       fireEvent.click(screen.getByRole("button", { name: "Create client" }));
 
       expect(await screen.findByRole("alert")).toHaveTextContent(/already exists/i);
-      expect(screen.getByLabelText(/client id/i)).toHaveValue("new-client");
-      expect(screen.getByLabelText(/display name/i)).toHaveValue("New Client");
+      expect(screen.getByRole("textbox", { name: "Client ID" })).toHaveValue("new-client");
+      expect(screen.getByRole("textbox", { name: "Display name" })).toHaveValue("New Client");
     });
 
   it("does not retry when creation succeeds but reconciliation fails", async () => {
@@ -174,10 +211,7 @@ describe("JL Mixing Studio — client workflow", () => {
       await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
-      fireEvent.change(screen.getByLabelText(/client id/i), {
-        target: { value: "new-client" },
-      });
-      fireEvent.change(screen.getByLabelText(/display name/i), {
+      fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
         target: { value: "New Client" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Review client" }));
@@ -204,10 +238,7 @@ describe("JL Mixing Studio — client workflow", () => {
       await waitForDashboardReady();
 
       fireEvent.click(screen.getByRole("button", { name: "New client" }));
-      fireEvent.change(screen.getByLabelText(/client id/i), {
-        target: { value: "new-client" },
-      });
-      fireEvent.change(screen.getByLabelText(/display name/i), {
+      fireEvent.change(screen.getByRole("textbox", { name: "Display name" }), {
         target: { value: "New Client" },
       });
       fireEvent.click(screen.getByRole("button", { name: "Review client" }));
