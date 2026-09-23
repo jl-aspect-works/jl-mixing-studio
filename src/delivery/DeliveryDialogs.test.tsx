@@ -41,6 +41,34 @@ describe("DeliveryOptionsDialog keyboard defaults", () => {
     expect(onBuild).not.toHaveBeenCalled();
   });
 
+  it("restores focus to Build Package when Delivery Notes finish loading", () => {
+    const props = {
+      approvedRevision: 2,
+      showCleanOption: true,
+      cleanFirst: false,
+      deliveryNote: "",
+      deliveryNoteError: null,
+      deliveryNoteMaxBytes: 65_536,
+      onCleanFirstChange: vi.fn(),
+      onDeliveryNoteChange: vi.fn(),
+      onBuild: vi.fn(),
+      onClose: vi.fn(),
+    };
+    const view = render(<>
+      <button type="button" autoFocus>Open package dialog</button>
+      <DeliveryOptionsDialog {...props} deliveryNoteLoading />
+    </>);
+    expect(screen.getByRole("button", { name: "Open package dialog" })).toHaveFocus();
+
+    view.rerender(<>
+      <button type="button">Open package dialog</button>
+      <DeliveryOptionsDialog {...props} deliveryNoteLoading={false} />
+    </>);
+
+    const build = screen.getByRole("button", { name: "Build Package" });
+    expect(build).toHaveFocus();
+  });
+
   it("leaves Enter available for multiline delivery notes", () => {
     const { onBuild } = renderDialog();
 

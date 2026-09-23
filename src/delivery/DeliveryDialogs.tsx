@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ActionIcon } from "../components/ActionIcon";
 import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import type { DeliveryWorkflowState } from "./models";
@@ -31,9 +32,17 @@ export function DeliveryOptionsDialog({
   const deliveryNoteBytes = new TextEncoder().encode(deliveryNote).length;
   const deliveryNoteTooLarge = deliveryNoteBytes > deliveryNoteMaxBytes;
   const buildDisabled = deliveryNoteLoading || deliveryNoteTooLarge;
+  const dialog = useRef<HTMLElement>(null);
+  const buildButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!buildDisabled && !dialog.current?.contains(document.activeElement)) {
+      buildButton.current?.focus();
+    }
+  }, [buildDisabled]);
 
   return <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, { defaultDisabled: buildDisabled, onDefault: onBuild, onEscape: onClose })}>
-    <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="delivery-options-title">
+    <section ref={dialog} className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="delivery-options-title">
       <p className="kicker">Delivery package</p>
       <h2 id="delivery-options-title">Build Package</h2>
       <p className="dialog-intro">Create a delivery package from <strong>Approved Revision {String(approvedRevision).padStart(2, "0")}</strong>.</p>
@@ -66,7 +75,7 @@ export function DeliveryOptionsDialog({
       </label>}
       <div className="dialog-actions">
         <button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />Cancel</button>
-        <button type="button" autoFocus onClick={onBuild} disabled={buildDisabled}><ActionIcon name="download" />Build Package</button>
+        <button ref={buildButton} type="button" autoFocus onClick={onBuild} disabled={buildDisabled}><ActionIcon name="download" />Build Package</button>
       </div>
     </section>
   </div>;
