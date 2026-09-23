@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { IntakeReportContent } from "../AppViews";
 import type { IntakeWorkflowState } from "../AppWorkflowModels";
 import { ActionIcon } from "../components/ActionIcon";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import { copy as productCopy } from "../resources/copy";
 import type { IntakeValidationProgress } from "./models";
 import { ValidationProgress } from "./ValidationProgress";
@@ -23,11 +24,16 @@ export function IntakeDialog({
     if (state.status === "confirming") confirmButton.current?.focus();
   }, [state.status]);
   return (
-    <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape" && !pending) onClose(); }}>
+    <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, {
+      defaultDisabled: pending,
+      escapeDisabled: pending,
+      onDefault: state.status === "uncertain" ? onClose : onConfirm,
+      onEscape: onClose,
+    })}>
       <section className="client-dialog intake-dialog" role="dialog" aria-modal="true" aria-labelledby="intake-dialog-title">
         <p className="kicker">{productCopy.intake.guided}</p>
         <h2 id="intake-dialog-title">{state.status === "uncertain" ? productCopy.intake.verificationTitle : productCopy.intake.confirmTitle}</h2>
-        {state.status === "uncertain" ? <><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.intake.uncertainHelp}</p><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></> : <>
+        {state.status === "uncertain" ? <><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">{productCopy.intake.uncertainHelp}</p><div className="dialog-actions"><button type="button" autoFocus onClick={onClose}><ActionIcon name="close" />{productCopy.common.close}</button></div></> : <>
           <p className="dialog-intro">{productCopy.intake.previewIntroPrefix} <code>00_Admin/Intake_Report.md</code>. {productCopy.intake.previewIntroSuffix}</p>
           <IntakeReportContent report={state.preview} compact />
           {pending && progress && <ValidationProgress progress={progress} />}

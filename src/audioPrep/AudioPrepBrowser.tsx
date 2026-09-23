@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
 import { FileStatusIcon, FileStatusLegend, FileViewControls, ManagedFolderToolbar, RowActionMenu, type FileStatusKind } from "../project/files/FileUiPrimitives";
 import type { ProjectFileEntry } from "../project/files/projectFileService";
@@ -287,14 +288,19 @@ export function AudioPrepBrowser({
       </>}
     </section>
 
-    {deleteCandidate && <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape" && !busyPath) setDeleteCandidate(null); }}>
+    {deleteCandidate && <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, {
+      defaultDisabled: Boolean(busyPath),
+      escapeDisabled: Boolean(busyPath),
+      onDefault: () => void confirmDelete(),
+      onEscape: () => setDeleteCandidate(null),
+    })}>
       <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="audio-prep-delete-title">
         <p className="kicker">Audio Prep</p>
         <h2 id="audio-prep-delete-title">Delete {deleteCandidate.displayName}?</h2>
         <p className="dialog-intro">This removes the working Audio Prep file only. Original Delivery is not changed.</p>
         <div className="dialog-actions">
           <button type="button" className="secondary" disabled={Boolean(busyPath)} onClick={() => setDeleteCandidate(null)}>Cancel</button>
-          <button type="button" className="danger" disabled={Boolean(busyPath)} onClick={() => void confirmDelete()}>{busyPath ? "Deleting…" : "Delete File"}</button>
+          <button type="button" autoFocus className="danger" disabled={Boolean(busyPath)} onClick={() => void confirmDelete()}>{busyPath ? "Deleting…" : "Delete File"}</button>
         </div>
       </section>
     </div>}

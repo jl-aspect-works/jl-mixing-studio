@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionIcon } from "../components/ActionIcon";
+import { handleDialogKeyDown } from "../components/dialogKeyboard";
 import { managedImportProgressPresentation } from "./managedImportProgress";
 import { audioPrepResetProgressPresentation } from "./audioPrepResetProgress";
 import type { IntakeValidationProgress, ManagedImportProgress } from "./models";
@@ -228,7 +229,19 @@ export function ManagedFileOperationDialog({
   const resetProgressUi = audioPrepResetProgressPresentation(resetProgress);
   const finalizingProgress = followupProgress;
 
-  return <div className="dialog-backdrop" onKeyDown={(event) => { if (event.key === "Escape" && !pending) onClose(); }}>
+  const defaultDisabled = pending || (state.status === "review" && (unresolved.length > 0 || (mode === "import" && selectedRelativePaths.length === 0)));
+  const defaultAction = state.status === "review"
+    ? () => void execute()
+    : state.status === "success" || state.status === "error"
+      ? onClose
+      : undefined;
+
+  return <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, {
+    defaultDisabled,
+    escapeDisabled: pending,
+    onDefault: defaultAction,
+    onEscape: onClose,
+  })}>
     <section className="client-dialog managed-file-dialog" role="dialog" aria-modal="true" aria-labelledby="managed-file-dialog-title">
       <p className="kicker">Managed files</p><h2 id="managed-file-dialog-title">{dialogTitle}</h2>
       {state.status === "source" && <><p className="dialog-intro">Choose what the client delivered.</p><div className="managed-source-options">
@@ -243,7 +256,7 @@ export function ManagedFileOperationDialog({
         {mode === "import" && <div className="managed-table-actions"><span>{selectedRelativePaths.length} of {state.plan.files.length} planned {state.plan.files.length === 1 ? "file" : "files"} selected.</span><div className="managed-apply-all"><span>Import selection:</span><button type="button" className="secondary" onClick={() => setAllSelections("add")}>Add All</button><button type="button" className="secondary" onClick={() => setAllSelections("skip")}>Skip All</button></div></div>}
         {mode === "import" && selectedRelativePaths.length === 0 ? <p className="managed-no-conflicts">No files are selected for import. Choose Add for at least one file to continue.</p> : activeConflicts.length === 0 ? <p className="managed-no-conflicts">No existing project files will be overwritten.</p> : <div className="managed-table-actions"><span>{conflictFileCount} {conflictFileCount === 1 ? "file has" : "files have"} {activeConflicts.length} destination {activeConflicts.length === 1 ? "conflict" : "conflicts"}. {unresolved.length} {unresolved.length === 1 ? "decision remains" : "decisions remain"}.</span>{activeConflicts.length > 1 && <div className="managed-apply-all"><span>Apply to selected conflicts:</span><button type="button" className="secondary" onClick={() => setAll("replace")}>Replace All</button><button type="button" className="secondary" onClick={() => setAll("skip")}>Skip All Conflicts</button></div>}</div>}
         <div className="managed-review-table-wrap"><table className={`managed-review-table ${mode === "import" ? "managed-review-table-import" : ""}`}><thead><tr><th>File</th>{mode === "import" && <th>Import</th>}<th>Client Files</th><th>Audio Prep</th></tr></thead><tbody>{rows.map((row) => <tr key={row.sourcePath}><td><strong>{row.sourcePath}</strong></td>{mode === "import" && <td><select aria-label={`Import selection for ${row.sourcePath}`} value={selections[row.sourcePath] ?? "add"} onChange={(event) => setSelection(row.sourcePath, event.target.value)}><option value="add">Add</option><option value="skip">Skip</option></select></td>}<td>{mode === "audioPrepReset" ? <span className="managed-action-static source">Source</span> : actionCell(row.original, "original")}</td><td>{actionCell(row.audio, "audio")}</td></tr>)}</tbody></table></div>
-        <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />{mode === "import" ? "Cancel Import" : "Cancel"}</button><button type="button" onClick={() => void execute()} disabled={unresolved.length > 0 || (mode === "import" && selectedRelativePaths.length === 0)}><ActionIcon name="check" />{mode === "import" ? "Import Files" : "Copy to Audio Prep"}</button></div></>}
+        <div className="dialog-actions"><button type="button" className="secondary" onClick={onClose}><ActionIcon name="close" />{mode === "import" ? "Cancel Import" : "Cancel"}</button><button type="button" autoFocus onClick={() => void execute()} disabled={unresolved.length > 0 || (mode === "import" && selectedRelativePaths.length === 0)}><ActionIcon name="check" />{mode === "import" ? "Import Files" : "Copy to Audio Prep"}</button></div></>}
 
       {state.status === "executing" && (mode === "import" && importProgress && importProgressUi ? <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite"><strong>{importProgressUi.label}</strong>{importProgressUi.determinate ? <progress aria-label={importProgressUi.ariaLabel} value={importProgressUi.value} max={importProgressUi.max} /> : <progress aria-label={importProgressUi.ariaLabel} />}{importProgress.active.length > 0 && <small>Processing: {importProgress.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small>}</div> : mode === "audioPrepReset" && resetProgressUi ? <div className="managed-operation-progress managed-operation-progress-primary" role="status" aria-live="polite"><strong>{resetProgressUi.label}</strong><progress aria-label={resetProgressUi.label} value={resetProgressUi.value} max={resetProgressUi.max} />{resetProgressUi.active.length > 0 && <small>Processing: {resetProgressUi.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small>}</div> : <div className="managed-operation-progress managed-operation-progress-primary" role="status"><span className="client-files-spinner" aria-hidden="true" />{mode === "import" ? "Importing client files…" : "Updating Audio Prep…"}</div>)}
 
@@ -253,8 +266,8 @@ export function ManagedFileOperationDialog({
         {finalizingProgress?.active.length ? <small>Processing: {finalizingProgress.active.map((path) => path.split(/[\\/]/).pop() ?? path).join(" · ")}</small> : <p>Import is complete. Studio is verifying the project before it becomes ready.</p>}
       </div>}
 
-      {state.status === "success" && <><div className="managed-operation-success" role="status"><strong>{mode === "import" ? "Project ready" : "Audio Prep updated"}</strong><p>{(() => { const items = state.result.data.result?.items ?? []; const changed = items.filter((item) => item.result === "created" || item.result === "replaced").length; const operationSkipped = items.filter((item) => item.result === "skipped").length; const skipped = operationSkipped + (mode === "import" ? Object.values(selections).filter((value) => value === "skip").length : 0); return `${changed} ${changed === 1 ? "file operation" : "file operations"} completed${skipped ? ` · ${skipped} skipped` : ""}.`; })()}</p></div><div className="dialog-actions"><button type="button" onClick={onClose}><ActionIcon name="check" />Done</button></div></>}
-      {state.status === "error" && <><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">No additional changes will be made until you try again.</p><div className="dialog-actions">{mode === "import" && <button type="button" className="secondary" onClick={() => setState({ status: "source" })}><ActionIcon name="back" />Choose another source</button>}{mode === "audioPrepReset" && <button type="button" className="secondary" onClick={planReset}><ActionIcon name="refresh" />Try again</button>}<button type="button" onClick={onClose}><ActionIcon name="close" />Close</button></div></>}
+      {state.status === "success" && <><div className="managed-operation-success" role="status"><strong>{mode === "import" ? "Project ready" : "Audio Prep updated"}</strong><p>{(() => { const items = state.result.data.result?.items ?? []; const changed = items.filter((item) => item.result === "created" || item.result === "replaced").length; const operationSkipped = items.filter((item) => item.result === "skipped").length; const skipped = operationSkipped + (mode === "import" ? Object.values(selections).filter((value) => value === "skip").length : 0); return `${changed} ${changed === 1 ? "file operation" : "file operations"} completed${skipped ? ` · ${skipped} skipped` : ""}.`; })()}</p></div><div className="dialog-actions"><button type="button" autoFocus onClick={onClose}><ActionIcon name="check" />Done</button></div></>}
+      {state.status === "error" && <><div className="form-error" role="alert">{state.message}</div><p className="dialog-intro">No additional changes will be made until you try again.</p><div className="dialog-actions">{mode === "import" && <button type="button" className="secondary" onClick={() => setState({ status: "source" })}><ActionIcon name="back" />Choose another source</button>}{mode === "audioPrepReset" && <button type="button" className="secondary" onClick={planReset}><ActionIcon name="refresh" />Try again</button>}<button type="button" autoFocus onClick={onClose}><ActionIcon name="close" />Close</button></div></>}
     </section>
   </div>;
 }
