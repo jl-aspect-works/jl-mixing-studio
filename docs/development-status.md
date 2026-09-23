@@ -9,7 +9,7 @@ Last updated: 2026-09-23
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **Studio v2.3 release preparation merged; Automation release preparation awaits approval**
+- Status: **v2.3 release preparation complete; publication and packaged acceptance pending**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -55,13 +55,14 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Active work
 
-- Studio release-preparation PR #416 merged to `main` at `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; PR CI #2107 passed. Post-merge CI #2108 passed.
-- Automation release-preparation PR #205 passed Tests and ShellCheck #1560 and remains open for review.
+- Studio release-preparation PR #416 merged at `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; PR CI #2107 and post-merge CI #2108 passed. Status PR #417 merged at `7b02d3dbc29da8a93f518460346ed5d17abbfd10`; PR CI #2109 and post-merge CI #2110 passed.
+- Automation release-preparation PR #205 merged at `8f6ef06da98e78e20dba0b8d4518eaee5b8951d5`; Tests and ShellCheck #1560 and post-merge #1561 passed.
 
 ## Remaining release work
 
-1. Review and merge Automation PR #205 and verify its post-merge CI.
-2. Dispatch Automation Release from `main` first, then Studio Release from `main`; verify artifacts and update packaged acceptance.
+1. Dispatch Automation Release from `main`, verify its tag and four platform packages, checksums, and inventories.
+2. Dispatch Studio Release from `main`, verify its tag, three installers, and `SHA256SUMS.txt`.
+3. Install published packages on the available Windows/macOS platforms and update `docs/RELEASE_ACCEPTANCE_V2.3.md` with exact results and deferrals.
 
 ## Known and deferred items
 
@@ -70,4 +71,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Review Automation PR #205; Studio post-merge CI #2108 passed. Publish Automation and Studio in that order after Automation preparation and post-merge checks pass. Record packaged acceptance. #396 remains deferred until after v2.3.
+Publish Automation first, then Studio through each repository's Release workflow on `main`; record artifact and packaged acceptance results. #396 remains deferred until after v2.3.
