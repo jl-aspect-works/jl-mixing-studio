@@ -11,9 +11,10 @@ This record separates completed issue-level/manual and CI evidence from acceptan
 | Project Files #368, Audio Prep Reset #337 | Manually accepted and merged; coordinated Automation PR #200, Studio PRs #402/#404 | Complete at feature level |
 | Project deletion #367, empty-client deletion #366 | Manually accepted; Automation PRs #201/#202 and Studio PRs #406/#408 | Complete at feature level |
 | Enter defaults #391, multiline Creative Direction #392, generated Client ID #401 | Manually accepted; Studio PRs #410/#412/#414 and Automation PR #204 | Complete at feature level |
-| Latest Studio main | `f7ac6dad646f1a61fc5d66f61c642c349df67ae5`; CI #2106 | Pass — implementation baseline |
-| Latest Automation main | `fe7251c0d81419af50315c4fb59d9a6e819469e6`; CI #1557 | Pass — implementation baseline |
-| Release preparation PR CI | Record exact commit and run after PRs open | Not run |
+| Studio implementation baseline | `f7ac6dad646f1a61fc5d66f61c642c349df67ae5`; CI #2106 | Pass — implementation baseline |
+| Automation implementation baseline | `fe7251c0d81419af50315c4fb59d9a6e819469e6`; CI #1557 | Pass — implementation baseline |
+| Automation release preparation PR #205 | `08af9ed9806d70fa4bd5f83abb5ad0818a702903`; Tests and ShellCheck #1560 | Pass — PR; merge pending |
+| Studio release preparation PR #416 | `63c881d3cee2ae23ce697cf235e1e5acd1d60526`; complete CI #2107 | Pass — merged as `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; post-merge CI #2108 passed |
 
 Issue-level acceptance is not a claim that a `v2.3.0` installer has been installed. Keep Windows and macOS results independent. **Not run** means no packaged test; **Deferred** requires a stated reason and supporting evidence; **Pass** requires an actual result on the named platform.
 

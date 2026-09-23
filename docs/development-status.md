@@ -9,7 +9,7 @@ Last updated: 2026-09-23
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **v2.3 implementation complete; release preparation PR in progress**
+- Status: **Studio v2.3 release preparation merged; Automation release preparation awaits approval**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -55,11 +55,12 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Active work
 
-- v2.3 implementation is complete. Release preparation branches cover version metadata, notes, acceptance tracking, and workflow references.
+- Studio release-preparation PR #416 merged to `main` at `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; PR CI #2107 passed. Post-merge CI #2108 passed.
+- Automation release-preparation PR #205 passed Tests and ShellCheck #1560 and remains open for review.
 
 ## Remaining release work
 
-1. Review and merge both v2.3 release-preparation PRs after CI.
+1. Review and merge Automation PR #205 and verify its post-merge CI.
 2. Dispatch Automation Release from `main` first, then Studio Release from `main`; verify artifacts and update packaged acceptance.
 
 ## Known and deferred items
@@ -69,4 +70,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Complete release-preparation CI/review, then publish Automation and Studio in that order and record packaged acceptance. #396 remains deferred until after v2.3.
+Review Automation PR #205; Studio post-merge CI #2108 passed. Publish Automation and Studio in that order after Automation preparation and post-merge checks pass. Record packaged acceptance. #396 remains deferred until after v2.3.
