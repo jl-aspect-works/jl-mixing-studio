@@ -14,6 +14,14 @@ use crate::models::{
 use crate::workspace::find_validated_project_path;
 use crate::{resolve_home, resolve_workspace_root};
 
+const UTF8_HEX_CAPABILITY: &str = "project.update.creativedirection.utf8hex";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ProjectUpdateSupport {
+    update: bool,
+    creative_direction_utf8_hex: bool,
+}
+
 fn manifest_file(project_path: &Path) -> PathBuf {
     project_path.join("00_Admin").join("project-manifest.json")
 }
@@ -165,7 +173,23 @@ fn read_edit_info(
     })
 }
 
-fn discovery_supports_update(home: &Path) -> Result<bool, String> {
+fn project_update_support(document: &Value) -> ProjectUpdateSupport {
+    let capabilities = document.get("capabilities").and_then(Value::as_array);
+    ProjectUpdateSupport {
+        update: capabilities.is_some_and(|items| {
+            items
+                .iter()
+                .any(|item| item.as_str() == Some("project.update"))
+        }),
+        creative_direction_utf8_hex: capabilities.is_some_and(|items| {
+            items
+                .iter()
+                .any(|item| item.as_str() == Some(UTF8_HEX_CAPABILITY))
+        }),
+    }
+}
+
+fn discovery_supports_update(home: &Path) -> Result<ProjectUpdateSupport, String> {
     let executable = resolve_command(home, AUTOMATION_EXECUTABLE)
         .ok_or_else(|| "JL Mixing Automation was not found.".to_owned())?;
     let arguments = vec!["system-info".to_owned(), "--json".to_owned()];
@@ -177,14 +201,7 @@ fn discovery_supports_update(home: &Path) -> Result<bool, String> {
     }
     let document: Value = serde_json::from_str(output.stdout.trim())
         .map_err(|_| "JL Mixing Automation returned malformed discovery data.".to_owned())?;
-    Ok(document
-        .get("capabilities")
-        .and_then(Value::as_array)
-        .is_some_and(|items| {
-            items
-                .iter()
-                .any(|item| item.as_str() == Some("project.update"))
-        }))
+    Ok(project_update_support(&document))
 }
 
 pub fn get_project_edit_info(
@@ -196,11 +213,11 @@ pub fn get_project_edit_info(
     let workspace = resolve_workspace_root(app)?;
     let mut info = read_edit_info(&workspace, client_id.trim(), project_id.trim())?;
     match discovery_supports_update(&home) {
-        Ok(true) => {
+        Ok(support) if support.update => {
             info.update_supported = true;
             info.message = "Project editing is available.".into();
         }
-        Ok(false) => {
+        Ok(_) => {
             info.message =
                 "The installed JL Mixing Automation does not advertise project.update.".into()
         }
@@ -235,6 +252,34 @@ fn same_editable(left: &ProjectEditInfo, request: &ProjectUpdateRequest) -> bool
         && left.creative_direction == request.creative_direction.trim()
 }
 
+fn utf8_hex(value: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut encoded = String::with_capacity(value.len() * 2);
+    for byte in value.as_bytes() {
+        encoded.push(HEX[(byte >> 4) as usize] as char);
+        encoded.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    encoded
+}
+
+fn creative_direction_argument(
+    value: &str,
+    support: ProjectUpdateSupport,
+) -> Result<(&'static str, String), ProjectUpdateResult> {
+    if value.contains('\r') || value.contains('\n') {
+        if !support.creative_direction_utf8_hex {
+            return Err(blocked(
+                ProjectUpdateCode::UnsupportedCapability,
+                "The installed JL Mixing Automation does not support multiline Creative Direction. Update Automation, then save again.",
+            ));
+        }
+        // The installed Windows Automation entry point is a cmd.exe launcher. Hex keeps embedded
+        // line breaks and Unicode out of that command parser while preserving the exact UTF-8.
+        return Ok(("--creative-direction-utf8-hex", utf8_hex(value)));
+    }
+    Ok(("--creative-direction", value.to_owned()))
+}
+
 pub fn update_project(app: &AppHandle, request: ProjectUpdateRequest) -> ProjectUpdateResult {
     let home = match resolve_home(app) {
         Ok(value) => value,
@@ -258,16 +303,16 @@ pub fn update_project(app: &AppHandle, request: ProjectUpdateRequest) -> Project
             "Project settings changed outside this edit session. Refresh and review the newer values before saving.",
         );
     }
-    match discovery_supports_update(&home) {
-        Ok(true) => {}
-        Ok(false) => {
+    let support = match discovery_supports_update(&home) {
+        Ok(support) if support.update => support,
+        Ok(_) => {
             return blocked(
                 ProjectUpdateCode::UnsupportedCapability,
                 "The installed JL Mixing Automation does not support Project editing.",
             )
         }
         Err(message) => return blocked(ProjectUpdateCode::AutomationUnavailable, message),
-    }
+    };
     if request.project_name.trim().is_empty() {
         return blocked(ProjectUpdateCode::InvalidInput, "Project name is required.");
     }
@@ -292,6 +337,13 @@ pub fn update_project(app: &AppHandle, request: ProjectUpdateRequest) -> Project
             "BPM must be positive or blank.",
         );
     }
+
+    let creative_direction = request.creative_direction.trim();
+    let (creative_direction_option, creative_direction_value) =
+        match creative_direction_argument(creative_direction, support) {
+            Ok(value) => value,
+            Err(result) => return result,
+        };
 
     let mut arguments = vec![
         "project".into(),
@@ -330,8 +382,8 @@ pub fn update_project(app: &AppHandle, request: ProjectUpdateRequest) -> Project
         request.requested_deliverables.join(","),
         "--deadline".into(),
         request.deadline.clone().unwrap_or_else(|| "null".into()),
-        "--creative-direction".into(),
-        request.creative_direction.trim().into(),
+        creative_direction_option.into(),
+        creative_direction_value,
     ];
     arguments.shrink_to_fit();
 
@@ -379,5 +431,63 @@ pub fn update_project(app: &AppHandle, request: ProjectUpdateRequest) -> Project
             "JL Mixing Automation was not found.",
         ),
         Err(error) => blocked(ProjectUpdateCode::Failed, error.message()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn support(encoded: bool) -> ProjectUpdateSupport {
+        ProjectUpdateSupport {
+            update: true,
+            creative_direction_utf8_hex: encoded,
+        }
+    }
+
+    #[test]
+    fn multiline_creative_direction_uses_transport_safe_utf8_hex() {
+        assert_eq!(
+            creative_direction_argument("First line\nSecond line", support(true)).unwrap(),
+            (
+                "--creative-direction-utf8-hex",
+                "4669727374206c696e650a5365636f6e64206c696e65".into(),
+            )
+        );
+        assert_eq!(
+            creative_direction_argument("Windows\r\nLine 🎚️", support(true)).unwrap(),
+            (
+                "--creative-direction-utf8-hex",
+                utf8_hex("Windows\r\nLine 🎚️"),
+            )
+        );
+    }
+
+    #[test]
+    fn existing_transport_remains_for_empty_and_single_line_values() {
+        assert_eq!(
+            creative_direction_argument("", support(false)).unwrap(),
+            ("--creative-direction", String::new())
+        );
+        assert_eq!(
+            creative_direction_argument("Single line", support(false)).unwrap(),
+            ("--creative-direction", "Single line".into())
+        );
+    }
+
+    #[test]
+    fn multiline_value_explains_missing_automation_capability() {
+        let result = creative_direction_argument("First\nSecond", support(false)).unwrap_err();
+        assert!(!result.ok);
+        assert_eq!(result.code, ProjectUpdateCode::UnsupportedCapability);
+        assert!(result.message.contains("Update Automation"));
+    }
+
+    #[test]
+    fn discovery_detects_multiline_transport_independently() {
+        let document = serde_json::json!({
+            "capabilities": ["project.update", UTF8_HEX_CAPABILITY]
+        });
+        assert_eq!(project_update_support(&document), support(true));
     }
 }
