@@ -9,7 +9,7 @@ Last updated: 2026-09-24
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **v2.3.1 candidate recovery in progress; packaged acceptance pending**
+- Status: **coordinated v2.3.1-rc.1 candidates published; installed packaged acceptance pending**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -56,15 +56,15 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 ## Active work
 
 - Studio #419 tracks recovery after both `v2.3.0` releases were published as stable before RC acceptance. Both release pages were marked prerelease on 2026-09-24; their tags and assets remain intact. The `v2.3.0` packages are unqualified. Automation #206 fixed the Windows NAS client-deletion blocker in PR #207, merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 passed. Installed Windows NAS acceptance remains required.
-- Automation candidate PR #208 merged as `ae4c04618106d5e613a925597880c48d9b16f01d`; post-merge Tests and ShellCheck #1569 passed. Studio candidate PR #420 merged as `d0fb6990674090066f9054edcf08210ca3cd34b6`; post-merge full CI #2114 passed. Both `main` branches have `VERSION=2.3.1-rc.1`. No candidate release workflow has run yet.
+- Automation candidate PR #208 merged as `ae4c04618106d5e613a925597880c48d9b16f01d`; post-merge Tests and ShellCheck #1569 passed. Release run #35940591720 succeeded from that commit with four archives, checksums, inventories, annotated tag, and prerelease flag verified.
+- Studio candidate PR #420 merged as `d0fb6990674090066f9054edcf08210ca3cd34b6`; post-merge full CI #2114 passed. Release run #35940624927 succeeded from that commit with three installers, `SHA256SUMS.txt`, annotated tag, and prerelease flag verified. The later documentation-only status PR #421 merged as `2db73ede93fa0d22b7d35d5a95505616efae83a4`; post-merge full CI #2116 passed. The Studio package is built from `d0fb699`, not the status commit.
 - Studio release-preparation PR #416 merged at `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; PR CI #2107 and post-merge CI #2108 passed. Status PR #417 merged at `7b02d3dbc29da8a93f518460346ed5d17abbfd10`; PR CI #2109 and post-merge CI #2110 passed.
 - Automation release-preparation PR #205 merged at `8f6ef06da98e78e20dba0b8d4518eaee5b8951d5`; Tests and ShellCheck #1560 and post-merge #1561 passed.
 
 ## Remaining release work
 
-1. Dispatch Automation then Studio Release on approved `main` commits; verify both tags, prerelease flags, platform assets, checksums, and inventories.
-2. Install candidate packages on Windows NAS and available macOS platforms; record exact builds and results in `docs/RELEASE_ACCEPTANCE_V2.3.md`.
-3. Resolve blockers through another RC, or prepare stable `v2.3.1` only after packaged qualification and explicit approval.
+1. Install coordinated candidate packages on Windows NAS and available macOS platforms; record exact builds, tester/date, workspace paths, and results in `docs/RELEASE_ACCEPTANCE_V2.3.md`.
+2. Resolve blockers through another RC, or prepare stable `v2.3.1` only after packaged qualification and explicit approval.
 
 ## Known and deferred items
 
@@ -73,4 +73,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Run the Automation RC Release workflow from `main`, then the Studio RC Release workflow from `main`; verify published candidate assets and record installed acceptance. #396 remains deferred until after v2.3.
+Install the coordinated `v2.3.1-rc.1` packages and execute the release acceptance matrix, particularly Windows NAS empty-client deletion plan/execute and safety negatives. Record platform results independently. #396 remains deferred until after v2.3.
