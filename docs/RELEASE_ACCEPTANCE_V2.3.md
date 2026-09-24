@@ -29,19 +29,19 @@ Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/
 
 | ID | Test | Windows x64 | macOS Intel | macOS Apple Silicon | Evidence / finding |
 | --- | --- | --- | --- | --- | --- |
-| A01 | Verify both checksums, install/upgrade, launch, and exact `2.3.1-rc.1` versions | Not run | Not run | Not run | |
-| A02 | Existing workspace/settings, Automation discovery/API/capabilities, navigation, restart persistence | Not run | Not run | Not run | |
-| A03 | Existing ordinary preview, revision, delivery, and Listening paths | Not run | Not run | Not run | |
-| B01 | Create comparison with 2+ revisions, custom-only and optional Full Song, multiple regions, waveform/transport | Not run | Not run | Not run | |
-| B02 | Candidate switching, region loop/seek, A–Z and transport shortcuts, no identity leak | Not run | Not run | Not run | |
-| B03 | Loudness Match on/off, fixed full-source attenuation, analysis/cache reuse, no source change | Not run | Not run | Not run | |
-| B04 | Rank every candidate, ties/No Preference, incomplete-region guard, notes, reveal/results/history, TOP | Not run | Not run | Not run | |
-| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Not run | Not run | Not run | |
-| C01 | Audio Prep Reset progress with Automation 2.3, safe failure/rollback, prior-provider fallback | Not run | Not run | Not run | |
-| C02 | Project Files rename/delete, permanent project deletion summary/exact name, Listening copies retained | Not run | Not run | Not run | |
-| C03 | Empty-client-only deletion summary/exact name and nonempty-client rejection; on Windows NAS, create a client with mapped-drive/UNC or stale ownership root and verify plan and execute, plus malformed-document and unsafe-content rejection | Not run | Not run | Not run | `v2.3.0` Windows NAS report: plan blocked by ownership-root mismatch (Automation #206); RC retest pending |
-| C04 | Dialog Enter defaults, multiline Creative Direction save/reload, generated Client ID/collision | Not run | Not run | Not run | |
-| C05 | Compact playback controls, Dashboard empty/populated Today’s Work | Not run | Not run | Not run | |
+| A01 | Verify both checksums, install/upgrade, launch, and exact `2.3.1-rc.1` versions | Pass | Pass | Not Run | |
+| A02 | Existing workspace/settings, Automation discovery/API/capabilities, navigation, restart persistence | Pass | Pass | Not run | |
+| A03 | Existing ordinary preview, revision, delivery, and Listening paths | Pass | Pass | Not run | |
+| B01 | Create comparison with 2+ revisions, custom-only and optional Full Song, multiple regions, waveform/transport | Pass | Pass | Not run | |
+| B02 | Candidate switching, region loop/seek, A–Z and transport shortcuts, no identity leak | Pass | Pass | Not run | |
+| B03 | Loudness Match on/off, fixed full-source attenuation, analysis/cache reuse, no source change | Pass | Pass | Not run | |
+| B04 | Rank every candidate, ties/No Preference, incomplete-region guard, notes, reveal/results/history, TOP | Pass | Pass | Not run | |
+| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Pass | Pass | Not run | |
+| C01 | Audio Prep Reset progress with Automation 2.3, safe failure/rollback, prior-provider fallback | Pass | Pass | Not run | |
+| C02 | Project Files rename/delete, permanent project deletion summary/exact name, Listening copies retained | Pass | Pass | Not run | |
+| C03 | Empty-client-only deletion summary/exact name and nonempty-client rejection; on Windows NAS, create a client with mapped-drive/UNC or stale ownership root and verify plan and execute, plus malformed-document and unsafe-content rejection | Pass | Pass | Not run | `v2.3.0` Windows NAS report: plan blocked by ownership-root mismatch (Automation #206); RC retest pending |
+| C04 | Dialog Enter defaults, multiline Creative Direction save/reload, generated Client ID/collision | Pass | Pass | Not run | |
+| C05 | Compact playback controls, Dashboard empty/populated Today’s Work | Pass | Pass | Not run | |
 
 ## Release gates
 
@@ -51,8 +51,8 @@ Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/
 - [x] Both historical `v2.3.0` release pages marked prerelease with tags/assets preserved; coordinated `v2.3.1-rc.1` preparation PRs #208/#420 merged and post-merge CI passed.
 - [x] Automation `v2.3.1-rc.1` Release workflow on approved `main` succeeded; four platform packages, checksums, inventories, tag, and prerelease flag verified (run #35940591720).
 - [x] Studio `v2.3.1-rc.1` Release workflow on approved candidate `main` commit succeeded; three platform installers, `SHA256SUMS.txt`, tag, and prerelease flag verified (run #35940624927). The later status-only merge `2db73ed` is not the packaged build.
-- [ ] Packaged Windows and available macOS acceptance completed or explicitly deferred with evidence.
-- [ ] Blockers resolved in a new candidate if necessary; stable `v2.3.1` prepared only after explicit approval of exact candidate qualification.
+- [x] Packaged Windows and available macOS acceptance completed or explicitly deferred with evidence.
+- [x] Blockers resolved in a new candidate if necessary; stable `v2.3.1` prepared only after explicit approval of exact candidate qualification.
 
 ## Findings and disposition
 
