@@ -9,7 +9,7 @@ Last updated: 2026-09-24
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **Studio RC2 targeted installed acceptance reported Pass on Windows x64 and macOS Intel; evidence review and stable qualification pending**
+- Status: **Studio RC2 with Automation RC1 accepted for stable v2.3.1 preparation; stable release PRs and CI pending**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -55,7 +55,7 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Active work
 
-- Studio #423 tracks the blind comparison defect found during candidate verification: a shorter revision ending within a selected final region could not load. PR #424 implements the approved rule (candidate audio must extend past region start, then plays and loops to its own end), passed user-reported manual verification and full PR CI #2119, and merged as `77d7a1d4feca7ddc8fb13e3c1624ab3e918a3432`; full post-merge CI #2120 passed. The user reported installed Windows and macOS Intel verification of the fix on Studio RC2 and recorded B02 Pass in the targeted RC2 matrix. Exact platform details remain to be recorded.
+- Studio #423 tracks the blind comparison defect found during candidate verification: a shorter revision ending within a selected final region could not load. PR #424 implements the approved rule (candidate audio must extend past region start, then plays and loops to its own end), passed user-reported manual verification and full PR CI #2119, and merged as `77d7a1d4feca7ddc8fb13e3c1624ab3e918a3432`; full post-merge CI #2120 passed. The user reported installed Windows 11 Pro and macOS Intel 12.7.6 verification of the fix on Studio RC2 and recorded B02 Pass in the targeted RC2 matrix.
 - Studio #419 tracks recovery after both `v2.3.0` releases were published as stable before RC acceptance. Both release pages were marked prerelease on 2026-09-24; their tags and assets remain intact. The `v2.3.0` packages are unqualified. Automation #206 fixed the Windows NAS client-deletion blocker in PR #207, merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 passed. The user recorded a Windows C03 Pass on Automation/Studio RC1, without exact NAS-path evidence.
 - Studio candidate PR #425 merged as `71e9c6f22ee24ae313302530deeaad10aaa2de91`; post-merge full CI #2122 passed. Release run #36064641938 succeeded from that commit with three nonempty installers, `SHA256SUMS.txt`, annotated tag, and prerelease flag verified for Studio `v2.3.1-rc.2`.
 - Automation candidate PR #208 merged as `ae4c04618106d5e613a925597880c48d9b16f01d`; post-merge Tests and ShellCheck #1569 passed. Release run #35940591720 succeeded from that commit with four archives, checksums, inventories, annotated tag, and prerelease flag verified.
@@ -65,9 +65,9 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Remaining release work
 
-1. Review the reported Studio/Automation RC1 full matrix and Studio RC2 targeted matrix, keeping each result attached to the installed package that was tested. All targeted RC2 rows were marked Pass on Windows x64 and macOS Intel in commit `8ad08dc`.
-2. Record exact OS versions, workspace paths, Windows NAS deletion negative-case evidence, and the reason Apple Silicon was not tested; review the evidence for qualification of Studio RC2 with Automation RC1.
-3. Prepare stable `v2.3.1` only after explicit qualification approval of this exact candidate pair.
+1. Integrate approved acceptance PR #426, preserving the full RC1 results separately from the Studio RC2/Automation RC1 targeted passes. Windows 11 Pro, macOS Intel 12.7.6, and the Windows NAS test location are recorded; Apple Silicon was unavailable. Individual negative-case logs were not attached.
+2. Prepare coordinated stable `v2.3.1` release PRs with final notes, versions, and complete CI. The user explicitly approved the exact Studio RC2 and Automation RC1 candidate pair for stable preparation on 2026-09-24.
+3. Publish Automation first and Studio second through their Release workflows only after their stable preparation PRs and post-merge CI pass; verify artifacts and flags.
 
 ## Known and deferred items
 
@@ -76,4 +76,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Review acceptance PR #426 with the committed Windows x64 and macOS Intel RC2 Pass results, complete missing environment evidence, and request explicit qualification approval before stable release preparation. #396 remains deferred until after v2.3.
+Complete approved acceptance PR #426, then prepare coordinated Automation and Studio `v2.3.1` stable release PRs. #396 remains deferred until after v2.3.
