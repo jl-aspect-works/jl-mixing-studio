@@ -519,6 +519,21 @@ const workspace = (session: FrozenComparisonSession = frozen, onCancel = vi.fn()
   <ComparisonWorkspace clientId="c1" projectId="p1" session={session} onCancel={onCancel} onComplete={onComplete} />;
 
 describe("blind comparison workspace shell", () => {
+  it("shows a shorter candidate's actual end within a selected final region", async () => {
+    const lastRegion = { regionId: "outro", name: "Outro", startSeconds: 40, endSeconds: 55, builtIn: false };
+    const shorterSession = { ...frozen, regions: [lastRegion] };
+    mocks.playbackPrepare.mockResolvedValue({ activeCandidateId: "A", playing: false, currentSeconds: 40, durationSeconds: 60 });
+    mocks.playbackSwitch.mockResolvedValue({ activeCandidateId: "B", playing: false, currentSeconds: 40, durationSeconds: 50 });
+    render(workspace(shorterSession));
+
+    const seek = await screen.findByRole("slider", { name: "Comparison playback position" });
+    await waitFor(() => expect(seek).toHaveAttribute("max", "55"));
+    fireEvent.click(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" }));
+    await waitFor(() => expect(seek).toHaveAttribute("max", "50"));
+    expect(screen.getByText("Candidate B ends before this region’s defined end; playback and looping use its actual end.")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Outro: Candidate B" })).toBeInTheDocument();
+  });
+
   it("stacks the icon transport above the blind candidate selector", () => {
     render(workspace());
     const transport = screen.getByLabelText("Comparison transport");

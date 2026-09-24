@@ -254,6 +254,7 @@ export class ComparisonPlaybackSession {
   private disposed = false;
   private providerKind: PlaybackProviderKind = "unknown";
   private lastStatus: ComparisonPlaybackSnapshot | null = null;
+  private candidateDurations = new Map<string, number>();
 
   constructor(
     private readonly clientId: string,
@@ -302,6 +303,7 @@ export class ComparisonPlaybackSession {
       onProgress?.(`Loading audio and checking durations for all ${prepared.length} candidates…`);
       const durations = await measureComparison("audio_prepare", () => this.provider!.prepare(prepared, this.activeRegion.startSeconds), prepared.length);
       this.regions.forEach((region) => validateRegionDurations(this.candidates, region, durations));
+      this.candidateDurations = durations;
       const status = this.remember(await this.provider.status());
       this.logDiagnostic("session_ready", "success", status);
       return status;
@@ -318,6 +320,9 @@ export class ComparisonPlaybackSession {
     try {
       const status = this.remember(await provider.status());
       this.playRequested = !status.playing;
+      if (!status.playing && status.currentSeconds >= this.effectiveEnd(status)) {
+        await provider.seek(this.activeRegion.startSeconds);
+      }
       const next = this.remember(this.normalizePlaybackState(status.playing ? await provider.pause() : await provider.play()));
       finish("success", this.diagnosticFields(next));
       return next;
@@ -335,7 +340,19 @@ export class ComparisonPlaybackSession {
   async switchCandidate(candidateId: string) {
     const finish = this.startDiagnostic("candidate_switch", candidateId);
     try {
-      const next = this.remember(this.normalizePlaybackState(await measureComparison("candidate_switch", () => this.requireProvider().switchCandidate(candidateId))));
+      const provider = this.requireProvider();
+      const current = await provider.status();
+      const duration = this.candidateDurations.get(candidateId);
+      if (duration === undefined) throw playbackError(candidateId, "selected");
+      const targetEnd = Math.min(this.activeRegion.endSeconds ?? duration, duration);
+      if (current.currentSeconds >= targetEnd) {
+        // Never ask a provider to seek/play a shorter candidate at EOF.
+        await provider.pause();
+        await provider.seek(this.activeRegion.startSeconds);
+      }
+      const switched = await measureComparison("candidate_switch", () => provider.switchCandidate(candidateId));
+      const next = this.remember(this.normalizePlaybackState(current.currentSeconds >= targetEnd && this.playRequested
+        ? await provider.play() : switched));
       finish("success", this.diagnosticFields(next, candidateId));
       return next;
     } catch (error) {
@@ -370,8 +387,9 @@ export class ComparisonPlaybackSession {
       this.logDiagnostic("status", "error");
       throw error;
     }
-    const end = this.activeRegion.endSeconds ?? status.durationSeconds;
-    if (this.playRequested && this.loop && end > this.activeRegion.startSeconds && status.currentSeconds >= end - 0.04) {
+    const end = this.effectiveEnd(status);
+    const endTolerance = Math.min(0.04, (end - this.activeRegion.startSeconds) / 4);
+    if (this.playRequested && this.loop && status.currentSeconds >= end - endTolerance) {
       const finish = this.startDiagnostic("loop_restart");
       try {
         await provider.seek(this.activeRegion.startSeconds);
@@ -383,7 +401,7 @@ export class ComparisonPlaybackSession {
         throw error;
       }
     }
-    if (!status.playing && status.currentSeconds >= end - 0.04) {
+    if (!status.playing && status.currentSeconds >= end - endTolerance) {
       this.playRequested = false;
       this.logDiagnostic("playback_end", "success", status);
     }
@@ -394,7 +412,9 @@ export class ComparisonPlaybackSession {
     const provider = this.requireProvider();
     const finish = this.startDiagnostic("retry");
     try {
-      await provider.seek(this.boundPosition((await provider.status()).currentSeconds));
+      const status = await provider.status();
+      await provider.seek(status.currentSeconds >= this.effectiveEnd(status)
+        ? this.activeRegion.startSeconds : this.boundPosition(status.currentSeconds));
       this.playRequested = true;
       const next = this.remember(this.normalizePlaybackState(await provider.play()));
       finish("success", this.diagnosticFields(next));
@@ -418,8 +438,12 @@ export class ComparisonPlaybackSession {
   }
 
   private boundPosition(seconds: number) {
-    const end = this.activeRegion.endSeconds;
+    const end = this.lastStatus ? this.effectiveEnd(this.lastStatus) : this.activeRegion.endSeconds;
     return Math.max(this.activeRegion.startSeconds, end === null ? seconds : Math.min(seconds, end));
+  }
+
+  private effectiveEnd(status: ComparisonPlaybackSnapshot) {
+    return Math.min(this.activeRegion.endSeconds ?? status.durationSeconds, status.durationSeconds);
   }
 
   private async stopProvider() {
@@ -428,6 +452,7 @@ export class ComparisonPlaybackSession {
     if (provider) await provider.dispose();
     this.providerKind = "unknown";
     this.lastStatus = null;
+    this.candidateDurations.clear();
   }
 
   private remember(status: ComparisonPlaybackSnapshot) {
@@ -438,7 +463,7 @@ export class ComparisonPlaybackSession {
   private diagnosticFields(status = this.lastStatus ?? undefined, targetCandidateId?: string): PlaybackDiagnosticFields {
     const activeCandidate = this.candidates.find((candidate) => candidate.blindId === status?.activeCandidateId);
     const targetCandidate = this.candidates.find((candidate) => candidate.blindId === targetCandidateId);
-    const end = this.activeRegion.endSeconds ?? status?.durationSeconds ?? 0;
+    const end = status ? this.effectiveEnd(status) : this.activeRegion.endSeconds ?? 0;
     const position = status?.currentSeconds ?? 0;
     return {
       provider: this.providerKind,
@@ -474,8 +499,9 @@ export class ComparisonPlaybackSession {
 
   private normalizePlaybackState(status: ComparisonPlaybackSnapshot): ComparisonPlaybackSnapshot {
     if (!this.playRequested || status.playing) return status;
-    const end = this.activeRegion.endSeconds ?? status.durationSeconds;
-    if (end > this.activeRegion.startSeconds && status.currentSeconds >= end - 0.04) {
+    const end = this.effectiveEnd(status);
+    const endTolerance = Math.min(0.04, (end - this.activeRegion.startSeconds) / 4);
+    if (status.currentSeconds >= end - endTolerance) {
       this.playRequested = false;
       return status;
     }
@@ -520,7 +546,9 @@ const validateRegionDurations = (
   region: ProjectRegion,
   durations: ReadonlyMap<string, number>,
 ) => {
-  if (region.endSeconds === null) return;
-  const tooShort = candidates.find((candidate) => (durations.get(candidate.blindId) ?? 0) + 0.01 < region.endSeconds!);
-  if (tooShort) throw playbackError(tooShort.blindId, "prepared for the selected region");
+  const tooShort = candidates.find((candidate) => {
+    const duration = durations.get(candidate.blindId);
+    return duration === undefined || !Number.isFinite(duration) || duration <= region.startSeconds;
+  });
+  if (tooShort) throw new Error(`Candidate ${tooShort.blindId} ends at or before the start of region "${region.name}".`);
 };

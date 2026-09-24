@@ -33,17 +33,18 @@ const snapshot = (values: Partial<ComparisonPlaybackSnapshot> = {}): ComparisonP
   ...values,
 });
 
-const fakeProvider = () => {
+const fakeProvider = (durations = new Map<string, number>()) => {
   let current = snapshot();
+  const durationFor = (candidateId: string) => durations.get(candidateId) ?? 120;
   const provider: ComparisonAudioProvider = {
     prepare: vi.fn(async (values: readonly PreparedCandidate[], start: number) => {
-      current = snapshot({ activeCandidateId: values[0].blindId, currentSeconds: start });
-      return new Map(values.map((candidate) => [candidate.blindId, 120]));
+      current = snapshot({ activeCandidateId: values[0].blindId, currentSeconds: start, durationSeconds: durationFor(values[0].blindId) });
+      return new Map(values.map((candidate) => [candidate.blindId, durationFor(candidate.blindId)]));
     }),
     play: vi.fn(async () => (current = { ...current, playing: true })),
     pause: vi.fn(async () => (current = { ...current, playing: false })),
     seek: vi.fn(async (seconds: number) => (current = { ...current, currentSeconds: seconds })),
-    switchCandidate: vi.fn(async (candidateId: string) => (current = { ...current, activeCandidateId: candidateId })),
+    switchCandidate: vi.fn(async (candidateId: string) => (current = { ...current, activeCandidateId: candidateId, durationSeconds: durationFor(candidateId) })),
     setVolume: vi.fn(async () => current),
     status: vi.fn(async () => current),
     dispose: vi.fn(async () => undefined),
@@ -161,13 +162,69 @@ describe("comparison playback session", () => {
     expect(result.playing).toBe(true);
   });
 
-  it("rejects a candidate that is too short for any selected custom region", async () => {
-    const fake = fakeProvider();
-    vi.mocked(fake.provider.prepare).mockResolvedValue(new Map([["A", 120], ["B", 50]]));
+  it("prepares a shorter candidate for a selected final region and loops at its own end", async () => {
+    const fake = fakeProvider(new Map([["B", 50]]));
+    const session = new ComparisonPlaybackSession("client", "project", candidates(2), [fullSong, verse], fullSong, () => fake.provider);
+    await session.prepare();
+    await session.setRegion(verse);
+    await session.switchCandidate("B");
+    await session.toggle();
+    fake.setStatus(snapshot({ activeCandidateId: "B", durationSeconds: 50, currentSeconds: 50, playing: false }));
+
+    const next = await session.refresh();
+    expect(fake.provider.seek).toHaveBeenLastCalledWith(40);
+    expect(next.playing).toBe(true);
+    expect(next.currentSeconds).toBe(40);
+  });
+
+  it("restarts a shorter candidate at the region start when switching beyond its end", async () => {
+    const fake = fakeProvider(new Map([["B", 50]]));
+    const session = new ComparisonPlaybackSession("client", "project", candidates(2), [verse], verse, () => fake.provider);
+    await session.prepare();
+    await session.toggle();
+    fake.setStatus(snapshot({ activeCandidateId: "A", currentSeconds: 54, playing: true }));
+
+    const next = await session.switchCandidate("B");
+    expect(fake.provider.pause).toHaveBeenCalled();
+    expect(fake.provider.seek).toHaveBeenLastCalledWith(40);
+    expect(next).toMatchObject({ activeCandidateId: "B", currentSeconds: 40, durationSeconds: 50, playing: true });
+  });
+
+  it("stops at the shorter end with Loop Off and restarts on Play", async () => {
+    const fake = fakeProvider(new Map([["B", 50]]));
+    const session = new ComparisonPlaybackSession("client", "project", candidates(2), [verse], verse, () => fake.provider);
+    await session.prepare();
+    await session.switchCandidate("B");
+    session.setLoop(false);
+    await session.toggle();
+    fake.setStatus(snapshot({ activeCandidateId: "B", durationSeconds: 50, currentSeconds: 50, playing: false }));
+    expect((await session.refresh()).playing).toBe(false);
+    expect(fake.provider.seek).not.toHaveBeenCalled();
+
+    const restarted = await session.toggle();
+    expect(fake.provider.seek).toHaveBeenLastCalledWith(40);
+    expect(restarted.currentSeconds).toBe(40);
+    expect(restarted.playing).toBe(true);
+  });
+
+  it("rejects a candidate whose audio does not extend past any selected region start", async () => {
+    const fake = fakeProvider(new Map([["B", 40]]));
     const session = new ComparisonPlaybackSession("client", "project", candidates(2), [intro, verse], intro, () => fake.provider);
 
-    await expect(session.prepare()).rejects.toThrow("Candidate B could not be prepared for the selected region.");
+    await expect(session.prepare()).rejects.toThrow('Candidate B ends at or before the start of region "Verse".');
     expect(fake.provider.dispose).toHaveBeenCalled();
+  });
+
+  it("does not immediately loop a valid very short tail region", async () => {
+    const fake = fakeProvider(new Map([["B", 40.02]]));
+    const session = new ComparisonPlaybackSession("client", "project", candidates(2), [verse], verse, () => fake.provider);
+    await session.prepare();
+    await session.switchCandidate("B");
+    await session.toggle();
+    fake.setStatus(snapshot({ activeCandidateId: "B", durationSeconds: 40.02, currentSeconds: 40, playing: false }));
+
+    expect(await session.refresh()).toMatchObject({ currentSeconds: 40, playing: true });
+    expect(fake.provider.seek).not.toHaveBeenCalled();
   });
 
   it("passes fixed loudness gains to providers independently of user volume", async () => {

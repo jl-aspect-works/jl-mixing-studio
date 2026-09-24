@@ -270,7 +270,7 @@ export function ComparisonSetup({
       void saveRegion();
     }}>
         <h3 id="comparison-regions-title">3. Select and manage regions</h3>
-        <p>Select one or more regions to evaluate. Full Song is selected by default but is optional.</p>
+        <p>Select one or more regions to evaluate. Full Song is selected by default but is optional. A candidate that ends during a region plays to its own end; it must extend past the region start.</p>
         <RegionPreview
           clientId={client.clientId}
           projectId={project.projectId}

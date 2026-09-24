@@ -60,7 +60,7 @@ Locked eligibility behavior:
 - setup reminds the user to ensure selected revisions have the same song structure without requiring a separate confirmation control;
 - Studio does not perform structural alignment, time-warping, section detection, or timestamp remapping;
 - small duration differences are acceptable when selected project regions still describe equivalent material;
-- a candidate too short for a required region is incompatible and must be excluded rather than clipped/remapped;
+- a candidate must extend past the start of every selected region; when it ends before a custom region's defined end, playback uses that candidate's actual end without changing the shared project region or remapping timestamps;
 - an unplayable candidate is excluded before the session starts;
 - candidate set is frozen when the session starts.
 
@@ -213,6 +213,7 @@ Locked behavior:
 
 - selecting a region makes that region's start/end the active playback bounds;
 - selecting a custom region moves playback to that region's start rather than preserving an irrelevant position from the previous region;
+- each candidate's effective custom-region end is the earlier of its own audio end and the shared region end; a shorter candidate loops from its own end, and switching to it after that end starts it at the region start;
 - reaching the region end while Loop is On returns to the region start and continues;
 - inactive candidates are brought near the new loop position opportunistically so switching remains responsive;
 - candidate switching inside a loop preserves the current project-timeline position as closely as practical;
