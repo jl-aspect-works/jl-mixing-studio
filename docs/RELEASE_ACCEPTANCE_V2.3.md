@@ -47,13 +47,25 @@ The matrix below is the user-reported installed pass on **Studio `v2.3.1-rc.1`**
 
 ## Studio RC2 focused verification
 
-Studio `v2.3.1-rc.2` contains #423 and was published from `71e9c6f22ee24ae313302530deeaad10aaa2de91` after full post-merge CI #2122 passed. Automation remains `v2.3.1-rc.1`. On 2026-09-24, the user reported verifying on installed Windows and Mac that RC2 loads a shorter candidate for the last region when its actual end is after the region start. The Mac architecture, exact OS versions, workspace paths, and package checksums for this focused check were not reported.
+Studio `v2.3.1-rc.2` contains #423 and was published from `71e9c6f22ee24ae313302530deeaad10aaa2de91` after full post-merge CI #2122 passed. Automation remains `v2.3.1-rc.1`. On 2026-09-24, the user reported verifying on installed Windows and macOS Intel that RC2 loads a shorter candidate for the last region when its actual end is after the region start. Exact OS versions, workspace paths, and package checksums for this focused check were not reported.
 
-| Check | Windows | Mac | Evidence |
+| Check | Windows x64 | macOS Intel | Evidence |
 | --- | --- | --- | --- |
-| #423 — candidate ends within final region but past its start | Pass — user reported | Pass — user reported; architecture not specified | RC2 installed check, reported 2026-09-24; no per-platform details recorded |
+| #423 — candidate ends within final region but past its start | Pass — user reported | Pass — user reported | RC2 installed check, reported 2026-09-24; no per-platform environment details recorded |
 
-The RC1 matrix is retained as evidence for that exact earlier package. Full matrix results for Studio RC2 have not been recorded. Decide and record the required RC2 smoke/regression scope and exact platform/build evidence before qualifying it for stable release.
+The user approved a **targeted RC2 pass** for stable qualification on Windows x64 and macOS Intel, retaining the full RC1 matrix as evidence for its exact earlier package. Run the following installed checks against Studio RC2 with Automation RC1 and record results independently. For C03, the mapped-drive/UNC or stale-root and unsafe-content negatives apply to Windows NAS; perform the available client-deletion checks on macOS. The #423 positive case above is already reported Pass. The remaining checks below have not been reported for RC2:
+
+| ID | Required RC2 check | Windows x64 | macOS Intel |
+| --- | --- | --- | --- |
+| A01 | Checksum, install/launch, and exact Studio RC2 / Automation RC1 versions | Not run | Not run |
+| A02 | Existing workspace/settings, Automation discovery and restart | Not run | Not run |
+| A03 | Ordinary preview, revision, delivery, and Listening smoke | Not run | Not run |
+| B01 | Comparison setup with custom and optional Full Song regions | Not run | Not run |
+| B02 | Candidate switching, seek, loop, shortcuts, blind identity, and unequal-length region | Not run | Not run |
+| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Not run | Not run |
+| C03 | Empty-client deletion and safety checks, including Windows NAS ownership-root case | Not run | Not run |
+
+Record the exact OS versions, workspace paths, tester/date, and any Apple Silicon deferral reason. The #423 check does not by itself mark the broader B02 case Pass. Full RC2 matrix repetition is not required under this approved targeted plan; stable qualification still requires the remaining targeted results and explicit approval.
 
 ## Release gates
 
@@ -65,7 +77,8 @@ The RC1 matrix is retained as evidence for that exact earlier package. Full matr
 - [x] Studio `v2.3.1-rc.1` Release workflow on approved candidate `main` commit succeeded; three platform installers, `SHA256SUMS.txt`, tag, and prerelease flag verified (run #35940624927). The later status-only merge `2db73ed` is not the packaged build.
 - [x] Studio RC1 packaged Windows x64 and macOS Intel matrix results recorded; Apple Silicon Not run. RC1 remains unqualified because #423 required a new candidate.
 - [x] Studio `v2.3.1-rc.2` Release workflow succeeded with prerelease tag and three installers; user reported focused #423 installed verification on Windows and Mac.
-- [ ] Exact Studio RC2 packaged qualification scope and platform evidence recorded; stable `v2.3.1` prepared only after explicit approval of the exact coordinated candidates.
+- [x] Targeted Studio RC2 installed acceptance scope approved; full RC1 matrix retained for that earlier candidate.
+- [ ] Remaining Studio RC2 targeted checks, exact platform evidence, and any Apple Silicon deferral recorded; stable `v2.3.1` prepared only after explicit approval of the exact coordinated candidates.
 
 ## Findings and disposition
 
@@ -75,4 +88,4 @@ The RC1 matrix is retained as evidence for that exact earlier package. Full matr
 | Windows and Mac | Studio #423 | Studio RC1 rejects a shorter candidate whose audio ends within the custom final region | Fixed in PR #424; focused installed RC2 check reported Pass on Windows and Mac; exact test environments not recorded |
 | All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Both pages marked prerelease; recover through `v2.3.1-rc.1` without treating historical builds as qualified |
 
-**Decision:** Studio RC1 and Automation RC1 matrix passes are recorded, and the Studio RC2 #423 fix was reported verified on Windows and Mac. Stable qualification of the exact Studio RC2 and Automation RC1 pair remains open until the required RC2 acceptance scope, platform details, and explicit approval are recorded. Do not dispatch a stable workflow yet.
+**Decision:** Studio RC1 and Automation RC1 matrix passes are recorded, and the Studio RC2 #423 fix was reported verified on Windows and macOS Intel. The approved targeted RC2 checks above remain Not run except for #423. Stable qualification of the exact Studio RC2 and Automation RC1 pair remains open until those results, platform details, and explicit approval are recorded. Do not dispatch a stable workflow yet.
