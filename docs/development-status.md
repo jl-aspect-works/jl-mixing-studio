@@ -4,12 +4,12 @@ Last updated: 2026-09-24
 
 ## Current release
 
-- Development target: coordinated Studio and Automation `v2.3.1-rc.1` candidate
+- Development target: Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1`
 - Last qualified stable release: JL Mixing Studio `v2.2.0`; `v2.3.0` was published without packaged RC acceptance
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **coordinated v2.3.1-rc.1 candidates published; Studio #423 blocks qualification of this candidate**
+- Status: **Studio #423 fix merged; replacement Studio RC preparation and installed acceptance pending**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -55,7 +55,7 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Active work
 
-- Studio #423 tracks the blind comparison defect found during candidate verification: a shorter revision that extends past a selected final region's start cannot currently load when it ends before the region's defined end. The approved playback rule permits that candidate and bounds playback and looping at its actual end. The Studio fix and regression coverage are in progress; a new Studio RC and installed acceptance are required after it merges.
+- Studio #423 tracks the blind comparison defect found during candidate verification: a shorter revision ending within a selected final region could not load. PR #424 implements the approved rule (candidate audio must extend past region start, then plays and loops to its own end), passed user-reported manual verification and full PR CI #2119, and merged as `77d7a1d4feca7ddc8fb13e3c1624ab3e918a3432`; full post-merge CI #2120 passed. #423 remains open until installed candidate acceptance.
 - Studio #419 tracks recovery after both `v2.3.0` releases were published as stable before RC acceptance. Both release pages were marked prerelease on 2026-09-24; their tags and assets remain intact. The `v2.3.0` packages are unqualified. Automation #206 fixed the Windows NAS client-deletion blocker in PR #207, merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 passed. Installed Windows NAS acceptance remains required.
 - Automation candidate PR #208 merged as `ae4c04618106d5e613a925597880c48d9b16f01d`; post-merge Tests and ShellCheck #1569 passed. Release run #35940591720 succeeded from that commit with four archives, checksums, inventories, annotated tag, and prerelease flag verified.
 - Studio candidate PR #420 merged as `d0fb6990674090066f9054edcf08210ca3cd34b6`; post-merge full CI #2114 passed. Release run #35940624927 succeeded from that commit with three installers, `SHA256SUMS.txt`, annotated tag, and prerelease flag verified. The later documentation-only status PR #421 merged as `2db73ede93fa0d22b7d35d5a95505616efae83a4`; post-merge full CI #2116 passed. The Studio package is built from `d0fb699`, not the status commit.
@@ -64,7 +64,7 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Remaining release work
 
-1. Complete #423, then publish a replacement Studio RC and verify the shorter final-region behavior on installed packages.
+1. Publish a replacement Studio `v2.3.1-rc.2` with the unchanged Automation `v2.3.1-rc.1` candidate, then verify the shorter final-region behavior on installed packages.
 2. Finish coordinated candidate acceptance on Windows NAS and available macOS platforms; record exact builds, tester/date, workspace paths, and results in `docs/RELEASE_ACCEPTANCE_V2.3.md`.
 3. Prepare stable `v2.3.1` only after packaged qualification and explicit approval.
 
@@ -75,4 +75,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Complete and verify Studio #423, publish a replacement Studio candidate, and resume installed acceptance, particularly Windows NAS empty-client deletion and blind comparison of unequal-length revisions. Record platform results independently. #396 remains deferred until after v2.3.
+Review and merge the Studio `v2.3.1-rc.2` preparation PR, dispatch its Release workflow from `main`, and resume installed acceptance with Automation `v2.3.1-rc.1`, particularly Windows NAS empty-client deletion and blind comparison of unequal-length revisions. Record platform results independently. #396 remains deferred until after v2.3.
