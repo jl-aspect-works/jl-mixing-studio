@@ -1,6 +1,6 @@
 # JL Mixing Studio 2.3 Release Acceptance Record
 
-This record separates completed issue-level/manual and CI evidence from acceptance of the coordinated `v2.3.1-rc.1` packages. Automation and Studio `v2.3.0` were published as stable before a candidate acceptance pass; those builds are not qualified by this record. No unrun packaged result is represented as Pass.
+This record separates completed issue-level/manual and CI evidence from acceptance of the coordinated Automation `v2.3.1-rc.1` and Studio candidate packages. Automation and Studio `v2.3.0` were published as stable before a candidate acceptance pass; those builds are not qualified by this record. No unrun packaged result is represented as Pass.
 
 ## Evidence available before release
 
@@ -16,32 +16,44 @@ This record separates completed issue-level/manual and CI evidence from acceptan
 | Automation release preparation PR #205 | `08af9ed9806d70fa4bd5f83abb5ad0818a702903`; Tests and ShellCheck #1560 | Pass — merged as `8f6ef06da98e78e20dba0b8d4518eaee5b8951d5`; post-merge Tests and ShellCheck #1561 passed |
 | Studio release preparation PR #416 | `63c881d3cee2ae23ce697cf235e1e5acd1d60526`; complete CI #2107 | Pass — merged as `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; post-merge CI #2108 passed |
 | Published `v2.3.0` builds | Automation and Studio Release workflows generated platform assets on 2026-09-23 before RC acceptance; both pages marked prerelease on 2026-09-24 | Unqualified; existing tags/assets retained for historical identity, not counted as accepted RC builds |
-| Automation NAS client deletion #206 | PR #207 merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 | Automated Pass; installed Windows NAS retest pending |
+| Automation NAS client deletion #206 | PR #207 merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 | Automated Pass; user-reported installed RC1 C03 Pass below |
 | `v2.3.1-rc.1` preparation | Automation PR #208 merged as `ae4c04618106d5e613a925597880c48d9b16f01d` (post-merge Tests/ShellCheck #1569); Studio PR #420 merged as `d0fb6990674090066f9054edcf08210ca3cd34b6` (post-merge full CI #2114) | Pass — source and metadata preparation; artifact evidence below |
-| Automation `v2.3.1-rc.1` artifacts | [Release run #35940591720](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/35940591720) succeeded on `ae4c04618106d5e613a925597880c48d9b16f01d`; annotated tag targets that commit; GitHub release is marked prerelease; four nonempty platform archives, four `.sha256` files, and four inventories present | Pass — workflow and artifact presence; installed package acceptance pending |
-| Studio `v2.3.1-rc.1` artifacts | [Release run #35940624927](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/35940624927) succeeded on `d0fb6990674090066f9054edcf08210ca3cd34b6`; annotated tag targets that commit; GitHub release is marked prerelease; nonempty Windows x64, macOS Intel, and Apple Silicon installers plus `SHA256SUMS.txt` present | Pass — workflow and artifact presence; installed package acceptance pending |
+| Automation `v2.3.1-rc.1` artifacts | [Release run #35940591720](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/35940591720) succeeded on `ae4c04618106d5e613a925597880c48d9b16f01d`; annotated tag targets that commit; GitHub release is marked prerelease; four nonempty platform archives, four `.sha256` files, and four inventories present | Pass — workflow/artifact presence; user-reported installed matrix below |
+| Studio `v2.3.1-rc.1` artifacts | [Release run #35940624927](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/35940624927) succeeded on `d0fb6990674090066f9054edcf08210ca3cd34b6`; annotated tag targets that commit; GitHub release is marked prerelease; nonempty Windows x64, macOS Intel, and Apple Silicon installers plus `SHA256SUMS.txt` present | Pass — workflow/artifact presence; user-reported installed matrix below |
+| Studio #423 shorter final region | PR #424 passed manual verification and PR CI #2119; merged as `77d7a1d4feca7ddc8fb13e3c1624ab3e918a3432`; post-merge CI #2120 passed | Fixed in source after Studio RC1; packaged RC2 check recorded below |
+| Studio `v2.3.1-rc.2` artifacts | [Release run #36064641938](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36064641938) succeeded on `71e9c6f22ee24ae313302530deeaad10aaa2de91`; annotated tag targets that commit; GitHub release is marked prerelease; nonempty Windows x64, macOS Intel, and Apple Silicon installers plus `SHA256SUMS.txt` present | Pass — workflow and artifact presence; focused installed check below |
 
 Issue-level acceptance is not a claim that an RC installer has been installed. Keep Windows and macOS results independent. **Not run** means no packaged test; **Deferred** requires a stated reason and supporting evidence; **Pass** requires an actual result on the named platform.
 
 ## Packaged acceptance
 
-Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/date, OS versions, and local/NAS workspace paths when executed. Use a fresh install or upgrade from 2.2 as appropriate. Automation is published first, then Studio.
+The matrix below is the user-reported installed pass on **Studio `v2.3.1-rc.1`** (`d0fb6990674090066f9054edcf08210ca3cd34b6`) with **Automation `v2.3.1-rc.1`** (`ae4c04618106d5e613a925597880c48d9b16f01d`). Tester: `jlevine456`; results committed 2026-09-24 on `docs/419-rc1-installed-acceptance` (`565f15cf966492a56040e6f546db48f975f6cbd7`). Windows x64 and macOS Intel were tested independently; Apple Silicon is Not run. OS versions, workspace paths, test dates, and per-row evidence were not included in the submitted matrix. Record these details when available. RC1 does not include Studio #423, so its passes cannot establish that fix or qualify the later RC2 package.
 
 | ID | Test | Windows x64 | macOS Intel | macOS Apple Silicon | Evidence / finding |
 | --- | --- | --- | --- | --- | --- |
-| A01 | Verify both checksums, install/upgrade, launch, and exact `2.3.1-rc.1` versions | Not run | Not run | Not run | |
-| A02 | Existing workspace/settings, Automation discovery/API/capabilities, navigation, restart persistence | Not run | Not run | Not run | |
-| A03 | Existing ordinary preview, revision, delivery, and Listening paths | Not run | Not run | Not run | |
-| B01 | Create comparison with 2+ revisions, custom-only and optional Full Song, multiple regions, waveform/transport | Not run | Not run | Not run | |
-| B02 | Candidate switching, region loop/seek, A–Z and transport shortcuts, no identity leak | Not run | Not run | Not run | |
-| B03 | Loudness Match on/off, fixed full-source attenuation, analysis/cache reuse, no source change | Not run | Not run | Not run | |
-| B04 | Rank every candidate, ties/No Preference, incomplete-region guard, notes, reveal/results/history, TOP | Not run | Not run | Not run | |
-| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Not run | Not run | Not run | |
-| C01 | Audio Prep Reset progress with Automation 2.3, safe failure/rollback, prior-provider fallback | Not run | Not run | Not run | |
-| C02 | Project Files rename/delete, permanent project deletion summary/exact name, Listening copies retained | Not run | Not run | Not run | |
-| C03 | Empty-client-only deletion summary/exact name and nonempty-client rejection; on Windows NAS, create a client with mapped-drive/UNC or stale ownership root and verify plan and execute, plus malformed-document and unsafe-content rejection | Not run | Not run | Not run | `v2.3.0` Windows NAS report: plan blocked by ownership-root mismatch (Automation #206); RC retest pending |
-| C04 | Dialog Enter defaults, multiline Creative Direction save/reload, generated Client ID/collision | Not run | Not run | Not run | |
-| C05 | Compact playback controls, Dashboard empty/populated Today’s Work | Not run | Not run | Not run | |
+| A01 | Verify both checksums, install/upgrade, launch, and exact Studio/Automation `2.3.1-rc.1` versions | Pass | Pass | Not run | |
+| A02 | Existing workspace/settings, Automation discovery/API/capabilities, navigation, restart persistence | Pass | Pass | Not run | |
+| A03 | Existing ordinary preview, revision, delivery, and Listening paths | Pass | Pass | Not run | |
+| B01 | Create comparison with 2+ revisions, custom-only and optional Full Song, multiple regions, waveform/transport | Pass | Pass | Not run | |
+| B02 | Candidate switching, region loop/seek, A–Z and transport shortcuts, no identity leak | Pass | Pass | Not run | |
+| B03 | Loudness Match on/off, fixed full-source attenuation, analysis/cache reuse, no source change | Pass | Pass | Not run | |
+| B04 | Rank every candidate, ties/No Preference, incomplete-region guard, notes, reveal/results/history, TOP | Pass | Pass | Not run | |
+| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Pass | Pass | Not run | |
+| C01 | Audio Prep Reset progress with Automation 2.3, safe failure/rollback, prior-provider fallback | Pass | Pass | Not run | |
+| C02 | Project Files rename/delete, permanent project deletion summary/exact name, Listening copies retained | Pass | Pass | Not run | |
+| C03 | Empty-client-only deletion summary/exact name and nonempty-client rejection; on Windows NAS, create a client with mapped-drive/UNC or stale ownership root and verify plan and execute, plus malformed-document and unsafe-content rejection | Pass | Pass | Not run | User-reported RC1 pass supersedes the `v2.3.0` Windows NAS ownership-root failure (Automation #206); exact NAS path and negative-case evidence not recorded |
+| C04 | Dialog Enter defaults, multiline Creative Direction save/reload, generated Client ID/collision | Pass | Pass | Not run | |
+| C05 | Compact playback controls, Dashboard empty/populated Today’s Work | Pass | Pass | Not run | |
+
+## Studio RC2 focused verification
+
+Studio `v2.3.1-rc.2` contains #423 and was published from `71e9c6f22ee24ae313302530deeaad10aaa2de91` after full post-merge CI #2122 passed. Automation remains `v2.3.1-rc.1`. On 2026-09-24, the user reported verifying on installed Windows and Mac that RC2 loads a shorter candidate for the last region when its actual end is after the region start. The Mac architecture, exact OS versions, workspace paths, and package checksums for this focused check were not reported.
+
+| Check | Windows | Mac | Evidence |
+| --- | --- | --- | --- |
+| #423 — candidate ends within final region but past its start | Pass — user reported | Pass — user reported; architecture not specified | RC2 installed check, reported 2026-09-24; no per-platform details recorded |
+
+The RC1 matrix is retained as evidence for that exact earlier package. Full matrix results for Studio RC2 have not been recorded. Decide and record the required RC2 smoke/regression scope and exact platform/build evidence before qualifying it for stable release.
 
 ## Release gates
 
@@ -51,14 +63,16 @@ Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/
 - [x] Both historical `v2.3.0` release pages marked prerelease with tags/assets preserved; coordinated `v2.3.1-rc.1` preparation PRs #208/#420 merged and post-merge CI passed.
 - [x] Automation `v2.3.1-rc.1` Release workflow on approved `main` succeeded; four platform packages, checksums, inventories, tag, and prerelease flag verified (run #35940591720).
 - [x] Studio `v2.3.1-rc.1` Release workflow on approved candidate `main` commit succeeded; three platform installers, `SHA256SUMS.txt`, tag, and prerelease flag verified (run #35940624927). The later status-only merge `2db73ed` is not the packaged build.
-- [ ] Packaged Windows and available macOS acceptance completed or explicitly deferred with evidence.
-- [ ] Blockers resolved in a new candidate if necessary; stable `v2.3.1` prepared only after explicit approval of exact candidate qualification.
+- [x] Studio RC1 packaged Windows x64 and macOS Intel matrix results recorded; Apple Silicon Not run. RC1 remains unqualified because #423 required a new candidate.
+- [x] Studio `v2.3.1-rc.2` Release workflow succeeded with prerelease tag and three installers; user reported focused #423 installed verification on Windows and Mac.
+- [ ] Exact Studio RC2 packaged qualification scope and platform evidence recorded; stable `v2.3.1` prepared only after explicit approval of the exact coordinated candidates.
 
 ## Findings and disposition
 
 | Platform | Issue | Finding | Disposition |
 | --- | --- | --- | --- |
-| Windows NAS | Automation #206 | Published `v2.3.0` blocks newly created empty-client deletion at plan with an ownership-root mismatch | Fixed in Automation PR #207; installed coordinated RC verification pending |
+| Windows NAS | Automation #206 | Published `v2.3.0` blocks newly created empty-client deletion at plan with an ownership-root mismatch | Fixed in Automation PR #207; RC1 C03 recorded Pass on Windows, with exact NAS path and negative-case evidence still to record |
+| Windows and Mac | Studio #423 | Studio RC1 rejects a shorter candidate whose audio ends within the custom final region | Fixed in PR #424; focused installed RC2 check reported Pass on Windows and Mac; exact test environments not recorded |
 | All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Both pages marked prerelease; recover through `v2.3.1-rc.1` without treating historical builds as qualified |
 
-**Decision:** Candidate packages are published; installed-platform qualification remains Not run. Record actual manual results before declaring packaged qualification complete or dispatching a stable workflow.
+**Decision:** Studio RC1 and Automation RC1 matrix passes are recorded, and the Studio RC2 #423 fix was reported verified on Windows and Mac. Stable qualification of the exact Studio RC2 and Automation RC1 pair remains open until the required RC2 acceptance scope, platform details, and explicit approval are recorded. Do not dispatch a stable workflow yet.
