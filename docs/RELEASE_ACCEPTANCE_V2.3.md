@@ -15,8 +15,9 @@ This record separates completed issue-level/manual and CI evidence from acceptan
 | Automation implementation baseline | `fe7251c0d81419af50315c4fb59d9a6e819469e6`; CI #1557 | Pass — implementation baseline |
 | Automation release preparation PR #205 | `08af9ed9806d70fa4bd5f83abb5ad0818a702903`; Tests and ShellCheck #1560 | Pass — merged as `8f6ef06da98e78e20dba0b8d4518eaee5b8951d5`; post-merge Tests and ShellCheck #1561 passed |
 | Studio release preparation PR #416 | `63c881d3cee2ae23ce697cf235e1e5acd1d60526`; complete CI #2107 | Pass — merged as `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; post-merge CI #2108 passed |
-| Published `v2.3.0` builds | Automation and Studio Release workflows generated platform assets on 2026-09-23 before RC acceptance | Unqualified; existing tags retained for historical identity |
+| Published `v2.3.0` builds | Automation and Studio Release workflows generated platform assets on 2026-09-23 before RC acceptance; both pages marked prerelease on 2026-09-24 | Unqualified; existing tags/assets retained for historical identity, not counted as accepted RC builds |
 | Automation NAS client deletion #206 | PR #207 merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 | Automated Pass; installed Windows NAS retest pending |
+| `v2.3.1-rc.1` preparation | Automation PR #208 merged as `ae4c04618106d5e613a925597880c48d9b16f01d` (post-merge Tests/ShellCheck #1569); Studio PR #420 merged as `d0fb6990674090066f9054edcf08210ca3cd34b6` (post-merge full CI #2114) | Pass — source and metadata preparation; release workflows and installed acceptance pending |
 
 Issue-level acceptance is not a claim that an RC installer has been installed. Keep Windows and macOS results independent. **Not run** means no packaged test; **Deferred** requires a stated reason and supporting evidence; **Pass** requires an actual result on the named platform.
 
@@ -45,6 +46,7 @@ Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/
 - [x] Approved implementation scope merged; #396 explicitly deferred beyond 2.3.
 - [x] Implementation baseline CI evidence recorded above.
 - [x] Release preparation PRs pass their complete CI matrices and merge (Automation #205; Studio #416 and status #417).
+- [x] Both historical `v2.3.0` release pages marked prerelease with tags/assets preserved; coordinated `v2.3.1-rc.1` preparation PRs #208/#420 merged and post-merge CI passed.
 - [ ] Automation `v2.3.1-rc.1` Release workflow on approved `main` succeeds; four platform packages, checksums, inventories, tag, and prerelease flag verified.
 - [ ] Studio `v2.3.1-rc.1` Release workflow on approved `main` succeeds; three platform installers, `SHA256SUMS.txt`, tag, and prerelease flag verified.
 - [ ] Packaged Windows and available macOS acceptance completed or explicitly deferred with evidence.
@@ -55,6 +57,6 @@ Record exact Studio/Automation tags, commit SHAs, release workflow runs, tester/
 | Platform | Issue | Finding | Disposition |
 | --- | --- | --- | --- |
 | Windows NAS | Automation #206 | Published `v2.3.0` blocks newly created empty-client deletion at plan with an ownership-root mismatch | Fixed in Automation PR #207; installed coordinated RC verification pending |
-| All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Recover through `v2.3.1-rc.1`; do not reinterpret the historical tags as qualified |
+| All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Both pages marked prerelease; recover through `v2.3.1-rc.1` without treating historical builds as qualified |
 
-**Decision:** Candidate preparation only. Update this record from actual RC workflow and manual results before declaring packaged qualification complete or dispatching a stable workflow.
+**Decision:** Candidate source preparation complete. Update this record from actual RC workflow and manual results before declaring packaged qualification complete or dispatching a stable workflow.
