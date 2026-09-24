@@ -4,6 +4,8 @@
 
 ## Prepare the release
 
+- [ ] For a new release line or patch, prepare and publish a prerelease candidate first. Do not dispatch a stable version until packaged acceptance is recorded for the exact coordinated Studio and Automation candidates.
+- [ ] Confirm the intended `VERSION` has an `-rc.N` suffix for a candidate. For stable, confirm the acceptance record identifies qualified builds, platform results, blocker dispositions, and explicit approval to promote.
 - [ ] Confirm all intended release changes are merged to `main` and no release-blocking PR remains open.
 - [ ] Update `VERSION` to the intended SemVer value (for example `2.1.0-rc.3` or `2.1.0`).
 - [ ] Run `npm run version:sync` and commit the generated manifest/lockfile changes with the `VERSION` change.
@@ -23,7 +25,7 @@
 - [ ] Confirm macOS Intel DMG succeeds.
 - [ ] Confirm macOS Apple Silicon DMG succeeds.
 - [ ] Confirm `SHA256SUMS.txt` is generated and verified.
-- [ ] Confirm the GitHub release is published and is marked prerelease when `VERSION` contains a prerelease suffix.
+- [ ] Confirm the GitHub release is published and marked prerelease for an `-rc.N` `VERSION`. Stop if the tag, version, or prerelease flag differs from the intended dispatch.
 
 ## Acceptance
 
@@ -32,3 +34,4 @@ For the active 2.3 release, use [`RELEASE_ACCEPTANCE_V2.3.md`](RELEASE_ACCEPTANC
 - [ ] Install the published package on Windows and perform the release acceptance pass.
 - [ ] Install the appropriate published package on macOS and perform the release acceptance pass.
 - [ ] Record release-blocking findings as issues/PRs and do not advance to the next RC or stable release until resolved or explicitly deferred.
+- [ ] Before a stable dispatch, verify the exact coordinated candidate packages passed required installed-platform checks, with any deferrals and user approval recorded in the acceptance record.
