@@ -6,7 +6,7 @@ This record separates completed issue-level/manual and CI evidence from acceptan
 
 | Scope | Evidence | State |
 | --- | --- | --- |
-| Blind Comparison #374–#380 | Sequenced merged PRs, cross-platform acceptance and NAS performance work in #380 | Complete at feature level; packaged v2.3 retest pending |
+| Blind Comparison #374–#380 | Sequenced merged PRs, cross-platform acceptance and NAS performance work in #380 | Complete at feature level; packaged results recorded below |
 | Dashboard #385 and compact playback #383 | Approved and merged PRs #399 and #400 | Complete at feature level |
 | Project Files #368, Audio Prep Reset #337 | Manually accepted and merged; coordinated Automation PR #200, Studio PRs #402/#404 | Complete at feature level |
 | Project deletion #367, empty-client deletion #366 | Manually accepted; Automation PRs #201/#202 and Studio PRs #406/#408 | Complete at feature level |
@@ -21,7 +21,7 @@ This record separates completed issue-level/manual and CI evidence from acceptan
 | Automation `v2.3.1-rc.1` artifacts | [Release run #35940591720](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/35940591720) succeeded on `ae4c04618106d5e613a925597880c48d9b16f01d`; annotated tag targets that commit; GitHub release is marked prerelease; four nonempty platform archives, four `.sha256` files, and four inventories present | Pass — workflow/artifact presence; user-reported installed matrix below |
 | Studio `v2.3.1-rc.1` artifacts | [Release run #35940624927](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/35940624927) succeeded on `d0fb6990674090066f9054edcf08210ca3cd34b6`; annotated tag targets that commit; GitHub release is marked prerelease; nonempty Windows x64, macOS Intel, and Apple Silicon installers plus `SHA256SUMS.txt` present | Pass — workflow/artifact presence; user-reported installed matrix below |
 | Studio #423 shorter final region | PR #424 passed manual verification and PR CI #2119; merged as `77d7a1d4feca7ddc8fb13e3c1624ab3e918a3432`; post-merge CI #2120 passed | Fixed in source after Studio RC1; packaged RC2 check recorded below |
-| Studio `v2.3.1-rc.2` artifacts | [Release run #36064641938](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36064641938) succeeded on `71e9c6f22ee24ae313302530deeaad10aaa2de91`; annotated tag targets that commit; GitHub release is marked prerelease; nonempty Windows x64, macOS Intel, and Apple Silicon installers plus `SHA256SUMS.txt` present | Pass — workflow and artifact presence; focused installed check below |
+| Studio `v2.3.1-rc.2` artifacts | [Release run #36064641938](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36064641938) succeeded on `71e9c6f22ee24ae313302530deeaad10aaa2de91`; annotated tag targets that commit; GitHub release is marked prerelease; nonempty Windows x64, macOS Intel, and Apple Silicon installers plus `SHA256SUMS.txt` present | Pass — workflow and artifact presence; targeted installed checks below |
 
 Issue-level acceptance is not a claim that an RC installer has been installed. Keep Windows and macOS results independent. **Not run** means no packaged test; **Deferred** requires a stated reason and supporting evidence; **Pass** requires an actual result on the named platform.
 
@@ -47,13 +47,13 @@ The matrix below is the user-reported installed pass on **Studio `v2.3.1-rc.1`**
 
 ## Studio RC2 focused verification
 
-Studio `v2.3.1-rc.2` contains #423 and was published from `71e9c6f22ee24ae313302530deeaad10aaa2de91` after full post-merge CI #2122 passed. Automation remains `v2.3.1-rc.1`. On 2026-09-24, the user reported verifying on installed Windows and macOS Intel that RC2 loads a shorter candidate for the last region when its actual end is after the region start. Exact OS versions, workspace paths, and package checksums for this focused check were not reported.
+Studio `v2.3.1-rc.2` contains #423 and was published from `71e9c6f22ee24ae313302530deeaad10aaa2de91` after full post-merge CI #2122 passed. Automation remains `v2.3.1-rc.1`. On 2026-09-24, the user reported verifying on installed Windows 11 Pro and macOS Intel 12.7.6 that RC2 loads a shorter candidate for the last region when its actual end is after the region start. The recorded Windows NAS test path appears below. Individual checksum values were not attached, while the targeted A01 check was reported Pass.
 
 | Check | Windows x64 | macOS Intel | Evidence |
 | --- | --- | --- | --- |
-| #423 — candidate ends within final region but past its start | Pass — user reported | Pass — user reported | RC2 installed check, reported 2026-09-24; no per-platform environment details recorded |
+| #423 — candidate ends within final region but past its start | Pass — user reported | Pass — user reported | RC2 installed check, reported 2026-09-24; platforms and NAS path recorded below |
 
-The user approved a **targeted RC2 pass** for stable qualification on Windows x64 and macOS Intel, retaining the full RC1 matrix as evidence for its exact earlier package. Run the following installed checks against Studio RC2 with Automation RC1 and record results independently. For C03, the mapped-drive/UNC or stale-root and unsafe-content negatives apply to Windows NAS; perform the available client-deletion checks on macOS. The #423 positive case above is already reported Pass. The following targeted checks were reported Pass on installed Studio RC2 with Automation RC1 by `jlevine456` in commit `8ad08dcc2baa955bd4d51c7b65a8b2731de23126` on 2026-09-24. Windows x64 and macOS Intel results were recorded independently:
+The user approved a **targeted RC2 pass** for stable qualification on Windows x64 and macOS Intel, retaining the full RC1 matrix as evidence for its exact earlier package. For C03, the mapped-drive/UNC or stale-root and unsafe-content negatives apply to Windows NAS; available client-deletion checks apply to macOS. The #423 positive case above is separately reported Pass. The following targeted checks were reported Pass on installed Studio RC2 with Automation RC1 by `jlevine456` in commit `8ad08dcc2baa955bd4d51c7b65a8b2731de23126` on 2026-09-24. Windows x64 and macOS Intel results were recorded independently:
 
 | ID | Required RC2 check | Windows x64 | macOS Intel |
 | --- | --- | --- | --- |
@@ -65,13 +65,14 @@ The user approved a **targeted RC2 pass** for stable qualification on Windows x6
 | B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Pass | Pass |
 | C03 | Empty-client deletion and safety checks, including Windows NAS ownership-root case | Pass | Pass |
 
-The committed RC2 matrix records B02 Pass independently of the earlier focused #423 result. Exact OS versions, workspace paths, per-row evidence, and the reason Apple Silicon was not tested are still missing from this record. Full RC2 matrix repetition is not required under the approved targeted plan. Stable qualification of the exact candidate pair requires review of this evidence and explicit approval.
+The committed RC2 matrix records B02 Pass independently of the earlier focused #423 result. Its C03 Pass covers the specified client-deletion safety checks, including the Windows NAS case; individual negative-case logs were not attached. Full RC2 matrix repetition is not required under the approved targeted plan.
 
-RC2 info/evidence:
+RC2 test environment, reported by `jlevine456`:
 
-*OS Version: Win 11 Pro, macos 12.7.6
-*Workspace path tested: \\nas-lev-02\media\Mixes-Test\Mixes-Test-2.1\Mixes\Clients\Test Client 2.3\Projects\Test Project 2.3
-*Apple Silicon based machine not available for testing yet
+- Windows 11 Pro; macOS Intel 12.7.6.
+- Windows NAS test location (project path beneath the workspace): `\\nas-lev-02\media\Mixes-Test\Mixes-Test-2.1\Mixes\Clients\Test Client 2.3\Projects\Test Project 2.3`. A separate macOS workspace path was not recorded.
+- macOS Apple Silicon: Not run; an Apple Silicon machine was unavailable. The available macOS Intel build was tested.
+- Individual checksum values and per-case logs were not attached; the A01 and C03 checks were marked Pass on both tested platforms.
 
 ## Release gates
 
@@ -85,15 +86,15 @@ RC2 info/evidence:
 - [x] Studio `v2.3.1-rc.2` Release workflow succeeded with prerelease tag and three installers; user reported focused #423 installed verification on Windows and Mac.
 - [x] Targeted Studio RC2 installed acceptance scope approved; full RC1 matrix retained for that earlier candidate.
 - [x] Targeted Studio RC2 checks A01–A03, B01–B02, B05, and C03 reported Pass on Windows x64 and macOS Intel in commit `8ad08dc`.
-- [x] Record exact OS versions, workspace paths, per-row evidence for the Windows NAS deletion negatives, and the Apple Silicon Not run/deferral reason.
-- [x] Review and explicitly approve qualification of Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1` before preparing stable `v2.3.1`.
+- [x] Record tested OS versions and Windows NAS path; note that individual negative-case logs and a macOS workspace path were not attached. Apple Silicon Not run is documented because no machine was available.
+- [x] User explicitly approved Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1` for stable `v2.3.1`, based on the recorded targeted results (2026-09-24).
 
 ## Findings and disposition
 
 | Platform | Issue | Finding | Disposition |
 | --- | --- | --- | --- |
-| Windows NAS | Automation #206 | Published `v2.3.0` blocks newly created empty-client deletion at plan with an ownership-root mismatch | Fixed in Automation PR #207; RC1 C03 recorded Pass on Windows, with exact NAS path and negative-case evidence still to record |
-| Windows and Mac | Studio #423 | Studio RC1 rejects a shorter candidate whose audio ends within the custom final region | Fixed in PR #424; focused installed RC2 check reported Pass on Windows and Mac; exact test environments not recorded |
+| Windows NAS | Automation #206 | Published `v2.3.0` blocks newly created empty-client deletion at plan with an ownership-root mismatch | Fixed in Automation PR #207; RC1 and RC2 C03 marked Pass on Windows. RC2 NAS location recorded above; individual negative-case logs were not attached |
+| Windows and Mac | Studio #423 | Studio RC1 rejects a shorter candidate whose audio ends within the custom final region | Fixed in PR #424; installed Studio RC2 checks reported Pass on Windows 11 Pro and macOS Intel 12.7.6 |
 | All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Both pages marked prerelease; recover through `v2.3.1-rc.1` without treating historical builds as qualified |
 
-**Decision:** Studio RC1 and Automation RC1 full matrix passes are preserved for the earlier package. The installed Studio RC2 #423 fix and all approved targeted RC2 checks are reported Pass on Windows x64 and macOS Intel with Automation RC1. Exact platform/workspace details and negative-case evidence are not yet recorded, and explicit stable qualification has not been approved. Do not dispatch a stable workflow yet.
+**Decision (approved 2026-09-24):** The full Studio RC1/Automation RC1 matrix remains historical evidence for the earlier packages. All approved targeted Studio RC2/Automation RC1 checks, including #423 and Windows NAS C03, were reported Pass on Windows 11 Pro and macOS Intel 12.7.6. Apple Silicon was unavailable and was not run. The user explicitly approved this exact candidate pair as ready for stable `v2.3.1` preparation. Final stable release documentation, version changes, CI, and artifact verification remain separate release steps.
