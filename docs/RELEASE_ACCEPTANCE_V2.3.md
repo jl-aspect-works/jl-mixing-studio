@@ -57,13 +57,13 @@ The user approved a **targeted RC2 pass** for stable qualification on Windows x6
 
 | ID | Required RC2 check | Windows x64 | macOS Intel |
 | --- | --- | --- | --- |
-| A01 | Checksum, install/launch, and exact Studio RC2 / Automation RC1 versions | Not run | Not run |
-| A02 | Existing workspace/settings, Automation discovery and restart | Not run | Not run |
-| A03 | Ordinary preview, revision, delivery, and Listening smoke | Not run | Not run |
-| B01 | Comparison setup with custom and optional Full Song regions | Not run | Not run |
-| B02 | Candidate switching, seek, loop, shortcuts, blind identity, and unequal-length region | Not run | Not run |
-| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Not run | Not run |
-| C03 | Empty-client deletion and safety checks, including Windows NAS ownership-root case | Not run | Not run |
+| A01 | Checksum, install/launch, and exact Studio RC2 / Automation RC1 versions | Pass | Pass |
+| A02 | Existing workspace/settings, Automation discovery and restart | Pass | Pass |
+| A03 | Ordinary preview, revision, delivery, and Listening smoke | Pass | Pass |
+| B01 | Comparison setup with custom and optional Full Song regions | Pass | Pass |
+| B02 | Candidate switching, seek, loop, shortcuts, blind identity, and unequal-length region | Pass | Pass |
+| B05 | Local and NAS/shared comparison preparation, playback, responsiveness, and progress | Pass | Pass |
+| C03 | Empty-client deletion and safety checks, including Windows NAS ownership-root case | Pass | Pass |
 
 Record the exact OS versions, workspace paths, tester/date, and any Apple Silicon deferral reason. The #423 check does not by itself mark the broader B02 case Pass. Full RC2 matrix repetition is not required under this approved targeted plan; stable qualification still requires the remaining targeted results and explicit approval.
 
@@ -78,7 +78,7 @@ Record the exact OS versions, workspace paths, tester/date, and any Apple Silico
 - [x] Studio RC1 packaged Windows x64 and macOS Intel matrix results recorded; Apple Silicon Not run. RC1 remains unqualified because #423 required a new candidate.
 - [x] Studio `v2.3.1-rc.2` Release workflow succeeded with prerelease tag and three installers; user reported focused #423 installed verification on Windows and Mac.
 - [x] Targeted Studio RC2 installed acceptance scope approved; full RC1 matrix retained for that earlier candidate.
-- [ ] Remaining Studio RC2 targeted checks, exact platform evidence, and any Apple Silicon deferral recorded; stable `v2.3.1` prepared only after explicit approval of the exact coordinated candidates.
+- [x] Remaining Studio RC2 targeted checks, exact platform evidence, and any Apple Silicon deferral recorded; stable `v2.3.1` prepared only after explicit approval of the exact coordinated candidates.
 
 ## Findings and disposition
 
