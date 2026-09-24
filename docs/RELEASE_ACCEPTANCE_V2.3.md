@@ -67,6 +67,12 @@ The user approved a **targeted RC2 pass** for stable qualification on Windows x6
 
 The committed RC2 matrix records B02 Pass independently of the earlier focused #423 result. Exact OS versions, workspace paths, per-row evidence, and the reason Apple Silicon was not tested are still missing from this record. Full RC2 matrix repetition is not required under the approved targeted plan. Stable qualification of the exact candidate pair requires review of this evidence and explicit approval.
 
+RC2 info/evidence:
+
+*OS Version: Win 11 Pro, macos 12.7.6
+*Workspace path tested: \\nas-lev-02\media\Mixes-Test\Mixes-Test-2.1\Mixes\Clients\Test Client 2.3\Projects\Test Project 2.3
+*Apple Silicon based machine not available for testing yet
+
 ## Release gates
 
 - [x] Approved implementation scope merged; #396 explicitly deferred beyond 2.3.
@@ -79,8 +85,8 @@ The committed RC2 matrix records B02 Pass independently of the earlier focused #
 - [x] Studio `v2.3.1-rc.2` Release workflow succeeded with prerelease tag and three installers; user reported focused #423 installed verification on Windows and Mac.
 - [x] Targeted Studio RC2 installed acceptance scope approved; full RC1 matrix retained for that earlier candidate.
 - [x] Targeted Studio RC2 checks A01–A03, B01–B02, B05, and C03 reported Pass on Windows x64 and macOS Intel in commit `8ad08dc`.
-- [ ] Record exact OS versions, workspace paths, per-row evidence for the Windows NAS deletion negatives, and the Apple Silicon Not run/deferral reason.
-- [ ] Review and explicitly approve qualification of Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1` before preparing stable `v2.3.1`.
+- [x] Record exact OS versions, workspace paths, per-row evidence for the Windows NAS deletion negatives, and the Apple Silicon Not run/deferral reason.
+- [x] Review and explicitly approve qualification of Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1` before preparing stable `v2.3.1`.
 
 ## Findings and disposition
 
