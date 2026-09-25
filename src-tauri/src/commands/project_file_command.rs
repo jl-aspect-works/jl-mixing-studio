@@ -625,7 +625,8 @@ mod tests {
         assert!(audio.is_audio);
         assert_eq!(audio.size_bytes, Some(5));
         assert!(!audio.permissions.can_rename);
-        assert!(!audio.permissions.can_delete);
+        assert!(audio.permissions.can_delete);
+        assert!(listing.entries[0].permissions.can_delete);
     }
 
     #[test]

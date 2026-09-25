@@ -1,5 +1,5 @@
 //! Explicit plan/execute deletion for user content in managed project folders.
-//! Reserved roots and Original Delivery files with recorded Audio Prep lineage are protected.
+//! Reserved roots stay protected; Automation reconciles Original Delivery lineage.
 
 use super::project_file_diagnostics::record_mutation;
 use super::project_files::{
