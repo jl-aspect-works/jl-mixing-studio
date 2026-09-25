@@ -9,8 +9,8 @@ This is the active installed-package acceptance record for Studio `v2.3.2-rc.1` 
 | Automation #270 implementation | PR #211 merged as `b7a5310f7fb493b55b6a81482d69115e48eef6ca`; PR Tests and ShellCheck passed | Source pass |
 | Studio #270 implementation | PR #430 merged as `93e38560af2d792a7f73c1ba93599bdecaa53564`; full PR CI passed | Source pass |
 | Studio #396 implementation | PR #431 merged as `d32d926ac9eef0333e77c7c5e21ffce63fd984b8`; rebased head `1446978f4aa043c0a22dbbf9b200a9e719dd625a` passed full CI #2145 | Source pass |
-| Automation `v2.3.2-rc.1` package | Record release workflow, exact tag target, four archives/checksums/inventories and prerelease flag | Pending |
-| Studio `v2.3.2-rc.1` package | Record release workflow, exact tag target, three installers/checksum file and prerelease flag | Pending |
+| Automation `v2.3.2-rc.1` package | Release preparation PR #212 merged as `651cd587a410b91787b9e8665266d22c26cac6cc`; PR Tests/ShellCheck #1589 and post-merge #1590 passed. [Release run #36193607159](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/36193607159) succeeded on that commit; `v2.3.2-rc.1` points to it. Release marked prerelease, with four nonempty archives, four `.sha256` files, and four inventories | Package publication pass; installed tests pending |
+| Studio `v2.3.2-rc.1` package | Release preparation PR #432 merged as `e16eccff28e4b4656e6cb326057c246f5d7fcf37`; complete PR CI #2147 and post-merge CI #2148 passed. [Release run #36194342663](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36194342663) succeeded on that commit; `v2.3.2-rc.1` points to it. Release marked prerelease, with nonempty Windows x64, macOS Intel, and Apple Silicon installers and `SHA256SUMS.txt` | Package publication pass; installed tests pending |
 
 ## Installed acceptance
 
@@ -30,10 +30,10 @@ Windows and macOS Intel installed checks are required for this pairing. If Apple
 
 ## Release gates
 
-- [ ] Automation release preparation passes Tests and ShellCheck, merges, and post-merge checks pass.
-- [ ] Studio release preparation passes full CI, merges, and post-merge checks pass.
-- [ ] Automation Release workflow from `main` publishes `v2.3.2-rc.1` as a prerelease with all archives, checksums, and inventories verified.
-- [ ] Studio Release workflow from `main` publishes `v2.3.2-rc.1` as a prerelease with all installers and checksum file verified.
+- [x] Automation release preparation passes Tests and ShellCheck, merges, and post-merge checks pass.
+- [x] Studio release preparation passes full CI, merges, and post-merge checks pass.
+- [x] Automation Release workflow from `main` publishes `v2.3.2-rc.1` as a prerelease with all archives, checksums, and inventories verified.
+- [x] Studio Release workflow from `main` publishes `v2.3.2-rc.1` as a prerelease with all installers and checksum file verified.
 - [ ] Windows x64 installed results recorded for the exact pair.
 - [ ] macOS Intel installed results recorded for the exact pair.
 - [ ] Apple Silicon result or reason for deferral recorded.
