@@ -29,7 +29,7 @@
 
 ## Acceptance
 
-For the active 2.3 release, use [`RELEASE_ACCEPTANCE_V2.3.md`](RELEASE_ACCEPTANCE_V2.3.md) as the packaged acceptance matrix. Preserve the 2.2 and 2.1 records as historical qualification evidence. Release Automation first, then Studio, and record exact tagged builds and platform results.
+For the active 2.3.2 release, use [`RELEASE_ACCEPTANCE_V2.3.2.md`](RELEASE_ACCEPTANCE_V2.3.2.md) as the packaged acceptance matrix. Preserve [`RELEASE_ACCEPTANCE_V2.3.md`](RELEASE_ACCEPTANCE_V2.3.md) and earlier records as historical qualification evidence. Release Automation first, then Studio, and record exact tagged builds and platform results.
 
 - [ ] Install the published package on Windows and perform the release acceptance pass.
 - [ ] Install the appropriate published package on macOS and perform the release acceptance pass.
