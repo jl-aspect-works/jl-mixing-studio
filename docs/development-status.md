@@ -4,12 +4,12 @@ Last updated: 2026-09-24
 
 ## Current release
 
-- Development target: Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1`
+- Development target: coordinated stable Studio and Automation `v2.3.1`
 - Last qualified stable release: JL Mixing Studio `v2.2.0`; `v2.3.0` was published without packaged RC acceptance
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **Studio RC2 with Automation RC1 accepted for stable v2.3.1 preparation; stable release PRs and CI pending**
+- Status: **Studio RC2 with Automation RC1 qualified for stable promotion; release preparation and publication pending**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -65,9 +65,9 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Remaining release work
 
-1. Integrate approved acceptance PR #426, preserving the full RC1 results separately from the Studio RC2/Automation RC1 targeted passes. Windows 11 Pro, macOS Intel 12.7.6, and the Windows NAS test location are recorded; Apple Silicon was unavailable. Individual negative-case logs were not attached.
-2. Prepare coordinated stable `v2.3.1` release PRs with final notes, versions, and complete CI. The user explicitly approved the exact Studio RC2 and Automation RC1 candidate pair for stable preparation on 2026-09-24.
-3. Publish Automation first and Studio second through their Release workflows only after their stable preparation PRs and post-merge CI pass; verify artifacts and flags.
+1. Complete Automation stable release PR #209 and Studio stable release PR #427, confirming full PR and post-merge CI. Acceptance PR #426 merged as `e3fc17e777316b9cb2189b08d23b49bc654c49f3`; the qualified RC pair and Apple Silicon Not run reason are documented in `docs/RELEASE_ACCEPTANCE_V2.3.md`.
+2. Publish Automation `v2.3.1` first and Studio `v2.3.1` second through their Release workflows from `main`. Verify workflow result, tag targets, stable release flags, checksums, and assets.
+3. Record exact stable build identities and publication evidence in the qualification record. The approved candidate packages, not the new stable installers, supplied installed acceptance evidence.
 
 ## Known and deferred items
 
@@ -76,4 +76,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Complete approved acceptance PR #426, then prepare coordinated Automation and Studio `v2.3.1` stable release PRs. #396 remains deferred until after v2.3.
+Complete stable preparation PRs #209 and #427 and verify their post-merge CI before dispatching Automation then Studio Release workflows. #396 remains deferred until after v2.3.

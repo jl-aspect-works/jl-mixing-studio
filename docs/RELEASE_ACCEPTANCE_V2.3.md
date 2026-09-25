@@ -1,6 +1,6 @@
-# JL Mixing Studio 2.3 Release Acceptance Record
+# JL Mixing Studio 2.3 Release Qualification Record
 
-This record separates completed issue-level/manual and CI evidence from acceptance of the coordinated Automation `v2.3.1-rc.1` and Studio candidate packages. Automation and Studio `v2.3.0` were published as stable before a candidate acceptance pass; those builds are not qualified by this record. No unrun packaged result is represented as Pass.
+This record documents the completed qualification of Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1` for stable `v2.3.1` promotion. It preserves earlier RC1 acceptance separately from the approved RC2 tests. Automation and Studio `v2.3.0` were published as stable before a candidate acceptance pass; those builds are not qualified by this record. No unrun packaged result is represented as Pass.
 
 ## Evidence available before release
 
@@ -55,7 +55,7 @@ Studio `v2.3.1-rc.2` contains #423 and was published from `71e9c6f22ee24ae313302
 
 The user approved a **targeted RC2 pass** for stable qualification on Windows x64 and macOS Intel, retaining the full RC1 matrix as evidence for its exact earlier package. For C03, the mapped-drive/UNC or stale-root and unsafe-content negatives apply to Windows NAS; available client-deletion checks apply to macOS. The #423 positive case above is separately reported Pass. The following targeted checks were reported Pass on installed Studio RC2 with Automation RC1 by `jlevine456` in commit `8ad08dcc2baa955bd4d51c7b65a8b2731de23126` on 2026-09-24. Windows x64 and macOS Intel results were recorded independently:
 
-| ID | Required RC2 check | Windows x64 | macOS Intel |
+| ID | RC2 check | Windows x64 | macOS Intel |
 | --- | --- | --- | --- |
 | A01 | Checksum, install/launch, and exact Studio RC2 / Automation RC1 versions | Pass | Pass |
 | A02 | Existing workspace/settings, Automation discovery and restart | Pass | Pass |
@@ -97,4 +97,8 @@ RC2 test environment, reported by `jlevine456`:
 | Windows and Mac | Studio #423 | Studio RC1 rejects a shorter candidate whose audio ends within the custom final region | Fixed in PR #424; installed Studio RC2 checks reported Pass on Windows 11 Pro and macOS Intel 12.7.6 |
 | All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Both pages marked prerelease; recover through `v2.3.1-rc.1` without treating historical builds as qualified |
 
-**Decision (approved 2026-09-24):** The full Studio RC1/Automation RC1 matrix remains historical evidence for the earlier packages. All approved targeted Studio RC2/Automation RC1 checks, including #423 and Windows NAS C03, were reported Pass on Windows 11 Pro and macOS Intel 12.7.6. Apple Silicon was unavailable and was not run. The user explicitly approved this exact candidate pair as ready for stable `v2.3.1` preparation. Final stable release documentation, version changes, CI, and artifact verification remain separate release steps.
+**Qualification decision (approved 2026-09-24):** The full Studio RC1/Automation RC1 matrix remains historical evidence for the earlier packages. All approved targeted Studio RC2/Automation RC1 checks, including #423 and Windows NAS C03, were reported Pass on Windows 11 Pro and macOS Intel 12.7.6. Apple Silicon was unavailable and was not run. The user explicitly approved this exact candidate pair for stable `v2.3.1` promotion. Stable package creation, workflow verification, and artifact checks remain release steps; no stable installer is represented as installed or tested by this record.
+
+## Stable publication status
+
+Stable `v2.3.1` publication is pending the release-preparation PRs, their post-merge CI, and the Automation-first, Studio-second Release workflows. Record the workflow runs, tag targets, release flags, and artifacts after each workflow completes.

@@ -1,20 +1,20 @@
 # JL Mixing Studio 2.3
 
-Studio 2.3 adds Blind Revision Comparison and improves everyday project work. This Studio `v2.3.1-rc.2` candidate is coordinated with JL Mixing Automation `v2.3.1-rc.1` for packaged qualification. Studio still uses Automation API `1.0` and workspace metadata schema `1.1.0`; compatibility is determined by advertised capabilities and supported schemas, not matching product version numbers.
+Studio 2.3 adds Blind Revision Comparison and improves everyday project work. Studio `v2.3.1` was qualified with JL Mixing Automation `v2.3.1-rc.1` on Windows 11 Pro and macOS Intel 12.7.6. Studio still uses Automation API `1.0` and workspace metadata schema `1.1.0`; compatibility is determined by advertised capabilities and supported schemas, not matching product version numbers.
 
 ## Installation
 
-Download the installer for your platform from the Assets section of the Studio `v2.3.1-rc.2` prerelease. Verify it against `SHA256SUMS.txt` before bypassing an operating-system security warning.
+Download the installer for your platform from the Assets section of the Studio `v2.3.1` release. Verify it against `SHA256SUMS.txt` before bypassing an operating-system security warning.
 
-- Intel Mac: `JL-Mixing-Studio_2.3.1-rc.2_macos_x86_64.dmg`
-- Apple Silicon Mac: `JL-Mixing-Studio_2.3.1-rc.2_macos_aarch64.dmg`
-- Windows x64: `JL-Mixing-Studio_2.3.1-rc.2_windows_x86_64.exe`
+- Intel Mac: `JL-Mixing-Studio_2.3.1_macos_x86_64.dmg`
+- Apple Silicon Mac: `JL-Mixing-Studio_2.3.1_macos_aarch64.dmg`
+- Windows x64: `JL-Mixing-Studio_2.3.1_windows_x86_64.exe`
 
 On macOS, open the DMG and drag **JL Mixing Studio** to **Applications**. Studio is unsigned and not notarized. After verifying the checksum, Control-click the app, choose **Open**, and confirm **Open**. If still blocked, launch once, then use **System Settings → Privacy & Security → Open Anyway**.
 
 On Windows, run the installer. Studio is unsigned; after verifying the checksum, select **More info → Run anyway** if SmartScreen blocks it and approve the normal User Account Control prompt.
 
-Install Automation separately. For coordinated candidate acceptance, use Automation `v2.3.1-rc.1`. Its macOS bundled runtime requires the documented recursive quarantine removal after checksum verification; see its release notes.
+Install Automation separately. The qualified pairing for this release used Automation `v2.3.1-rc.1`; install Automation `v2.3.1` for the coordinated stable release. Its macOS bundled runtime requires the documented recursive quarantine removal after checksum verification; see its release notes.
 
 ## What's new
 
@@ -33,4 +33,4 @@ Install Automation separately. For coordinated candidate acceptance, use Automat
 
 ## Verification record
 
-Implementation issues received feature-level approval; the merged Studio and Automation commits passed CI. Automation #206 fixes a Windows NAS client-deletion blocker from the initial `v2.3.0` packages; Studio #423 fixes blind comparison of shorter final-region candidates from `v2.3.1-rc.1`. The separate [2.3 release acceptance record](RELEASE_ACCEPTANCE_V2.3.md) tracks this candidate's packaged qualification without treating unrun checks as passed.
+Implementation issues received feature-level approval; the merged Studio and Automation commits passed CI. Automation #206 fixes a Windows NAS client-deletion blocker from the initial `v2.3.0` packages; Studio #423 fixes blind comparison of shorter final-region candidates from `v2.3.1-rc.1`. The [2.3 release acceptance record](RELEASE_ACCEPTANCE_V2.3.md) records Windows and macOS Intel candidate package passes, the Apple Silicon deferral, and explicit approval of the qualified pairing.
