@@ -31,6 +31,7 @@ type StoredCompletedCandidate = {
   blind_id: string;
   integrated_lufs: number | null;
   applied_gain_db: number | null;
+  region_loudness?: Record<string, { integrated_lufs: number; applied_gain_db: number }>;
 };
 
 type StoredRegionSnapshot = {
@@ -52,6 +53,7 @@ type StoredCompletedSession = {
   candidates: StoredCompletedCandidate[];
   regions: StoredCompletedRegionResult[];
   loudness_match: boolean;
+  region_loudness_match?: boolean;
 };
 
 type StoredDocument = {
@@ -69,7 +71,7 @@ type StoredLoudnessCandidate = {
   applied_gain_db: number;
   cache_state: "analyzed" | "reused";
 };
-type StoredLoudnessResult = { candidates: StoredLoudnessCandidate[] };
+type StoredLoudnessResult = { candidates: StoredLoudnessCandidate[]; regions?: { region_id: string; candidates: StoredLoudnessCandidate[] }[] };
 type StoredCumulativeStanding = {
   revision_id: string;
   revision_number: number;
@@ -107,6 +109,9 @@ const completedCandidate = (candidate: StoredCompletedCandidate): CompletedCompa
   blindId: candidate.blind_id,
   integratedLufs: candidate.integrated_lufs,
   appliedGainDb: candidate.applied_gain_db,
+  regionLoudness: Object.fromEntries(Object.entries(candidate.region_loudness ?? {}).map(([id, value]) => [id, {
+    integratedLufs: value.integrated_lufs, appliedGainDb: value.applied_gain_db,
+  }])),
 });
 
 const completedRegionResult = (result: StoredCompletedRegionResult): CompletedComparisonRegionResult => ({
@@ -121,6 +126,7 @@ const completedSession = (session: StoredCompletedSession): CompletedComparisonS
   candidates: session.candidates.map(completedCandidate),
   regions: session.regions.map(completedRegionResult),
   loudnessMatch: session.loudness_match,
+  regionLoudnessMatch: session.region_loudness_match ?? false,
 });
 
 const comparisonDocument = (document: StoredDocument): ComparisonDocument => ({
@@ -150,6 +156,9 @@ const toStoredCompleteSessionRequest = (request: CompleteComparisonSessionReques
     blindId: candidate.blindId,
     integratedLufs: candidate.integratedLufs,
     appliedGainDb: candidate.appliedGainDb,
+    regionLoudness: Object.fromEntries(Object.entries(candidate.regionLoudness ?? {}).map(([id, value]) => [id, {
+      integratedLufs: value.integratedLufs, appliedGainDb: value.appliedGainDb,
+    }])),
   })),
   regions: request.regions.map((result) => ({
     region: {
@@ -162,6 +171,7 @@ const toStoredCompleteSessionRequest = (request: CompleteComparisonSessionReques
     notes: result.notes,
   })),
   loudnessMatch: request.loudnessMatch,
+  regionLoudnessMatch: request.regionLoudnessMatch ?? false,
 });
 
 export const getComparisonSetup = (request: ProjectIdentity) =>
@@ -206,7 +216,7 @@ export const clearComparisonHistory = (request: ProjectIdentity) =>
     }));
 
 export const analyzeComparisonLoudness = (
-  request: ProjectIdentity & { candidates: { revisionId: string; revisionNumber: number; relativePath: string }[] },
+  request: ProjectIdentity & { candidates: { revisionId: string; revisionNumber: number; relativePath: string }[]; regions?: ProjectRegion[] },
 ) =>
   invoke<StoredLoudnessResult>("analyze_comparison_loudness", { request }).then((result): ComparisonLoudnessResult => ({
     candidates: result.candidates.map((candidate) => ({
@@ -217,4 +227,9 @@ export const analyzeComparisonLoudness = (
       appliedGainDb: candidate.applied_gain_db,
       cacheState: candidate.cache_state,
     })),
+    regions: result.regions?.map((region) => ({ regionId: region.region_id, candidates: region.candidates.map((candidate) => ({
+      revisionId: candidate.revision_id, revisionNumber: candidate.revision_number,
+      relativePath: candidate.relative_path, integratedLufs: candidate.integrated_lufs,
+      appliedGainDb: candidate.applied_gain_db, cacheState: candidate.cache_state,
+    })) })),
   }));

@@ -144,7 +144,7 @@ export function ComparisonResults({
         <dl className="comparison-results-stat-grid">
           <div><dt>Completed</dt><dd>{formatDate(activeSession.completedAt)}</dd></div>
           <div><dt>Candidates</dt><dd>{activeSession.candidates.length}</dd></div>
-          <div><dt>Loudness</dt><dd>{activeSession.loudnessMatch ? "Matched" : "Off"}</dd></div>
+          <div><dt>Loudness</dt><dd>{activeSession.regionLoudnessMatch ? "Per region" : activeSession.loudnessMatch ? "Full source" : "Off"}</dd></div>
           <div><dt>Regions</dt><dd>{rankedRegionCount}</dd></div>
           <div><dt>Session Winner</dt><dd>{sessionWinner ? <CandidateName candidate={sessionWinner} /> : "No Full Song winner"}</dd></div>
           <div><dt>Cumulative TOP</dt><dd>{cumulativeTop ? revisionLabel(cumulativeTop.revisionNumber) : "No Full Song evidence"}</dd></div>
@@ -215,7 +215,19 @@ export function ComparisonResults({
 
             <section className="comparison-loudness-table compact" aria-labelledby="comparison-loudness-title">
               <h3 id="comparison-loudness-title">Loudness Match Details</h3>
-              {activeSession.loudnessMatch ? <div className="comparison-loudness-list" aria-label="Loudness matched candidate measurements">
+              {activeSession.regionLoudnessMatch ? <div className="comparison-loudness-list" aria-label="Region loudness matched candidate measurements">
+                {activeSession.regions.map(({ region }) => <div key={region.regionId}>
+                  <h4>{region.name}</h4>
+                  <div className="comparison-loudness-heading" aria-hidden="true"><span /><span>LUFS</span><span>Gain</span></div>
+                  {activeSession.candidates.map((candidate) => {
+                    const measurement = candidate.regionLoudness?.[region.regionId];
+                    return <div className="comparison-loudness-row" key={candidate.revisionId}>
+                      <strong>{candidate.blindId}</strong><span>{measurement?.integratedLufs.toFixed(2) ?? "n/a"}</span>
+                      <span>{measurement ? `${measurement.appliedGainDb.toFixed(2)} dB` : "n/a"}</span>
+                    </div>;
+                  })}
+                </div>)}
+              </div> : activeSession.loudnessMatch ? <div className="comparison-loudness-list" aria-label="Loudness matched candidate measurements">
                 <div className="comparison-loudness-heading" aria-hidden="true">
                   <span />
                   <span>LUFS</span>

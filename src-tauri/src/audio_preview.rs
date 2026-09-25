@@ -8,9 +8,9 @@ use std::time::Duration;
 mod comparison_audio;
 pub(crate) use comparison_audio::{
     pause as pause_comparison, play as play_comparison, prepare as prepare_comparison,
-    seek as seek_comparison, set_volume as set_comparison_volume, status as comparison_status,
-    stop as stop_comparison, switch_candidate as switch_comparison_candidate,
-    NativeComparisonAudioStatus,
+    seek as seek_comparison, set_match_gains as set_comparison_match_gains,
+    set_volume as set_comparison_volume, status as comparison_status, stop as stop_comparison,
+    switch_candidate as switch_comparison_candidate, NativeComparisonAudioStatus,
 };
 
 #[derive(Debug, Clone, Serialize)]

@@ -15,6 +15,7 @@ export const completedCandidatesFromSession = (
   blindId: candidate.blindId,
   integratedLufs: candidate.integratedLufs,
   appliedGainDb: candidate.appliedGainDb,
+  regionLoudness: candidate.regionLoudness,
 }));
 
 export const completedRegionResultsFromRankings = (

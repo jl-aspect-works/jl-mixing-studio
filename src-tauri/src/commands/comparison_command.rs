@@ -1,9 +1,10 @@
 use super::project_files::is_audio_extension;
 use super::{find_project_summary, resolve_workspace_root, validated_project_directory};
-use crate::comparison_loudness::{self, LoudnessAnalysisInput};
+use crate::comparison_loudness::{self, LoudnessAnalysisInput, LoudnessAnalysisRegion};
 use crate::models::comparison::{
     self, ComparisonDocument, CompletedCandidate, CompletedRegionResult, CompletedSession,
-    CumulativeStanding, ProjectRegion, RegionSnapshot, FULL_SONG_REGION_ID,
+    CumulativeStanding, ProjectRegion, RegionLoudnessMeasurement, RegionSnapshot,
+    FULL_SONG_REGION_ID,
 };
 use crate::workspace;
 use chrono::{SecondsFormat, Utc};
@@ -97,6 +98,16 @@ pub(crate) struct ComparisonLoudnessRequest {
     client_id: String,
     project_id: String,
     candidates: Vec<ComparisonLoudnessCandidateRequest>,
+    #[serde(default)]
+    regions: Vec<ComparisonLoudnessRegionRequest>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ComparisonLoudnessRegionRequest {
+    region_id: String,
+    start_seconds: f64,
+    end_seconds: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -107,6 +118,8 @@ pub(crate) struct CompleteComparisonCandidateRequest {
     blind_id: String,
     integrated_lufs: Option<f64>,
     applied_gain_db: Option<f64>,
+    #[serde(default)]
+    region_loudness: BTreeMap<String, RegionLoudnessMeasurement>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -135,6 +148,8 @@ pub(crate) struct CompleteComparisonSessionRequest {
     candidates: Vec<CompleteComparisonCandidateRequest>,
     regions: Vec<CompleteComparisonRegionResultRequest>,
     loudness_match: bool,
+    #[serde(default)]
+    region_loudness_match: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -166,6 +181,7 @@ pub(crate) struct ComparisonSetup {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ComparisonLoudnessResult {
     candidates: Vec<comparison_loudness::LoudnessAnalysisCandidate>,
+    regions: Vec<comparison_loudness::LoudnessRegionAnalysis>,
 }
 
 #[derive(Debug, Serialize)]
@@ -383,6 +399,31 @@ fn analyze_comparison_loudness_blocking(
     request: ComparisonLoudnessRequest,
 ) -> Result<ComparisonLoudnessResult, String> {
     let (directory, _) = project_context(&app, &request.client_id, &request.project_id)?;
+    let selected_regions = if request.regions.is_empty() {
+        Vec::new()
+    } else {
+        let document = comparison::load(&directory)?;
+        request
+            .regions
+            .iter()
+            .map(|requested| {
+                let selected = document
+                    .regions
+                    .iter()
+                    .find(|region| {
+                        region.region_id == requested.region_id
+                            && region.start_seconds == requested.start_seconds
+                            && region.end_seconds == requested.end_seconds
+                    })
+                    .ok_or("A selected comparison region changed; reopen setup before analyzing")?;
+                Ok(LoudnessAnalysisRegion {
+                    region_id: selected.region_id.clone(),
+                    start_seconds: selected.start_seconds,
+                    end_seconds: selected.end_seconds,
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?
+    };
     let inputs = request
         .candidates
         .into_iter()
@@ -397,9 +438,21 @@ fn analyze_comparison_loudness_blocking(
             })
         })
         .collect::<Result<Vec<_>, String>>()?;
-    Ok(ComparisonLoudnessResult {
-        candidates: comparison_loudness::analyze_project_candidates(&directory, inputs)?,
-    })
+    if selected_regions.is_empty() {
+        Ok(ComparisonLoudnessResult {
+            candidates: comparison_loudness::analyze_project_candidates(&directory, inputs)?,
+            regions: Vec::new(),
+        })
+    } else {
+        Ok(ComparisonLoudnessResult {
+            candidates: Vec::new(),
+            regions: comparison_loudness::analyze_project_regions(
+                &directory,
+                inputs,
+                selected_regions,
+            )?,
+        })
+    }
 }
 
 #[tauri::command]
@@ -480,6 +533,7 @@ fn completed_session_from_request(
             blind_id: candidate.blind_id.trim().to_owned(),
             integrated_lufs: candidate.integrated_lufs,
             applied_gain_db: candidate.applied_gain_db,
+            region_loudness: candidate.region_loudness,
         })
         .collect();
     let regions = request
@@ -519,6 +573,7 @@ fn completed_session_from_request(
         candidates,
         regions,
         loudness_match: request.loudness_match,
+        region_loudness_match: request.region_loudness_match,
     })
 }
 

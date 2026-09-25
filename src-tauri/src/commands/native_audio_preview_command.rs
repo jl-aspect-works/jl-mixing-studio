@@ -333,6 +333,14 @@ pub(crate) fn set_native_comparison_audio_volume(
 }
 
 #[tauri::command]
+pub(crate) fn set_native_comparison_match_gains(
+    state: tauri::State<'_, NativeAudioPreviewState>,
+    gains: std::collections::BTreeMap<String, Option<f64>>,
+) -> Result<NativeComparisonAudioStatus, String> {
+    audio_preview::set_comparison_match_gains(&state, gains)
+}
+
+#[tauri::command]
 pub(crate) fn stop_native_comparison_audio(
     state: tauri::State<'_, NativeAudioPreviewState>,
 ) -> Result<NativeComparisonAudioStatus, String> {

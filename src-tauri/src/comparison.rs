@@ -34,6 +34,8 @@ pub struct CompletedSession {
     pub candidates: Vec<CompletedCandidate>,
     pub regions: Vec<CompletedRegionResult>,
     pub loudness_match: bool,
+    #[serde(default)]
+    pub region_loudness_match: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -43,6 +45,14 @@ pub struct CompletedCandidate {
     pub blind_id: String,
     pub integrated_lufs: Option<f64>,
     pub applied_gain_db: Option<f64>,
+    #[serde(default)]
+    pub region_loudness: BTreeMap<String, RegionLoudnessMeasurement>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegionLoudnessMeasurement {
+    pub integrated_lufs: f64,
+    pub applied_gain_db: f64,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -229,7 +239,16 @@ fn validate_session(session: &CompletedSession) -> Result<(), String> {
         candidate.revision_id.trim().is_empty()
             || candidate.blind_id.trim().is_empty()
             || (session.loudness_match
+                && !session.region_loudness_match
                 && (candidate.integrated_lufs.is_none() || candidate.applied_gain_db.is_none()))
+            || (session.region_loudness_match
+                && (!session.loudness_match
+                    || candidate.region_loudness.len() != session.regions.len()
+                    || candidate.region_loudness.values().any(|value| {
+                        !value.integrated_lufs.is_finite()
+                            || !value.applied_gain_db.is_finite()
+                            || value.applied_gain_db > 0.0
+                    })))
     }) {
         return Err("Completed comparison candidate metadata is incomplete".to_owned());
     }
@@ -244,6 +263,16 @@ fn validate_session(session: &CompletedSession) -> Result<(), String> {
             result.region.end_seconds,
         )?;
         validate_rank_rows(result, &candidate_ids)?;
+    }
+    if session.region_loudness_match
+        && session.candidates.iter().any(|candidate| {
+            candidate
+                .region_loudness
+                .keys()
+                .any(|id| !region_ids.contains(id.as_str()))
+        })
+    {
+        return Err("Region loudness measurements must match selected comparison regions".into());
     }
     Ok(())
 }

@@ -291,6 +291,35 @@ pub(crate) fn set_volume(
     }
 }
 
+pub(crate) fn set_match_gains(
+    state: &NativeAudioPreviewState,
+    gains: std::collections::BTreeMap<String, Option<f64>>,
+) -> Result<NativeComparisonAudioStatus, String> {
+    #[cfg(target_os = "windows")]
+    {
+        return with_comparison(state, |comparison| {
+            if gains.len() != comparison.players.len()
+                || comparison.players.keys().any(|id| !gains.contains_key(id))
+            {
+                return Err("Region loudness gains do not match comparison candidates".into());
+            }
+            for (id, gain) in gains {
+                let scalar = gain_scalar(gain);
+                comparison.match_gains.insert(id.clone(), scalar);
+                if let Some(player) = comparison.players.get(&id) {
+                    player.set_volume(comparison.volume * scalar);
+                }
+            }
+            Ok(comparison.status(false))
+        });
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = gains;
+        unsupported_on_non_windows(state)
+    }
+}
+
 pub(crate) fn stop(state: &NativeAudioPreviewState) -> Result<NativeComparisonAudioStatus, String> {
     #[cfg(target_os = "windows")]
     {

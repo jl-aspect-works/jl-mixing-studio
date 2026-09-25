@@ -62,6 +62,7 @@ export function ComparisonFlow({
       candidates: draft.candidates,
       regions: draft.regions,
       loudnessMatch: draft.loudnessMatch,
+      regionLoudnessMatch: draft.regionLoudnessMatch,
     }));
     const nextResults = await measureComparison("results", () => getComparisonResults({ clientId: client.clientId, projectId: project.projectId }));
     setRevealedSession(completed);

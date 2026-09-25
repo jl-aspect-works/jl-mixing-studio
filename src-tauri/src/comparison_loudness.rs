@@ -37,6 +37,27 @@ struct LoudnessCacheEntry {
     relative_path: String,
     source: SourceIdentity,
     integrated_lufs: f64,
+    #[serde(default)]
+    region: Option<RegionBounds>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct RegionBounds {
+    start_bits: u64,
+    end_bits: Option<u64>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LoudnessAnalysisRegion {
+    pub region_id: String,
+    pub start_seconds: f64,
+    pub end_seconds: Option<f64>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct LoudnessRegionAnalysis {
+    pub region_id: String,
+    pub candidates: Vec<LoudnessAnalysisCandidate>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -52,6 +73,83 @@ pub(crate) struct LoudnessAnalysisInput {
     pub revision_number: u32,
     pub relative_path: String,
     pub path: PathBuf,
+}
+
+pub(crate) fn analyze_project_regions(
+    project_directory: &Path,
+    inputs: Vec<LoudnessAnalysisInput>,
+    regions: Vec<LoudnessAnalysisRegion>,
+) -> Result<Vec<LoudnessRegionAnalysis>, String> {
+    if inputs.len() < 2 || regions.is_empty() {
+        return Err("Region Loudness Match requires 2+ candidates and a selected region".into());
+    }
+    let mut cache = load_cache(project_directory)?;
+    let mut results = Vec::with_capacity(regions.len());
+    for region in regions {
+        if region.region_id.trim().is_empty()
+            || !region.start_seconds.is_finite()
+            || region.start_seconds < 0.0
+            || region
+                .end_seconds
+                .is_some_and(|end| !end.is_finite() || end <= region.start_seconds)
+            || results
+                .iter()
+                .any(|item: &LoudnessRegionAnalysis| item.region_id == region.region_id)
+        {
+            return Err("Region Loudness Match received invalid or duplicate boundaries".into());
+        }
+        let bounds = if region.start_seconds == 0.0 && region.end_seconds.is_none() {
+            None
+        } else {
+            Some(RegionBounds {
+                start_bits: region.start_seconds.to_bits(),
+                end_bits: region.end_seconds.map(f64::to_bits),
+            })
+        };
+        let mut candidates = Vec::with_capacity(inputs.len());
+        for input in &inputs {
+            let source = source_identity(&input.path)?;
+            let cached = cache.entries.iter().find(|entry| {
+                entry.revision_id == input.revision_id
+                    && entry.relative_path == input.relative_path
+                    && entry.source == source
+                    && entry.region == bounds
+            });
+            let (integrated_lufs, cache_state) = if let Some(entry) = cached {
+                (entry.integrated_lufs, LoudnessCacheState::Reused)
+            } else {
+                let value = analyze_integrated_loudness_range(&input.path, bounds.as_ref())?;
+                cache.entries.retain(|entry| {
+                    entry.revision_id != input.revision_id
+                        || entry.relative_path != input.relative_path
+                        || entry.region != bounds
+                });
+                cache.entries.push(LoudnessCacheEntry {
+                    revision_id: input.revision_id.clone(),
+                    relative_path: input.relative_path.clone(),
+                    source,
+                    integrated_lufs: value,
+                    region: bounds.clone(),
+                });
+                (value, LoudnessCacheState::Analyzed)
+            };
+            candidates.push(LoudnessAnalysisCandidate {
+                revision_id: input.revision_id.clone(),
+                revision_number: input.revision_number,
+                relative_path: input.relative_path.clone(),
+                integrated_lufs,
+                applied_gain_db: 0.0,
+                cache_state,
+            });
+        }
+        apply_attenuation_only_gains(&mut candidates)?;
+        results.push(LoudnessRegionAnalysis {
+            region_id: region.region_id,
+            candidates,
+        });
+    }
+    save_cache(project_directory, &cache)?;
+    Ok(results)
 }
 
 pub(crate) fn analyze_project_candidates(
@@ -77,6 +175,7 @@ fn analyze_project_candidates_with(
             entry.revision_id == input.revision_id
                 && entry.relative_path == input.relative_path
                 && entry.source == source
+                && entry.region.is_none()
         });
         let (integrated_lufs, cache_state) = if let Some(entry) = cached {
             (entry.integrated_lufs, LoudnessCacheState::Reused)
@@ -90,6 +189,7 @@ fn analyze_project_candidates_with(
                 relative_path: input.relative_path.clone(),
                 source,
                 integrated_lufs: value,
+                region: None,
             });
             (value, LoudnessCacheState::Analyzed)
         };
@@ -125,6 +225,13 @@ fn apply_attenuation_only_gains(
 }
 
 fn analyze_integrated_loudness(path: &Path) -> Result<f64, String> {
+    analyze_integrated_loudness_range(path, None)
+}
+
+fn analyze_integrated_loudness_range(
+    path: &Path,
+    region: Option<&RegionBounds>,
+) -> Result<f64, String> {
     let decoder = Decoder::try_from(
         File::open(path).map_err(|error| format!("Unable to open loudness source: {error}"))?,
     )
@@ -139,6 +246,25 @@ fn analyze_integrated_loudness(path: &Path) -> Result<f64, String> {
     for (index, sample) in decoder.enumerate() {
         channel_samples[index % channels].push(sample);
     }
+    let start = region.map_or(0, |bounds| {
+        (f64::from_bits(bounds.start_bits) * sample_rate as f64).floor() as usize
+    });
+    let end = region
+        .and_then(|bounds| bounds.end_bits)
+        .map_or(usize::MAX, |end| {
+            (f64::from_bits(end) * sample_rate as f64).ceil() as usize
+        });
+    let start = start.min(channel_samples[0].len());
+    let end = end.min(channel_samples[0].len());
+    if end <= start || (region.is_some() && end - start < (sample_rate as usize * 2 / 5)) {
+        return Err(
+            "A selected comparison region is too short or beyond a candidate's audio".into(),
+        );
+    }
+    let channel_samples = channel_samples
+        .into_iter()
+        .map(|samples| samples[start.min(samples.len())..end.min(samples.len())].to_vec())
+        .collect::<Vec<_>>();
     if channel_samples
         .iter()
         .all(|samples| samples.iter().all(|sample| sample.abs() <= f32::EPSILON))
@@ -294,6 +420,64 @@ mod tests {
         fs::write(&path, b"two").unwrap();
         let second = sampled_fingerprint(&path, 3).unwrap();
         assert_ne!(first, second);
+    }
+
+    #[test]
+    fn region_cache_reuses_only_matching_source_and_boundaries_without_full_song() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("source.wav");
+        let samples = 96_000_u32;
+        let mut bytes = Vec::new();
+        bytes.extend(b"RIFF");
+        bytes.extend(&(36 + samples * 2).to_le_bytes());
+        bytes.extend(b"WAVEfmt ");
+        bytes.extend(&16_u32.to_le_bytes());
+        bytes.extend(&1_u16.to_le_bytes());
+        bytes.extend(&1_u16.to_le_bytes());
+        bytes.extend(&48_000_u32.to_le_bytes());
+        bytes.extend(&96_000_u32.to_le_bytes());
+        bytes.extend(&2_u16.to_le_bytes());
+        bytes.extend(&16_u16.to_le_bytes());
+        bytes.extend(b"data");
+        bytes.extend(&(samples * 2).to_le_bytes());
+        for index in 0..samples {
+            let sample =
+                ((index as f32 * 440.0 * std::f32::consts::TAU / 48_000.0).sin() * 12_000.0) as i16;
+            bytes.extend(&sample.to_le_bytes());
+        }
+        fs::write(&path, bytes).unwrap();
+        let inputs = || {
+            (0..2)
+                .map(|number| LoudnessAnalysisInput {
+                    revision_id: format!("revision-{number}"),
+                    revision_number: number,
+                    relative_path: format!("{number}.wav"),
+                    path: path.clone(),
+                })
+                .collect()
+        };
+        let region = |end_seconds| {
+            vec![LoudnessAnalysisRegion {
+                region_id: "verse".into(),
+                start_seconds: 0.25,
+                end_seconds: Some(end_seconds),
+            }]
+        };
+        let first = analyze_project_regions(temp.path(), inputs(), region(1.0)).unwrap();
+        assert!(first[0]
+            .candidates
+            .iter()
+            .all(|item| item.cache_state == LoudnessCacheState::Analyzed));
+        let reused = analyze_project_regions(temp.path(), inputs(), region(1.0)).unwrap();
+        assert!(reused[0]
+            .candidates
+            .iter()
+            .all(|item| item.cache_state == LoudnessCacheState::Reused));
+        let changed = analyze_project_regions(temp.path(), inputs(), region(1.25)).unwrap();
+        assert!(changed[0]
+            .candidates
+            .iter()
+            .all(|item| item.cache_state == LoudnessCacheState::Analyzed));
     }
 
     #[test]
