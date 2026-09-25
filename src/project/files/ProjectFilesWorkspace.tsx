@@ -13,7 +13,7 @@ import "./ProjectFilesWorkspace.css";
 
 const policyText = (path: string) => {
   if (path.startsWith(projectFilePaths.originalDelivery)) {
-    return "Original Delivery is read-only. Files may be inspected, opened, revealed, and previewed where supported.";
+    return "Original Delivery content can be deleted with supported Automation; linked Working Audio copies remain, while managed roots stay protected.";
   }
   if (path.startsWith(projectFilePaths.finalDelivery)) {
     return "Final Delivery is managed by the Delivery workflow. Use Delivery for changes that affect deliverables or package state.";
@@ -22,7 +22,7 @@ const policyText = (path: string) => {
     return "Reference files are project-owned. Use References for add/delete workflow operations.";
   }
   if (path.startsWith(projectFilePaths.audioPreparation)) {
-    return "Audio Preparation is a working area. Rename/delete are available only when the validated file service marks a file safe to modify.";
+    return "Audio Preparation is a working area. Eligible files and folders may be deleted after reviewing their scope; managed roots remain protected.";
   }
   if (path.startsWith(projectFilePaths.revisions)) {
     return "Revision files are managed project assets. Supported rename/delete operations use the revision-aware managed file service.";

@@ -5,7 +5,8 @@ import { AudioPrepBrowser } from "./AudioPrepBrowser";
 const mocks = vi.hoisted(() => ({
   refresh: vi.fn(() => Promise.resolve()),
   renameAudioPrepFile: vi.fn(() => Promise.resolve({ relativePath: "02_Audio_Preparation/Working_Audio/Vocal Clean.wav" })),
-  deleteAudioPrepFile: vi.fn(() => Promise.resolve({ relativePath: "02_Audio_Preparation/Working_Audio/Vocal.wav" })),
+  planProjectContentDelete: vi.fn(() => Promise.resolve({ relativePath: "02_Audio_Preparation/Working_Audio/Vocal.wav", displayName: "Vocal.wav", isDirectory: false, fileCount: 1, directoryCount: 0, totalBytes: 2048, fingerprint: "abc" })),
+  executeProjectContentDelete: vi.fn(() => Promise.resolve({ relativePath: "02_Audio_Preparation/Working_Audio/Vocal.wav" })),
 }));
 
 vi.mock("../project/files/AudioPreviewPlayer", () => ({
@@ -17,7 +18,8 @@ vi.mock("../project/files/projectFileService", async () => {
   return {
     ...actual,
     renameAudioPrepFile: mocks.renameAudioPrepFile,
-    deleteAudioPrepFile: mocks.deleteAudioPrepFile,
+    planProjectContentDelete: mocks.planProjectContentDelete,
+    executeProjectContentDelete: mocks.executeProjectContentDelete,
     openProjectFile: vi.fn(() => Promise.resolve({ relativePath: "" })),
     revealProjectFile: vi.fn(() => Promise.resolve({ relativePath: "" })),
   };
@@ -55,7 +57,8 @@ afterEach(() => {
   cleanup();
   mocks.refresh.mockClear();
   mocks.renameAudioPrepFile.mockClear();
-  mocks.deleteAudioPrepFile.mockClear();
+  mocks.planProjectContentDelete.mockClear();
+  mocks.executeProjectContentDelete.mockClear();
   vi.restoreAllMocks();
 });
 
@@ -170,10 +173,10 @@ describe("AudioPrepBrowser", () => {
     fireEvent.click(menu.getByRole("menuitem", { name: "Delete" }));
 
     expect(screen.getByRole("heading", { name: "Delete Vocal.wav?" })).toBeInTheDocument();
-    expect(mocks.deleteAudioPrepFile).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Delete File" }));
+    expect(mocks.executeProjectContentDelete).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole("button", { name: "Delete file" }));
 
-    await waitFor(() => expect(mocks.deleteAudioPrepFile).toHaveBeenCalledWith({ clientId: "client", projectId: "project", relativePath: "02_Audio_Preparation/Working_Audio/Vocal.wav" }));
+    await waitFor(() => expect(mocks.executeProjectContentDelete).toHaveBeenCalledWith({ clientId: "client", projectId: "project", relativePath: "02_Audio_Preparation/Working_Audio/Vocal.wav", fingerprint: "abc", confirmName: "Vocal.wav" }));
     expect(mocks.refresh).toHaveBeenCalled();
     expect(onValidationRefresh).toHaveBeenCalled();
     expect(screen.queryByRole("heading", { name: "Delete Vocal.wav?" })).not.toBeInTheDocument();

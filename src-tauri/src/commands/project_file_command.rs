@@ -113,7 +113,7 @@ pub(crate) fn delete_project_file(
     Ok(ProjectFileMutationResult { relative_path })
 }
 
-fn resolve_project_directory(
+pub(super) fn resolve_project_directory(
     app: &tauri::AppHandle,
     client_id: &str,
     project_id: &str,
@@ -207,6 +207,16 @@ fn project_file_entry(path: &Path, parent_relative: &str) -> Result<ProjectFileE
         .and_then(|duration| u64::try_from(duration.as_millis()).ok());
     let symlink = matches!(entry_type, ProjectFileEntryType::Symlink);
 
+    let mut permissions = permissions_for(area, entry_type, symlink);
+    if !symlink
+        && matches!(
+            entry_type,
+            ProjectFileEntryType::File | ProjectFileEntryType::Directory
+        )
+        && super::project_content_delete::is_deletable_content_path(&relative_path)
+    {
+        permissions.can_delete = true;
+    }
     Ok(ProjectFileEntry {
         id: relative_path.clone(),
         relative_path,
@@ -218,11 +228,11 @@ fn project_file_entry(path: &Path, parent_relative: &str) -> Result<ProjectFileE
         modified_epoch_ms,
         is_audio,
         playable,
-        permissions: permissions_for(area, entry_type, symlink),
+        permissions,
     })
 }
 
-fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
+pub(super) fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
     let value = relative_path.trim();
     if value.is_empty() {
         return Ok(String::new());
@@ -239,7 +249,7 @@ fn normalize_relative_path(relative_path: &str) -> Result<String, String> {
     Ok(value.to_owned())
 }
 
-fn resolve_existing_directory(
+pub(super) fn resolve_existing_directory(
     project_directory: &Path,
     relative_path: &str,
 ) -> Result<PathBuf, String> {
@@ -254,7 +264,7 @@ fn resolve_existing_directory(
     Ok(canonical)
 }
 
-fn resolve_existing_regular_file(
+pub(super) fn resolve_existing_regular_file(
     project_directory: &Path,
     relative_path: &str,
 ) -> Result<PathBuf, String> {
@@ -615,7 +625,8 @@ mod tests {
         assert!(audio.is_audio);
         assert_eq!(audio.size_bytes, Some(5));
         assert!(!audio.permissions.can_rename);
-        assert!(!audio.permissions.can_delete);
+        assert!(audio.permissions.can_delete);
+        assert!(listing.entries[0].permissions.can_delete);
     }
 
     #[test]

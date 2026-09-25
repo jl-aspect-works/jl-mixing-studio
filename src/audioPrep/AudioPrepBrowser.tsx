@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
-import { handleDialogKeyDown } from "../components/dialogKeyboard";
+import { ContentDeleteDialog } from "../project/files/ContentDeleteDialog";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
 import { FileStatusIcon, FileStatusLegend, FileViewControls, ManagedFolderToolbar, RowActionMenu, type FileStatusKind } from "../project/files/FileUiPrimitives";
 import type { ProjectFileEntry } from "../project/files/projectFileService";
 import {
-  deleteAudioPrepFile,
   openProjectFile,
   projectFilePaths,
   renameAudioPrepFile,
@@ -195,24 +194,6 @@ export function AudioPrepBrowser({
     catch (error) { setActionError(actionErrorMessage(error)); }
   };
 
-  const confirmDelete = async () => {
-    const entry = deleteCandidate;
-    if (!entry) return;
-    setActionError(null);
-    setBusyPath(entry.relativePath);
-    try {
-      await deleteAudioPrepFile({ clientId, projectId, relativePath: entry.relativePath });
-      if (renameState?.path === entry.relativePath) setRenameState(null);
-      setDeleteCandidate(null);
-      await refreshFilesAndValidation();
-    } catch (error) {
-      setActionError(actionErrorMessage(error));
-      setDeleteCandidate(null);
-    } finally {
-      setBusyPath(null);
-    }
-  };
-
   return <>
     <section className="client-files-browser audio-prep-browser" aria-label="Audio Prep working files">
       <ManagedFolderToolbar
@@ -262,7 +243,7 @@ export function AudioPrepBrowser({
             entry.entryType === "file" && entry.permissions.canRename ? { label: "Rename", onSelect: () => beginRename(entry) } : null,
             entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runAction(openProjectFile, entry) } : null,
             entry.permissions.canReveal ? { label: "Reveal", onSelect: () => void runAction(revealProjectFile, entry) } : null,
-            entry.entryType === "file" && entry.permissions.canDelete ? { label: "Delete", onSelect: () => { setActionError(null); setDeleteCandidate(entry); }, disabled: busy, destructive: true } : null,
+            entry.permissions.canDelete ? { label: "Delete", onSelect: () => { setActionError(null); setDeleteCandidate(entry); }, disabled: busy, destructive: true } : null,
           ].filter((action): action is NonNullable<typeof action> => action !== null);
           return <tr key={entry.id} className={`${editing ? "audio-prep-row-editing " : ""}${record?.status ? `validation-${record.status}` : ""}`}>
             <td className="client-file-status-cell"><FileStatusIcon kind={status.kind} label={statusLabel} /></td>
@@ -288,21 +269,11 @@ export function AudioPrepBrowser({
       </>}
     </section>
 
-    {deleteCandidate && <div className="dialog-backdrop" onKeyDown={(event) => handleDialogKeyDown(event, {
-      defaultDisabled: Boolean(busyPath),
-      escapeDisabled: Boolean(busyPath),
-      onDefault: () => void confirmDelete(),
-      onEscape: () => setDeleteCandidate(null),
-    })}>
-      <section className="client-dialog" role="dialog" aria-modal="true" aria-labelledby="audio-prep-delete-title">
-        <p className="kicker">Audio Prep</p>
-        <h2 id="audio-prep-delete-title">Delete {deleteCandidate.displayName}?</h2>
-        <p className="dialog-intro">This removes the working Audio Prep file only. Original Delivery is not changed.</p>
-        <div className="dialog-actions">
-          <button type="button" className="secondary" disabled={Boolean(busyPath)} onClick={() => setDeleteCandidate(null)}>Cancel</button>
-          <button type="button" autoFocus className="danger" disabled={Boolean(busyPath)} onClick={() => void confirmDelete()}>{busyPath ? "Deleting…" : "Delete File"}</button>
-        </div>
-      </section>
-    </div>}
+    {deleteCandidate && <ContentDeleteDialog clientId={clientId} projectId={projectId} entry={deleteCandidate}
+      onClose={() => setDeleteCandidate(null)} onCompleted={async () => {
+        if (renameState?.path === deleteCandidate.relativePath) setRenameState(null);
+        setDeleteCandidate(null);
+        await refreshFilesAndValidation();
+      }} />}
   </>;
 }

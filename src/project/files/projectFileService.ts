@@ -96,6 +96,21 @@ export const projectFilePaths = {
 } as const;
 
 let nativePreviewSupport: Promise<boolean> | null = null;
+let originalDeleteSupport: Promise<boolean> | null = null;
+
+const supportsOriginalDelete = () => {
+  if (!originalDeleteSupport) {
+    originalDeleteSupport = invoke<boolean>("get_original_delete_support").catch(() => false);
+  }
+  return originalDeleteSupport;
+};
+
+const withOriginalDeleteEligibility = async (listing: ProjectFileListing): Promise<ProjectFileListing> => {
+  if (!listing.entries.some((entry) => entry.area === "clientOriginalDelivery" && entry.permissions.canDelete)) return listing;
+  if (await supportsOriginalDelete()) return listing;
+  return { ...listing, entries: listing.entries.map((entry) => entry.area === "clientOriginalDelivery"
+    ? { ...entry, permissions: { ...entry.permissions, canDelete: false } } : entry) };
+};
 
 const isManagedRevisionFile = (entry: ProjectFileEntry) => {
   if (entry.area !== "revisions" || entry.entryType !== "file" || entry.displayName === "Revision_Notes.md") {
@@ -151,6 +166,7 @@ export const listProjectFiles = ({ clientId, projectId, relativePath = "" }: Pro
     request: { clientId, projectId, relativePath },
   })
     .then(withManagedMutationPermissions)
+    .then(withOriginalDeleteEligibility)
     .then(withNativePlaybackEligibility);
 
 export const summarizeProjectFiles = ({ clientId, projectId }: ProjectFileListRequest) =>
@@ -203,6 +219,23 @@ export const deleteAudioPrepFile = async ({ clientId, projectId, relativePath }:
     request: { clientId, projectId, relativePath },
   });
 };
+
+export type ContentDeletePlan = {
+  relativePath: string;
+  displayName: string;
+  isDirectory: boolean;
+  fileCount: number;
+  directoryCount: number;
+  totalBytes: number;
+  fingerprint: string;
+  workingCopiesRetained: string[];
+};
+
+export const planProjectContentDelete = (request: ProjectFileMutationRequest) =>
+  invoke<ContentDeletePlan>("plan_project_content_delete", { request });
+
+export const executeProjectContentDelete = (request: ProjectFileMutationRequest & { fingerprint: string; confirmName: string }) =>
+  invoke<ContentDeletePlan>("execute_project_content_delete", { request });
 
 export const renameRevisionFile = async (
   { clientId, projectId, relativePath }: ProjectFileMutationRequest,

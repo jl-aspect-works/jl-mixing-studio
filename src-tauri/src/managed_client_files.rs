@@ -79,7 +79,7 @@ fn with_project_argument(project: &Path, mut arguments: Vec<String>) -> Vec<Stri
     arguments
 }
 
-fn call_api(
+pub(crate) fn call_api(
     app: &AppHandle,
     project: &Path,
     operation: &str,

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { AudioPreviewPlayer } from "../project/files/AudioPreviewPlayer";
+import { ContentDeleteDialog } from "../project/files/ContentDeleteDialog";
 import { FileStatusIcon, FileStatusLegend, FileViewControls, ManagedFolderToolbar, RowActionMenu, type FileStatusKind } from "../project/files/FileUiPrimitives";
 import type { ProjectFileEntry } from "../project/files/projectFileService";
 import { openProjectFile, projectFilePaths, revealProjectFile } from "../project/files/projectFileService";
@@ -127,7 +128,7 @@ const actionErrorMessage = (error: unknown) => error instanceof Error && error.m
   ? error.message
   : typeof error === "string" && error ? error : "The project file action could not be completed.";
 
-export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], selectedPath = null, onSelectionChange, selectedPaths = [], onSelectedPathsChange }: {
+export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], selectedPath = null, onSelectionChange, selectedPaths = [], onSelectedPathsChange, onAfterDelete }: {
   clientId: string;
   projectId: string;
   validationFiles?: IntakeValidationFile[];
@@ -135,6 +136,7 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
   onSelectionChange?: (selection: ClientFilesSelection | null) => void;
   selectedPaths?: string[];
   onSelectedPathsChange?: (paths: string[]) => void;
+  onAfterDelete?: () => void;
 }) {
   const rootPath = projectFilePaths.originalDelivery;
   const [relativePath, setRelativePath] = useState<string>(rootPath);
@@ -143,6 +145,7 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
   const [sort, setSort] = useState<ProjectFileSort>("name");
   const [validationFilter, setValidationFilter] = useState<ValidationFilter>("all");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<ProjectFileEntry | null>(null);
   const { state, refresh } = useProjectFiles({ clientId, projectId, relativePath });
   const bulkSelectionEnabled = Boolean(onSelectedPathsChange);
 
@@ -251,6 +254,7 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
         const actions = [
           entry.entryType === "file" && entry.permissions.canOpen ? { label: "Open", onSelect: () => void runAction(openProjectFile, entry) } : null,
           entry.permissions.canReveal ? { label: "Reveal", onSelect: () => void runAction(revealProjectFile, entry) } : null,
+          entry.permissions.canDelete ? { label: "Delete", onSelect: () => setDeleteCandidate(entry), destructive: true } : null,
         ].filter((action): action is NonNullable<typeof action> => action !== null);
         const validationDetails = record && entry.entryType === "file" ? <details className="client-file-menu-validation"><summary>Validation details</summary><div className="validation-details-content">
           {(codec || format || cacheState) && <p>{codec && <>Codec: <strong>{codec}</strong></>}{codec && (format || cacheState) ? " · " : ""}{format && <>Format: <strong>{format}</strong></>}{format && cacheState ? " · " : ""}{cacheState && <>Cache: <strong>{cacheState}</strong></>}</p>}
@@ -278,5 +282,14 @@ export function ClientFilesBrowser({ clientId, projectId, validationFiles = [], 
         { kind: "none", label: "Not applicable" },
       ]} />
     </>}
+    {deleteCandidate && <ContentDeleteDialog clientId={clientId} projectId={projectId} entry={deleteCandidate}
+      onClose={() => setDeleteCandidate(null)} onCompleted={async () => {
+        setDeleteCandidate(null);
+        onSelectionChange?.(null);
+        onSelectedPathsChange?.([]);
+        const refreshed = await refresh();
+        if (!refreshed) setActionError("Deletion completed, but the folder could not be refreshed. Reconnect and refresh before another action.");
+        onAfterDelete?.();
+      }} />}
   </section>;
 }

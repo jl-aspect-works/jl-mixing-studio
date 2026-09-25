@@ -46,7 +46,7 @@ describe("ProjectFilesWorkspace", () => {
     render(<ProjectFilesWorkspace clientId="client-1" projectId="project-1" />);
 
     const props = browserProps.mock.calls[browserProps.mock.calls.length - 1]?.[0] as BrowserProps;
-    expect(props.pathDescription?.("01_Client_Files/Original_Delivery")).toMatch(/Original Delivery is read-only/);
+    expect(props.pathDescription?.("01_Client_Files/Original_Delivery")).toMatch(/linked Working Audio copies remain/);
     expect(props.pathDescription?.("02_Audio_Preparation/Working_Audio")).toMatch(/Audio Preparation is a working area/);
     expect(props.pathDescription?.("04_Revisions/Rev_02")).toMatch(/Revision files are managed project assets/);
     expect(props.pathDescription?.("05_Final_Delivery")).toMatch(/Final Delivery is managed by the Delivery workflow/);

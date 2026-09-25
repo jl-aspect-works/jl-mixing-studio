@@ -24,6 +24,7 @@ mod listening_publish_base;
 #[path = "native_audio_preview_command.rs"]
 mod native_audio_preview;
 mod os_metadata;
+mod project_content_delete;
 mod project_file_diagnostics;
 #[path = "project_file_open_command.rs"]
 mod project_file_open;
@@ -77,6 +78,9 @@ pub(super) use native_audio_preview::{
     set_native_comparison_audio_volume, set_native_project_audio_preview_volume,
     stop_native_comparison_audio, stop_native_project_audio_preview,
     switch_native_comparison_candidate,
+};
+pub(super) use project_content_delete::{
+    execute_project_content_delete, plan_project_content_delete,
 };
 pub(super) use project_file_open::{
     open_project_file, prepare_project_audio_preview, reveal_project_file,
