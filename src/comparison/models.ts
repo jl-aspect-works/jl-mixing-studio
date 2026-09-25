@@ -32,12 +32,16 @@ export type FrozenComparisonCandidate = {
   relativePath: string;
   integratedLufs: number | null;
   appliedGainDb: number | null;
+  regionLoudness?: Record<string, RegionLoudnessMeasurement>;
 };
+
+export type RegionLoudnessMeasurement = { integratedLufs: number; appliedGainDb: number };
 
 export type FrozenComparisonSession = {
   candidates: readonly FrozenComparisonCandidate[];
   regions: readonly ProjectRegion[];
   loudnessMatch: boolean;
+  regionLoudnessMatch?: boolean;
 };
 
 export type CompletedComparisonCandidate = {
@@ -46,6 +50,7 @@ export type CompletedComparisonCandidate = {
   blindId: string;
   integratedLufs: number | null;
   appliedGainDb: number | null;
+  regionLoudness?: Record<string, RegionLoudnessMeasurement>;
 };
 
 export type CompletedRegionSnapshot = {
@@ -67,6 +72,7 @@ export type CompletedComparisonSession = {
   candidates: CompletedComparisonCandidate[];
   regions: CompletedComparisonRegionResult[];
   loudnessMatch: boolean;
+  regionLoudnessMatch?: boolean;
 };
 
 export type CumulativeStanding = {
@@ -97,6 +103,7 @@ export type CompleteComparisonSessionRequest = {
     notes: Record<string, string>;
   }[];
   loudnessMatch: boolean;
+  regionLoudnessMatch?: boolean;
 };
 
 export type ComparisonLoudnessCandidate = {
@@ -110,6 +117,7 @@ export type ComparisonLoudnessCandidate = {
 
 export type ComparisonLoudnessResult = {
   candidates: ComparisonLoudnessCandidate[];
+  regions?: { regionId: string; candidates: ComparisonLoudnessCandidate[] }[];
 };
 
 export type RegionDraft = {

@@ -75,9 +75,9 @@ pub(super) use native_audio_preview::{
     pause_native_project_audio_preview, play_native_comparison_audio,
     play_native_project_audio_preview, prepare_native_comparison_audio,
     seek_native_comparison_audio, seek_native_project_audio_preview,
-    set_native_comparison_audio_volume, set_native_project_audio_preview_volume,
-    stop_native_comparison_audio, stop_native_project_audio_preview,
-    switch_native_comparison_candidate,
+    set_native_comparison_audio_volume, set_native_comparison_match_gains,
+    set_native_project_audio_preview_volume, stop_native_comparison_audio,
+    stop_native_project_audio_preview, switch_native_comparison_candidate,
 };
 pub(super) use project_content_delete::{
     execute_project_content_delete, plan_project_content_delete,

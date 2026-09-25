@@ -46,6 +46,7 @@ const fakeProvider = (durations = new Map<string, number>()) => {
     seek: vi.fn(async (seconds: number) => (current = { ...current, currentSeconds: seconds })),
     switchCandidate: vi.fn(async (candidateId: string) => (current = { ...current, activeCandidateId: candidateId, durationSeconds: durationFor(candidateId) })),
     setVolume: vi.fn(async () => current),
+    setMatchGains: vi.fn(async () => current),
     status: vi.fn(async () => current),
     dispose: vi.fn(async () => undefined),
   };
@@ -113,6 +114,27 @@ describe("comparison playback session", () => {
     await session.refresh();
     expect(fake.provider.seek).toHaveBeenLastCalledWith(40);
     expect(fake.provider.play).toHaveBeenCalled();
+  });
+
+  it("keeps region gain fixed through seek and candidate changes, updating it only at the next region", async () => {
+    const matched = candidates(2).map((candidate, index) => ({ ...candidate, regionLoudness: {
+      intro: { integratedLufs: -16 + index, appliedGainDb: index ? -1 : 0 },
+      verse: { integratedLufs: -12 + index, appliedGainDb: index ? 0 : -1 },
+    } }));
+    const fake = fakeProvider();
+    const session = new ComparisonPlaybackSession("client", "project", matched, [intro, verse], intro, () => fake.provider);
+    await session.prepare();
+    expect(fake.provider.prepare).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ blindId: "A", appliedGainDb: 0 }),
+      expect.objectContaining({ blindId: "B", appliedGainDb: -1 }),
+    ]), 10);
+    await session.seek(14);
+    await session.switchCandidate("B");
+    expect(fake.provider.setMatchGains).not.toHaveBeenCalled();
+    await session.setRegion(verse);
+    expect(fake.provider.setMatchGains).toHaveBeenCalledExactlyOnceWith({ A: -1, B: 0 });
+    await session.seek(43);
+    expect(fake.provider.setMatchGains).toHaveBeenCalledTimes(1);
   });
 
   it("loops from the active region end even when the provider reports its channel ended", async () => {

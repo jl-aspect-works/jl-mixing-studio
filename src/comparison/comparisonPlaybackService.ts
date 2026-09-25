@@ -24,6 +24,7 @@ export interface ComparisonAudioProvider {
   seek(seconds: number): Promise<ComparisonPlaybackSnapshot>;
   switchCandidate(candidateId: string): Promise<ComparisonPlaybackSnapshot>;
   setVolume(volume: number): Promise<ComparisonPlaybackSnapshot>;
+  setMatchGains(gains: Record<string, number | null>): Promise<ComparisonPlaybackSnapshot>;
   status(): Promise<ComparisonPlaybackSnapshot>;
   dispose(): Promise<void>;
 }
@@ -158,6 +159,14 @@ export class WebComparisonAudioProvider implements ComparisonAudioProvider {
     return this.snapshot(this.active());
   }
 
+  async setMatchGains(gains: Record<string, number | null>) {
+    this.channels.forEach((channel, candidateId) => {
+      this.matchGains.set(candidateId, gainScalar(gains[candidateId]));
+      channel.volume = this.effectiveVolume(candidateId);
+    });
+    return this.snapshot(this.active());
+  }
+
   async status() {
     this.throwRuntimeFailure();
     return this.snapshot(this.active());
@@ -239,6 +248,7 @@ export class NativeComparisonAudioProvider implements ComparisonAudioProvider {
   seek = (seconds: number) => invoke<NativeComparisonStatus>("seek_native_comparison_audio", { seconds });
   switchCandidate = (candidateId: string) => invoke<NativeComparisonStatus>("switch_native_comparison_candidate", { candidateId });
   setVolume = (volume: number) => invoke<NativeComparisonStatus>("set_native_comparison_audio_volume", { volume });
+  setMatchGains = (gains: Record<string, number | null>) => invoke<NativeComparisonStatus>("set_native_comparison_match_gains", { gains });
   status = () => invoke<NativeComparisonStatus>("get_native_comparison_audio_status");
   async dispose() { await invoke("stop_native_comparison_audio"); }
 }
@@ -288,7 +298,8 @@ export class ComparisonPlaybackSession {
       const prepared = this.candidates.map((candidate, index) => {
         const source = sources[index];
         if (!source || source.relativePath !== candidate.relativePath) throw playbackError(candidate.blindId, "prepared");
-        return { ...candidate, sourceUrl: source.supported && source.filePath ? convertFileSrc(source.filePath) : null,
+        return { ...candidate, appliedGainDb: candidate.regionLoudness?.[this.activeRegion.regionId]?.appliedGainDb ?? candidate.appliedGainDb,
+          sourceUrl: source.supported && source.filePath ? convertFileSrc(source.filePath) : null,
           provider: source.supported ? "web" as const : "native" as const };
       });
       onProgress?.(`Resolved all ${prepared.length} audio sources…`);
@@ -366,10 +377,19 @@ export class ComparisonPlaybackSession {
   }
 
   async setRegion(region: ProjectRegion) {
+    const provider = this.requireProvider();
+    if (this.candidates.some((candidate) => candidate.regionLoudness && !candidate.regionLoudness[region.regionId])) {
+      throw new Error("The selected region has no loudness measurement for a candidate.");
+    }
+    const regionMatched = this.candidates.some((candidate) => candidate.regionLoudness);
+    if (regionMatched) await provider.pause();
     this.activeRegion = region;
     this.loop = true;
-    const provider = this.requireProvider();
     const next = await provider.seek(region.startSeconds);
+    if (regionMatched) {
+      await provider.setMatchGains(Object.fromEntries(this.candidates.map((candidate) => [candidate.blindId,
+        candidate.regionLoudness?.[region.regionId]?.appliedGainDb ?? candidate.appliedGainDb])));
+    }
     if (this.playRequested) return this.remember(this.normalizePlaybackState(await provider.play()));
     return this.remember(this.normalizePlaybackState(next));
   }

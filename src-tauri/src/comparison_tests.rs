@@ -10,6 +10,7 @@ fn candidate(id: &str, number: u32, blind: &str) -> CompletedCandidate {
         blind_id: blind.to_owned(),
         integrated_lufs: None,
         applied_gain_db: None,
+        region_loudness: BTreeMap::new(),
     }
 }
 
@@ -44,6 +45,7 @@ fn session(
         candidates,
         regions,
         loudness_match: false,
+        region_loudness_match: false,
     }
 }
 
@@ -269,4 +271,37 @@ fn loudness_matched_session_requires_measurements_and_gain() {
     );
     matched.loudness_match = true;
     assert!(append_completed_session(&mut document, matched).is_err());
+}
+
+#[test]
+fn region_matched_session_requires_measurements_for_every_selected_region() {
+    let mut matched = session(
+        "region-match",
+        vec![candidate("r1", 1, "A"), candidate("r2", 2, "B")],
+        vec![result(
+            snapshot("verse", "Verse", 10.0, Some(20.0)),
+            &[&["r1"], &["r2"]],
+        )],
+    );
+    matched.loudness_match = true;
+    matched.region_loudness_match = true;
+    assert!(validate_session(&matched).is_err());
+    for candidate in &mut matched.candidates {
+        candidate.region_loudness.insert(
+            "verse".into(),
+            RegionLoudnessMeasurement {
+                integrated_lufs: -16.0,
+                applied_gain_db: 0.0,
+            },
+        );
+    }
+    assert!(validate_session(&matched).is_ok());
+    matched.candidates[0].region_loudness.insert(
+        "different".into(),
+        RegionLoudnessMeasurement {
+            integrated_lufs: -12.0,
+            applied_gain_db: -4.0,
+        },
+    );
+    assert!(validate_session(&matched).is_err());
 }

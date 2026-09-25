@@ -1,5 +1,6 @@
 import type {
   ComparisonCandidateAvailability,
+  FrozenComparisonCandidate,
   FrozenComparisonSession,
   ProjectRegion,
 } from "./models";
@@ -42,10 +43,11 @@ const secureRandom = (): number => {
 };
 
 export const freezeComparisonSession = (
-  candidates: readonly (ComparisonCandidateAvailability & Partial<{ integratedLufs: number; appliedGainDb: number }>)[],
+  candidates: readonly (ComparisonCandidateAvailability & Partial<{ integratedLufs: number; appliedGainDb: number; regionLoudness: FrozenComparisonCandidate["regionLoudness"] }>)[],
   regions: readonly ProjectRegion[],
   loudnessMatch: boolean,
   random: () => number = secureRandom,
+  regionLoudnessMatch = false,
 ): FrozenComparisonSession => {
   const randomized = shuffled(candidates, random).map((candidate, index) => Object.freeze({
     revisionId: candidate.revisionId,
@@ -54,11 +56,13 @@ export const freezeComparisonSession = (
     relativePath: candidate.relativePath!,
     integratedLufs: "integratedLufs" in candidate && typeof candidate.integratedLufs === "number" ? candidate.integratedLufs : null,
     appliedGainDb: "appliedGainDb" in candidate && typeof candidate.appliedGainDb === "number" ? candidate.appliedGainDb : null,
+    regionLoudness: candidate.regionLoudness,
   }));
   return Object.freeze({
     candidates: Object.freeze(randomized),
     regions: Object.freeze(regions.map((region) => Object.freeze({ ...region }))),
     loudnessMatch,
+    regionLoudnessMatch,
   });
 };
 

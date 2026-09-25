@@ -240,6 +240,7 @@ export function ComparisonWorkspace({
         candidates: completedCandidatesFromSession(session),
         regions: completedRegionResultsFromRankings(session, rankings, notes),
         loudnessMatch: session.loudnessMatch,
+        regionLoudnessMatch: session.regionLoudnessMatch,
       });
       setDirty(false);
       await playbackSessionRef.current?.dispose();

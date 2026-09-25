@@ -223,6 +223,27 @@ describe("comparison setup", () => {
     expect(screen.getByLabelText("Region completion progress")).not.toHaveTextContent("Full Song");
   });
 
+  it("analyzes only the selected custom region when per-region matching is chosen", async () => {
+    const intro = { regionId: "intro", name: "Intro", startSeconds: 0, endSeconds: 20, builtIn: false };
+    mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, intro] } });
+    mocks.analyzeLoudness.mockResolvedValue({ candidates: [], regions: [{ regionId: "intro", candidates: [
+      { revisionId: "r1", integratedLufs: -18, appliedGainDb: 0 },
+      { revisionId: "r2", integratedLufs: -15, appliedGainDb: -3 },
+    ] }] });
+    render(<ComparisonFlow client={client} project={project} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "New Comparison" });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 01/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Full Song/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Intro/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "Each selected region" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
+    expect(await screen.findByRole("heading", { name: "Intro: Candidate A" })).toBeInTheDocument();
+    expect(mocks.analyzeLoudness).toHaveBeenCalledWith(expect.objectContaining({ regions: [intro] }));
+    expect(screen.getByLabelText("Region completion progress")).not.toHaveTextContent("Full Song");
+    expect(screen.queryByText("-18.00")).not.toBeInTheDocument();
+  });
+
   it("adds consecutive custom regions and selects them", async () => {
     const verse = { regionId: "verse", name: "Verse", startSeconds: 0, endSeconds: 30, builtIn: false };
     const chorus = { regionId: "chorus", name: "Chorus", startSeconds: 30, endSeconds: 60, builtIn: false };
