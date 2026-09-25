@@ -1,15 +1,15 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-09-24
+Last updated: 2026-09-25
 
 ## Current release
 
-- Development target: coordinated stable Studio and Automation `v2.3.1`
-- Last qualified stable release: JL Mixing Studio `v2.2.0`; `v2.3.0` was published without packaged RC acceptance
+- Current stable releases: JL Mixing Studio `v2.3.1` and JL Mixing Automation `v2.3.1`
+- Historical `v2.3.0` packages remain unqualified and their release pages remain marked prerelease
 - Supported Automation API: `1.0`
 - Supported workspace metadata schema: `1.1.0`
 - Application identifier: `com.jlaudio.jlmixingstudio`
-- Status: **Studio RC2 with Automation RC1 qualified for stable promotion; release preparation and publication pending**
+- Status: **v2.3.1 stable releases published; user-reported installed sanity tests passed**
 
 Studio and Automation remain independently versioned products. Compatibility is based on Automation API version/capabilities plus supported metadata schemas, not matching product versions.
 
@@ -53,21 +53,22 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 - #392 multiline Creative Direction persistence was manually accepted and merged through Automation PR #204 at `fe7251c0d81419af50315c4fb59d9a6e819469e6` and Studio PR #412 at `1b9d29efc21ef8152dae2b67287167032f0ffba3`. Post-merge Automation CI run #1557 passed. Studio post-merge CI run #2100 passed after a targeted rerun of the same unrelated intermittent comparison timing test seen in run #2096. Multiline UTF-8 text now crosses the Windows launcher safely and preserves LF/CRLF line breaks, while empty and single-line values retain their established behavior.
 - #401 generated Client IDs was manually accepted and merged through PR #414 at `b59c0fe8670b0eda486eb42e5c5ce255fbcd0a98`; post-merge CI run #2104 passed. New Client now derives and previews a read-only filesystem-safe ID from the display name while preserving Automation’s authoritative validation and collision checks.
 
-## Active work
+## 2.3 release history
 
-- Studio #423 tracks the blind comparison defect found during candidate verification: a shorter revision ending within a selected final region could not load. PR #424 implements the approved rule (candidate audio must extend past region start, then plays and loops to its own end), passed user-reported manual verification and full PR CI #2119, and merged as `77d7a1d4feca7ddc8fb13e3c1624ab3e918a3432`; full post-merge CI #2120 passed. The user reported installed Windows 11 Pro and macOS Intel 12.7.6 verification of the fix on Studio RC2 and recorded B02 Pass in the targeted RC2 matrix.
-- Studio #419 tracks recovery after both `v2.3.0` releases were published as stable before RC acceptance. Both release pages were marked prerelease on 2026-09-24; their tags and assets remain intact. The `v2.3.0` packages are unqualified. Automation #206 fixed the Windows NAS client-deletion blocker in PR #207, merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 passed. The user recorded a Windows C03 Pass on Automation/Studio RC1, without exact NAS-path evidence.
+- Studio #423 tracked the blind comparison defect found during candidate verification: a shorter revision ending within a selected final region could not load. PR #424 implements the approved rule (candidate audio must extend past region start, then plays and loops to its own end), passed user-reported manual verification and full PR CI #2119, and merged as `77d7a1d4feca7ddc8fb13e3c1624ab3e918a3432`; full post-merge CI #2120 passed. The user reported installed Windows 11 Pro and macOS Intel 12.7.6 verification of the fix on Studio RC2 and recorded B02 Pass in the targeted RC2 matrix.
+- Studio #419 tracked recovery after both `v2.3.0` releases were published as stable before RC acceptance. Both release pages were marked prerelease on 2026-09-24; their tags and assets remain intact. The `v2.3.0` packages are unqualified. Automation #206 fixed the Windows NAS client-deletion blocker in PR #207, merged as `1d38839b4db534478281b5c31f8d96e1865d6fd0`; post-merge Tests and ShellCheck #1565 passed. The user recorded a Windows C03 Pass on Automation/Studio RC1, without exact NAS-path evidence.
 - Studio candidate PR #425 merged as `71e9c6f22ee24ae313302530deeaad10aaa2de91`; post-merge full CI #2122 passed. Release run #36064641938 succeeded from that commit with three nonempty installers, `SHA256SUMS.txt`, annotated tag, and prerelease flag verified for Studio `v2.3.1-rc.2`.
 - Automation candidate PR #208 merged as `ae4c04618106d5e613a925597880c48d9b16f01d`; post-merge Tests and ShellCheck #1569 passed. Release run #35940591720 succeeded from that commit with four archives, checksums, inventories, annotated tag, and prerelease flag verified.
 - Studio candidate PR #420 merged as `d0fb6990674090066f9054edcf08210ca3cd34b6`; post-merge full CI #2114 passed. Release run #35940624927 succeeded from that commit with three installers, `SHA256SUMS.txt`, annotated tag, and prerelease flag verified. The later documentation-only status PR #421 merged as `2db73ede93fa0d22b7d35d5a95505616efae83a4`; post-merge full CI #2116 passed. The Studio package is built from `d0fb699`, not the status commit.
 - Studio release-preparation PR #416 merged at `f28ea5650f7d84b0de6a4606f45aefaefabe305a`; PR CI #2107 and post-merge CI #2108 passed. Status PR #417 merged at `7b02d3dbc29da8a93f518460346ed5d17abbfd10`; PR CI #2109 and post-merge CI #2110 passed.
 - Automation release-preparation PR #205 merged at `8f6ef06da98e78e20dba0b8d4518eaee5b8951d5`; Tests and ShellCheck #1560 and post-merge #1561 passed.
 
-## Remaining release work
+## Stable release closeout
 
-1. Complete Automation stable release PR #209 and Studio stable release PR #427, confirming full PR and post-merge CI. Acceptance PR #426 merged as `e3fc17e777316b9cb2189b08d23b49bc654c49f3`; the qualified RC pair and Apple Silicon Not run reason are documented in `docs/RELEASE_ACCEPTANCE_V2.3.md`.
-2. Publish Automation `v2.3.1` first and Studio `v2.3.1` second through their Release workflows from `main`. Verify workflow result, tag targets, stable release flags, checksums, and assets.
-3. Record exact stable build identities and publication evidence in the qualification record. The approved candidate packages, not the new stable installers, supplied installed acceptance evidence.
+- Acceptance PR #426 merged as `e3fc17e`; the qualified Studio RC2 and Automation RC1 pair, including Apple Silicon Not run, is recorded in `docs/RELEASE_ACCEPTANCE_V2.3.md`.
+- Automation stable PR #209 merged as `a3c3b66` with post-merge Tests/ShellCheck #1574 passed. Release run #36130036679 published stable `v2.3.1` with four archives, checksum files, and inventories; annotated tag points to that commit.
+- Studio stable PR #427 merged as `575190c` with post-merge full CI #2134 passed. Release run #36130067020 published stable `v2.3.1` with three installers and `SHA256SUMS.txt`; annotated tag points to that commit.
+- The user reported installing both stable releases and passing sanity tests on 2026-09-25. Specific platforms and test cases for that smoke check were not supplied. The candidate qualification record retains its separate platform results.
 
 ## Known and deferred items
 
@@ -76,4 +77,4 @@ The locked product design is `docs/BLIND_REVISION_COMPARISON.md`. Approved compa
 
 ## Immediate next action
 
-Complete stable preparation PRs #209 and #427 and verify their post-merge CI before dispatching Automation then Studio Release workflows. #396 remains deferred until after v2.3.
+The 2.3 release is complete. Select a future issue or release scope when ready; #396 remains deferred until after v2.3.
