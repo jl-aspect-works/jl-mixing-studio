@@ -22,13 +22,13 @@ use commands::{
     add_comparison_region, add_project_reference, analyze_comparison_loudness,
     choose_workspace_folder, clear_comparison_history, complete_comparison_session,
     delete_comparison_region, delete_comparison_session, delete_project_file,
-    execute_project_content_delete, plan_project_content_delete,
     delete_project_reference, delete_revision_file, discover_default_workspace,
-    get_comparison_results, get_comparison_setup, get_delivery_notes, get_jl_mixing_version,
-    get_native_comparison_audio_status, get_native_project_audio_preview_status,
-    get_project_audio_waveform, get_revision_notes, get_system_info, get_workspace_configuration,
-    list_project_files, load_native_project_audio_preview, open_folder, open_project_file,
-    pause_native_comparison_audio, pause_native_project_audio_preview,
+    execute_project_content_delete, get_comparison_results, get_comparison_setup,
+    get_delivery_notes, get_jl_mixing_version, get_native_comparison_audio_status,
+    get_native_project_audio_preview_status, get_project_audio_waveform, get_revision_notes,
+    get_system_info, get_workspace_configuration, list_project_files,
+    load_native_project_audio_preview, open_folder, open_project_file,
+    pause_native_comparison_audio, pause_native_project_audio_preview, plan_project_content_delete,
     play_native_comparison_audio, play_native_project_audio_preview,
     prepare_native_comparison_audio, prepare_project_audio_preview, rename_project_file,
     rename_revision_file, resolve_compact_audio_source, resolve_folder, reveal_project_file,
@@ -195,8 +195,12 @@ fn get_original_delete_support(app: tauri::AppHandle) -> bool {
         .ok()
         .and_then(|home| cli::advertised_capabilities(&home, &automation_api::SystemProcessRunner))
         .is_some_and(|capabilities| {
-            capabilities.iter().any(|value| value == "client.files.delete.plan")
-                && capabilities.iter().any(|value| value == "client.files.delete.execute")
+            capabilities
+                .iter()
+                .any(|value| value == "client.files.delete.plan")
+                && capabilities
+                    .iter()
+                    .any(|value| value == "client.files.delete.execute")
         })
 }
 

@@ -6,8 +6,8 @@ use super::project_files::{
     normalize_relative_path, resolve_existing_directory, resolve_existing_regular_file,
     resolve_project_directory,
 };
-use crate::models::ProjectFileMutationRequest;
 use crate::managed_client_files;
+use crate::models::ProjectFileMutationRequest;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -57,18 +57,34 @@ pub(crate) fn execute_project_content_delete(
     app: tauri::AppHandle,
     request: ContentDeleteExecuteRequest,
 ) -> Result<ContentDeletePlan, String> {
-    record_mutation("delete", "protectedContent", &request.relative_path, "attempted", None);
+    record_mutation(
+        "delete",
+        "protectedContent",
+        &request.relative_path,
+        "attempted",
+        None,
+    );
     let result = (|| {
         let root = resolve_project_directory(&app, &request.client_id, &request.project_id)?;
         if request.relative_path.starts_with(ORIGINAL) {
-            return automation_original_delete(&app, &root, &request.relative_path,
-                Some((&request.fingerprint, &request.confirm_name)));
+            return automation_original_delete(
+                &app,
+                &root,
+                &request.relative_path,
+                Some((&request.fingerprint, &request.confirm_name)),
+            );
         }
         execute_at(&root, &request)
     })();
     record_mutation(
-        "delete", "protectedContent", &request.relative_path,
-        if result.is_ok() { "succeeded" } else { "failed" },
+        "delete",
+        "protectedContent",
+        &request.relative_path,
+        if result.is_ok() {
+            "succeeded"
+        } else {
+            "failed"
+        },
         result.as_ref().err().map(|_| "validation_or_filesystem"),
     );
     result
@@ -81,41 +97,86 @@ fn automation_original_delete(
     confirmation: Option<(&str, &str)>,
 ) -> Result<ContentDeletePlan, String> {
     let execute = confirmation.is_some();
-    let mut args = vec!["client-files".into(),
-        if execute { "delete-execute" } else { "delete-plan" }.into(),
-        "--json".into(), "--relative-path".into(), relative_path.into()];
+    let mut args = vec![
+        "client-files".into(),
+        if execute {
+            "delete-execute"
+        } else {
+            "delete-plan"
+        }
+        .into(),
+        "--json".into(),
+        "--relative-path".into(),
+        relative_path.into(),
+    ];
     if let Some((fingerprint, name)) = confirmation {
-        args.extend(["--fingerprint".into(), fingerprint.into(), "--confirm-name".into(), name.into()]);
+        args.extend([
+            "--fingerprint".into(),
+            fingerprint.into(),
+            "--confirm-name".into(),
+            name.into(),
+        ]);
     }
-    let operation = if execute { "client.files.delete.execute" } else { "client.files.delete.plan" };
+    let operation = if execute {
+        "client.files.delete.execute"
+    } else {
+        "client.files.delete.plan"
+    };
     let result = managed_client_files::call_api(app, project, operation, args);
     if !result.ok {
         return Err(if result.message.is_empty() {
             "Original Delivery deletion requires an installed Automation release with managed delete support".into()
-        } else { result.message });
+        } else {
+            result.message
+        });
     }
-    let summary = result.data.get("summary")
+    let summary = result
+        .data
+        .get("summary")
         .ok_or("Automation returned no deletion summary")?;
     Ok(ContentDeletePlan {
-        relative_path: summary.get("relative_path").and_then(serde_json::Value::as_str)
-            .ok_or("Automation returned an invalid deletion path")?.into(),
-        display_name: summary.get("display_name").and_then(serde_json::Value::as_str)
-            .ok_or("Automation returned an invalid deletion name")?.into(),
-        is_directory: summary.get("is_directory").and_then(serde_json::Value::as_bool)
+        relative_path: summary
+            .get("relative_path")
+            .and_then(serde_json::Value::as_str)
+            .ok_or("Automation returned an invalid deletion path")?
+            .into(),
+        display_name: summary
+            .get("display_name")
+            .and_then(serde_json::Value::as_str)
+            .ok_or("Automation returned an invalid deletion name")?
+            .into(),
+        is_directory: summary
+            .get("is_directory")
+            .and_then(serde_json::Value::as_bool)
             .ok_or("Automation returned an invalid deletion type")?,
-        file_count: summary.get("file_count").and_then(serde_json::Value::as_u64)
+        file_count: summary
+            .get("file_count")
+            .and_then(serde_json::Value::as_u64)
             .ok_or("Automation returned an invalid file count")?,
-        directory_count: summary.get("directory_count").and_then(serde_json::Value::as_u64)
+        directory_count: summary
+            .get("directory_count")
+            .and_then(serde_json::Value::as_u64)
             .ok_or("Automation returned an invalid folder count")?,
-        total_bytes: summary.get("total_bytes").and_then(serde_json::Value::as_u64)
+        total_bytes: summary
+            .get("total_bytes")
+            .and_then(serde_json::Value::as_u64)
             .ok_or("Automation returned an invalid byte count")?,
-        fingerprint: summary.get("fingerprint").and_then(serde_json::Value::as_str)
-            .ok_or("Automation returned an invalid deletion fingerprint")?.into(),
-        working_copies_retained: summary.get("working_copies_retained")
+        fingerprint: summary
+            .get("fingerprint")
+            .and_then(serde_json::Value::as_str)
+            .ok_or("Automation returned an invalid deletion fingerprint")?
+            .into(),
+        working_copies_retained: summary
+            .get("working_copies_retained")
             .and_then(serde_json::Value::as_array)
             .ok_or("Automation returned an invalid Working Audio summary")?
-            .iter().map(|value| value.as_str().map(str::to_owned)
-                .ok_or("Automation returned an invalid Working Audio path"))
+            .iter()
+            .map(|value| {
+                value
+                    .as_str()
+                    .map(str::to_owned)
+                    .ok_or("Automation returned an invalid Working Audio path")
+            })
             .collect::<Result<Vec<_>, _>>()?,
     })
 }
@@ -124,14 +185,19 @@ fn allowed_path(relative: &str) -> bool {
     [WORKING, REJECTED].iter().any(|root| {
         relative.starts_with(root)
             && relative.len() > root.len()
-            && !relative.split('/').any(|part| part.starts_with(".jl-mixing-deleting-"))
+            && !relative
+                .split('/')
+                .any(|part| part.starts_with(".jl-mixing-deleting-"))
     })
 }
 
 pub(super) fn is_deletable_content_path(relative: &str) -> bool {
-    allowed_path(relative) || (relative.starts_with(ORIGINAL)
-        && relative.len() > ORIGINAL.len()
-        && !relative.split('/').any(|part| part.starts_with(".jl-mixing-deleting-")))
+    allowed_path(relative)
+        || (relative.starts_with(ORIGINAL)
+            && relative.len() > ORIGINAL.len()
+            && !relative
+                .split('/')
+                .any(|part| part.starts_with(".jl-mixing-deleting-")))
 }
 
 fn target_at(project: &Path, relative: &str) -> Result<(PathBuf, bool), String> {
@@ -156,11 +222,19 @@ fn plan_at(project: &Path, relative_path: &str) -> Result<ContentDeletePlan, Str
         return Err("Deletion is limited to content inside Working Audio and Rejected Files; managed roots are protected".into());
     }
     let (target, is_directory) = target_at(project, &relative)?;
-    let display_name = target.file_name().ok_or("The selected content has no name")?
-        .to_string_lossy().into_owned();
+    let display_name = target
+        .file_name()
+        .ok_or("The selected content has no name")?
+        .to_string_lossy()
+        .into_owned();
     let mut plan = ContentDeletePlan {
-        relative_path: relative.clone(), display_name, is_directory,
-        file_count: 0, directory_count: 0, total_bytes: 0, fingerprint: String::new(),
+        relative_path: relative.clone(),
+        display_name,
+        is_directory,
+        file_count: 0,
+        directory_count: 0,
+        total_bytes: 0,
+        fingerprint: String::new(),
         working_copies_retained: Vec::new(),
     };
     let mut hash = 0xcbf29ce484222325_u64;
@@ -175,17 +249,37 @@ fn hash_bytes(hash: &mut u64, bytes: &[u8]) {
     }
 }
 
-fn visit(path: &Path, root: &Path, plan: &mut ContentDeletePlan, hash: &mut u64) -> Result<(), String> {
+fn visit(
+    path: &Path,
+    root: &Path,
+    plan: &mut ContentDeletePlan,
+    hash: &mut u64,
+) -> Result<(), String> {
     let metadata = fs::symlink_metadata(path)
         .map_err(|error| format!("Cannot inspect deletion contents: {error}"))?;
     if metadata.file_type().is_symlink() || !(metadata.is_file() || metadata.is_dir()) {
-        return Err("The selected folder contains a symbolic link or unsupported item; deletion is blocked".into());
+        return Err(
+            "The selected folder contains a symbolic link or unsupported item; deletion is blocked"
+                .into(),
+        );
     }
-    hash_bytes(hash, path.strip_prefix(root).unwrap_or(path).to_string_lossy().as_bytes());
+    hash_bytes(
+        hash,
+        path.strip_prefix(root)
+            .unwrap_or(path)
+            .to_string_lossy()
+            .as_bytes(),
+    );
     hash_bytes(hash, &[u8::from(metadata.is_dir())]);
     hash_bytes(hash, &metadata.len().to_le_bytes());
-    let modified = metadata.modified().ok().and_then(|time| time.duration_since(UNIX_EPOCH).ok());
-    hash_bytes(hash, &modified.map_or(0, |time| time.as_nanos()).to_le_bytes());
+    let modified = metadata
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(UNIX_EPOCH).ok());
+    hash_bytes(
+        hash,
+        &modified.map_or(0, |time| time.as_nanos()).to_le_bytes(),
+    );
     if metadata.is_file() {
         plan.file_count += 1;
         plan.total_bytes = plan.total_bytes.saturating_add(metadata.len());
@@ -197,30 +291,52 @@ fn visit(path: &Path, root: &Path, plan: &mut ContentDeletePlan, hash: &mut u64)
             .collect::<Result<Vec<_>, _>>()
             .map_err(|error| format!("Cannot inspect deletion folder: {error}"))?;
         children.sort();
-        for child in children { visit(&child, root, plan, hash)?; }
+        for child in children {
+            visit(&child, root, plan, hash)?;
+        }
     }
     Ok(())
 }
 
-fn execute_at(project: &Path, request: &ContentDeleteExecuteRequest) -> Result<ContentDeletePlan, String> {
+fn execute_at(
+    project: &Path,
+    request: &ContentDeleteExecuteRequest,
+) -> Result<ContentDeletePlan, String> {
     let plan = plan_at(project, &request.relative_path)?;
     if plan.fingerprint != request.fingerprint {
-        return Err("The folder contents changed since confirmation; review a new deletion summary".into());
+        return Err(
+            "The folder contents changed since confirmation; review a new deletion summary".into(),
+        );
     }
     if plan.display_name != request.confirm_name {
         return Err("Confirmation must match the selected file or folder name exactly".into());
     }
     let (target, _) = target_at(project, &plan.relative_path)?;
-    let parent = target.parent().ok_or("The selected content has no parent folder")?;
-    let staged = (0..100).map(|index| parent.join(format!(
-        ".jl-mixing-deleting-{}-{index}", std::process::id()
-    ))).find(|path| !path.exists()).ok_or("Could not reserve a safe deletion name")?;
+    let parent = target
+        .parent()
+        .ok_or("The selected content has no parent folder")?;
+    let staged = (0..100)
+        .map(|index| {
+            parent.join(format!(
+                ".jl-mixing-deleting-{}-{index}",
+                std::process::id()
+            ))
+        })
+        .find(|path| !path.exists())
+        .ok_or("Could not reserve a safe deletion name")?;
     fs::rename(&target, &staged)
         .map_err(|error| format!("Could not stage deletion; the original item remains: {error}"))?;
-    let cleanup = if plan.is_directory { fs::remove_dir_all(&staged) } else { fs::remove_file(&staged) };
-    cleanup.map_err(|error| format!(
-        "Deletion cleanup is incomplete at {}; do not retry automatically: {error}", staged.display()
-    ))?;
+    let cleanup = if plan.is_directory {
+        fs::remove_dir_all(&staged)
+    } else {
+        fs::remove_file(&staged)
+    };
+    cleanup.map_err(|error| {
+        format!(
+            "Deletion cleanup is incomplete at {}; do not retry automatically: {error}",
+            staged.display()
+        )
+    })?;
     Ok(plan)
 }
 
@@ -230,8 +346,10 @@ mod tests {
 
     fn request(path: &str, plan: &ContentDeletePlan) -> ContentDeleteExecuteRequest {
         ContentDeleteExecuteRequest {
-            client_id: String::new(), project_id: String::new(),
-            relative_path: path.into(), fingerprint: plan.fingerprint.clone(),
+            client_id: String::new(),
+            project_id: String::new(),
+            relative_path: path.into(),
+            fingerprint: plan.fingerprint.clone(),
             confirm_name: plan.display_name.clone(),
         }
     }
@@ -244,7 +362,10 @@ mod tests {
         fs::write(folder.join("lead.wav"), b"lead").unwrap();
         let path = "02_Audio_Preparation/Working_Audio/Stems";
         let plan = plan_at(root.path(), path).unwrap();
-        assert_eq!((plan.file_count, plan.directory_count, plan.total_bytes), (1, 1, 4));
+        assert_eq!(
+            (plan.file_count, plan.directory_count, plan.total_bytes),
+            (1, 1, 4)
+        );
         fs::write(folder.join("new.wav"), b"new").unwrap();
         assert!(execute_at(root.path(), &request(path, &plan)).is_err());
         assert!(folder.exists());
@@ -259,8 +380,13 @@ mod tests {
         let working = root.path().join("02_Audio_Preparation/Working_Audio");
         fs::create_dir_all(&working).unwrap();
         assert!(plan_at(root.path(), "02_Audio_Preparation/Working_Audio").is_err());
-        assert!(plan_at(root.path(), "02_Audio_Preparation/Working_Audio/../00_Admin").is_err());
-        #[cfg(unix)] {
+        assert!(plan_at(
+            root.path(),
+            "02_Audio_Preparation/Working_Audio/../00_Admin"
+        )
+        .is_err());
+        #[cfg(unix)]
+        {
             let outside = root.path().join("outside.wav");
             fs::write(&outside, b"outside").unwrap();
             std::os::unix::fs::symlink(&outside, working.join("link.wav")).unwrap();

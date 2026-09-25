@@ -208,7 +208,11 @@ fn project_file_entry(path: &Path, parent_relative: &str) -> Result<ProjectFileE
     let symlink = matches!(entry_type, ProjectFileEntryType::Symlink);
 
     let mut permissions = permissions_for(area, entry_type, symlink);
-    if !symlink && matches!(entry_type, ProjectFileEntryType::File | ProjectFileEntryType::Directory)
+    if !symlink
+        && matches!(
+            entry_type,
+            ProjectFileEntryType::File | ProjectFileEntryType::Directory
+        )
         && super::project_content_delete::is_deletable_content_path(&relative_path)
     {
         permissions.can_delete = true;
