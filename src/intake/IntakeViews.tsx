@@ -119,6 +119,7 @@ export function IntakeView({ client, project, reportState, actionError, validati
         onSelectionChange={setSelectedFile}
         selectedPaths={selectedPaths}
         onSelectedPathsChange={setSelectedPaths}
+        onAfterDelete={() => { onRefresh(); if (validationAvailable) onRecheck(); }}
       />
     </section>
 

@@ -4,6 +4,7 @@ import { AudioPreviewPlayer } from "./AudioPreviewPlayer";
 import { FileViewControls, ManagedFolderToolbar } from "./FileUiPrimitives";
 import { ProjectFileList } from "./ProjectFileList";
 import { ProjectFileMutationDialog, type ProjectFileMutation } from "./ProjectFileMutationDialog";
+import { ContentDeleteDialog } from "./ContentDeleteDialog";
 import { canNavigateProjectFilesUp, projectFilePathUp } from "./projectFileNavigation";
 import {
   presentProjectFileListing,
@@ -278,7 +279,20 @@ export function ProjectFileBrowser({
         />
       )}
 
-      {pendingMutation && <ProjectFileMutationDialog
+      {pendingMutation?.kind === "delete" && pendingMutation.entry.permissions.canDelete && (
+        pendingMutation.entry.relativePath.startsWith("01_Client_Files/Original_Delivery/")
+        || pendingMutation.entry.relativePath.startsWith("02_Audio_Preparation/Working_Audio/")
+        || pendingMutation.entry.relativePath.startsWith("02_Audio_Preparation/Rejected_Files/"))
+        ? <ContentDeleteDialog clientId={clientId} projectId={projectId} entry={pendingMutation.entry}
+          onClose={() => setPendingMutation(null)} onCompleted={async () => {
+            const completed = pendingMutation.entry;
+            setActionBusy(`Refreshing after deleting ${completed.displayName}…`);
+            const refreshed = await refresh();
+            setPendingMutation(null);
+            setActionBusy(null);
+            if (refreshed) setActionSuccess(`${completed.displayName} was deleted.`);
+            else setActionError("Deletion completed, but the folder could not be refreshed. Reconnect and refresh before another action.");
+          }} /> : pendingMutation && <ProjectFileMutationDialog
         mutation={pendingMutation}
         onRename={onRename}
         onDelete={onDelete}

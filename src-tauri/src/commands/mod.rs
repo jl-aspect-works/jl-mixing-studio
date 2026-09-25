@@ -25,6 +25,7 @@ mod listening_publish_base;
 mod native_audio_preview;
 mod os_metadata;
 mod project_file_diagnostics;
+mod project_content_delete;
 #[path = "project_file_open_command.rs"]
 mod project_file_open;
 #[path = "project_file_summary_command.rs"]
@@ -83,6 +84,7 @@ pub(super) use project_file_open::{
 };
 pub(super) use project_file_summary::summarize_project_files;
 pub(super) use project_files::{delete_project_file, list_project_files, rename_project_file};
+pub(super) use project_content_delete::{execute_project_content_delete, plan_project_content_delete};
 pub(super) use project_references::{add_project_reference, delete_project_reference};
 pub(crate) use project_revision_files::ListeningSourceSelection;
 pub(super) use project_revision_files::{delete_revision_file, rename_revision_file};

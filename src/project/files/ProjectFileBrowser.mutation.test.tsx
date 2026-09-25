@@ -6,16 +6,16 @@ import type { ProjectFileListing } from "./projectFileService";
 const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
 
 const listing: ProjectFileListing = {
-  relativePath: "02_Audio_Preparation/Working_Audio",
-  area: "audioPreparation",
+  relativePath: "04_Revisions/Revision_01",
+  area: "revisions",
   permissions: { canOpen: true, canReveal: true, canRename: false, canDelete: false, canCopy: false },
   entries: [{
     id: "mix",
-    relativePath: "02_Audio_Preparation/Working_Audio/Mix.wav",
+    relativePath: "04_Revisions/Revision_01/Mix.wav",
     displayName: "Mix.wav",
     extension: "wav",
     entryType: "file",
-    area: "audioPreparation",
+    area: "revisions",
     sizeBytes: 1024,
     modifiedEpochMs: null,
     isAudio: false,

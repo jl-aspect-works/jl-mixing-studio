@@ -1,6 +1,13 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClientFilesBrowser, formatClientFileModified } from "./ClientFilesBrowser";
+
+const { plan, execute, refresh } = vi.hoisted(() => ({ plan: vi.fn(), execute: vi.fn(), refresh: vi.fn() }));
+vi.mock("../project/files/projectFileService", async () => ({
+  ...await vi.importActual<typeof import("../project/files/projectFileService")>("../project/files/projectFileService"),
+  planProjectContentDelete: plan,
+  executeProjectContentDelete: execute,
+}));
 
 vi.mock("../project/files/AudioPreviewPlayer", () => ({
   AudioPreviewPlayer: ({ entry }: { entry: { displayName: string } }) => <span data-testid="inline-preview">Previewing {entry.displayName}</span>,
@@ -40,16 +47,37 @@ vi.mock("../project/files/useProjectFiles", () => ({
             modifiedEpochMs: 1,
             isAudio: false,
             playable: false,
-            permissions: { canOpen: true, canReveal: true, canRename: false, canDelete: false, canCopy: false },
+            permissions: { canOpen: true, canReveal: true, canRename: false, canDelete: true, canCopy: false },
           },
         ],
       },
     },
-    refresh: vi.fn(),
+    refresh,
   }),
 }));
 
+afterEach(cleanup);
+
 describe("ClientFilesBrowser", () => {
+  it("reviews and deletes eligible Original Delivery content, then refreshes selection and validation", async () => {
+    plan.mockResolvedValue({ relativePath: "01_Client_Files/Original_Delivery/Notes.txt", displayName: "Notes.txt", isDirectory: false, fileCount: 1, directoryCount: 0, totalBytes: 12, fingerprint: "source" });
+    execute.mockResolvedValue({});
+    refresh.mockResolvedValue(true);
+    const onAfterDelete = vi.fn();
+    const onSelectedPathsChange = vi.fn();
+    render(<ClientFilesBrowser clientId="client" projectId="project" onAfterDelete={onAfterDelete} onSelectedPathsChange={onSelectedPathsChange} />);
+    fireEvent.click(screen.getByLabelText("Actions for Notes.txt"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+    expect(await screen.findByText(/1 file, 0 folders, 12 bytes/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete file" }));
+    await waitFor(() => expect(execute).toHaveBeenCalledWith({
+      clientId: "client", projectId: "project", relativePath: "01_Client_Files/Original_Delivery/Notes.txt",
+      fingerprint: "source", confirmName: "Notes.txt",
+    }));
+    await waitFor(() => expect(onAfterDelete).toHaveBeenCalled());
+    expect(refresh).toHaveBeenCalled();
+    expect(onSelectedPathsChange).toHaveBeenLastCalledWith([]);
+  });
   it("formats modified date and time without a comma", () => {
     const formatted = formatClientFileModified(new Date(2026, 7, 17, 7, 10).getTime());
     expect(formatted).toBe("8/17/26 07:10am");
