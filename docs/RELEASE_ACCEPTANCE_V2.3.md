@@ -88,6 +88,8 @@ RC2 test environment, reported by `jlevine456`:
 - [x] Targeted Studio RC2 checks A01–A03, B01–B02, B05, and C03 reported Pass on Windows x64 and macOS Intel in commit `8ad08dc`.
 - [x] Record tested OS versions and Windows NAS path; note that individual negative-case logs and a macOS workspace path were not attached. Apple Silicon Not run is documented because no machine was available.
 - [x] User explicitly approved Studio `v2.3.1-rc.2` with Automation `v2.3.1-rc.1` for stable `v2.3.1`, based on the recorded targeted results (2026-09-24).
+- [x] Stable Automation and Studio `v2.3.1` workflows succeeded on approved `main` commits; annotated tags, release flags, nonempty artifacts, and checksum-file presence verified (2026-09-25).
+- [x] User reported installed stable releases passed sanity tests (2026-09-25); no per-platform test matrix was submitted for the stable packages.
 
 ## Findings and disposition
 
@@ -95,10 +97,17 @@ RC2 test environment, reported by `jlevine456`:
 | --- | --- | --- | --- |
 | Windows NAS | Automation #206 | Published `v2.3.0` blocks newly created empty-client deletion at plan with an ownership-root mismatch | Fixed in Automation PR #207; RC1 and RC2 C03 marked Pass on Windows. RC2 NAS location recorded above; individual negative-case logs were not attached |
 | Windows and Mac | Studio #423 | Studio RC1 rejects a shorter candidate whose audio ends within the custom final region | Fixed in PR #424; installed Studio RC2 checks reported Pass on Windows 11 Pro and macOS Intel 12.7.6 |
-| All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Both pages marked prerelease; recover through `v2.3.1-rc.1` without treating historical builds as qualified |
+| All | Studio #419 | `v2.3.0` published without RC packaged acceptance | Both historical pages remain prereleases. Qualified RCs were promoted through new stable `v2.3.1` releases with tags/assets preserved |
 
 **Qualification decision (approved 2026-09-24):** The full Studio RC1/Automation RC1 matrix remains historical evidence for the earlier packages. All approved targeted Studio RC2/Automation RC1 checks, including #423 and Windows NAS C03, were reported Pass on Windows 11 Pro and macOS Intel 12.7.6. Apple Silicon was unavailable and was not run. The user explicitly approved this exact candidate pair for stable `v2.3.1` promotion. Stable package creation, workflow verification, and artifact checks remain release steps; no stable installer is represented as installed or tested by this record.
 
 ## Stable publication status
 
-Stable `v2.3.1` publication is pending the release-preparation PRs, their post-merge CI, and the Automation-first, Studio-second Release workflows. Record the workflow runs, tag targets, release flags, and artifacts after each workflow completes.
+The preparation PRs merged with passing post-merge CI: Automation #209 as `a3c3b66c1ff3965713f39140d6e93263d67c4298` (Tests/ShellCheck #1574), then Studio #427 as `575190c266f2b51211bdcbf60ec8ed0753a370bc` (full CI #2134). The Release workflows were dispatched from `main`, and Automation published before Studio.
+
+| Release | Workflow and tag target | Release state and assets |
+| --- | --- | --- |
+| [Automation `v2.3.1`](https://github.com/jl-aspect-works/jl-mixing-automation/releases/tag/v2.3.1) | [Run #36130036679](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/36130036679) succeeded; annotated tag points to `a3c3b66c1ff3965713f39140d6e93263d67c4298` | Published, `draft=false`, `prerelease=false`; four nonempty platform archives, four `.sha256` files, and four inventories present |
+| [Studio `v2.3.1`](https://github.com/jl-aspect-works/jl-mixing-studio/releases/tag/v2.3.1) | [Run #36130067020](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36130067020) succeeded; annotated tag points to `575190c266f2b51211bdcbf60ec8ed0753a370bc` | Published, `draft=false`, `prerelease=false`; nonempty Windows x64, macOS Intel, and Apple Silicon installers plus `SHA256SUMS.txt` present |
+
+On 2026-09-25, the user reported installing the stable releases and passing sanity tests. The report did not specify platforms, test cases, installation paths, or checksum values, so it is recorded as a general installed smoke result; it does not change any platform-specific RC acceptance or the Apple Silicon Not run status above. Stable publication is complete.
