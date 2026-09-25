@@ -35,4 +35,4 @@ Install Automation `v2.3.2-rc.1` separately before testing managed Original Deli
 
 ## Verification record
 
-The preceding stable `v2.3.1` qualification is preserved in the [2.3.1 record](RELEASE_ACCEPTANCE_V2.3.md). The [2.3.2 candidate record](RELEASE_ACCEPTANCE_V2.3.2.md) tracks this exact pairing and its installed platform results. This prerelease has not yet passed packaged acceptance.
+The preceding stable `v2.3.1` qualification is preserved in the [2.3.1 record](https://github.com/jl-aspect-works/jl-mixing-studio/blob/main/docs/RELEASE_ACCEPTANCE_V2.3.md). The [2.3.2 candidate record](https://github.com/jl-aspect-works/jl-mixing-studio/blob/main/docs/RELEASE_ACCEPTANCE_V2.3.2.md) tracks this exact pairing and its installed platform results. This prerelease has not yet passed installed acceptance.
