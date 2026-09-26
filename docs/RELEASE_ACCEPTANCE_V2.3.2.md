@@ -46,3 +46,12 @@ Apple Silicon: Not run because Apple Silicon hardware was unavailable for testin
 - [x] Blockers resolved or explicitly deferred; user explicitly approves stable promotion of the exact pair.
 
 **Qualification decision:** The required installed checks for Studio `v2.3.2-rc.2` with Automation `v2.3.2-rc.1` passed on Windows x64 and macOS Intel. RC1 Windows L03 failed on #434; RC2 L03 passed after #435. Apple Silicon is unavailable, so its checks remain Not run. Windows Reveal actions (#441) were classified by the user as nonblocking for this release. On 2026-09-26 the user explicitly approved Studio `v2.3.2-rc.2` with Automation `v2.3.2-rc.1` for stable promotion. The installed candidate pair is qualified; stable package publication and artifact checks are tracked in the release workflow.
+
+## Stable publication
+
+| Package | Source and release evidence | Result |
+| --- | --- | --- |
+| Automation `v2.3.2` | Stable preparation [PR #213](https://github.com/jl-aspect-works/jl-mixing-automation/pull/213) merged as `a054f553c7eaebc515b9daa36d340e62a9877ab4` after Tests and ShellCheck passed; post-merge checks passed. [Release run #36272219658](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/36272219658) succeeded on that commit. The [stable release](https://github.com/jl-aspect-works/jl-mixing-automation/releases/tag/v2.3.2) is not marked prerelease; its tag resolves to that commit and contains four nonempty platform archives, four checksum files, and four inventories. | Published |
+| Studio `v2.3.2` | Stable preparation [PR #443](https://github.com/jl-aspect-works/jl-mixing-studio/pull/443) merged as `128b930eef718e066a7e22cc888bc2d28ff4bd7d` after full PR CI passed; post-merge CI passed. [Release run #36272657351](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36272657351) succeeded on that commit. The [stable release](https://github.com/jl-aspect-works/jl-mixing-studio/releases/tag/v2.3.2) is not marked prerelease; its tag resolves to that commit and contains three nonempty installers and `SHA256SUMS.txt`. The checksum entries match the installers' published SHA-256 digests. | Published |
+
+Stable builds promote the approved candidates with release-version and documentation changes; the installed acceptance results above refer to the exact RC packages, not a separate installed test of the stable packages.
