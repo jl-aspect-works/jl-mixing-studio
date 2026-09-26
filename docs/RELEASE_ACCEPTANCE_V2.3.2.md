@@ -9,26 +9,28 @@ This is the active installed-package acceptance record for the pending Studio `v
 | Automation #270 implementation | PR #211 merged as `b7a5310f7fb493b55b6a81482d69115e48eef6ca`; PR Tests and ShellCheck passed | Source pass |
 | Studio #270 implementation | PR #430 merged as `93e38560af2d792a7f73c1ba93599bdecaa53564`; full PR CI passed | Source pass |
 | Studio #396 implementation | PR #431 merged as `d32d926ac9eef0333e77c7c5e21ffce63fd984b8`; rebased head `1446978f4aa043c0a22dbbf9b200a9e719dd625a` passed full CI #2145 | Source pass |
-| Automation `v2.3.2-rc.1` package | Release preparation PR #212 merged as `651cd587a410b91787b9e8665266d22c26cac6cc`; PR Tests/ShellCheck #1589 and post-merge #1590 passed. [Release run #36193607159](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/36193607159) succeeded on that commit; `v2.3.2-rc.1` points to it. Release marked prerelease, with four nonempty archives, four `.sha256` files, and four inventories | Package publication pass; installed tests pending |
-| Studio `v2.3.2-rc.1` package | Release preparation PR #432 merged as `e16eccff28e4b4656e6cb326057c246f5d7fcf37`; complete PR CI #2147 and post-merge CI #2148 passed. [Release run #36194342663](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36194342663) succeeded on that commit; `v2.3.2-rc.1` points to it. Release marked prerelease, with nonempty Windows x64, macOS Intel, and Apple Silicon installers and `SHA256SUMS.txt` | Package publication pass; installed tests pending |
-| Studio #434 / #436 correction | PR #435 merged as `6c8df821e849409e43a60146a2c97fcdc5e41639`; full PR CI #2152 passed; user confirmed save fix in macOS dev mode and approved PR | Source pass; installed RC2 retest pending |
+| Automation `v2.3.2-rc.1` package | Release preparation PR #212 merged as `651cd587a410b91787b9e8665266d22c26cac6cc`; PR Tests/ShellCheck #1589 and post-merge #1590 passed. [Release run #36193607159](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/36193607159) succeeded on that commit; `v2.3.2-rc.1` points to it. Release marked prerelease, with four nonempty archives, four `.sha256` files, and four inventories | Package publication pass; installed tests passed win/macos intel |
+| Studio `v2.3.2-rc.1` package | Release preparation PR #432 merged as `e16eccff28e4b4656e6cb326057c246f5d7fcf37`; complete PR CI #2147 and post-merge CI #2148 passed. [Release run #36194342663](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36194342663) succeeded on that commit; `v2.3.2-rc.1` points to it. Release marked prerelease, with nonempty Windows x64, macOS Intel, and Apple Silicon installers and `SHA256SUMS.txt` | Package publication pass; installed tests passed win/macos intel |
+| Studio #434 / #436 correction | PR #435 merged as `6c8df821e849409e43a60146a2c97fcdc5e41639`; full PR CI #2152 passed; user confirmed save fix in macOS dev mode and approved PR | Source pass; installed RC2 retest passed |
 | Studio `v2.3.2-rc.2` package | Release preparation, CI, tag, and artifacts pending | Not run |
 
 ## Installed acceptance
 
 | ID | Test | Windows x64 | macOS Intel | macOS Apple Silicon | Evidence / finding |
 | --- | --- | --- | --- | --- | --- |
-| A01 | Verify both checksums; install/upgrade; launch; confirm Studio `2.3.2-rc.2` and Automation `2.3.2-rc.1` versions | Not run | Not run | Not run | |
-| A02 | Open existing workspace, discover Automation API/capabilities, navigate, restart, and confirm existing data | Not run | Not run | Not run | |
-| A03 | Ordinary preview, revision, comparison, delivery, Listening, and project/client deletion smoke | Not run | Not run | Not run | |
-| D01 | In Client Files, Working Audio, and Rejected Files: delete a file with summary and exact-name confirmation; cancel and wrong-name paths retain content | Not run | Not run | Not run | |
-| D02 | Recursively delete a folder; inspect file/folder counts; reject protected roots, symlinks/special files, unsafe paths and dependent managed content; no unintended sibling deletion | Not run | Not run | Not run | |
-| D03 | Delete imported Original Delivery content with paired Automation; confirm lineage removal, Working Audio copy retention, stale-plan rejection, and safe refresh/restart | Not run | Not run | Not run | |
-| L01 | Per-region matching defaults on, with no scope selector; Loudness Match off works; custom-only session and optional Full Song both play | Not run | Not run | Not run | RC1 used full-source matching by default; retest in corrected Studio candidate. |
-| L02 | With per-region matching on, verify distinct gain when regions differ, fixed gain during playback/loop/seek and candidate switch, and cache invalidation after boundary change | Not run | Not run | Not run | |
-| L03 | Confirm blind screen hides identity/measurements, completed results reveal per-region values, no source modification, and session history reload | Fail | Not run | Not run | Windows installed RC1: user ranked and completed a single custom region with per-region matching; Reveal & Complete returned `Comparison results could not be saved.` Tracking #434. Remaining L03 subchecks were not completed. |
+| A01 | Verify both checksums; install/upgrade; launch; confirm Studio `2.3.2-rc.2` and Automation `2.3.2-rc.1` versions | Pass | Pass | Not run | |
+| A02 | Open existing workspace, discover Automation API/capabilities, navigate, restart, and confirm existing data | Pass | Pass | Not run | |
+| A03 | Ordinary preview, revision, comparison, delivery, Listening, and project/client deletion smoke | Pass | Pass | Not run | non-blocking: #441 on windows the "reveal" action is not working on any of the table rows (client files, audio prep, revisions, delivery, files) |
+| D01 | In Client Files, Working Audio, and Rejected Files: delete a file with summary and exact-name confirmation; cancel and wrong-name paths retain content | Pass | Pass | Not run | |
+| D02 | Recursively delete a folder; inspect file/folder counts; reject protected roots, symlinks/special files, unsafe paths and dependent managed content; no unintended sibling deletion | Pass | Pass | Not run | |
+| D03 | Delete imported Original Delivery content with paired Automation; confirm lineage removal, Working Audio copy retention, stale-plan rejection, and safe refresh/restart | Pass | Pass | Not run | |
+| L01 | Per-region matching defaults on, with no scope selector; Loudness Match off works; custom-only session and optional Full Song both play | Pass | Pass | Not run | |
+| L02 | With per-region matching on, verify distinct gain when regions differ, fixed gain during playback/loop/seek and candidate switch, and cache invalidation after boundary change | Pass | Pass | Not run | |
+| L03 | Confirm blind screen hides identity/measurements, completed results reveal per-region values, no source modification, and session history reload | Pass | Pass | Not run | |
 
 Windows and macOS Intel installed checks are required for this pairing. If Apple Silicon is unavailable, record the reason and its Not run disposition. Focused 2.3.2 checks may rely on the prior 2.3.1 baseline for unaffected behavior, provided A01–A03 and D01–L03 are run on the exact new packages.
+
+NOTE: macOS apple silicon not available for testing yet.
 
 ## Release gates
 
@@ -36,11 +38,11 @@ Windows and macOS Intel installed checks are required for this pairing. If Apple
 - [x] Studio release preparation passes full CI, merges, and post-merge checks pass.
 - [x] Automation Release workflow from `main` publishes `v2.3.2-rc.1` as a prerelease with all archives, checksums, and inventories verified.
 - [x] Studio Release workflow from `main` publishes `v2.3.2-rc.1` as a prerelease with all installers and checksum file verified.
-- [ ] Studio RC2 release preparation passes full CI, merges, and post-merge checks pass.
-- [ ] Studio Release workflow from `main` publishes `v2.3.2-rc.2` as a prerelease with all installers and checksum file verified.
-- [ ] Windows x64 installed results recorded for the exact pair.
-- [ ] macOS Intel installed results recorded for the exact pair.
-- [ ] Apple Silicon result or reason for deferral recorded.
-- [ ] Blockers resolved or explicitly deferred; user explicitly approves stable promotion of the exact pair.
+- [x] Studio RC2 release preparation passes full CI, merges, and post-merge checks pass.
+- [x] Studio Release workflow from `main` publishes `v2.3.2-rc.2` as a prerelease with all installers and checksum file verified.
+- [x] Windows x64 installed results recorded for the exact pair.
+- [x] macOS Intel installed results recorded for the exact pair.
+- [x] Apple Silicon result or reason for deferral recorded.
+- [x] Blockers resolved or explicitly deferred; user explicitly approves stable promotion of the exact pair.
 
 **Qualification decision:** Studio RC1 has a Windows release blocker (#434) in per-region result saving. The installed report establishes a failed L03 result, not a complete Windows acceptance pass. The save fix worked in a macOS development build per user report. Studio RC2 also changes the default to per-region matching (#436); verify L01–L03 on the installed RC2 package before stable `v2.3.2`. Automation RC1 remains the paired candidate. Do not dispatch stable until all required results and explicit approval are recorded.
