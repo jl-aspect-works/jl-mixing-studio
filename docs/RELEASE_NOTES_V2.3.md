@@ -1,24 +1,24 @@
 # JL Mixing Studio 2.3
 
-Studio `v2.3.2-rc.2` is a prerelease candidate that adds guarded Client Files deletion (#270), defaults Loudness Match to per-region analysis (#396, #436), and fixes completed comparison result saving (#434). It pairs with Automation `v2.3.2-rc.1` for managed Original Delivery deletion. Studio still uses Automation API `1.0` and workspace metadata schema `1.1.0`; compatibility is determined by advertised capabilities and supported schemas.
+Studio `v2.3.2` adds guarded Client Files deletion (#270), defaults Loudness Match to per-region analysis (#396, #436), and fixes completed comparison result saving (#434). It pairs with Automation `v2.3.2` for managed Original Delivery deletion. Studio still uses Automation API `1.0` and workspace metadata schema `1.1.0`; compatibility is determined by advertised capabilities and supported schemas.
 
 ## Installation
 
-Download the installer for your platform from the Assets section of the Studio `v2.3.2-rc.2` prerelease. Verify it against `SHA256SUMS.txt` before bypassing an operating-system security warning.
+Download the installer for your platform from the Assets section of the Studio `v2.3.2` release. Verify it against `SHA256SUMS.txt` before bypassing an operating-system security warning.
 
-- Intel Mac: `JL-Mixing-Studio_2.3.2-rc.2_macos_x86_64.dmg`
-- Apple Silicon Mac: `JL-Mixing-Studio_2.3.2-rc.2_macos_aarch64.dmg`
-- Windows x64: `JL-Mixing-Studio_2.3.2-rc.2_windows_x86_64.exe`
+- Intel Mac: `JL-Mixing-Studio_2.3.2_macos_x86_64.dmg`
+- Apple Silicon Mac: `JL-Mixing-Studio_2.3.2_macos_aarch64.dmg`
+- Windows x64: `JL-Mixing-Studio_2.3.2_windows_x86_64.exe`
 
 On macOS, open the DMG and drag **JL Mixing Studio** to **Applications**. Studio is unsigned and not notarized. After verifying the checksum, Control-click the app, choose **Open**, and confirm **Open**. If still blocked, launch once, then use **System Settings → Privacy & Security → Open Anyway**.
 
 On Windows, run the installer. Studio is unsigned; after verifying the checksum, select **More info → Run anyway** if SmartScreen blocks it and approve the normal User Account Control prompt.
 
-Install Automation `v2.3.2-rc.1` separately before testing managed Original Delivery deletion. Its macOS bundled runtime requires the documented recursive quarantine removal after checksum verification; see its release notes.
+Install Automation `v2.3.2` separately for managed Original Delivery deletion. Its macOS bundled runtime requires the documented recursive quarantine removal after checksum verification; see its release notes.
 
 ## What's new
 
-- **Client Files deletion (#270):** Delete individual files or recursively delete folders within Client Files, Working Audio, and Rejected Files after a pre-delete summary and exact-name confirmation. Protected roots, symbolic links, and unsafe managed dependencies are rejected. Imported Original Delivery deletion uses Automation `v2.3.2-rc.1` to reconcile managed lineage and retain Working Audio copies. Deletion is permanent and has no built-in recovery.
+- **Client Files deletion (#270):** Delete individual files or recursively delete folders within Client Files, Working Audio, and Rejected Files after a pre-delete summary and exact-name confirmation. Protected roots, symbolic links, and unsafe managed dependencies are rejected. Imported Original Delivery deletion uses Automation `v2.3.2` to reconcile managed lineage and retain Working Audio copies. Deletion is permanent and has no built-in recovery.
 - **Per-region Loudness Match (#396, #436):** Loudness Match is on by default and analyzes each selected region using its precise boundaries. The on/off switch remains, and the matching-scope choice is removed. Custom-only sessions are supported. Gain stays fixed throughout each region and changes when the region changes, without modifying source audio. The blind screen hides measurements; revealed results include per-region values. Older full-source sessions remain readable.
 - **Completed comparison results (#434):** Per-region measurements now save correctly when a completed comparison is revealed, including custom-only sessions.
 - **Blind Revision Comparison:** Compare two or more normal revisions, define overlapping timestamp regions, loop a region, switch candidates while preserving timeline position, explicitly rank every candidate with ties or No Preference, and add per-candidate notes. The built-in Full Song region is optional for a session. Completed sessions reveal revision identities, retain region snapshots, and contribute to cumulative standings; only the Full Song leader receives the TOP indicator. Unfinished sessions are not saved.
@@ -36,4 +36,4 @@ Install Automation `v2.3.2-rc.1` separately before testing managed Original Deli
 
 ## Verification record
 
-The preceding stable `v2.3.1` qualification is preserved in the [2.3.1 record](https://github.com/jl-aspect-works/jl-mixing-studio/blob/main/docs/RELEASE_ACCEPTANCE_V2.3.md). The [2.3.2 candidate record](https://github.com/jl-aspect-works/jl-mixing-studio/blob/main/docs/RELEASE_ACCEPTANCE_V2.3.2.md) tracks this exact pairing and its installed platform results. This prerelease has not yet passed installed acceptance.
+The preceding stable `v2.3.1` qualification is preserved in the [2.3.1 record](https://github.com/jl-aspect-works/jl-mixing-studio/blob/main/docs/RELEASE_ACCEPTANCE_V2.3.md). The [2.3.2 qualification record](https://github.com/jl-aspect-works/jl-mixing-studio/blob/main/docs/RELEASE_ACCEPTANCE_V2.3.2.md) tracks this exact pairing and its installed platform results. The Studio `v2.3.2-rc.2` and Automation `v2.3.2-rc.1` packages passed installed acceptance on Windows x64 and macOS Intel. Apple Silicon testing was unavailable; Windows Reveal actions are tracked as nonblocking issue #441. The exact pair was approved for stable promotion on 2026-09-26.
