@@ -22,9 +22,9 @@ This is the active installed-package acceptance record for Studio `v2.3.2-rc.1` 
 | D01 | In Client Files, Working Audio, and Rejected Files: delete a file with summary and exact-name confirmation; cancel and wrong-name paths retain content | Not run | Not run | Not run | |
 | D02 | Recursively delete a folder; inspect file/folder counts; reject protected roots, symlinks/special files, unsafe paths and dependent managed content; no unintended sibling deletion | Not run | Not run | Not run | |
 | D03 | Delete imported Original Delivery content with paired Automation; confirm lineage removal, Working Audio copy retention, stale-plan rejection, and safe refresh/restart | Not run | Not run | Not run | |
-| L01 | Full-source default remains unchanged with Loudness Match on/off; custom-only session and optional Full Song both play | Not run | Not run | Not run | |
-| L02 | Select Each selected region; verify distinct gain when regions differ, fixed gain during playback/loop/seek and candidate switch, and cache invalidation after boundary change | Not run | Not run | Not run | |
-| L03 | Confirm blind screen hides identity/measurements, completed results reveal per-region values, no source modification, and session history reload | Not run | Not run | Not run | |
+| L01 | Per-region matching defaults on, with no scope selector; Loudness Match off works; custom-only session and optional Full Song both play | Not run | Not run | Not run | RC1 used full-source matching by default; retest in corrected Studio candidate. |
+| L02 | With per-region matching on, verify distinct gain when regions differ, fixed gain during playback/loop/seek and candidate switch, and cache invalidation after boundary change | Not run | Not run | Not run | |
+| L03 | Confirm blind screen hides identity/measurements, completed results reveal per-region values, no source modification, and session history reload | Fail | Not run | Not run | Windows installed RC1: user ranked and completed a single custom region with per-region matching; Reveal & Complete returned `Comparison results could not be saved.` Tracking #434. Remaining L03 subchecks were not completed. |
 
 Windows and macOS Intel installed checks are required for this pairing. If Apple Silicon is unavailable, record the reason and its Not run disposition. Focused 2.3.2 checks may rely on the prior 2.3.1 baseline for unaffected behavior, provided A01–A03 and D01–L03 are run on the exact new packages.
 
@@ -39,4 +39,4 @@ Windows and macOS Intel installed checks are required for this pairing. If Apple
 - [ ] Apple Silicon result or reason for deferral recorded.
 - [ ] Blockers resolved or explicitly deferred; user explicitly approves stable promotion of the exact pair.
 
-**Qualification decision:** Pending installed acceptance. Do not dispatch stable `v2.3.2` until the results and explicit approval above are recorded.
+**Qualification decision:** Studio RC1 has a Windows release blocker (#434) in per-region result saving. The installed report establishes a failed L03 result, not a complete Windows acceptance pass. The proposed save fix worked in a macOS development build per user report, but installed retest remains required. The follow-up candidate also changes the default to per-region matching (#436); verify L01–L03 on the corrected Studio package before stable `v2.3.2`. Automation RC1 may remain paired if its behavior is unaffected. Do not dispatch stable until all required results and explicit approval are recorded.

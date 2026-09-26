@@ -101,10 +101,11 @@ beforeEach(() => {
   mocks.deleteSession.mockReset();
   mocks.clearHistory.mockReset();
   mocks.analyzeLoudness.mockReset().mockResolvedValue({
-    candidates: [
-      { revisionId: "r1", revisionNumber: 1, relativePath: "04_Revisions/Revision_01/mix.wav", integratedLufs: -18, appliedGainDb: 0, cacheState: "analyzed" },
-      { revisionId: "r2", revisionNumber: 2, relativePath: "04_Revisions/Revision_02/mix.wav", integratedLufs: -15, appliedGainDb: -3, cacheState: "analyzed" },
-    ],
+    candidates: [],
+    regions: [{ regionId: "full-song", candidates: [
+      { revisionId: "r1", integratedLufs: -18, appliedGainDb: 0 },
+      { revisionId: "r2", integratedLufs: -15, appliedGainDb: -3 },
+    ] }],
   });
   mocks.waveform.mockReset().mockResolvedValue({ durationSeconds: 120, peaks: [.1, .5, .9, .4] });
   const playback = { activeCandidateId: "A", playing: false, currentSeconds: 0, durationSeconds: 120 };
@@ -199,6 +200,7 @@ describe("comparison setup", () => {
     expect(screen.getByText("2 candidates")).toBeInTheDocument();
     expect(screen.getByText("ON")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Full Song Active" })).toBeInTheDocument();
+    expect(mocks.analyzeLoudness).toHaveBeenCalledWith(expect.objectContaining({ regions: setup.document.regions }));
   });
 
   it("allows a comparison to evaluate a custom region without requiring Full Song", async () => {
@@ -223,7 +225,7 @@ describe("comparison setup", () => {
     expect(screen.getByLabelText("Region completion progress")).not.toHaveTextContent("Full Song");
   });
 
-  it("analyzes only the selected custom region when per-region matching is chosen", async () => {
+  it("analyzes only the selected custom region by default", async () => {
     const intro = { regionId: "intro", name: "Intro", startSeconds: 0, endSeconds: 20, builtIn: false };
     mocks.get.mockResolvedValue({ ...setup, document: { ...setup.document, regions: [...setup.document.regions, intro] } });
     mocks.analyzeLoudness.mockResolvedValue({ candidates: [], regions: [{ regionId: "intro", candidates: [
@@ -236,7 +238,7 @@ describe("comparison setup", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Revision 02/ }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Full Song/ }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Intro/ }));
-    fireEvent.click(screen.getByRole("radio", { name: "Each selected region" }));
+    expect(screen.queryByRole("radio", { name: /Full source|Each selected region/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Start Comparison" }));
     expect(await screen.findByRole("heading", { name: "Intro: Candidate A" })).toBeInTheDocument();
     expect(mocks.analyzeLoudness).toHaveBeenCalledWith(expect.objectContaining({ regions: [intro] }));
@@ -305,7 +307,7 @@ describe("comparison setup", () => {
     expect(screen.getByRole("checkbox", { name: /Revision 02/ })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: /Revision 03/ })).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Select all regions" })).toBeChecked();
-    expect(screen.getByText("Matches the loudness of the revisions being compared.")).toBeInTheDocument();
+    expect(screen.getByText("Matches loudness independently for each selected region.")).toBeInTheDocument();
   });
 
   it("requires all selected candidates to analyze before starting a loudness-matched session", async () => {
