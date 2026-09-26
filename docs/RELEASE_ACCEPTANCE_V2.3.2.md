@@ -1,6 +1,6 @@
-# JL Mixing 2.3.2 Candidate Acceptance
+# JL Mixing 2.3.2 Stable Qualification
 
-This is the active installed-package acceptance record for Studio `v2.3.2-rc.2` with Automation `v2.3.2-rc.1`. The prior stable `v2.3.1` qualification is recorded in [`RELEASE_ACCEPTANCE_V2.3.md`](RELEASE_ACCEPTANCE_V2.3.md). Studio RC1 findings remain below as historical evidence. Mark each platform independently; **Not run** is not a pass. Record tester, date, OS version, workspace type/path, build tags and source commits, and concise evidence or issue links when results arrive.
+This is the final installed-package qualification record for Studio `v2.3.2-rc.2` with Automation `v2.3.2-rc.1`. The prior stable `v2.3.1` qualification is recorded in [`RELEASE_ACCEPTANCE_V2.3.md`](RELEASE_ACCEPTANCE_V2.3.md). Studio RC1 findings are preserved as historical evidence. Platform results are independent; **Not run** is not a pass.
 
 ## Source and package evidence
 
@@ -30,7 +30,7 @@ This is the active installed-package acceptance record for Studio `v2.3.2-rc.2` 
 
 Windows and macOS Intel installed checks are required for this pairing. If Apple Silicon is unavailable, record the reason and its Not run disposition. Focused 2.3.2 checks may rely on the prior 2.3.1 baseline for unaffected behavior, provided A01–A03 and D01–L03 are run on the exact new packages.
 
-Apple Silicon: Not run because Apple Silicon hardware was unavailable for testing. The user committed Windows and macOS Intel results to `release/232-rc2` in `f4588206f7822821e6950edace4e111e0aa8772f` on 2026-09-26. OS versions and workspace paths were not included in that record.
+Apple Silicon: Not run because Apple Silicon hardware was unavailable for testing. The user committed Windows and macOS Intel results to `release/232-rc2` in `f4588206f7822821e6950edace4e111e0aa8772f` on 2026-09-26. The user subsequently supplied Windows 11 Pro and macOS 12.7.6 as the tested OS versions; workspace paths were not supplied.
 
 ## Release gates
 
@@ -43,6 +43,6 @@ Apple Silicon: Not run because Apple Silicon hardware was unavailable for testin
 - [x] Windows x64 installed results recorded for the exact pair.
 - [x] macOS Intel installed results recorded for the exact pair.
 - [x] Apple Silicon result or reason for deferral recorded.
-- [ ] Blockers resolved or explicitly deferred; user explicitly approves stable promotion of the exact pair.
+- [x] Blockers resolved or explicitly deferred; user explicitly approves stable promotion of the exact pair.
 
-**Qualification decision:** The required installed checks for Studio `v2.3.2-rc.2` with Automation `v2.3.2-rc.1` passed on Windows x64 and macOS Intel. RC1 Windows L03 failed on #434; RC2 L03 passed after #435. Apple Silicon is unavailable, so its checks remain Not run. Windows Reveal actions (#441) were classified by the user as nonblocking for this release. Explicit user approval to promote this exact pair to stable remains pending; do not dispatch stable until that approval is recorded.
+**Qualification decision:** The required installed checks for Studio `v2.3.2-rc.2` with Automation `v2.3.2-rc.1` passed on Windows x64 and macOS Intel. RC1 Windows L03 failed on #434; RC2 L03 passed after #435. Apple Silicon is unavailable, so its checks remain Not run. Windows Reveal actions (#441) were classified by the user as nonblocking for this release. On 2026-09-26 the user explicitly approved Studio `v2.3.2-rc.2` with Automation `v2.3.2-rc.1` for stable promotion. The installed candidate pair is qualified; stable package publication and artifact checks are tracked in the release workflow.
