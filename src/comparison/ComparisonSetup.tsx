@@ -65,7 +65,6 @@ export function ComparisonSetup({
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
   const [selectedRegions, setSelectedRegions] = useState<Set<string>>(new Set(["full-song"]));
   const [loudnessMatch, setLoudnessMatch] = useState(true);
-  const [loudnessScope, setLoudnessScope] = useState<"full-source" | "per-region">("full-source");
   const [draft, setDraft] = useState<RegionDraft>(emptyDraft);
   const [editRequest, setEditRequest] = useState(0);
   const [pendingDelete, setPendingDelete] = useState<ProjectRegion | null>(null);
@@ -221,28 +220,18 @@ export function ComparisonSetup({
           revisionNumber: candidate.revisionNumber,
           relativePath: candidate.relativePath!,
         })),
-        regions: loudnessScope === "per-region" ? selectedRegionValues : undefined,
+        regions: selectedRegionValues,
       }), selectedCandidateValues.length);
-      if (loudnessScope === "per-region") {
-        const matchedCandidates = selectedCandidateValues.map((candidate) => {
-          const regionLoudness = Object.fromEntries((analyzed.regions ?? []).map((region) => {
-            const measurement = region.candidates.find((item) => item.revisionId === candidate.revisionId);
-            if (!measurement) throw new Error(`Revision ${candidate.revisionNumber} could not be matched for ${region.regionId}.`);
-            return [region.regionId, { integratedLufs: measurement.integratedLufs, appliedGainDb: measurement.appliedGainDb }];
-          }));
-          if (Object.keys(regionLoudness).length !== selectedRegionValues.length) throw new Error("Selected regions were not fully analyzed.");
-          return { ...candidate, regionLoudness };
-        });
-        onStart(freezeComparisonSession(matchedCandidates, selectedRegionValues, true, undefined, true));
-        return;
-      }
-      const byRevision = new Map(analyzed.candidates.map((candidate) => [candidate.revisionId, candidate]));
       const matchedCandidates = selectedCandidateValues.map((candidate) => {
-        const match = byRevision.get(candidate.revisionId);
-        if (!match) throw new Error(`Revision ${String(candidate.revisionNumber).padStart(2, "0")} could not be loudness matched.`);
-        return { ...candidate, integratedLufs: match.integratedLufs, appliedGainDb: match.appliedGainDb };
+        const regionLoudness = Object.fromEntries((analyzed.regions ?? []).map((region) => {
+          const measurement = region.candidates.find((item) => item.revisionId === candidate.revisionId);
+          if (!measurement) throw new Error(`Revision ${candidate.revisionNumber} could not be matched for ${region.regionId}.`);
+          return [region.regionId, { integratedLufs: measurement.integratedLufs, appliedGainDb: measurement.appliedGainDb }];
+        }));
+        if (Object.keys(regionLoudness).length !== selectedRegionValues.length) throw new Error("Selected regions were not fully analyzed.");
+        return { ...candidate, regionLoudness };
       });
-      onStart(freezeComparisonSession(matchedCandidates, selectedRegionValues, true));
+      onStart(freezeComparisonSession(matchedCandidates, selectedRegionValues, true, undefined, true));
     } catch (reason) {
       setError(`${errorMessage(reason, "Loudness Match could not be completed.")} Exclude the affected revision or turn Loudness Match Off for this session.`);
     } finally {
@@ -276,8 +265,7 @@ export function ComparisonSetup({
       </section>
       <section className="panel comparison-session-options" aria-labelledby="comparison-options-title">
         <h3 id="comparison-options-title">2. Session options</h3>
-        <label className="comparison-toggle"><input type="checkbox" checked={loudnessMatch} onChange={(event) => setLoudnessMatch(event.target.checked)} /><span><strong>Loudness Match</strong><small>Matches the loudness of the revisions being compared.</small></span></label>
-        {loudnessMatch && <fieldset><legend>Matching scope</legend><label><input type="radio" name="loudness-scope" checked={loudnessScope === "full-source"} onChange={() => setLoudnessScope("full-source")} /> Full source (default)</label><label><input type="radio" name="loudness-scope" checked={loudnessScope === "per-region"} onChange={() => setLoudnessScope("per-region")} /> Each selected region</label></fieldset>}
+        <label className="comparison-toggle"><input type="checkbox" checked={loudnessMatch} onChange={(event) => setLoudnessMatch(event.target.checked)} /><span><strong>Loudness Match</strong><small>Matches loudness independently for each selected region.</small></span></label>
       </section>
     </div>
     <section className="panel comparison-regions-panel" aria-labelledby="comparison-regions-title" onKeyDown={(event) => {
