@@ -157,7 +157,8 @@ const toStoredCompleteSessionRequest = (request: CompleteComparisonSessionReques
     integratedLufs: candidate.integratedLufs,
     appliedGainDb: candidate.appliedGainDb,
     regionLoudness: Object.fromEntries(Object.entries(candidate.regionLoudness ?? {}).map(([id, value]) => [id, {
-      integratedLufs: value.integratedLufs, appliedGainDb: value.appliedGainDb,
+      // The nested Rust measurement is a persisted snake_case type, unlike the camelCase request.
+      integrated_lufs: value.integratedLufs, applied_gain_db: value.appliedGainDb,
     }])),
   })),
   regions: request.regions.map((result) => ({
