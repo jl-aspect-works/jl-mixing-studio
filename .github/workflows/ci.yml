@@ -19,7 +19,7 @@ jobs:
     outputs:
       full_ci: ${{ steps.classify.outputs.full_ci }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - id: classify
@@ -35,8 +35,8 @@ jobs:
     if: needs.scope.outputs.full_ci == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
@@ -53,7 +53,7 @@ jobs:
           npm test 2>&1 | tee artifacts/vitest.log
       - name: Upload frontend test log
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: frontend-test-log
           path: artifacts/vitest.log
@@ -70,7 +70,7 @@ jobs:
     if: needs.scope.outputs.full_ci == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
       - name: Install Tauri Linux dependencies
@@ -100,7 +100,7 @@ jobs:
             os: windows-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: true
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
@@ -123,7 +123,7 @@ jobs:
             os: macos-15
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Ensure ffmpeg is available
         run: |
           if ! command -v ffmpeg >/dev/null 2>&1; then
@@ -151,7 +151,7 @@ jobs:
     if: needs.scope.outputs.full_ci == 'true' && github.event_name == 'pull_request' && github.head_ref == 'spike/v2.1-windows-native-audio-preview'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
       - name: Ensure ffmpeg and NSIS are available
         shell: powershell
@@ -172,7 +172,7 @@ jobs:
         shell: powershell
         run: ./scripts/package-windows-audio-spike-test.ps1 -FixtureDir "$env:RUNNER_TEMP/jl-audio-preview-fixtures" -OutDir "$env:RUNNER_TEMP/jl-audio-spike-installer"
       - name: Upload Windows spike test installer
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-audio-spike-test-installer
           path: ${{ runner.temp }}/jl-audio-spike-installer/JL-Mixing-Studio_Windows-Audio-Spike-Test_x64.exe
