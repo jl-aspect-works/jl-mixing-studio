@@ -91,7 +91,7 @@ jobs:
       - name: Synchronize version metadata from VERSION
         run: npm run version:sync
       - name: Build installer
-        run: npm run tauri build
+        run: npm run tauri build -- -- --locked
       - name: Stage release asset
         run: >-
           node scripts/stage-release-asset.mjs
