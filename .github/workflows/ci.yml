@@ -81,8 +81,8 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
-      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --all-features
+      - run: cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
+      - run: cargo test --locked --manifest-path src-tauri/Cargo.toml --all-features
 
   desktop-check:
     name: ${{ matrix.name }} compile and Listening tests
@@ -105,9 +105,9 @@ jobs:
           submodules: true
       - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
       - name: Check desktop compile
-        run: cargo check --manifest-path src-tauri/Cargo.toml --all-features
+        run: cargo check --locked --manifest-path src-tauri/Cargo.toml --all-features
       - name: Run Listening filesystem regression tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml --all-features --lib listening
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml --all-features --lib listening
 
   macos-audio-preview-spike:
     name: ${{ matrix.name }} WKWebView audio preview spike
@@ -167,7 +167,7 @@ jobs:
         shell: powershell
         run: ./scripts/windows-audio-preview-fixtures.ps1 -OutDir "$env:RUNNER_TEMP/jl-audio-preview-fixtures"
       - name: Build release-mode native probe
-        run: cargo build --release --manifest-path src-tauri/Cargo.toml --bin windows_audio_preview_spike
+        run: cargo build --locked --release --manifest-path src-tauri/Cargo.toml --bin windows_audio_preview_spike
       - name: Package per-user NSIS test installer
         shell: powershell
         run: ./scripts/package-windows-audio-spike-test.ps1 -FixtureDir "$env:RUNNER_TEMP/jl-audio-preview-fixtures" -OutDir "$env:RUNNER_TEMP/jl-audio-spike-installer"
