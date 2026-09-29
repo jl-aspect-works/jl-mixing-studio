@@ -20,7 +20,7 @@ The prior stable qualification is recorded in [`RELEASE_ACCEPTANCE_V2.3.2.md`](R
 ## Installed acceptance
 
 | ID | Test | Windows x64 | macOS Intel | macOS Apple Silicon | Evidence / finding |
-| --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- |
 | A01 | Verify checksum; install/upgrade; launch; confirm Studio `2.3.3-rc.1` and Automation `2.3.2` | Pass | Not run | **Not run** (not available) | |
 | A02 | Open an existing workspace; navigate Client/Project/Revision screens; restart and confirm existing data remains readable | Pass | Not run | **Not run** (not available) | |
 | A03 | Preview audio and exercise ordinary transport/playback, revision playback, and Listening workflow | Pass | Not run | **Not run** (not available) | |
