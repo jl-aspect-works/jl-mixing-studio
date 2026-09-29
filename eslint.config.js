@@ -8,5 +8,5 @@ export default tseslint.config(
   { ignores: ["dist", "src-tauri/target"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  { files: ["**/*.{ts,tsx}"], languageOptions: { ecmaVersion: 2022, globals: globals.browser }, plugins: { "react-hooks": reactHooks, "react-refresh": reactRefresh }, rules: { ...reactHooks.configs.recommended.rules, "react-refresh/only-export-components": ["warn", { allowConstantExport: true }] } },
+  { files: ["**/*.{ts,tsx}"], languageOptions: { ecmaVersion: 2022, globals: globals.browser }, plugins: { "react-hooks": reactHooks, "react-refresh": reactRefresh }, rules: { "react-hooks/rules-of-hooks": "error", "react-hooks/exhaustive-deps": "warn", "react-refresh/only-export-components": ["warn", { allowConstantExport: true }] } },
 );
