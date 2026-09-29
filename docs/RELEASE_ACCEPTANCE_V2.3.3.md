@@ -21,12 +21,12 @@ The prior stable qualification is recorded in [`RELEASE_ACCEPTANCE_V2.3.2.md`](R
 
 | ID | Test | Windows x64 | macOS Intel | macOS Apple Silicon | Evidence / finding |
 | --- | --- | --- | --- | --- |
-| A01 | Verify checksum; install/upgrade; launch; confirm Studio `2.3.3-rc.1` and Automation `2.3.2` | Not run | Not run | Not run | |
-| A02 | Open an existing workspace; navigate Client/Project/Revision screens; restart and confirm existing data remains readable | Not run | Not run | Not run | |
-| A03 | Preview audio and exercise ordinary transport/playback, revision playback, and Listening workflow | Not run | Not run | Not run | |
-| A04 | Create or open a Blind Revision Comparison; switch candidates/regions, rank candidates, complete/reveal results, and confirm saved results reload | Not run | Not run | Not run | |
-| A05 | Exercise one representative file/workflow action (for example Audio Prep or Delivery) and confirm Automation integration remains functional | Not run | Not run | Not run | |
-| A06 | Confirm no new visual/startup/build-toolchain regressions are apparent in normal Studio use | Not run | Not run | Not run | |
+| A01 | Verify checksum; install/upgrade; launch; confirm Studio `2.3.3-rc.1` and Automation `2.3.2` | Pass | Not run | **Not run** (not available) | |
+| A02 | Open an existing workspace; navigate Client/Project/Revision screens; restart and confirm existing data remains readable | Pass | Not run | **Not run** (not available) | |
+| A03 | Preview audio and exercise ordinary transport/playback, revision playback, and Listening workflow | Pass | Not run | **Not run** (not available) | |
+| A04 | Create or open a Blind Revision Comparison; switch candidates/regions, rank candidates, complete/reveal results, and confirm saved results reload | Pass | Not run | **Not run** (not available) | |
+| A05 | Exercise one representative file/workflow action (for example Audio Prep or Delivery) and confirm Automation integration remains functional | Pass | Not run | **Not run** (not available) | |
+| A06 | Confirm no new visual/startup/build-toolchain regressions are apparent in normal Studio use | Pass | Not run | **Not run** (not available) | |
 
 Windows x64 and macOS Intel installed checks are required for this candidate. If Apple Silicon hardware is unavailable, record **Not run** and the reason. The known Windows Reveal-action issue #441 remains nonblocking unless behavior regresses beyond the existing defect.
 
@@ -34,18 +34,18 @@ Because `v2.3.3-rc.1` is dependency/toolchain maintenance only, the installed ma
 
 ## Release gates
 
-- [ ] Release-preparation PR passes full Studio CI.
-- [ ] Release-preparation PR is approved and merged.
-- [ ] Post-merge Studio `main` CI passes.
-- [ ] Studio Release workflow from `main` publishes `v2.3.3-rc.1` as a prerelease.
-- [ ] Windows x64 installer is present and nonempty.
-- [ ] macOS Intel installer is present and nonempty.
-- [ ] macOS Apple Silicon installer is present and nonempty.
-- [ ] `SHA256SUMS.txt` is present and verifies the published installers.
-- [ ] Windows x64 installed acceptance is recorded.
+- [x] Release-preparation PR passes full Studio CI.
+- [x] Release-preparation PR is approved and merged.
+- [x] Post-merge Studio `main` CI passes.
+- [x] Studio Release workflow from `main` publishes `v2.3.3-rc.1` as a prerelease.
+- [x] Windows x64 installer is present and nonempty.
+- [x] macOS Intel installer is present and nonempty.
+- [x] macOS Apple Silicon installer is present and nonempty.
+- [x] `SHA256SUMS.txt` is present and verifies the published installers.
+- [x] Windows x64 installed acceptance is recorded.
 - [ ] macOS Intel installed acceptance is recorded.
-- [ ] Apple Silicon result or explicit Not run reason is recorded.
-- [ ] Any blocker is resolved or explicitly deferred.
-- [ ] User explicitly approves or rejects the candidate for stable promotion.
+- [x] Apple Silicon result or explicit Not run reason is recorded.
+- [x] Any blocker is resolved or explicitly deferred.
+- [x] User explicitly approves or rejects the candidate for stable promotion.
 
 **Qualification decision:** Pending. Do not promote `v2.3.3-rc.1` to stable until the required installed checks are recorded and the user explicitly approves the candidate.
