@@ -145,6 +145,8 @@ Release preparation also validates packaged macOS and Windows installers and coo
 
 ## Release workflow
 
+Release versions are single-use: normal dispatch fails if either `v${VERSION}` or its GitHub Release already exists, even when the tag points to the same commit. The workflow checks before building and again before creating the tag, and stops if GitHub availability cannot be confirmed. Published assets are never updated by the normal release workflow. Corrections require a new version/tag; a failure after tag creation also requires a new version rather than rerunning publication for that tag.
+
 1. Implement changes on a feature/fix/documentation branch.
 2. Open a PR to `main`; never modify `main` directly.
 3. Require applicable CI to pass.

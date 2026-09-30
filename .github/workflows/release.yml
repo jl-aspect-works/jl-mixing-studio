@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.sha }}
+  group: release-publication
   cancel-in-progress: false
 
 jobs:
@@ -41,6 +41,11 @@ jobs:
           }
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
+      - name: Require unused release version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: python3 .github/scripts/check-release-available.py "$GITHUB_REPOSITORY" "$RELEASE_TAG"
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -160,23 +165,17 @@ jobs:
           grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.3.md
           grep -q 'More info' docs/RELEASE_NOTES_V2.3.md
           grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.3.md
-      - name: Create release tag
+      - name: Recheck unused version and create release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --tags --force
-          if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
-            target="$(git rev-list -n 1 "$RELEASE_TAG")"
-            test "$target" = "$GITHUB_SHA" || {
-              echo "Tag $RELEASE_TAG already points to $target, not $GITHUB_SHA" >&2
-              exit 1
-            }
-          else
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git tag -a "$RELEASE_TAG" "$GITHUB_SHA" -m "JL Mixing Studio $RELEASE_TAG"
-            git push origin "$RELEASE_TAG"
-          fi
+          python3 .github/scripts/check-release-available.py "$GITHUB_REPOSITORY" "$RELEASE_TAG"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "$RELEASE_TAG" "$GITHUB_SHA" -m "JL Mixing Studio $RELEASE_TAG"
+          git push origin "refs/tags/$RELEASE_TAG"
       - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -187,13 +186,9 @@ jobs:
           if [[ "$RELEASE_VERSION" == *-* ]]; then
             prerelease=(--prerelease)
           fi
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" release-assets/* --clobber
-          else
-            gh release create "$RELEASE_TAG" \
-              --verify-tag \
-              --title "JL Mixing Studio $RELEASE_TAG" \
-              --notes-file docs/RELEASE_NOTES_V2.3.md \
-              "${prerelease[@]}" \
-              release-assets/*
-          fi
+          gh release create "$RELEASE_TAG" \
+            --verify-tag \
+            --title "JL Mixing Studio $RELEASE_TAG" \
+            --notes-file docs/RELEASE_NOTES_V2.3.md \
+            "${prerelease[@]}" \
+            release-assets/*
