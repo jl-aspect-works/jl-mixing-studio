@@ -4,8 +4,8 @@ JL Mixing Studio Listening Phase 1 uses the approved square listening cover from
 
 - Source repository: `jl-aspect-works/jl-brand`
 - Source path: `listening-cover-dark-1200.png`
-- Pinned brand commit: `64b6fdd05566f52a4c327c1f773c67bf31036dd2`
-- Source blob: `6d6401afecbd0b548428902ad6dd7177aa660031`
+- Pinned brand commit: `538446cdcea388fe06c85722504065e12549fba4`
+- Source blob: `ec13c145ed3a15ef2554923542060a84a64c2ee5`
 - Dimensions: 1200 x 1200
 - Studio source path: `vendor/jl-brand/listening-cover-dark-1200.png`
 
