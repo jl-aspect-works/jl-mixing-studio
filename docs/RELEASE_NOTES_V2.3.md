@@ -1,6 +1,6 @@
 # JL Mixing Studio 2.3
 
-Studio `v2.3.3-rc.2` is a security, dependency, and build-toolchain maintenance candidate based on the qualified v2.3.2 feature set. It includes no intended product-behavior changes and pairs with Automation `v2.3.3-rc.2`. Studio still uses Automation API `1.0` and workspace metadata schema `1.1.0`; compatibility is determined by advertised capabilities and supported schemas.
+Studio `v2.3.3-rc.2` is a security, dependency, and build-toolchain maintenance candidate based on the qualified v2.3.2 feature set. It includes no intended product-behavior changes and pairs with Automation `v2.3.3-rc.1`. Studio still uses Automation API `1.0` and workspace metadata schema `1.1.0`; compatibility is determined by advertised capabilities and supported schemas.
 
 ## Installation
 
