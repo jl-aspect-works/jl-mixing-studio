@@ -15,7 +15,7 @@ The prior stable qualification is recorded in [`RELEASE_ACCEPTANCE_V2.3.2.md`](R
 | jsonschema 0.58 migration | Studio PR #468 merged; full CI passed | Source pass |
 | ESLint 10 migration | Studio PR #470 merged; full CI passed | Source pass |
 | Vite 8 / plugin-react 6 / Vitest 5 migration | Studio PR #472 merged as `ed96d5da106216df046773faf67abc1e5361e628`; full PR and post-merge CI passed | Source pass |
-| Studio `v2.3.3-rc.1` release preparation | PR, post-merge CI, release workflow, tag, and artifacts pending | Not run |
+| Studio `v2.3.3-rc.1` package | Release preparation PR #474 merged as `640c83bf8b5da830b023992c312abc1e0e4e442a`; post-merge CI #36612887417 passed. Release run #36614168635 completed successfully; tag `v2.3.3-rc.1` points to that commit. Prerelease contains nonempty Windows x64, macOS Intel, and macOS Apple Silicon installers plus `SHA256SUMS.txt`. | Package publication pass; installed Windows x64 and macOS Intel acceptance passed |
 
 ## Installed acceptance
 
@@ -46,6 +46,6 @@ Because `v2.3.3-rc.1` is dependency/toolchain maintenance only, the installed ma
 - [x] macOS Intel installed acceptance is recorded.
 - [x] Apple Silicon result or explicit Not run reason is recorded.
 - [x] Any blocker is resolved or explicitly deferred.
-- [x] User explicitly approves or rejects the candidate for stable promotion.
+- [ ] User explicitly approves or rejects the candidate for stable promotion.
 
 **Qualification decision:** Pending. Do not promote `v2.3.3-rc.1` to stable until the required installed checks are recorded and the user explicitly approves the candidate.
