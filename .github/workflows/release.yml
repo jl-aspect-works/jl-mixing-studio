@@ -113,6 +113,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     env:
       RELEASE_VERSION: ${{ needs.validate.outputs.version }}
       RELEASE_TAG: ${{ needs.validate.outputs.tag }}
@@ -144,6 +147,11 @@ jobs:
             sha256sum "${expected[@]}" > SHA256SUMS.txt
             sha256sum --check SHA256SUMS.txt
           )
+      - name: Attest release artifacts
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: release-assets/*
+
       - name: Verify release notes
         shell: bash
         run: |
