@@ -70,6 +70,6 @@ If RC2 reveals a product-behavior regression, expand acceptance as needed. Other
 - [x] macOS Intel RC2 sanity acceptance is recorded.
 - [x] Apple Silicon result or explicit **Not run** reason is recorded.
 - [x] Any blocker is resolved or explicitly deferred.
-- [ ] User explicitly approves or rejects the candidate pair for final v2.3.3 stable preparation.
+- [x] User explicitly approves the candidate pair for final v2.3.3 stable preparation.
 
-**Qualification decision:** Studio `v2.3.3-rc.2` with Automation `v2.3.3-rc.1` passed the required hardened-release qualification on Windows x64 and macOS Intel. Apple Silicon remains Not run because hardware is unavailable. RC1 remains the behavioral baseline for unchanged product behavior. The candidate pair is ready for the user's final qualification decision before stable v2.3.3 preparation.
+**Qualification decision:** **Approved for stable v2.3.3 preparation.** Studio `v2.3.3-rc.2` with Automation `v2.3.3-rc.1` passed the required hardened-release qualification on Windows x64 and macOS Intel. Apple Silicon remains Not run because hardware is unavailable. RC1 remains the behavioral baseline for unchanged product behavior. Stable promotion introduces no intentional product-behavior, Automation API, or workspace-schema change.
