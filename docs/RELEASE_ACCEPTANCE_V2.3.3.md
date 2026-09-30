@@ -48,4 +48,4 @@ Because `v2.3.3-rc.1` is dependency/toolchain maintenance only, the installed ma
 - [x] Any blocker is resolved or explicitly deferred.
 - [ ] User explicitly approves or rejects the candidate for stable promotion.
 
-**Qualification decision:** Pending. Do not promote `v2.3.3-rc.1` to stable until the required installed checks are recorded and the user explicitly approves the candidate.
+**Qualification decision:** Studio `v2.3.3-rc.1` passed the required installed acceptance on Windows x64 and macOS Intel. Apple Silicon remains Not run because hardware is unavailable. Stable promotion is intentionally deferred while the GitHub security audit and hardening work continues; additional 2.3.3 release candidates may be generated before one final stable v2.3.3 release.
