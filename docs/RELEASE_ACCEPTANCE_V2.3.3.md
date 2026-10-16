@@ -1,4 +1,4 @@
-# JL Mixing Studio 2.3.3 Candidate Acceptance
+# JL Mixing 2.3.3 Stable Qualification and Publication
 
 This record tracks the JL Mixing Studio 2.3.3 maintenance candidates. Studio `v2.3.3-rc.1` established the installed dependency/toolchain baseline with Automation `v2.3.2`. Studio `v2.3.3-rc.2` pairs with Automation `v2.3.3-rc.1` to qualify the completed GitHub security hardening and release-provenance work. No Automation API or workspace metadata schema change is introduced.
 
@@ -73,3 +73,30 @@ If RC2 reveals a product-behavior regression, expand acceptance as needed. Other
 - [x] User explicitly approves the candidate pair for final v2.3.3 stable preparation.
 
 **Qualification decision:** **Approved for stable v2.3.3 preparation.** Studio `v2.3.3-rc.2` with Automation `v2.3.3-rc.1` passed the required hardened-release qualification on Windows x64 and macOS Intel. Apple Silicon remains Not run because hardware is unavailable. RC1 remains the behavioral baseline for unchanged product behavior. Stable promotion introduces no intentional product-behavior, Automation API, or workspace-schema change.
+
+## Stable publication and closeout
+
+Studio and Automation `v2.3.3` were published as stable on 2026-09-30 after explicit approval of the qualified RC pair. Promotion included no intentional product-behavior, API or workspace-schema change. The matrices above describe the exact RC packages; no separate full installed matrix for the final stable packages is claimed.
+
+| Product | Approved stable source and publication | Verification |
+| --- | --- | --- |
+| Automation `v2.3.3` | [PR #231](https://github.com/jl-aspect-works/jl-mixing-automation/pull/231), commit `debaf26de54ebd5860b2cc356f3e8eb4d11b3de3`; [Release run 36786471310](https://github.com/jl-aspect-works/jl-mixing-automation/actions/runs/36786471310) | Post-merge Tests/ShellCheck passed; stable flag and annotated source tag verified; all 12 expected archive/checksum/inventory files present; attestation step and independent Windows ZIP provenance verification passed |
+| Studio `v2.3.3` | [PR #484](https://github.com/jl-aspect-works/jl-mixing-studio/pull/484), commit `11619902356b9ad55569e22d6b32d75f1a2a92fc`; [Release run 36789494359](https://github.com/jl-aspect-works/jl-mixing-studio/actions/runs/36789494359) | Post-merge CI/CodeQL passed; stable flag and annotated source tag verified; three installers plus checksum file present; checksum verification passed for all installers; attestation step and independent Windows installer provenance verification passed |
+
+[Engineering #12](https://github.com/jl-aspect-works/engineering/issues/12) records final candidate approval; closed [Engineering #13](https://github.com/jl-aspect-works/engineering/issues/13) contains the detailed stable publication and consumer-verification evidence, including artifact digests.
+
+### Issue and deferral dispositions
+
+| Item | Disposition |
+| --- | --- |
+| #270 — safe file/folder deletion | Implemented in Studio PR #430 and Automation PR #211; v2.3.2 D01–D03 passed on Windows x64 and macOS Intel |
+| #396 — per-region loudness matching | Implemented in PR #431, with follow-up corrections/default in PR #435; v2.3.2 L01–L03 passed on both required platforms |
+| #436 — per-region default / scope-selector removal | Approved decision implemented in PR #435; supersedes #396's original full-source-default wording; RC2 L01–L03 passed |
+| #437 — publish v2.3.2 RC2 | PR #438 merged; RC2 published and exact pair qualified and approved, as recorded in [v2.3.2 acceptance](RELEASE_ACCEPTANCE_V2.3.2.md) |
+| #441 — Windows Reveal | Open, explicitly nonblocking; carried forward to future scoped work |
+| Apple Silicon installed acceptance | Not run — hardware unavailable; explicitly accepted, never counted as Pass |
+| Signing/notarization | Explicitly deferred; Studio #50 / Automation #112 |
+
+The issue bookkeeping above was reconciled during the user-authorized 2026-10-16 closeout. It records existing implementation and acceptance evidence; no acceptance tests were newly run or results invented during closeout. Later repository hardening is tracked separately in Engineering #14–18 and #23 and does not change the published stable artifacts.
+
+**Final release disposition:** Studio and Automation `v2.3.3` stable publication is complete, with the recorded candidate qualification, explicit approval and accepted deferrals.
