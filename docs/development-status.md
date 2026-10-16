@@ -22,6 +22,15 @@ Last updated: 2026-10-16
 
 ## Post-release hardening
 
+### Unreleased October dependency maintenance
+
+The user approved integrating reviewed dependency updates on 2026-10-16, with publication deferred to the next maintenance or feature release. This does not change the v2.3.3 qualification record or artifacts.
+
+- Consolidate the Tauri API/core/build/clipboard updates, React 19.3, jsonschema 0.58.4, jest-dom 7.0.1 and Vitest 5.0.4; refresh reviewed Actions and align CodeQL init/analyze pins atomically.
+- Retain jsdom 26.1 and rfd 0.15; their proposed upgrades (#489/#488) remain deferred for focused investigation/qualification.
+- Full source CI and CodeQL qualify integration. Installed Windows and macOS acceptance, including macOS 12.7.6, clipboard, native dialogs, comparison/playback and schema/discovery behavior, remains required for the next approved release candidate. No installed acceptance for these new dependencies is claimed.
+- [Engineering #24](https://github.com/jl-aspect-works/engineering/issues/24) tracks exact integration PRs, superseded Dependabot proposals and CI evidence. No VERSION/tag/release change is part of this work.
+
 Engineering [#14](https://github.com/jl-aspect-works/engineering/issues/14) through [#18](https://github.com/jl-aspect-works/engineering/issues/18) are complete: create-only release guards, Automation Python CodeQL, branch protection and community/governance defaults. These later main-branch changes do not alter the published v2.3.3 artifacts.
 
 The [governance record](https://github.com/jl-aspect-works/engineering/blob/main/docs/GITHUB_GOVERNANCE.md) distinguishes API-verified protections from owner-confirmed administrator settings. Native release immutability is enabled for future Studio/Automation releases; existing v2.3.3 releases still report `immutable: false`. Verify native immutability at the next approved release.
