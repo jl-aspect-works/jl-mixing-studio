@@ -22,15 +22,21 @@ pub(crate) fn open_project_file(
 }
 
 #[tauri::command]
-pub(crate) fn reveal_project_file(
+pub(crate) async fn reveal_project_file(
     app: tauri::AppHandle,
     request: ProjectFileMutationRequest,
 ) -> Result<ProjectFileMutationResult, String> {
-    let project_directory =
-        resolve_project_directory(&app, &request.client_id, &request.project_id)?;
-    let (path, relative_path) = resolve_project_entry(&project_directory, &request.relative_path)?;
-    reveal_with_system(&path)?;
-    Ok(ProjectFileMutationResult { relative_path })
+    // Shell parsing can wait on a disconnected NAS; keep it off the UI thread.
+    tauri::async_runtime::spawn_blocking(move || {
+        let project_directory =
+            resolve_project_directory(&app, &request.client_id, &request.project_id)?;
+        let (path, relative_path) =
+            resolve_project_entry(&project_directory, &request.relative_path)?;
+        reveal_with_system(&path)?;
+        Ok(ProjectFileMutationResult { relative_path })
+    })
+    .await
+    .map_err(|_| "The Reveal task could not finish; try again".to_owned())?
 }
 
 #[tauri::command]
@@ -162,15 +168,17 @@ fn open_with_system(path: &Path) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(windows)]
+fn reveal_with_system(path: &Path) -> Result<(), String> {
+    super::project_file_reveal::reveal(path)
+}
+
+#[cfg(not(windows))]
 fn reveal_with_system(path: &Path) -> Result<(), String> {
     let status = if cfg!(target_os = "macos") {
         std::process::Command::new("open")
             .arg("-R")
             .arg(path)
-            .status()
-    } else if cfg!(target_os = "windows") {
-        std::process::Command::new("explorer.exe")
-            .arg(format!("/select,{}", path.to_string_lossy()))
             .status()
     } else {
         let directory = if path.is_dir() {
