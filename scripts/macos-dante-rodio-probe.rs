@@ -26,10 +26,9 @@ fn fixture() -> Vec<u8> {
         let position = frame % (frames / 2);
         let ramp = (position.min(frames / 2 - 1 - position) as f64 / 480.0).min(1.0);
         let frequency = if left { 440.0 } else { 880.0 };
-        let sample = (1_000.0
-            * ramp
-            * (std::f64::consts::TAU * frequency * frame as f64 / 48_000.0).sin())
-            as i16;
+        let sample =
+            (1_000.0 * ramp * (std::f64::consts::TAU * frequency * frame as f64 / 48_000.0).sin())
+                as i16;
         wav.extend_from_slice(&(if left { sample } else { 0 }).to_le_bytes());
         wav.extend_from_slice(&(if left { 0 } else { sample }).to_le_bytes());
     }
@@ -37,12 +36,16 @@ fn fixture() -> Vec<u8> {
 }
 
 fn run(log: &mut File, decode_only: bool) -> Result<(), Box<dyn Error>> {
-    let decoder = Decoder::new(Cursor::new(fixture()))?;
+    let mut decoder = Decoder::new(Cursor::new(fixture()))?;
     if decoder.channels().get() != 2 || decoder.sample_rate().get() != 48_000 {
         return Err("generated fixture did not decode as stereo 48 kHz".into());
     }
-    writeln!(log, "PASS generated stereo/48 kHz PCM decode")?;
+    writeln!(log, "PASS generated stereo/48 kHz PCM metadata")?;
     if decode_only {
+        if !decoder.any(|sample| sample.abs() > 0.001) {
+            return Err("fixture produced no nonzero decoded samples".into());
+        }
+        writeln!(log, "PASS nonzero decoded samples")?;
         return Ok(());
     }
 
@@ -51,11 +54,17 @@ fn run(log: &mut File, decode_only: bool) -> Result<(), Box<dyn Error>> {
     let sink = DeviceSinkBuilder::open_default_sink()?;
     let player = Player::connect_new(sink.mixer());
     player.append(decoder.repeat_infinite());
-    writeln!(log, "STARTED 60-second rodio/CPAL output; discovery NOT VERIFIED")?;
+    writeln!(
+        log,
+        "STARTED 60-second rodio/CPAL output; discovery NOT VERIFIED"
+    )?;
     log.flush()?;
     thread::sleep(Duration::from_secs(60));
     player.clear();
-    writeln!(log, "FINISHED; discovery and signal must be observed manually")?;
+    writeln!(
+        log,
+        "FINISHED; discovery and signal must be observed manually"
+    )?;
     Ok(())
 }
 
