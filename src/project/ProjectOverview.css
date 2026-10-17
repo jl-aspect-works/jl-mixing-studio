@@ -67,6 +67,7 @@
 .overview-revision-meta { display: grid; justify-items: end; gap: 5px; color: #6f7c91; font-size: .64rem; }
 .overview-revision-meta > div { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 .overview-revision-badge { border-radius: 999px; background: #eef2f7; color: #68758a; padding: 2px 6px; font-size: .6rem; font-weight: 850; }
+.overview-revision-badge.top { border: 1px solid rgba(49, 87, 196, .24); background: rgba(49, 87, 196, .12); color: #3157c4; }
 .overview-revision-badge.current { background: #e8f7ef; color: #188653; }
 .overview-revision-badge.approved { background: #e8f7ef; color: #188653; }
 .overview-revision-badge.delivered { background: #eaf2ff; color: #1758d5; }
