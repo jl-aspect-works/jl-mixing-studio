@@ -22,11 +22,13 @@ Last updated: 2026-10-17
 
 ## Post-release hardening
 
-### v2.4 approved scope and active spike
+### v2.4 approved scope and dependency qualification
 
 - [#515](https://github.com/jl-aspect-works/jl-mixing-studio/issues/515) tracks the locked v2.4 scope: Windows Reveal (#441), Recent Revisions TOP status (#439), macOS Dante investigation (#512), conditional implementation/acceptance (#513/#514), and reviewed Dependabot changes.
 - User approved starting #512 first and approved the shared native-provider design on 2026-10-17. Dependency qualification follows spike closeout, then #441/#439 and #513/#514.
 - [macOS Dante discovery spike](macos-dante-discovery-spike.md): feasibility passed on Intel macOS 12.7.6 / Via 1.4.1.3. User verified audible rodio/CPAL output, Via discovery and Controller TX publication; both WebKit controls were not detected. PR #516 merged as `1fa4649`; final source head passed CI #2260 and CodeQL #54. Shared native preview/compact/comparison design is approved for #513. Receiver/isolation, full Studio playback and Apple Silicon installed acceptance remain unverified; shipping playback is unchanged.
+- #512 is closed after PRs #516/#517 and passing main CI/CodeQL. The next focused integration combines the six reviewed dependency proposals from #515: serde_json 1.0.154 (#503), jsonschema 0.58.6 (#504), Tauri JS API 2.12.3 (#506), tauri-build 2.7.2 (#507), Vite React plugin 6.1.2 (#509), and clipboard JS 2.4.2 (#510). The integration PR records current-baseline source qualification; installed acceptance remains required for the release candidate.
+- Hold rfd #488 pending packaged-dialog qualification; rodio #505 conflicts with the approved macOS 12.7.6 support floor; TypeScript #508 has unsupported lint-tool peers; jsdom #511 needs focused accessibility regression investigation. Retain rodio 0.22.2 / CPAL 0.17.3, rfd 0.15.4, TypeScript 5.8.3 and jsdom 26.1.0.
 - Automated documentation screenshots (#363) are explicitly deferred beyond v2.4; the user guide (#362) remains deferred.
 
 ### Unreleased October dependency maintenance
@@ -52,4 +54,4 @@ The [governance record](https://github.com/jl-aspect-works/engineering/blob/main
 
 ## Immediate next action
 
-Complete #512 documentation closeout and verify post-merge CI, then review/qualify the open Dependabot changes. Follow with #441, #439 and the approved #513 implementation/#514 acceptance. No additional v2.3.3 release cycle is required.
+Complete current-baseline source qualification and integration of the six reviewed dependency proposals in #515; preserve installed dependency acceptance for the next approved release candidate. Follow with #441, #439 and the approved #513 implementation/#514 acceptance. No additional v2.3.3 release cycle is required.
