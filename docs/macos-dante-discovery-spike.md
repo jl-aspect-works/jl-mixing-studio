@@ -1,23 +1,32 @@
 # macOS Dante Via discovery spike (#512)
 
-## Status and recommendation
+## Outcome and approved design
 
-**In progress; host verification required.** No Studio shipping behavior changes.
-The leading hypothesis is macOS WebKit audio-process attribution, not network
-discovery. Root cause and a production remedy are **not yet proven**.
+**PASS: bounded native playback/discovery feasibility. Design approved 2026-10-17.**
+No Studio shipping playback behavior changed in this spike.
 
-The user completed the native/HTML/Web Audio comparison on macOS 12.7.6:
-Via detects AVAudioPlayer but detects neither web mode. The simple Web Audio
-graph remedy therefore failed on this host. Via version and chip architecture
-remain unrecorded. Next test the isolated rodio/CPAL app described below. Prefer a supported
-remedy preserving HTML playback if these controls establish one. If native audio
-is independently discoverable while both web paths fail, the preferred next
-experiment is an isolated rodio/CPAL macOS provider prototype, reusing the existing
-Windows architecture. AVAudioPlayer success alone does not qualify rodio or #513.
+On **Intel macOS 12.7.6 with Dante Via 1.4.1.3**, the user verified audible
+rodio 0.22.2 / CPAL 0.17.3 diagnostic playback, Via application discovery, and
+transmitter-channel publication in Dante Controller. The AVAudioPlayer control
+was also detected; WKWebView HTML media and Web Audio controls were not detected.
+The exact vendor-internal capture/process-attribution cause remains unconfirmed.
 
-Release: v2.4, tracked in #515. User approved starting #512 before dependency
-qualification and the other scoped issues on 2026-10-17. #513 design approval
-and #514 installed acceptance remain required.
+The user approved sharing the existing native rodio/CPAL provider architecture
+across macOS and Windows for ordinary preview, compact preview and Blind
+Comparison (#513). Reuse the native command contract and exclusive-playback
+coordination; preserve transport/ranking behavior and per-region gain timing.
+
+Initially use the system-default output at playback-session creation; users
+select Via as their macOS default and enable Studio independently in Via.
+No loopback driver, microphone capture or output-selector UI is included.
+Device/service loss must stop playback with a clear error; do not silently
+reopen isolated playback on speakers. Non-Dante users use their normal default.
+
+Release: v2.4 (#515). PR #516 merged as `1fa4649`; its final source head
+`44e6584` passed full CI #2260 and CodeQL #54, including both architecture
+diagnostic builds and nonzero sample decode. These builds are not installed
+Apple Silicon acceptance. Qualify dependency updates separately, then #441/#439,
+before implementing the approved #513 design. #514 retains production acceptance.
 
 ## Evidence and limits
 
@@ -29,13 +38,14 @@ and #514 installed acceptance remain required.
 | Windows Studio appears in Via and enables transmitter discovery | User report, #512 comment | Preserve Windows provider; receiver audio not yet tested |
 | Full Via stop/quit/start plus Studio restart sequence | Not run as a controlled recorded case | Complete Audinate's documented sequence once |
 | First diagnostic compile on both architectures | CI #2256 passed; CodeQL #50 passed | Compilation is not Via discovery or audible acceptance |
-| Native vs HTML vs Web Audio diagnostic discovery | User-tested on macOS 12.7.6: native detected, both web modes absent | Proceed to isolated rodio/CPAL discovery test |
+| Native vs HTML vs Web Audio diagnostic discovery | User-tested: AVAudioPlayer detected; both web modes absent | Simple Web Audio workaround failed on this host |
+| Native rodio/CPAL audible output, Via discovery and Controller TX publication | User-verified PASS on Intel macOS 12.7.6 / Via 1.4.1.3 | Native Rust feasibility established on this host |
 | Installed receiver signal and notification isolation | Not run | Requires physical receiving endpoint; belongs to #514 |
 
-Record exact Mac model, architecture, macOS, Studio, Via, and Controller versions
-with results. The target macOS 12.7.6 host needs its own run; macOS 15 CI does not
-prove runtime compatibility on macOS 12.7.6. No Audinate support response or
-vendor-confirmed WebKit limitation has been obtained.
+Confirmed host: Intel macOS 12.7.6, Via 1.4.1.3. Exact Mac model, installed
+Studio build and Controller version were not supplied for this test. The user
+verified the rodio app on 12.7.6; macOS 15 CI alone would not establish that.
+No Audinate support response or vendor-confirmed WebKit limitation was obtained.
 
 ## Repository findings
 
@@ -120,7 +130,7 @@ open -W -n "$probe_app" --args webaudio
 
 Close the app between modes; click Play for each web mode. Native begins playing
 on launch. Start at a low listening level. The local build is ad-hoc signed and
-targets macOS 12.0 or later; actual 12.7.6 runtime acceptance remains Not run.
+targets macOS 12.0 or later; the user subsequently verified discovery on 12.7.6; full product acceptance remains Not run.
 CI supplies architecture-specific ZIP artifacts, containing a second ZIP with
 the app. Those downloads remain unsigned for distribution/not notarized; normal
 documented unsigned-app handling applies. Building locally avoids treating an
@@ -163,6 +173,7 @@ before approving that implementation.
 | Installed Studio preview | User-reported audible | User-reported absent | No Studio source reported | Not run | Not run |
 | Installed Studio comparison | Not separately recorded | Not separately recorded | Not separately recorded | Not run | Not run |
 | Native AVAudioPlayer diagnostic | Discovery reported; audibility not separately recorded | Detected (user report) | Not run | Not run | Not run |
+| Native rodio/CPAL diagnostic | Audible: PASS (user) | Detected: PASS (user) | TX channels visible: PASS (user) | Receiver/L-R: Not run | Not run |
 | WKWebView HTML diagnostic | Not separately recorded | Not detected (user report) | Not run | Not run | Not run |
 | WKWebView Web Audio diagnostic | Not separately recorded | Not detected (user report) | Not run | Not run | Not run |
 
@@ -185,28 +196,28 @@ No microphone or user audio files are opened. Missing-device errors terminate
 playback and are logged. This plain Rust bundle is not a full Tauri application;
 a negative result needs an embedded-Tauri check before rejecting native Rust.
 
-The target is macOS 12.0, but 12.7.6 runtime compatibility remains unverified for
-this second app. Do not infer audible playback, discovery, or isolation from
+The target is macOS 12.0. The user verified audible output, Via discovery and
+Controller TX publication for this second app on Intel macOS 12.7.6 / Via 1.4.1.3. Do not infer audible playback, discovery, or isolation from
 compilation or the decode-only CI check. The current CPAL main-branch minimum
 OS policy must not be substituted for the locked 0.17.3 source requirements;
 review the exact dependency versions before any future upgrade.
 
-### Decision gate
+### Implementation qualification remaining
 
-- If the documented restart sequence fixes installed Studio, qualify repeatability
-  before deciding whether documentation alone satisfies #513.
-- If Web Audio alone fixes discovery, prototype that change in Studio and compare
-  duration, seek, gain and region/candidate transitions before design approval.
-- If only native works, prototype rodio/CPAL in a separate test app/bundle first;
-  evaluate all existing preview formats and comparison gain/control operations.
-- If neither works, keep #512 open; collect exact versions/process evidence and
-  prepare a minimal reproduction for Audinate. No support request has been sent.
+The #513 architecture above is approved. The isolated WAV discovery test does
+not establish full Studio codec, seek/duration, gain or transport compatibility.
+Before shipping, verify the existing macOS codec matrix, ordinary/compact
+previews, Blind Comparison, per-region loudness matching and candidate/region
+transitions. Define numeric position/gain tolerances and switching/latency
+criteria during detailed implementation; no new product-policy change is
+authorized by this record.
 
-For #513 design review define numeric position/gain tolerances, acceptable
-switching/latency behavior, missing-device recovery and fallback policy. Do not
-silently route isolated playback to speakers after a device disconnect. #514
-must cover packaged preview, compact preview, comparison, loudness matching,
-sleep/wake, service/device loss and Windows regressions.
+#514 must verify actual receiver audio, stereo integrity, exclusion of Chrome/
+notifications/microphone audio, device/service loss, sleep/wake and recovery on
+installed packages. A visible transmitter is not receiver-signal acceptance.
+Record Intel macOS 12.7.6 and Windows results independently; installed Apple
+Silicon tests remain Not run and need execution or an explicit disposition.
+Do not claim bit-perfect conversion or measured latency from this spike.
 
 ## Primary references (reviewed 2026-10-17)
 

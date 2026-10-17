@@ -25,8 +25,8 @@ Last updated: 2026-10-17
 ### v2.4 approved scope and active spike
 
 - [#515](https://github.com/jl-aspect-works/jl-mixing-studio/issues/515) tracks the locked v2.4 scope: Windows Reveal (#441), Recent Revisions TOP status (#439), macOS Dante investigation (#512), conditional implementation/acceptance (#513/#514), and reviewed Dependabot changes.
-- User approved starting #512 first. Dependency qualification follows the spike decision, then #441/#439 and the approved Dante implementation/acceptance.
-- [macOS Dante discovery spike](macos-dante-discovery-spike.md) records source findings and options. On macOS 12.7.6 the user reports native AVAudioPlayer discovery **Pass**, with HTML media and Web Audio both **not detected** by Via. The next experiment is an isolated rodio 0.22.2 / CPAL 0.17.3 app; its host discovery and receiver acceptance remain **Not run**. Root cause is unconfirmed; no Studio playback behavior has changed.
+- User approved starting #512 first and approved the shared native-provider design on 2026-10-17. Dependency qualification follows spike closeout, then #441/#439 and #513/#514.
+- [macOS Dante discovery spike](macos-dante-discovery-spike.md): feasibility passed on Intel macOS 12.7.6 / Via 1.4.1.3. User verified audible rodio/CPAL output, Via discovery and Controller TX publication; both WebKit controls were not detected. PR #516 merged as `1fa4649`; final source head passed CI #2260 and CodeQL #54. Shared native preview/compact/comparison design is approved for #513. Receiver/isolation, full Studio playback and Apple Silicon installed acceptance remain unverified; shipping playback is unchanged.
 - Automated documentation screenshots (#363) are explicitly deferred beyond v2.4; the user guide (#362) remains deferred.
 
 ### Unreleased October dependency maintenance
@@ -52,4 +52,4 @@ The [governance record](https://github.com/jl-aspect-works/engineering/blob/main
 
 ## Immediate next action
 
-Complete #512 diagnostic build validation and controlled macOS host discovery tests, then review the proposed routing approach before #513. No additional v2.3.3 build, tag, publication or acceptance cycle is required.
+Complete #512 documentation closeout and verify post-merge CI, then review/qualify the open Dependabot changes. Follow with #441, #439 and the approved #513 implementation/#514 acceptance. No additional v2.3.3 release cycle is required.
