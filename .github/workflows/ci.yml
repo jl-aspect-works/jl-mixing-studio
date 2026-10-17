@@ -136,6 +136,21 @@ jobs:
           ffmpeg -version | head -n 1
       - name: Generate required audio fixtures
         run: bash scripts/macos-audio-preview-fixtures.sh "$RUNNER_TEMP/jl-audio-preview-fixtures"
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          components: rustfmt
+      - name: Build isolated rodio discovery diagnostic app
+        run: |
+          rustfmt --check scripts/macos-dante-rodio-probe.rs
+          probe_app="$(bash scripts/build-macos-dante-rodio-probe.sh)"
+          ditto -c -k --keepParent "$probe_app" "$RUNNER_TEMP/JL-Dante-Rodio-Probe.zip"
+      - name: Upload rodio discovery diagnostic app
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dante-rodio-probe-${{ matrix.os }}
+          path: ${{ runner.temp }}/JL-Dante-Rodio-Probe.zip
+          if-no-files-found: error
+          retention-days: 14
       - name: Build isolated Dante discovery diagnostic app
         run: |
           probe_app="$(bash scripts/build-macos-dante-probe.sh)"
