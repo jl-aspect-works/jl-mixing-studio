@@ -1,6 +1,6 @@
 # JL Mixing Studio Development Status
 
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 
 ## Current release
 
@@ -22,6 +22,13 @@ Last updated: 2026-10-16
 
 ## Post-release hardening
 
+### v2.4 approved scope and active spike
+
+- [#515](https://github.com/jl-aspect-works/jl-mixing-studio/issues/515) tracks the locked v2.4 scope: Windows Reveal (#441), Recent Revisions TOP status (#439), macOS Dante investigation (#512), conditional implementation/acceptance (#513/#514), and reviewed Dependabot changes.
+- User approved starting #512 first. Dependency qualification follows the spike decision, then #441/#439 and the approved Dante implementation/acceptance.
+- [macOS Dante discovery spike](macos-dante-discovery-spike.md) records source findings and options. On macOS 12.7.6 the user reports native AVAudioPlayer discovery **Pass**, with HTML media and Web Audio both **not detected** by Via. The next experiment is an isolated rodio 0.22.2 / CPAL 0.17.3 app; its host discovery and receiver acceptance remain **Not run**. Root cause is unconfirmed; no Studio playback behavior has changed.
+- Automated documentation screenshots (#363) are explicitly deferred beyond v2.4; the user guide (#362) remains deferred.
+
 ### Unreleased October dependency maintenance
 
 The user approved integrating reviewed dependency updates on 2026-10-16, with publication deferred to the next maintenance or feature release. This does not change the v2.3.3 qualification record or artifacts.
@@ -37,12 +44,12 @@ The [governance record](https://github.com/jl-aspect-works/engineering/blob/main
 
 ## Known and deferred items
 
-- [#441](https://github.com/jl-aspect-works/jl-mixing-studio/issues/441): Windows Reveal actions remain open and explicitly nonblocking for the qualified releases; fix requires a future scoped release.
+- [#441](https://github.com/jl-aspect-works/jl-mixing-studio/issues/441): Windows Reveal actions remain open and explicitly nonblocking for the qualified v2.3.x releases; fix is now scoped for v2.4.
 - Apple Silicon installed acceptance remains Not run, with the accepted hardware-unavailable disposition.
 - Signing/notarization remains deferred: Studio [#50](https://github.com/jl-aspect-works/jl-mixing-studio/issues/50) and Automation [#112](https://github.com/jl-aspect-works/jl-mixing-automation/issues/112).
-- Future work includes TOP status in Recent Revisions (#439), user-guide/screenshot work (#362/#363), provider-specific media/cloud APIs and cascading deletion of non-empty clients.
+- v2.4 includes TOP status in Recent Revisions (#439). Deferred work includes user-guide/screenshot work (#362/#363), provider-specific media/cloud APIs and cascading deletion of non-empty clients.
 - [Engineering #23](https://github.com/jl-aspect-works/engineering/issues/23) tracks separate residual repository-hardening work, including Plugin Suite and lightweight-workflow update maintenance. It does not reopen v2.3.3 release qualification.
 
 ## Immediate next action
 
-Select and approve the next issue or release scope. No additional v2.3.3 build, tag, publication or acceptance cycle is required by this documentation closeout.
+Complete #512 diagnostic build validation and controlled macOS host discovery tests, then review the proposed routing approach before #513. No additional v2.3.3 build, tag, publication or acceptance cycle is required.
