@@ -136,6 +136,17 @@ jobs:
           ffmpeg -version | head -n 1
       - name: Generate required audio fixtures
         run: bash scripts/macos-audio-preview-fixtures.sh "$RUNNER_TEMP/jl-audio-preview-fixtures"
+      - name: Build isolated Dante discovery diagnostic app
+        run: |
+          probe_app="$(bash scripts/build-macos-dante-probe.sh)"
+          ditto -c -k --keepParent "$probe_app" "$RUNNER_TEMP/JL-Dante-Probe.zip"
+      - name: Upload Dante discovery diagnostic app
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dante-discovery-probe-${{ matrix.os }}
+          path: ${{ runner.temp }}/JL-Dante-Probe.zip
+          if-no-files-found: error
+          retention-days: 14
       - name: Probe required formats through WKWebView
         run: |
           swift scripts/macos-wkwebview-audio-probe.swift \
