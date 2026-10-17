@@ -6,8 +6,10 @@
 The leading hypothesis is macOS WebKit audio-process attribution, not network
 discovery. Root cause and a production remedy are **not yet proven**.
 
-First compare native AVAudioPlayer, WKWebView HTML media, and WKWebView Web Audio
-on the affected Mac using the isolated diagnostic app below. Prefer a supported
+The user completed the native/HTML/Web Audio comparison on macOS 12.7.6:
+Via detects AVAudioPlayer but detects neither web mode. The simple Web Audio
+graph remedy therefore failed on this host. Via version and chip architecture
+remain unrecorded. Next test the isolated rodio/CPAL app described below. Prefer a supported
 remedy preserving HTML playback if these controls establish one. If native audio
 is independently discoverable while both web paths fail, the preferred next
 experiment is an isolated rodio/CPAL macOS provider prototype, reusing the existing
@@ -26,8 +28,8 @@ and #514 installed acceptance remain required.
 | Restarting Studio did not fix discovery | User report, #512 | Repeated restart alone is not an established remedy |
 | Windows Studio appears in Via and enables transmitter discovery | User report, #512 comment | Preserve Windows provider; receiver audio not yet tested |
 | Full Via stop/quit/start plus Studio restart sequence | Not run as a controlled recorded case | Complete Audinate's documented sequence once |
-| Diagnostic app compile on both architectures | Pending PR CI | Compilation is not Via discovery or audible acceptance |
-| Native vs HTML vs Web Audio diagnostic discovery | Not run | Required before selecting a provider change |
+| First diagnostic compile on both architectures | CI #2256 passed; CodeQL #50 passed | Compilation is not Via discovery or audible acceptance |
+| Native vs HTML vs Web Audio diagnostic discovery | User-tested on macOS 12.7.6: native detected, both web modes absent | Proceed to isolated rodio/CPAL discovery test |
 | Installed receiver signal and notification isolation | Not run | Requires physical receiving endpoint; belongs to #514 |
 
 Record exact Mac model, architecture, macOS, Studio, Via, and Controller versions
@@ -160,9 +162,34 @@ before approving that implementation.
 | Chrome positive control | User-reported pass | User-reported pass | User-reported pass | Not run | Not run |
 | Installed Studio preview | User-reported audible | User-reported absent | No Studio source reported | Not run | Not run |
 | Installed Studio comparison | Not separately recorded | Not separately recorded | Not separately recorded | Not run | Not run |
-| Native AVAudioPlayer diagnostic | Not run | Not run | Not run | Not run | Not run |
-| WKWebView HTML diagnostic | Not run | Not run | Not run | Not run | Not run |
-| WKWebView Web Audio diagnostic | Not run | Not run | Not run | Not run | Not run |
+| Native AVAudioPlayer diagnostic | Discovery reported; audibility not separately recorded | Detected (user report) | Not run | Not run | Not run |
+| WKWebView HTML diagnostic | Not separately recorded | Not detected (user report) | Not run | Not run | Not run |
+| WKWebView Web Audio diagnostic | Not separately recorded | Not detected (user report) | Not run | Not run | Not run |
+
+### Second experiment: rodio/CPAL
+
+`scripts/build-macos-dante-rodio-probe.sh` builds a separate temporary Cargo
+crate with exact rodio 0.22.2 and CPAL 0.17.3, seeded from Studio's lockfile.
+It does not enable macOS playback in Studio or change the production lockfile.
+The generated app includes its resolved Cargo.lock and dependency tree for review.
+CI compiles it on both Mac architectures and runs a decode-only fixture check.
+This is a prototype resolution, not approval of a dependency update.
+
+Start Via, select its default output, then open **JL Dante Rodio Probe.app**.
+There is no window: it plays the same quiet alternating stereo tone for 60
+seconds and exits. Check Local Applications while it plays and record the exact
+source name. If discovered, check Enable Dante and Controller TX separately.
+Log output is written to the macOS temporary directory as
+`jl-dante-rodio-<PID>.log`; launching the executable from Terminal prints its path.
+No microphone or user audio files are opened. Missing-device errors terminate
+playback and are logged. This plain Rust bundle is not a full Tauri application;
+a negative result needs an embedded-Tauri check before rejecting native Rust.
+
+The target is macOS 12.0, but 12.7.6 runtime compatibility remains unverified for
+this second app. Do not infer audible playback, discovery, or isolation from
+compilation or the decode-only CI check. The current CPAL main-branch minimum
+OS policy must not be substituted for the locked 0.17.3 source requirements;
+review the exact dependency versions before any future upgrade.
 
 ### Decision gate
 
@@ -189,7 +216,7 @@ sleep/wake, service/device loss and Windows regressions.
 - [Apple WKWebView process model](https://developer.apple.com/videos/play/wwdc2020/10188/)
 - [WebKit Safari 18.4 features](https://webkit.org/blog/16574/webkit-features-in-safari-18-4/)
 - [Tauri configuration reference](https://v2.tauri.app/reference/config/)
-- [CPAL supported platforms](https://github.com/RustAudio/cpal)
+- [CPAL 0.17.3 supported platforms](https://docs.rs/crate/cpal/0.17.3/source/README.md)
 - [Apple AVAudioPlayer](https://developer.apple.com/documentation/avfaudio/avaudioplayer)
 - [Loopback sources and routing](https://www.rogueamoeba.com/support/manuals/loopback/?page=sources)
 
