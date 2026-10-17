@@ -26,7 +26,7 @@ Last updated: 2026-10-17
 
 - [#515](https://github.com/jl-aspect-works/jl-mixing-studio/issues/515) tracks the locked v2.4 scope: Windows Reveal (#441), Recent Revisions TOP status (#439), macOS Dante investigation (#512), conditional implementation/acceptance (#513/#514), and reviewed Dependabot changes.
 - User approved starting #512 first. Dependency qualification follows the spike decision, then #441/#439 and the approved Dante implementation/acceptance.
-- [macOS Dante discovery spike](macos-dante-discovery-spike.md) records source findings, options and an isolated native/HTML/Web Audio diagnostic. Host discovery and receiver acceptance remain **Not run** for the diagnostic; root cause is unconfirmed. No Studio playback behavior has changed.
+- [macOS Dante discovery spike](macos-dante-discovery-spike.md) records source findings and options. On macOS 12.7.6 the user reports native AVAudioPlayer discovery **Pass**, with HTML media and Web Audio both **not detected** by Via. The next experiment is an isolated rodio 0.22.2 / CPAL 0.17.3 app; its host discovery and receiver acceptance remain **Not run**. Root cause is unconfirmed; no Studio playback behavior has changed.
 - Automated documentation screenshots (#363) are explicitly deferred beyond v2.4; the user guide (#362) remains deferred.
 
 ### Unreleased October dependency maintenance
