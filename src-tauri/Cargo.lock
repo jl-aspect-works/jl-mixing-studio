@@ -2094,6 +2094,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-clipboard-manager",
  "tempfile",
+ "windows",
 ]
 
 [[package]]

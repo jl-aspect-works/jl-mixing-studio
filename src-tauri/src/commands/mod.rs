@@ -28,6 +28,8 @@ mod project_content_delete;
 mod project_file_diagnostics;
 #[path = "project_file_open_command.rs"]
 mod project_file_open;
+#[cfg(any(windows, test))]
+mod project_file_reveal;
 #[path = "project_file_summary_command.rs"]
 mod project_file_summary;
 #[path = "project_file_command.rs"]
