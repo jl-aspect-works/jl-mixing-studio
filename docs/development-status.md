@@ -22,14 +22,15 @@ Last updated: 2026-10-17
 
 ## Post-release hardening
 
-### v2.4 approved scope and completed Windows Reveal correction
+### v2.4 approved scope and Recent Revisions TOP status
 
 - [#515](https://github.com/jl-aspect-works/jl-mixing-studio/issues/515) tracks the locked v2.4 scope: Windows Reveal (#441), Recent Revisions TOP status (#439), macOS Dante investigation (#512), conditional implementation/acceptance (#513/#514), and reviewed Dependabot changes.
 - User approved starting #512 first and approved the shared native-provider design on 2026-10-17. Dependency qualification follows spike closeout, then #441/#439 and #513/#514.
 - [macOS Dante discovery spike](macos-dante-discovery-spike.md): feasibility passed on Intel macOS 12.7.6 / Via 1.4.1.3. User verified audible rodio/CPAL output, Via discovery and Controller TX publication; both WebKit controls were not detected. PR #516 merged as `1fa4649`; final source head passed CI #2260 and CodeQL #54. Shared native preview/compact/comparison design is approved for #513. Receiver/isolation, full Studio playback and Apple Silicon installed acceptance remain unverified; shipping playback is unchanged.
 - #512 is closed after PRs #516/#517 and passing main CI/CodeQL. PR #518 integrated the six reviewed dependency proposals from #515: serde_json 1.0.154 (#503), jsonschema 0.58.6 (#504), Tauri JS API 2.12.3 (#506), tauri-build 2.7.2 (#507), Vite React plugin 6.1.2 (#509), and clipboard JS 2.4.2 (#510). PR CI #2264 / CodeQL #58 and main CI #2265 / CodeQL #59 passed on merge `4020a3c`; installed acceptance remains required for the release candidate.
 - Hold rfd #488 pending packaged-dialog qualification; rodio #505 conflicts with the approved macOS 12.7.6 support floor; TypeScript #508 has unsupported lint-tool peers; jsdom #511 needs focused accessibility regression investigation. Retain rodio 0.22.2 / CPAL 0.17.3, rfd 0.15.4, TypeScript 5.8.3 and jsdom 26.1.0.
-- #441: PR #519 merged as `579eda6`, replacing the shared Windows Reveal command-line handoff with native Shell item selection while preserving containment validation and macOS `open -R`. Source CI #2270 / CodeQL #64 passed. The user verified all Windows tables with the installed test package and confirmed Reveal works on Windows and macOS. [Installed acceptance](WINDOWS_REVEAL_ACCEPTANCE.md) records the reported passes and detailed path/variant cases still to enumerate at v2.4 RC acceptance. Post-merge verification is tracked in #441.
+- #441: PR #519 merged as `579eda6`, replacing the shared Windows Reveal command-line handoff with native Shell item selection while preserving containment validation and macOS `open -R`. Source CI #2270 / CodeQL #64 passed. The user verified all Windows tables with the installed test package and confirmed Reveal works on Windows and macOS. [Installed acceptance](WINDOWS_REVEAL_ACCEPTANCE.md) records the reported passes and detailed path/variant cases still to enumerate at v2.4 RC acceptance. Post-merge source CI #2271 / CodeQL #65 and final documentation main CI #2275 / CodeQL #69 passed. #441 is closed.
+- Active #439 adds the existing cumulative comparison TOP status to the Recent Revisions card, alongside its compact status badges. It uses the same cumulative Full Song result as Comparison Results and omits TOP when no result is available. Focused regression coverage includes refresh/history clearing and stale responses across project changes. The user pre-approved starting this issue after #441; UI review and approval remain required before merge.
 - Automated documentation screenshots (#363) are explicitly deferred beyond v2.4; the user guide (#362) remains deferred.
 
 ### Unreleased October dependency maintenance
@@ -55,4 +56,4 @@ The [governance record](https://github.com/jl-aspect-works/engineering/blob/main
 
 ## Immediate next action
 
-After #441 closeout checks complete, proceed with #439 Recent Revisions TOP status, then the approved #513 implementation/#514 acceptance. Preserve detailed Reveal and dependency installed coverage for the next approved release candidate. No additional v2.3.3 release cycle is required.
+Complete #439 CI and UI verification/approval, then proceed with the approved #513 implementation/#514 acceptance. Preserve detailed Reveal and dependency installed coverage for the next approved release candidate. No additional v2.3.3 release cycle is required.
