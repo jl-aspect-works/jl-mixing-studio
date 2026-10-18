@@ -116,6 +116,40 @@ describe("comparison playback session", () => {
     expect(fake.provider.play).toHaveBeenCalled();
   });
 
+  it("recreates a lost native session only on Retry, retaining region, candidate, position and mute across a failed recovery", async () => {
+    const first = fakeProvider();
+    const unavailable = fakeProvider();
+    const restored = fakeProvider();
+    const factory = vi.fn().mockReturnValueOnce(first.provider).mockReturnValueOnce(unavailable.provider).mockReturnValueOnce(restored.provider);
+    const matched = candidates(2).map((candidate, index) => ({ ...candidate, regionLoudness: {
+      intro: { integratedLufs: -16, appliedGainDb: index ? -1 : 0 },
+      verse: { integratedLufs: -12, appliedGainDb: index ? 0 : -1 },
+    } }));
+    const session = new ComparisonPlaybackSession("client", "project", matched, [intro, verse], intro, factory);
+    await session.prepare();
+    await session.setRegion(verse);
+    await session.switchCandidate("B");
+    await session.seek(43);
+    await session.setVolume(0);
+    vi.mocked(first.provider.status).mockRejectedValue("Audio output was lost.");
+    await expect(session.refresh()).rejects.toBe("Audio output was lost.");
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(first.provider.play).not.toHaveBeenCalled();
+    vi.mocked(unavailable.provider.prepare).mockRejectedValue("Output still unavailable.");
+    await expect(session.retry()).rejects.toBe("Output still unavailable.");
+    expect(unavailable.provider.play).not.toHaveBeenCalled();
+    const result = await session.retry();
+    expect(first.provider.dispose).toHaveBeenCalledOnce();
+    expect(unavailable.provider.dispose).toHaveBeenCalledOnce();
+    expect(restored.provider.prepare).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ blindId: "A", appliedGainDb: -1 }),
+      expect.objectContaining({ blindId: "B", appliedGainDb: 0 }),
+    ]), 40);
+    expect(restored.provider.setVolume).toHaveBeenCalledWith(0);
+    expect(result).toMatchObject({ activeCandidateId: "B", currentSeconds: 43, playing: true });
+    expect(restored.provider.play).toHaveBeenCalledOnce();
+  });
+
   it("keeps region gain fixed through seek and candidate changes, updating it only at the next region", async () => {
     const matched = candidates(2).map((candidate, index) => ({ ...candidate, regionLoudness: {
       intro: { integratedLufs: -16 + index, appliedGainDb: index ? -1 : 0 },

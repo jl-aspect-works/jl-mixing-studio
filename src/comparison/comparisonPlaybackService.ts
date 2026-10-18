@@ -264,6 +264,9 @@ export class ComparisonPlaybackSession {
   private disposed = false;
   private providerKind: PlaybackProviderKind = "unknown";
   private lastStatus: ComparisonPlaybackSnapshot | null = null;
+  private recoveryStatus: ComparisonPlaybackSnapshot | null = null;
+  private nativeProvider = false;
+  private volume = 1;
   private candidateDurations = new Map<string, number>();
 
   constructor(
@@ -311,10 +314,12 @@ export class ComparisonPlaybackSession {
       this.provider = this.providerFactory?.(providerKind)
         ?? (providerKind === "web" ? new WebComparisonAudioProvider() : new NativeComparisonAudioProvider(this.clientId, this.projectId));
       this.providerKind = providerKind;
+      this.nativeProvider = providerKind === "native";
       onProgress?.(`Loading audio and checking durations for all ${prepared.length} candidates…`);
       const durations = await measureComparison("audio_prepare", () => this.provider!.prepare(prepared, this.activeRegion.startSeconds), prepared.length);
       this.regions.forEach((region) => validateRegionDurations(this.candidates, region, durations));
       this.candidateDurations = durations;
+      if (this.volume !== 1) await this.provider.setVolume(this.volume);
       const status = this.remember(await this.provider.status());
       this.logDiagnostic("session_ready", "success", status);
       return status;
@@ -396,7 +401,10 @@ export class ComparisonPlaybackSession {
 
   setLoop(loop: boolean) { this.loop = loop; }
 
-  async setVolume(volume: number) { return this.remember(await this.requireProvider().setVolume(volume)); }
+  async setVolume(volume: number) {
+    this.volume = volume;
+    return this.remember(await this.requireProvider().setVolume(volume));
+  }
 
   async refresh() {
     const provider = this.requireProvider();
@@ -428,15 +436,38 @@ export class ComparisonPlaybackSession {
     return this.remember(this.normalizePlaybackState(status));
   }
 
-  async retry() {
+  private async statusForRetry() {
+    try {
+      if (this.provider) return await this.provider.status();
+    } catch (error) {
+      if (!this.nativeProvider) throw error;
+    }
+    if (!this.nativeProvider) throw new Error("Comparison audio is not prepared.");
+    // A native stream failure releases the backend session. Only an explicit
+    // Retry may recreate it, using the user's currently selected default output.
+    const previous = this.recoveryStatus ?? this.lastStatus;
+    this.recoveryStatus = previous;
+    await this.stopProvider();
+    await this.prepare();
     const provider = this.requireProvider();
+    if (previous) {
+      await provider.switchCandidate(previous.activeCandidateId);
+      await provider.seek(this.boundPosition(previous.currentSeconds));
+    }
+    return provider.status();
+  }
+
+  async retry() {
+    if (this.disposed) throw new Error("Comparison playback session is closed.");
     const finish = this.startDiagnostic("retry");
     try {
-      const status = await provider.status();
+      const status = await this.statusForRetry();
+      const provider = this.requireProvider();
       await provider.seek(status.currentSeconds >= this.effectiveEnd(status)
         ? this.activeRegion.startSeconds : this.boundPosition(status.currentSeconds));
       this.playRequested = true;
       const next = this.remember(this.normalizePlaybackState(await provider.play()));
+      this.recoveryStatus = null;
       finish("success", this.diagnosticFields(next));
       return next;
     } catch (error) {
