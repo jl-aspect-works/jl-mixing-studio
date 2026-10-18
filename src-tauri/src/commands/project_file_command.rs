@@ -199,7 +199,7 @@ fn project_file_entry(path: &Path, parent_relative: &str) -> Result<ProjectFileE
         None
     };
     let is_audio = extension.as_deref().is_some_and(is_audio_extension);
-    let playable = cfg!(target_os = "macos") && is_audio;
+    let playable = crate::audio_preview::supported() && is_audio;
     let modified_epoch_ms = metadata
         .modified()
         .ok()

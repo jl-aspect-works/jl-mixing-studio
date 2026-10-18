@@ -198,7 +198,7 @@ pub(crate) fn load_native_project_audio_preview(
     state: tauri::State<'_, NativeAudioPreviewState>,
     request: ProjectFileMutationRequest,
 ) -> Result<NativeAudioPreviewStatus, String> {
-    if !cfg!(target_os = "windows") {
+    if !audio_preview::supported() {
         return audio_preview::status(&state);
     }
     let (path, relative_path) = resolve_project_audio_file(&app, &request)?;
@@ -267,7 +267,7 @@ fn prepare_native_comparison_audio_blocking(
     state: tauri::State<'_, NativeAudioPreviewState>,
     request: NativeComparisonPrepareRequest,
 ) -> Result<NativeComparisonAudioStatus, String> {
-    if !cfg!(target_os = "windows") {
+    if !audio_preview::supported() {
         return audio_preview::comparison_status(&state);
     }
     let first = request

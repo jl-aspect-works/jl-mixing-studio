@@ -1,11 +1,19 @@
 use serde::Serialize;
 use std::path::Path;
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 use std::sync::Mutex;
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 use std::time::Duration;
 
 mod comparison_audio;
+#[cfg(any(target_os = "windows", target_os = "macos", test))]
+mod output_failure;
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+mod output_session;
+
+pub(crate) const fn supported() -> bool {
+    cfg!(any(target_os = "windows", target_os = "macos"))
+}
 pub(crate) use comparison_audio::{
     pause as pause_comparison, play as play_comparison, prepare as prepare_comparison,
     seek as seek_comparison, set_match_gains as set_comparison_match_gains,
@@ -25,26 +33,26 @@ pub(crate) struct NativeAudioPreviewStatus {
 
 #[derive(Default)]
 pub(crate) struct NativeAudioPreviewState {
-    #[cfg(target_os = "windows")]
-    inner: Mutex<WindowsPlayback>,
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    inner: Mutex<NativePlayback>,
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 #[derive(Default)]
-struct WindowsPlayback {
-    stream: Option<rodio::MixerDeviceSink>,
+struct NativePlayback {
+    stream: Option<output_session::OutputSession>,
     player: Option<rodio::Player>,
     relative_path: Option<String>,
     duration: Duration,
     volume: f32,
-    comparison: Option<comparison_audio::WindowsComparisonPlayback>,
+    comparison: Option<comparison_audio::NativeComparisonPlayback>,
 }
 
-#[cfg(target_os = "windows")]
-impl WindowsPlayback {
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+impl NativePlayback {
     fn stop(&mut self) {
         if let Some(player) = self.player.take() {
-            player.clear();
+            player.stop();
             drop(player);
         }
         self.stream.take();
@@ -53,6 +61,19 @@ impl WindowsPlayback {
         if let Some(comparison) = self.comparison.take() {
             comparison.clear();
         }
+    }
+
+    fn check_output(&mut self) -> Result<(), String> {
+        if self.stream.as_ref().is_some_and(|output| output.failed())
+            || self
+                .comparison
+                .as_ref()
+                .is_some_and(|value| value.output_failed())
+        {
+            self.stop();
+            return Err(output_failure::OUTPUT_LOST_MESSAGE.into());
+        }
+        Ok(())
     }
 
     fn status(&self) -> NativeAudioPreviewStatus {
@@ -73,6 +94,7 @@ impl WindowsPlayback {
     }
 }
 
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
 fn unsupported_status() -> NativeAudioPreviewStatus {
     NativeAudioPreviewStatus {
         supported: false,
@@ -88,9 +110,9 @@ pub(crate) fn load(
     path: &Path,
     relative_path: String,
 ) -> Result<NativeAudioPreviewStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
-        use rodio::{Decoder, DeviceSinkBuilder, Player, Source};
+        use rodio::{Decoder, Player, Source};
         use std::fs::File;
 
         let decoder = Decoder::try_from(
@@ -101,9 +123,7 @@ pub(crate) fn load(
         let duration = decoder
             .total_duration()
             .ok_or_else(|| "The audio preview duration could not be determined".to_owned())?;
-        let stream = DeviceSinkBuilder::open_default_sink().map_err(|error| {
-            format!("Unable to open the default Windows audio output device: {error}")
-        })?;
+        let stream = output_session::OutputSession::open()?;
         let player = Player::connect_new(stream.mixer());
         player.pause();
         player.append(decoder);
@@ -111,7 +131,7 @@ pub(crate) fn load(
         let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
         playback.stop();
         playback.volume = if playback.volume > 0.0 {
             playback.volume
@@ -126,7 +146,7 @@ pub(crate) fn load(
         return Ok(playback.status());
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = (state, path, relative_path);
         Ok(unsupported_status())
@@ -134,20 +154,21 @@ pub(crate) fn load(
 }
 
 pub(crate) fn play(state: &NativeAudioPreviewState) -> Result<NativeAudioPreviewStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
-        let playback = state
+        let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
+        playback.check_output()?;
         let player = playback
             .player
             .as_ref()
-            .ok_or_else(|| "No Windows audio preview is loaded".to_owned())?;
+            .ok_or_else(|| "No native audio preview is loaded".to_owned())?;
         player.play();
         return Ok(playback.status());
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = state;
         Ok(unsupported_status())
@@ -155,18 +176,19 @@ pub(crate) fn play(state: &NativeAudioPreviewState) -> Result<NativeAudioPreview
 }
 
 pub(crate) fn pause(state: &NativeAudioPreviewState) -> Result<NativeAudioPreviewStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
-        let playback = state
+        let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
+        playback.check_output()?;
         if let Some(player) = &playback.player {
             player.pause();
         }
         return Ok(playback.status());
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = state;
         Ok(unsupported_status())
@@ -180,16 +202,17 @@ pub(crate) fn seek(
     if !seconds.is_finite() || seconds < 0.0 {
         return Err("Audio preview seek position is invalid".into());
     }
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
-        let playback = state
+        let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
+        playback.check_output()?;
         let player = playback
             .player
             .as_ref()
-            .ok_or_else(|| "No Windows audio preview is loaded".to_owned())?;
+            .ok_or_else(|| "No native audio preview is loaded".to_owned())?;
         player
             .try_seek(Duration::from_secs_f64(
                 seconds.min(playback.duration.as_secs_f64()),
@@ -197,7 +220,7 @@ pub(crate) fn seek(
             .map_err(|error| format!("Unable to seek audio preview: {error}"))?;
         return Ok(playback.status());
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = state;
         Ok(unsupported_status())
@@ -209,19 +232,20 @@ pub(crate) fn set_volume(
     volume: f32,
 ) -> Result<NativeAudioPreviewStatus, String> {
     let volume = volume.clamp(0.0, 1.0);
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
+        playback.check_output()?;
         playback.volume = volume;
         if let Some(player) = &playback.player {
             player.set_volume(volume);
         }
         return Ok(playback.status());
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = (state, volume);
         Ok(unsupported_status())
@@ -229,16 +253,16 @@ pub(crate) fn set_volume(
 }
 
 pub(crate) fn stop(state: &NativeAudioPreviewState) -> Result<NativeAudioPreviewStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
         playback.stop();
         return Ok(playback.status());
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = state;
         Ok(unsupported_status())
@@ -246,15 +270,16 @@ pub(crate) fn stop(state: &NativeAudioPreviewState) -> Result<NativeAudioPreview
 }
 
 pub(crate) fn status(state: &NativeAudioPreviewState) -> Result<NativeAudioPreviewStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
-        let playback = state
+        let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
+        playback.check_output()?;
         return Ok(playback.status());
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = state;
         Ok(unsupported_status())
