@@ -62,7 +62,7 @@ export function ComparisonWorkspace({
         setPlayback(null);
         setPlaybackError({
           candidateId: candidateFromPlaybackError(error) ?? session.candidates[0].blindId,
-          message: error instanceof Error ? error.message : "Comparison audio could not be prepared.",
+          message: playbackErrorMessage(error, "Comparison audio could not be prepared."),
         });
       }
     } finally {
@@ -89,7 +89,7 @@ export function ComparisonWorkspace({
     setPlayback((current) => current ? { ...current, playing: false } : current);
     setPlaybackError({
       candidateId: candidateFromPlaybackError(error) ?? candidateId,
-      message: error instanceof Error ? error.message : `Candidate ${candidateId} could not be played.`,
+      message: playbackErrorMessage(error, `Candidate ${candidateId} could not be played.`),
     });
   }, []);
 
@@ -325,5 +325,8 @@ export function ComparisonWorkspace({
   </section>;
 }
 
+const playbackErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : typeof error === "string" && error ? error : fallback;
+
 const candidateFromPlaybackError = (error: unknown) =>
-  error instanceof Error ? error.message.match(/Candidate ([A-Z])\b/)?.[1] ?? null : null;
+  playbackErrorMessage(error, "").match(/Candidate ([A-Z])\b/)?.[1] ?? null;
