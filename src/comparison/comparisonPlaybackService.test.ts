@@ -150,6 +150,56 @@ describe("comparison playback session", () => {
     expect(restored.provider.play).toHaveBeenCalledOnce();
   });
 
+  it("retries the intended candidate when output is lost during a candidate switch", async () => {
+    const first = fakeProvider();
+    const restored = fakeProvider();
+    const factory = vi.fn().mockReturnValueOnce(first.provider).mockReturnValueOnce(restored.provider);
+    const session = new ComparisonPlaybackSession("client", "project", candidates(2), [intro], intro, factory);
+    await session.prepare();
+    await session.seek(14);
+    vi.mocked(first.provider.switchCandidate).mockRejectedValueOnce("Audio output was lost.");
+    await expect(session.switchCandidate("B")).rejects.toBe("Audio output was lost.");
+    vi.mocked(first.provider.status).mockRejectedValue("Comparison audio is not prepared.");
+    expect(await session.retry()).toMatchObject({ activeCandidateId: "B", currentSeconds: 14, playing: true });
+  });
+
+  it("retains the selected region and its gains when output is lost during a region change", async () => {
+    const first = fakeProvider();
+    const restored = fakeProvider();
+    const factory = vi.fn().mockReturnValueOnce(first.provider).mockReturnValueOnce(restored.provider);
+    const matched = candidates(2).map((candidate, index) => ({ ...candidate, regionLoudness: {
+      intro: { integratedLufs: -16, appliedGainDb: index ? -1 : 0 },
+      verse: { integratedLufs: -12, appliedGainDb: index ? 0 : -1 },
+    } }));
+    const session = new ComparisonPlaybackSession("client", "project", matched, [intro, verse], intro, factory);
+    await session.prepare();
+    await session.seek(14);
+    vi.mocked(first.provider.seek).mockRejectedValueOnce("Audio output was lost.");
+    await expect(session.setRegion(verse)).rejects.toBe("Audio output was lost.");
+    vi.mocked(first.provider.status).mockRejectedValue("Comparison audio is not prepared.");
+    expect(await session.retry()).toMatchObject({ currentSeconds: 14, playing: true });
+    expect(restored.provider.prepare).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ blindId: "A", appliedGainDb: 0 }),
+      expect.objectContaining({ blindId: "B", appliedGainDb: -1 }),
+    ]), 10);
+  });
+
+  it("restores selected-region gains on Retry after a partially applied region change", async () => {
+    const fake = fakeProvider();
+    const matched = candidates(2).map((candidate, index) => ({ ...candidate, regionLoudness: {
+      intro: { integratedLufs: -16, appliedGainDb: index ? -1 : 0 },
+      verse: { integratedLufs: -12, appliedGainDb: index ? 0 : -1 },
+    } }));
+    const session = new ComparisonPlaybackSession("client", "project", matched, [intro, verse], intro, () => fake.provider);
+    await session.prepare();
+    await session.toggle();
+    vi.mocked(fake.provider.play).mockRejectedValueOnce("Playback could not resume.");
+    await expect(session.setRegion(verse)).rejects.toBe("Playback could not resume.");
+    expect(fake.provider.setMatchGains).toHaveBeenLastCalledWith({ A: -1, B: 0 });
+    expect(await session.retry()).toMatchObject({ currentSeconds: 10, playing: true });
+    expect(fake.provider.setMatchGains).toHaveBeenLastCalledWith({ A: 0, B: -1 });
+  });
+
   it("keeps region gain fixed through seek and candidate changes, updating it only at the next region", async () => {
     const matched = candidates(2).map((candidate, index) => ({ ...candidate, regionLoudness: {
       intro: { integratedLufs: -16 + index, appliedGainDb: index ? -1 : 0 },

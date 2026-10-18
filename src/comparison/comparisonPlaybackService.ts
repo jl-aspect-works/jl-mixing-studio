@@ -266,6 +266,7 @@ export class ComparisonPlaybackSession {
   private lastStatus: ComparisonPlaybackSnapshot | null = null;
   private recoveryStatus: ComparisonPlaybackSnapshot | null = null;
   private nativeProvider = false;
+  private failedCandidateId: string | null = null;
   private volume = 1;
   private candidateDurations = new Map<string, number>();
 
@@ -369,9 +370,11 @@ export class ComparisonPlaybackSession {
       const switched = await measureComparison("candidate_switch", () => provider.switchCandidate(candidateId));
       const next = this.remember(this.normalizePlaybackState(current.currentSeconds >= targetEnd && this.playRequested
         ? await provider.play() : switched));
+      this.failedCandidateId = null;
       finish("success", this.diagnosticFields(next, candidateId));
       return next;
     } catch (error) {
+      this.failedCandidateId = candidateId;
       finish("error", this.diagnosticFields(undefined, candidateId));
       throw error;
     }
@@ -386,17 +389,25 @@ export class ComparisonPlaybackSession {
     if (this.candidates.some((candidate) => candidate.regionLoudness && !candidate.regionLoudness[region.regionId])) {
       throw new Error("The selected region has no loudness measurement for a candidate.");
     }
-    const regionMatched = this.candidates.some((candidate) => candidate.regionLoudness);
-    if (regionMatched) await provider.pause();
-    this.activeRegion = region;
-    this.loop = true;
-    const next = await provider.seek(region.startSeconds);
-    if (regionMatched) {
-      await provider.setMatchGains(Object.fromEntries(this.candidates.map((candidate) => [candidate.blindId,
-        candidate.regionLoudness?.[region.regionId]?.appliedGainDb ?? candidate.appliedGainDb])));
+    const previousRegion = this.activeRegion;
+    const previousLoop = this.loop;
+    try {
+      const regionMatched = this.candidates.some((candidate) => candidate.regionLoudness);
+      if (regionMatched) await provider.pause();
+      this.activeRegion = region;
+      this.loop = true;
+      const next = await provider.seek(region.startSeconds);
+      if (regionMatched) {
+        await provider.setMatchGains(Object.fromEntries(this.candidates.map((candidate) => [candidate.blindId,
+          candidate.regionLoudness?.[region.regionId]?.appliedGainDb ?? candidate.appliedGainDb])));
+      }
+      if (this.playRequested) return this.remember(this.normalizePlaybackState(await provider.play()));
+      return this.remember(this.normalizePlaybackState(next));
+    } catch (error) {
+      this.activeRegion = previousRegion;
+      this.loop = previousLoop;
+      throw error;
     }
-    if (this.playRequested) return this.remember(this.normalizePlaybackState(await provider.play()));
-    return this.remember(this.normalizePlaybackState(next));
   }
 
   setLoop(loop: boolean) { this.loop = loop; }
@@ -451,7 +462,7 @@ export class ComparisonPlaybackSession {
     await this.prepare();
     const provider = this.requireProvider();
     if (previous) {
-      await provider.switchCandidate(previous.activeCandidateId);
+      await provider.switchCandidate(this.failedCandidateId ?? previous.activeCandidateId);
       await provider.seek(this.boundPosition(previous.currentSeconds));
     }
     return provider.status();
@@ -461,13 +472,22 @@ export class ComparisonPlaybackSession {
     if (this.disposed) throw new Error("Comparison playback session is closed.");
     const finish = this.startDiagnostic("retry");
     try {
-      const status = await this.statusForRetry();
+      let status = await this.statusForRetry();
       const provider = this.requireProvider();
+      if (this.failedCandidateId && status.activeCandidateId !== this.failedCandidateId) {
+        status = await provider.switchCandidate(this.failedCandidateId);
+      }
+      await provider.setVolume(this.volume);
+      if (this.candidates.some((candidate) => candidate.regionLoudness)) {
+        await provider.setMatchGains(Object.fromEntries(this.candidates.map((candidate) => [candidate.blindId,
+          candidate.regionLoudness?.[this.activeRegion.regionId]?.appliedGainDb ?? candidate.appliedGainDb])));
+      }
       await provider.seek(status.currentSeconds >= this.effectiveEnd(status)
         ? this.activeRegion.startSeconds : this.boundPosition(status.currentSeconds));
       this.playRequested = true;
       const next = this.remember(this.normalizePlaybackState(await provider.play()));
       this.recoveryStatus = null;
+      this.failedCandidateId = null;
       finish("success", this.diagnosticFields(next));
       return next;
     } catch (error) {

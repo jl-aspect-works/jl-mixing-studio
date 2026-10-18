@@ -204,6 +204,7 @@ export function ComparisonWorkspace({
     try {
       const next = playback ? await playbackSession.retry() : await measureComparison("session_prepare", () => playbackSession.prepare(), session.candidates.length);
       setPlayback(next);
+      setActiveCandidate(next.activeCandidateId);
     } catch (error) {
       await playbackFailure(activeCandidate, error);
     } finally {

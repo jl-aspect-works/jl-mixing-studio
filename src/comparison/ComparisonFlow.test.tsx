@@ -899,5 +899,6 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(within(failure).getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(mocks.playbackRetry).toHaveBeenCalledOnce());
     await waitFor(() => expect(screen.queryByText("Candidate B playback stopped.")).not.toBeInTheDocument());
+    expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "A" })).toHaveAttribute("aria-pressed", "true");
   });
 });
