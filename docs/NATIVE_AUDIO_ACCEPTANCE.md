@@ -9,20 +9,20 @@ BUILD.txt; identify the package by commit, not the displayed version alone.
 
 | Installed case | Intel macOS 12.7.6 | Apple Silicon macOS | Windows 11 |
 | --- | --- | --- | --- |
-| Install and launch correct architecture | Pass | Not run | Not run |
-| Ordinary file preview and compact preview across app surfaces | Partial pass (reported preview and compact transport; not all surfaces) | Not run | Not run |
+| Install and launch correct architecture | Pass | Not run | Pass |
+| Ordinary file preview and compact preview across app surfaces | Partial pass (reported preview and compact transport; not all surfaces) | Not run | Pass (reported ordinary and compact preview; not every surface itemized) |
 | WAV16/44.1k mono, WAV24/48k stereo, float32/96k, AIFF, MP3, FLAC, AAC, M4A, MP4 | Not run | Not run | Not run |
-| Pause/play, seek, end/replay, mute/volume, file release | Partial pass (all reported transport/volume/mute; file release not reported) | Not run | Not run |
-| Comparison candidate/region changes, looping and shortcuts | Partial pass (candidate/region/loop/seek; shortcuts not separately reported) | Not run | Not run |
-| Per-region loudness matching and ranking/results unchanged | Pass (functional, not measured gain tolerance) | Not run | Not run |
-| Exclusive preview/comparison ownership | Not run | Not run | Not run |
+| Pause/play, seek, end/replay, mute/volume, file release | Partial pass (all reported transport/volume/mute; file release not reported) | Not run | Pass (feature-level transport reported; file release not separately checked) |
+| Comparison candidate/region changes, looping and shortcuts | Partial pass (candidate/region/loop/seek; shortcuts not separately reported) | Not run | Pass (feature-level Blind Comparison; individual shortcuts not itemized) |
+| Per-region loudness matching and ranking/results unchanged | Pass (functional, not measured gain tolerance) | Not run | Pass (functional, not measured gain tolerance) |
+| Exclusive preview/comparison ownership | Not run | Not run | Pass |
 | Via individual Studio source and Controller transmitter | Pass | Pass (discovery only) | Pass (discovery only) |
 | Receiver audio and stereo L/R integrity | Not run | Not run | Not run |
 | Chrome, notification and microphone excluded | Not run | Not run | Not run |
-| Via stop, output-device disconnect, explicit recovery | Accepted limitation for Via Stop; disconnect and Retry state-retention not run | Not run | Not run |
+| Via stop, output-device disconnect, explicit recovery | Accepted limitation for Via Stop; disconnect and Retry state-retention not run | Not run | Pass (Via Stop error/explicit Play); device unplug and comparison state retention not run |
 | Controller route removal / receiver unavailable | Not run | Not run | Not run |
 | Sleep/wake, no automatic restart or speaker fallback | Partial pass (sleep/wake, no auto-resume or speaker fallback in Via Stop/quit diagnostic) | Not run | Not run |
-| Ordinary default-output playback without Via | Pass | Not run | Not run |
+| Ordinary default-output playback without Via | Pass | Not run | Pass |
 
 ## Reported installed results and explicit v2.4 disposition
 
@@ -38,9 +38,19 @@ Source check and headless tests do not establish installed acceptance.
   disconnect/reconnect, independent Retry candidate/region/gain/volume retention,
   exclusive playback, measured gain tolerance, receiver signal/stereo L/R and
   isolation remain **Not run / not individually reported**.
-- **Apple Silicon macOS 27.0.1 and Windows 11:** individual Studio discovery in
-  Via and Controller transmitter publication passed, as separately recorded in
-  #514. Do **not** propagate Intel functional passes to these hosts.
+- **Apple Silicon macOS 27.0.1:** individual Studio discovery in Via and
+  Controller transmitter publication passed; installed playback/transport,
+  comparison, recovery and receiver checks remain not run/unreported.
+- **Windows 11:** user-reported nine feature-level passes on installed
+  `0344a183`: installer/launch, ordinary and compact previews, Blind
+  Comparison, functional per-region loudness and ranking/results, exclusive
+  playback ownership, Dante Via routing, output recovery and normal Windows
+  default speakers without Via. When Via stopped, Studio displayed an error
+  icon/message and stopped playback; restarting Via did not automatically
+  resume, and explicit Play resumed successfully. Exact codec-by-codec
+  coverage, Windows sleep/wake, physical device disconnect, downstream
+  receiver/stereo and isolation, and itemized comparison Retry state retention
+  remain **Not run/unreported**. Do not propagate results between platforms.
 - **Via Stop / quit diagnostics on Intel Mac:** Via Stop silenced audio and froze
   the playhead while the Play/Pause button continued to indicate Playing, with
   no displayed error. Playback did **not** automatically resume on Via restart.
