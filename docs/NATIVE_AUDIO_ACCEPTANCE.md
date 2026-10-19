@@ -19,7 +19,7 @@ BUILD.txt; identify the package by commit, not the displayed version alone.
 | Via individual Studio source and Controller transmitter | Pass | Deferred this run (Via unavailable; earlier reported discovery pass preserved below) | Pass (discovery only) |
 | Receiver audio and stereo L/R integrity | Pass (Mac → Windows laptop Dante endpoint); physical Dante-to-analog receiver Not run | Not run | Pass (Windows → Mac laptop Dante endpoint); physical Dante-to-analog receiver Not run |
 | Chrome, notification and microphone excluded | Pass (reported end-to-end laptop Dante isolation; macOS notifications) | Not run | Pass (reported unrelated-source isolation; Windows notification case not itemized) |
-| Via stop, output-device disconnect, explicit recovery | Accepted limitation for Via Stop; disconnect and Retry state-retention not run | Deferred Via tests (Via unavailable); hardware unplug/Retry state-retention not run | Pass (Via Stop error/explicit Play); device unplug and comparison state retention not run |
+| Via stop, output-device disconnect, explicit recovery | Via Stop: accepted limitation; device unplug and detailed Retry retention: accepted as built, not individually tested | Via tests deferred; unplug and detailed Retry retention: accepted as built, not individually tested | Via Stop/explicit Play: Pass; device unplug and detailed Retry retention: accepted as built, not individually tested |
 | Controller route removal / receiver unavailable | Pass (subscription remove/restore to Windows laptop); physical receiver loss Not run | Not run | Pass (subscription remove/restore to Mac laptop); physical receiver loss Not run |
 | Sleep/wake, no automatic restart or speaker fallback | Partial pass (sleep/wake, no auto-resume or speaker fallback in Via Stop/quit diagnostic) | Not run | Not run |
 | Ordinary default-output playback without Via | Pass | Pass | Pass |
@@ -88,6 +88,19 @@ not separately supplied. Windows notification-specific coverage was not
 individually reported. Keep the physical-hardware and other acceptance cases
 independent from the successful laptop-to-laptop test.
 
+**Additional user-confirmed v2.4 scope disposition (2026-10-19):**
+Physical output-device disconnect/reconnect and detailed Blind Comparison Retry
+state retention (candidate/position/region/gains/volume/mute) are **accepted as
+built without additional installed qualification for v2.4**, rather than release
+blockers. The implementation and existing automated recovery tests are retained
+unchanged. These subcases remain **Not individually tested** on each platform;
+acceptance as built is a user-approved risk disposition, **not a Pass** and not
+proof of reliable behavior under every device-loss scenario. The documented
+manual recovery remains the fallback. Do not schedule new code fixes, runtime
+stall detection, or mandatory hands-on disconnect/Retry tests solely for this
+release. This disposition does not change the intent to avoid unintended
+speaker routing, and does not imply acceptance of future observed regressions.
+
 **User-approved v2.4 acceptance exception (2026-10-19):** Retain the existing
 native rodio/CPAL implementation and explicit CPAL stream-error handling.
 The Via Stop case may leave a frozen playhead and stale Playing indicator
@@ -97,8 +110,10 @@ false detections could disrupt comparison listening. User-approved manual
 recovery: stop/close the Studio preview or comparison, restore Via and intended
 system default, verify individual source/route, reopen or Retry as applicable,
 and explicitly restart playback. See [recovery guidance](NATIVE_AUDIO_DANTE.md).
-This exception does not waive real output-device-loss handling, intentional
-no-fallback behavior, or the remaining receiver/isolation/cross-platform gates.
+This Via Stop exception and the separate accepted-as-built disposition do not
+change intentional no-fallback behavior or any observed functional Pass/Fail.
+Physical receiver/analog output qualification remains distinct from software
+routing between the two tested laptops.
 
 ## Procedure and acceptance criteria
 
@@ -127,7 +142,8 @@ For Via Stop on Intel macOS 12.7.6, apply the specifically approved accepted
 limitation above (stale Playing indicator/no error); manually recover using the
 Dante setup guide. For a genuinely reported output stream error, require a
 useful message, no automatic resume and no unintended speaker output. Restore
-routing and explicitly retry. Hardware disconnect still requires its own test. Also remove
+routing and explicitly retry. Hardware disconnect and detailed Retry state retention are documented as
+accepted as built / not individually tested for v2.4, not as Pass. Also remove
 only the downstream Controller subscription: Studio may continue local playback
 because downstream receiver availability is not reported by the local device.
 Record this distinction rather than calling it a detected-device-loss pass.
