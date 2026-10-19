@@ -97,6 +97,15 @@ jobs:
         run: npm run version:sync
       - name: Build installer
         run: npm run tauri build -- -- --locked
+      - name: Verify complete macOS app signature inside DMG
+        if: matrix.platform == 'macos'
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          installers=(src-tauri/target/release/bundle/dmg/*.dmg)
+          test "${#installers[@]}" -eq 1
+          bash scripts/verify-macos-dmg-signature.sh "${installers[0]}"
       - name: Stage release asset
         run: >-
           node scripts/stage-release-asset.mjs
