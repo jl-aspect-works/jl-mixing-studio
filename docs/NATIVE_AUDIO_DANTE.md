@@ -39,6 +39,38 @@ or use the comparison's Retry action. Playback never restarts automatically.
 Check the intended system default before retrying: a new session uses that
 current default, which may have changed while Via was unavailable.
 
+### Accepted Dante Via Stop limitation (v2.4)
+
+On the installed Intel Mac (macOS 12.7.6), stopping Dante Via while Studio is
+playing can silence audio and freeze the playback position while Studio's
+Play/Pause control still indicates Playing; Studio may show no error. This is a
+**known, user-accepted limitation** for v2.4, not evidence that the audio is
+still reaching Dante. Via Stop need not generate a CPAL stream-error callback.
+Do not infer receiver connectivity from the Studio playback icon.
+
+To recover safely:
+
+1. Stop or pause playback in Studio; if the control does not respond, close the
+   preview or leave and reopen the comparison. Do not assume the stalled UI
+   represents audible playback.
+2. Restart/enable Dante Via and confirm the intended system-default audio
+   output. If the Studio source is missing, quit Studio, restart Via, and
+   reopen Studio.
+3. Enable **JL Mixing Studio** as an individual Via source, check the Dante
+   Controller route, and verify the receiver if connected.
+4. Explicitly start the preview again. In Blind Comparison, use **Retry** if a
+   playback error is shown; verify the candidate, region, position, and gains
+   before continuing. No automatic resume is expected.
+
+The Intel Mac interruption diagnostic did **not** reproduce automatic output
+switching to system speakers or automatic resumption after restarting Via.
+An earlier apparent speaker-fallback report in a different comparison recovery
+scenario remains unresolved; do not treat it as either a confirmed mechanism or
+as an approved fallback behavior. The selected-default/no-automatic-fallback
+design remains the intended behavior. No runtime stall watchdog is introduced:
+false positives could unnecessarily interrupt critical listening. Device
+unplug/replug, receiver signal, L/R, and isolation still require testing.
+
 Studio cannot guarantee receiver delivery or know a downstream Controller
 subscription was removed while the local output device continues to operate.
 For that condition, inspect Via/Controller and the receiver. Device/service
