@@ -10,19 +10,19 @@ BUILD.txt; identify the package by commit, not the displayed version alone.
 | Installed case | Intel macOS 12.7.6 | Apple Silicon macOS | Windows 11 |
 | --- | --- | --- | --- |
 | Install and launch correct architecture | Pass | Not run | Pass |
-| Ordinary file preview and compact preview across app surfaces | Partial pass (reported preview and compact transport; not all surfaces) | Not run | Pass (reported ordinary and compact preview; not every surface itemized) |
+| Ordinary file preview and compact preview across app surfaces | Partial pass (reported preview and compact transport; not all surfaces) | Pass (ordinary and compact previews; not all surfaces itemized) | Pass (reported ordinary and compact preview; not every surface itemized) |
 | WAV16/44.1k mono, WAV24/48k stereo, float32/96k, AIFF, MP3, FLAC, AAC, M4A, MP4 | Not run | Not run | Not run |
-| Pause/play, seek, end/replay, mute/volume, file release | Partial pass (all reported transport/volume/mute; file release not reported) | Not run | Pass (feature-level transport reported; file release not separately checked) |
-| Comparison candidate/region changes, looping and shortcuts | Partial pass (candidate/region/loop/seek; shortcuts not separately reported) | Not run | Pass (feature-level Blind Comparison; individual shortcuts not itemized) |
-| Per-region loudness matching and ranking/results unchanged | Pass (functional, not measured gain tolerance) | Not run | Pass (functional, not measured gain tolerance) |
-| Exclusive preview/comparison ownership | Not run | Not run | Pass |
-| Via individual Studio source and Controller transmitter | Pass | Pass (discovery only) | Pass (discovery only) |
+| Pause/play, seek, end/replay, mute/volume, file release | Partial pass (all reported transport/volume/mute; file release not reported) | Partial pass (transport/seek/volume/mute; end/replay/file release not separately itemized) | Pass (feature-level transport reported; file release not separately checked) |
+| Comparison candidate/region changes, looping and shortcuts | Partial pass (candidate/region/loop/seek; shortcuts not separately reported) | Partial pass (candidate/region/loop; shortcuts not separately reported) | Pass (feature-level Blind Comparison; individual shortcuts not itemized) |
+| Per-region loudness matching and ranking/results unchanged | Pass (functional, not measured gain tolerance) | Pass (functional, not measured gain tolerance) | Pass (functional, not measured gain tolerance) |
+| Exclusive preview/comparison ownership | Not run | Pass | Pass |
+| Via individual Studio source and Controller transmitter | Pass | Deferred this run (Via unavailable; earlier reported discovery pass preserved below) | Pass (discovery only) |
 | Receiver audio and stereo L/R integrity | Not run | Not run | Not run |
 | Chrome, notification and microphone excluded | Not run | Not run | Not run |
-| Via stop, output-device disconnect, explicit recovery | Accepted limitation for Via Stop; disconnect and Retry state-retention not run | Not run | Pass (Via Stop error/explicit Play); device unplug and comparison state retention not run |
+| Via stop, output-device disconnect, explicit recovery | Accepted limitation for Via Stop; disconnect and Retry state-retention not run | Deferred Via tests (Via unavailable); hardware unplug/Retry state-retention not run | Pass (Via Stop error/explicit Play); device unplug and comparison state retention not run |
 | Controller route removal / receiver unavailable | Not run | Not run | Not run |
 | Sleep/wake, no automatic restart or speaker fallback | Partial pass (sleep/wake, no auto-resume or speaker fallback in Via Stop/quit diagnostic) | Not run | Not run |
-| Ordinary default-output playback without Via | Pass | Not run | Pass |
+| Ordinary default-output playback without Via | Pass | Pass | Pass |
 
 ## Reported installed results and explicit v2.4 disposition
 
@@ -38,9 +38,18 @@ Source check and headless tests do not establish installed acceptance.
   disconnect/reconnect, independent Retry candidate/region/gain/volume retention,
   exclusive playback, measured gain tolerance, receiver signal/stereo L/R and
   isolation remain **Not run / not individually reported**.
-- **Apple Silicon macOS 27.0.1:** individual Studio discovery in Via and
-  Controller transmitter publication passed; installed playback/transport,
-  comparison, recovery and receiver checks remain not run/unreported.
+- **Apple Silicon macOS 27.0.1:** user-reported functional passes against
+  `0344a183` for ordinary/compact previews, transport/seek/volume/mute,
+  candidate/region switching and looping, functional LUFS matching and
+  ranking/results, exclusive playback, and intentional non-Via speakers.
+  The **install/launch qualification was explicitly Not run**, even though
+  playback was exercised; do not infer installer verification. **Via discovery
+  and Via stop/recovery are Deferred for this round because Dante Via was
+  unavailable** on that host. An earlier Apple Silicon Studio/Via discovery
+  and Controller TX pass had been reported in #514; retain that as a distinct
+  historical observation, not a current-run pass. Receiver signal/isolation,
+  all-codec installed testing, hardware disconnect and individual comparison
+  Retry state checks remain Not run/unreported.
 - **Windows 11:** user-reported nine feature-level passes on installed
   `0344a183`: installer/launch, ordinary and compact previews, Blind
   Comparison, functional per-region loudness and ranking/results, exclusive
