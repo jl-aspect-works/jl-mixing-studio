@@ -17,7 +17,7 @@ BUILD.txt; identify the package by commit, not the displayed version alone.
 | Per-region loudness matching and ranking/results unchanged | Pass (functional, not measured gain tolerance) | Pass (functional, not measured gain tolerance) | Pass (functional, not measured gain tolerance) |
 | Exclusive preview/comparison ownership | Not run | Pass | Pass |
 | Via individual Studio source and Controller transmitter | Pass | Deferred this run (Via unavailable; earlier reported discovery pass preserved below) | Pass (discovery only) |
-| Receiver audio and stereo L/R integrity | Pass (Mac → Windows laptop Dante endpoint); physical Dante-to-analog receiver Not run | Not run | Pass (Windows → Mac laptop Dante endpoint); physical Dante-to-analog receiver Not run |
+| Receiver audio and stereo L/R integrity | Pass (Mac → Windows laptop Dante endpoint); physical Dante-to-analog receiver Deferred | Not run | Pass (Windows → Mac laptop Dante endpoint); physical Dante-to-analog receiver Not run |
 | Chrome, notification and microphone excluded | Pass (reported end-to-end laptop Dante isolation; macOS notifications) | Not run | Pass (reported unrelated-source isolation; Windows notification case not itemized) |
 | Via stop, output-device disconnect, explicit recovery | Via Stop: accepted limitation; device unplug and detailed Retry retention: accepted as built, not individually tested | Via tests deferred; unplug and detailed Retry retention: accepted as built, not individually tested | Via Stop/explicit Play: Pass; device unplug and detailed Retry retention: accepted as built, not individually tested |
 | Controller route removal / receiver unavailable | Pass (subscription remove/restore to Windows laptop); physical receiver loss Not run | Not run | Pass (subscription remove/restore to Mac laptop); physical receiver loss Not run |
@@ -80,13 +80,25 @@ and unrelated application audio, and receiver audio stop/restore when removing
 and restoring the Dante Controller subscription.
 
 These are **real network receiver endpoint and isolation passes**, not just
-transmitter publication. The receiving endpoint was a **laptop**, not the
-planned physical Turtle AV Dante-to-analog receiver. Therefore **Turtle AV
-analog audio, hardware L/R channel identity and Sonos path remain Not run**.
+transmitter publication. The receiving endpoint was a **laptop**, not a physical Dante-to-analog
+receiver. Therefore the **Dante AVIO / Turtle AV analog receiver and downstream
+Sonos path remain untested and are explicitly Deferred until the full system
+is available**. This is a user-approved non-blocking v2.4 disposition, not a
+hardware Pass or a claim that the final analog path works.
 The exact receiving monitor method, software versions and stereo fixture were
 not separately supplied. Windows notification-specific coverage was not
 individually reported. Keep the physical-hardware and other acceptance cases
 independent from the successful laptop-to-laptop test.
+
+**Physical Dante receiver deferral (2026-10-19):** User approved deferring
+Dante AVIO / physical Dante-to-analog receiver and complete downstream playback
+qualification until the full audio system is available. This test is **Deferred
+/ not a blocker for Studio v2.4 software acceptance**. The two-way MacBook ↔
+Windows laptop Dante audio, stereo identity, source isolation and Controller
+subscription tests passed and provide strong software/interoperability evidence,
+but **do not verify the eventual physical analog receiver, wiring or Sonos line-in**.
+Revisit these exact hardware checks upon system installation; do not infer a
+hardware Pass or require purchasing/configuring hardware solely for this PR.
 
 **Additional user-confirmed v2.4 scope disposition (2026-10-19):**
 Physical output-device disconnect/reconnect and detailed Blind Comparison Retry
