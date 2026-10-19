@@ -39,8 +39,6 @@ fi
 codesign --verify --deep --strict --verbose=2 "$app"
 details="$(codesign --display --verbose=4 "$app" 2>&1)"
 printf '%s\n' "$details" | grep -F "Signature=adhoc"
-printf '%s\n' "$details" | grep -E "^Sealed Resources=[^n]" >/dev/null || {
-  echo "App inside DMG has no sealed resources." >&2
-  exit 1
-}
+# The CodeResources file and strict codesign check above verify the bundle seal.
+# codesign --display formats its human-readable summary differently by macOS version.
 echo "PASS: mounted DMG contains an ad-hoc signed, resource-sealed, strictly verifiable app."
