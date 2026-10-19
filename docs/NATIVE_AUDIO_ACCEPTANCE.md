@@ -17,10 +17,10 @@ BUILD.txt; identify the package by commit, not the displayed version alone.
 | Per-region loudness matching and ranking/results unchanged | Pass (functional, not measured gain tolerance) | Pass (functional, not measured gain tolerance) | Pass (functional, not measured gain tolerance) |
 | Exclusive preview/comparison ownership | Not run | Pass | Pass |
 | Via individual Studio source and Controller transmitter | Pass | Deferred this run (Via unavailable; earlier reported discovery pass preserved below) | Pass (discovery only) |
-| Receiver audio and stereo L/R integrity | Not run | Not run | Not run |
-| Chrome, notification and microphone excluded | Not run | Not run | Not run |
+| Receiver audio and stereo L/R integrity | Pass (Mac → Windows laptop Dante endpoint); physical Dante-to-analog receiver Not run | Not run | Pass (Windows → Mac laptop Dante endpoint); physical Dante-to-analog receiver Not run |
+| Chrome, notification and microphone excluded | Pass (reported end-to-end laptop Dante isolation; macOS notifications) | Not run | Pass (reported unrelated-source isolation; Windows notification case not itemized) |
 | Via stop, output-device disconnect, explicit recovery | Accepted limitation for Via Stop; disconnect and Retry state-retention not run | Deferred Via tests (Via unavailable); hardware unplug/Retry state-retention not run | Pass (Via Stop error/explicit Play); device unplug and comparison state retention not run |
-| Controller route removal / receiver unavailable | Not run | Not run | Not run |
+| Controller route removal / receiver unavailable | Pass (subscription remove/restore to Windows laptop); physical receiver loss Not run | Not run | Pass (subscription remove/restore to Mac laptop); physical receiver loss Not run |
 | Sleep/wake, no automatic restart or speaker fallback | Partial pass (sleep/wake, no auto-resume or speaker fallback in Via Stop/quit diagnostic) | Not run | Not run |
 | Ordinary default-output playback without Via | Pass | Pass | Pass |
 
@@ -36,8 +36,9 @@ Source check and headless tests do not establish installed acceptance.
   LUFS matching, and ranking/results passed. Sleep/wake and deliberately using
   system speakers without Via passed. Exact codecs, all app surfaces, output
   disconnect/reconnect, independent Retry candidate/region/gain/volume retention,
-  exclusive playback, measured gain tolerance, receiver signal/stereo L/R and
-  isolation remain **Not run / not individually reported**.
+  exclusive playback, measured gain tolerance and physical Dante-to-analog
+  receiver remain **Not run / not individually reported**; network laptop endpoint
+  stereo/isolation tests passed separately below.
 - **Apple Silicon macOS 27.0.1:** user-reported functional passes against
   `0344a183` for ordinary/compact previews, transport/seek/volume/mute,
   candidate/region switching and looping, functional LUFS matching and
@@ -58,8 +59,9 @@ Source check and headless tests do not establish installed acceptance.
   icon/message and stopped playback; restarting Via did not automatically
   resume, and explicit Play resumed successfully. Exact codec-by-codec
   coverage, Windows sleep/wake, physical device disconnect, downstream
-  receiver/stereo and isolation, and itemized comparison Retry state retention
-  remain **Not run/unreported**. Do not propagate results between platforms.
+  physical Dante-to-analog receiver/stereo outputs, and itemized comparison
+  Retry state retention remain **Not run/unreported**. Network laptop endpoint
+  stereo/isolation tests passed separately below. Do not propagate results between platforms.
 - **Via Stop / quit diagnostics on Intel Mac:** Via Stop silenced audio and froze
   the playhead while the Play/Pause button continued to indicate Playing, with
   no displayed error. Playback did **not** automatically resume on Via restart.
@@ -67,6 +69,24 @@ Source check and headless tests do not establish installed acceptance.
   default output or cause speaker audio, and clicking Via Stop did not cause
   speaker audio. A prior apparent fallback during another comparison recovery
   scenario remains *unresolved*, not established as a permitted behavior.
+
+### End-to-end Dante laptop endpoint and source-isolation verification (2026-10-19)
+
+User reports **Pass** for six checks using two directions: **Intel macOS
+12.7.6 MacBook → Windows laptop** and **Windows laptop → Intel MacBook**:
+audible receiver signal, correct stereo L/R, ordinary/compact/comparison
+playback, exclusion of Chrome and macOS notifications, exclusion of microphone
+and unrelated application audio, and receiver audio stop/restore when removing
+and restoring the Dante Controller subscription.
+
+These are **real network receiver endpoint and isolation passes**, not just
+transmitter publication. The receiving endpoint was a **laptop**, not the
+planned physical Turtle AV Dante-to-analog receiver. Therefore **Turtle AV
+analog audio, hardware L/R channel identity and Sonos path remain Not run**.
+The exact receiving monitor method, software versions and stereo fixture were
+not separately supplied. Windows notification-specific coverage was not
+individually reported. Keep the physical-hardware and other acceptance cases
+independent from the successful laptop-to-laptop test.
 
 **User-approved v2.4 acceptance exception (2026-10-19):** Retain the existing
 native rodio/CPAL implementation and explicit CPAL stream-error handling.
