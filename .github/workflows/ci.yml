@@ -242,10 +242,56 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  macos-bundle-signature-acceptance:
+    name: macOS ${{ matrix.arch }} signed-DMG acceptance
+    if: github.event_name == 'pull_request' && github.head_ref == 'fix/521-macos-bundle-signature'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: intel
+            os: macos-15-intel
+          - arch: apple-silicon
+            os: macos-15
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - run: npm ci
+      - name: Build ad-hoc signed macOS DMG
+        run: npm run tauri build -- --bundles dmg -- --locked
+      - name: Validate resource-sealed app inside finished DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          installers=(src-tauri/target/release/bundle/dmg/*.dmg)
+          test "${#installers[@]}" -eq 1
+          bash scripts/verify-macos-dmg-signature.sh "${installers[0]}"
+      - name: Stage installed acceptance artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/macos-signature
+          cp src-tauri/target/release/bundle/dmg/*.dmg artifacts/macos-signature/
+          printf 'Issue #521 development acceptance build; not a release.\nCommit: %s\n' "$GITHUB_SHA" > artifacts/macos-signature/BUILD.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: macos-signature-acceptance-${{ matrix.arch }}
+          path: artifacts/macos-signature/*
+          if-no-files-found: error
+          retention-days: 14
+
   required:
     name: Required CI
     if: always()
-    needs: [scope, frontend, rust, desktop-check, macos-audio-preview-spike, windows-audio-spike-test-installer]
+    needs: [scope, frontend, rust, desktop-check, macos-audio-preview-spike, windows-audio-spike-test-installer, macos-bundle-signature-acceptance]
     runs-on: ubuntu-latest
     steps:
       - name: Confirm the checks required for this change passed
@@ -257,6 +303,8 @@ jobs:
           DESKTOP_RESULT: ${{ needs.desktop-check.result }}
           AUDIO_RESULT: ${{ needs.macos-audio-preview-spike.result }}
           WINDOWS_SPIKE_RESULT: ${{ needs.windows-audio-spike-test-installer.result }}
+          MACOS_SIGNATURE_RESULT: ${{ needs.macos-bundle-signature-acceptance.result }}
+          MACOS_SIGNATURE_BRANCH: ${{ github.event_name == 'pull_request' && github.head_ref == 'fix/521-macos-bundle-signature' }}
           SPIKE_BRANCH: ${{ github.event_name == 'pull_request' && github.head_ref == 'spike/v2.1-windows-native-audio-preview' }}
         run: |
           test "$SCOPE_RESULT" = success
@@ -267,6 +315,9 @@ jobs:
             test "$AUDIO_RESULT" = success
             if [ "$SPIKE_BRANCH" = true ]; then
               test "$WINDOWS_SPIKE_RESULT" = success
+            fi
+            if [ "$MACOS_SIGNATURE_BRANCH" = true ]; then
+              test "$MACOS_SIGNATURE_RESULT" = success
             fi
           else
             test "$FULL_CI" = false
