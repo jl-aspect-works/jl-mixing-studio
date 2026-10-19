@@ -31,6 +31,9 @@
   },
   "bundle": {
     "active": true,
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "category": "Music",
     "copyright": "Copyright © 2026 JL Aspect Works contributors",
     "homepage": "https://github.com/jl-aspect-works/jl-mixing-studio",
