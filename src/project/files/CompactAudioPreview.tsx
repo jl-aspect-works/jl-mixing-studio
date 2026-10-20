@@ -82,6 +82,7 @@ export function CompactAudioPreview({
         }
       } catch (error: unknown) {
         if (!cancelled) {
+          nativeLoadedRef.current = false;
           setPlaying(false);
           setFailure(previewError(error));
           releaseAudioPlayback(sessionId);
@@ -165,6 +166,7 @@ export function CompactAudioPreview({
       }
       await audio.play();
     } catch (error: unknown) {
+      nativeLoadedRef.current = false;
       releaseAudioPlayback(sessionId);
       setPlaying(false);
       setFailure(previewError(error));

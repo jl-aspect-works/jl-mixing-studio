@@ -20,12 +20,12 @@ pub(crate) struct NativeComparisonAudioStatus {
     pub candidates: Option<Vec<NativeComparisonCandidateStatus>>,
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 use std::{collections::BTreeMap, time::Duration};
 
-#[cfg(target_os = "windows")]
-pub(super) struct WindowsComparisonPlayback {
-    _stream: rodio::MixerDeviceSink,
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+pub(super) struct NativeComparisonPlayback {
+    output: super::output_session::OutputSession,
     players: BTreeMap<String, rodio::Player>,
     durations: BTreeMap<String, Duration>,
     match_gains: BTreeMap<String, f32>,
@@ -33,10 +33,14 @@ pub(super) struct WindowsComparisonPlayback {
     volume: f32,
 }
 
-#[cfg(target_os = "windows")]
-impl WindowsComparisonPlayback {
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+impl NativeComparisonPlayback {
+    pub(super) fn output_failed(&self) -> bool {
+        self.output.failed()
+    }
+
     pub(super) fn clear(&self) {
-        self.players.values().for_each(rodio::Player::clear);
+        self.players.values().for_each(rodio::Player::stop);
     }
 
     fn status(&self, include_candidates: bool) -> NativeComparisonAudioStatus {
@@ -90,17 +94,15 @@ pub(crate) fn prepare(
     if !start_seconds.is_finite() || start_seconds < 0.0 {
         return Err("Comparison start position is invalid".into());
     }
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
-        use rodio::{Decoder, DeviceSinkBuilder, Player, Source};
+        use rodio::{Decoder, Player, Source};
         use std::fs::File;
 
         if candidates.len() < 2 {
             return Err("Comparison playback requires at least two candidates".into());
         }
-        let stream = DeviceSinkBuilder::open_default_sink().map_err(|error| {
-            format!("Unable to open the default Windows audio output device: {error}")
-        })?;
+        let stream = super::output_session::OutputSession::open()?;
         let mut players = BTreeMap::new();
         let mut durations = BTreeMap::new();
         let mut match_gains = BTreeMap::new();
@@ -125,8 +127,8 @@ pub(crate) fn prepare(
             durations.insert(blind_id.clone(), duration);
             match_gains.insert(blind_id.clone(), match_gain);
         }
-        let comparison = WindowsComparisonPlayback {
-            _stream: stream,
+        let comparison = NativeComparisonPlayback {
+            output: stream,
             players,
             durations,
             match_gains,
@@ -136,7 +138,7 @@ pub(crate) fn prepare(
         let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
         playback.stop();
         playback.comparison = Some(comparison);
         return Ok(playback
@@ -145,7 +147,7 @@ pub(crate) fn prepare(
             .expect("comparison was just assigned")
             .status(true));
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = (state, candidates);
         Ok(unsupported_status())
@@ -153,7 +155,7 @@ pub(crate) fn prepare(
 }
 
 pub(crate) fn play(state: &NativeAudioPreviewState) -> Result<NativeComparisonAudioStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         return with_comparison(state, |comparison| {
             comparison
@@ -164,16 +166,16 @@ pub(crate) fn play(state: &NativeAudioPreviewState) -> Result<NativeComparisonAu
             Ok(comparison.status(false))
         });
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
 pub(crate) fn pause(
     state: &NativeAudioPreviewState,
 ) -> Result<NativeComparisonAudioStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         return with_comparison(state, |comparison| {
             if let Some(player) = comparison.players.get(&comparison.active_candidate_id) {
@@ -182,9 +184,9 @@ pub(crate) fn pause(
             Ok(comparison.status(false))
         });
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
@@ -195,7 +197,7 @@ pub(crate) fn seek(
     if !seconds.is_finite() || seconds < 0.0 {
         return Err("Comparison seek position is invalid".into());
     }
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         return with_comparison(state, |comparison| {
             let position = Duration::from_secs_f64(seconds);
@@ -219,9 +221,9 @@ pub(crate) fn seek(
             Ok(comparison.status(false))
         });
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
@@ -229,7 +231,7 @@ pub(crate) fn switch_candidate(
     state: &NativeAudioPreviewState,
     candidate_id: &str,
 ) -> Result<NativeComparisonAudioStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         return with_comparison(state, |comparison| {
             let active = comparison
@@ -260,10 +262,10 @@ pub(crate) fn switch_candidate(
             Ok(comparison.status(false))
         });
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = candidate_id;
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
@@ -271,7 +273,7 @@ pub(crate) fn set_volume(
     state: &NativeAudioPreviewState,
     volume: f32,
 ) -> Result<NativeComparisonAudioStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         return with_comparison(state, |comparison| {
             comparison.volume = volume.clamp(0.0, 1.0);
@@ -284,10 +286,10 @@ pub(crate) fn set_volume(
             Ok(comparison.status(false))
         });
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = volume;
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
@@ -295,7 +297,7 @@ pub(crate) fn set_match_gains(
     state: &NativeAudioPreviewState,
     gains: std::collections::BTreeMap<String, Option<f64>>,
 ) -> Result<NativeComparisonAudioStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         return with_comparison(state, |comparison| {
             if gains.len() != comparison.players.len()
@@ -313,41 +315,41 @@ pub(crate) fn set_match_gains(
             Ok(comparison.status(false))
         });
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = gains;
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
 pub(crate) fn stop(state: &NativeAudioPreviewState) -> Result<NativeComparisonAudioStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         let mut playback = state
             .inner
             .lock()
-            .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+            .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
         if let Some(comparison) = playback.comparison.take() {
             comparison.clear();
         }
         return Ok(unsupported_status());
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
 pub(crate) fn status(
     state: &NativeAudioPreviewState,
 ) -> Result<NativeComparisonAudioStatus, String> {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     {
         return with_comparison(state, |comparison| Ok(comparison.status(false)));
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        unsupported_on_non_windows(state)
+        unsupported_on_other_platforms(state)
     }
 }
 
@@ -362,25 +364,24 @@ fn unsupported_status() -> NativeComparisonAudioStatus {
     }
 }
 
-#[cfg(not(target_os = "windows"))]
-fn unsupported_on_non_windows(
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+fn unsupported_on_other_platforms(
     state: &NativeAudioPreviewState,
 ) -> Result<NativeComparisonAudioStatus, String> {
     let _ = state;
     Ok(unsupported_status())
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos"))]
 fn with_comparison(
     state: &NativeAudioPreviewState,
-    operation: impl FnOnce(
-        &mut WindowsComparisonPlayback,
-    ) -> Result<NativeComparisonAudioStatus, String>,
+    operation: impl FnOnce(&mut NativeComparisonPlayback) -> Result<NativeComparisonAudioStatus, String>,
 ) -> Result<NativeComparisonAudioStatus, String> {
     let mut playback = state
         .inner
         .lock()
-        .map_err(|_| "The Windows audio preview provider is unavailable".to_owned())?;
+        .map_err(|_| "The native audio preview provider is unavailable".to_owned())?;
+    playback.check_output()?;
     let comparison = playback
         .comparison
         .as_mut()
@@ -388,10 +389,24 @@ fn with_comparison(
     operation(comparison)
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "macos", test))]
 fn gain_scalar(gain_db: Option<f64>) -> f32 {
     gain_db
         .filter(|value| value.is_finite())
         .map(|value| 10.0_f64.powf(value.min(0.0) / 20.0) as f32)
         .unwrap_or(1.0)
+}
+
+#[cfg(test)]
+mod native_audio_qualification {
+    use super::gain_scalar;
+
+    #[test]
+    fn comparison_gains_preserve_attenuation_without_boosting_or_nonfinite_values() {
+        assert!((gain_scalar(Some(-6.020_599_913)) - 0.5).abs() < 0.000_001);
+        assert_eq!(gain_scalar(Some(6.0)), 1.0);
+        assert_eq!(gain_scalar(None), 1.0);
+        assert_eq!(gain_scalar(Some(f64::NAN)), 1.0);
+        assert_eq!(gain_scalar(Some(f64::NEG_INFINITY)), 1.0);
+    }
 }

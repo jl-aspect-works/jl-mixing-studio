@@ -7,7 +7,6 @@ use crate::models::{
 use crate::workspace;
 use std::fs;
 use std::path::{Path, PathBuf};
-use tauri::Manager;
 
 #[tauri::command]
 pub(crate) fn open_project_file(
@@ -52,22 +51,11 @@ pub(crate) fn prepare_project_audio_preview(
         return Err("Only regular project files can be previewed".into());
     }
 
-    if !cfg!(target_os = "macos") {
-        return Ok(ProjectAudioPreviewResult {
-            supported: false,
-            relative_path,
-            file_path: None,
-        });
-    }
-
-    app.asset_protocol_scope()
-        .allow_file(&path)
-        .map_err(|error| format!("Unable to authorize this audio file for preview: {error}"))?;
-
+    // Native previews do not grant the webview access to the audio file.
     Ok(ProjectAudioPreviewResult {
-        supported: true,
+        supported: false,
         relative_path,
-        file_path: Some(path.to_string_lossy().into_owned()),
+        file_path: None,
     })
 }
 

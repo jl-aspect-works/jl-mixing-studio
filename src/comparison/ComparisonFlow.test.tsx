@@ -865,8 +865,21 @@ describe("blind comparison workspace shell", () => {
     await waitFor(() => expect(mocks.clearHistory).toHaveBeenCalledWith({ clientId: "c1", projectId: "p1" }));
   });
 
-  it("pauses on a runtime candidate failure and requires Retry or Cancel", async () => {
-    mocks.playbackSwitch.mockRejectedValueOnce(new Error("Candidate B could not be played."));
+  it("preserves native output preparation errors and offers an explicit retry", async () => {
+    const message = "Unable to open the default audio output. Restore Dante Via, then retry.";
+    mocks.playbackPrepare.mockRejectedValueOnce(message);
+    render(workspace());
+    const failure = await screen.findByRole("alert");
+    expect(within(failure).getByText(message)).toBeInTheDocument();
+    expect(within(failure).getByRole("button", { name: "Retry" })).toBeEnabled();
+    expect(mocks.playbackRetry).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    new Error("Candidate B could not be played."),
+    "Audio output was lost. Restore your intended output and Dante Via, then retry.",
+  ])("preserves runtime playback error %s and requires Retry or Cancel", async (error) => {
+    mocks.playbackSwitch.mockRejectedValueOnce(error);
     render(workspace());
     const candidateB = await waitFor(() => {
       const button = within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "B" });
@@ -877,6 +890,7 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(candidateB);
     const failure = await screen.findByRole("alert");
     expect(mocks.playbackPause).toHaveBeenCalledOnce();
+    expect(within(failure).getByText(error instanceof Error ? error.message : error)).toBeInTheDocument();
     expect(within(failure).getByText("Candidate B playback stopped.")).toBeInTheDocument();
     expect(within(failure).getByRole("button", { name: "Retry" })).toBeInTheDocument();
     expect(within(failure).getByRole("button", { name: "Cancel" })).toBeInTheDocument();
@@ -885,5 +899,6 @@ describe("blind comparison workspace shell", () => {
     fireEvent.click(within(failure).getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(mocks.playbackRetry).toHaveBeenCalledOnce());
     await waitFor(() => expect(screen.queryByText("Candidate B playback stopped.")).not.toBeInTheDocument());
+    expect(within(screen.getByLabelText("Blind candidates")).getByRole("button", { name: "A" })).toHaveAttribute("aria-pressed", "true");
   });
 });

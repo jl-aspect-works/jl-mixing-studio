@@ -121,6 +121,8 @@ export const AudioPreviewPlayer = forwardRef<AudioPreviewPlayerHandle, {
         }
       } catch (reason) {
         if (!cancelled) {
+          nativeLoadedRef.current = false;
+          releaseAudioPlayback(sessionId);
           setPlaying(false);
           setError(previewErrorMessage(reason));
         }
@@ -225,6 +227,7 @@ export const AudioPreviewPlayer = forwardRef<AudioPreviewPlayerHandle, {
       }
       await current.play();
     } catch (reason) {
+      nativeLoadedRef.current = false;
       releaseAudioPlayback(sessionId);
       setPlaying(false);
       setError(previewErrorMessage(reason));
