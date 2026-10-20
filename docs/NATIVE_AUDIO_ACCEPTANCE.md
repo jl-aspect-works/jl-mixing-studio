@@ -1,6 +1,7 @@
 # Native playback / Dante acceptance (#513 / #514)
 
-Status: **Partial installed acceptance — implementation under review**. Target: Studio v2.4.
+Status: **Development-package installed results and approved v2.4 dispositions recorded; implementation merged in PR #523**. Target: Studio v2.4.
+Post-merge integration verification and exact RC installed acceptance remain separate gates; see [RC checklist](RELEASE_ACCEPTANCE_V2.4.md).
 This record does not inherit #512 diagnostic or older release acceptance.
 Record exact test-build commit, package, OS/architecture, Via/Controller versions,
 system default, receiver and test file for every run. Compilation is not an
