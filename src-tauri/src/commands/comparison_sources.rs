@@ -3,7 +3,6 @@ use super::resolve_workspace_root;
 use crate::models::ProjectAudioPreviewResult;
 use crate::workspace;
 use serde::Deserialize;
-use tauri::Manager;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -59,16 +58,11 @@ fn prepare_sources(
             if !path.is_file() {
                 return Err(failure());
             }
-            let supported = cfg!(target_os = "macos");
-            if supported {
-                app.asset_protocol_scope()
-                    .allow_file(&path)
-                    .map_err(|_| failure())?;
-            }
+
             Ok(ProjectAudioPreviewResult {
-                supported,
+                supported: false,
                 relative_path,
-                file_path: supported.then(|| path.to_string_lossy().into_owned()),
+                file_path: None,
             })
         })
         .collect()

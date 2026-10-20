@@ -264,6 +264,10 @@ export class ComparisonPlaybackSession {
   private disposed = false;
   private providerKind: PlaybackProviderKind = "unknown";
   private lastStatus: ComparisonPlaybackSnapshot | null = null;
+  private recoveryStatus: ComparisonPlaybackSnapshot | null = null;
+  private nativeProvider = false;
+  private failedCandidateId: string | null = null;
+  private volume = 1;
   private candidateDurations = new Map<string, number>();
 
   constructor(
@@ -311,10 +315,12 @@ export class ComparisonPlaybackSession {
       this.provider = this.providerFactory?.(providerKind)
         ?? (providerKind === "web" ? new WebComparisonAudioProvider() : new NativeComparisonAudioProvider(this.clientId, this.projectId));
       this.providerKind = providerKind;
+      this.nativeProvider = providerKind === "native";
       onProgress?.(`Loading audio and checking durations for all ${prepared.length} candidates…`);
       const durations = await measureComparison("audio_prepare", () => this.provider!.prepare(prepared, this.activeRegion.startSeconds), prepared.length);
       this.regions.forEach((region) => validateRegionDurations(this.candidates, region, durations));
       this.candidateDurations = durations;
+      if (this.volume !== 1) await this.provider.setVolume(this.volume);
       const status = this.remember(await this.provider.status());
       this.logDiagnostic("session_ready", "success", status);
       return status;
@@ -364,9 +370,11 @@ export class ComparisonPlaybackSession {
       const switched = await measureComparison("candidate_switch", () => provider.switchCandidate(candidateId));
       const next = this.remember(this.normalizePlaybackState(current.currentSeconds >= targetEnd && this.playRequested
         ? await provider.play() : switched));
+      this.failedCandidateId = null;
       finish("success", this.diagnosticFields(next, candidateId));
       return next;
     } catch (error) {
+      this.failedCandidateId = candidateId;
       finish("error", this.diagnosticFields(undefined, candidateId));
       throw error;
     }
@@ -381,22 +389,33 @@ export class ComparisonPlaybackSession {
     if (this.candidates.some((candidate) => candidate.regionLoudness && !candidate.regionLoudness[region.regionId])) {
       throw new Error("The selected region has no loudness measurement for a candidate.");
     }
-    const regionMatched = this.candidates.some((candidate) => candidate.regionLoudness);
-    if (regionMatched) await provider.pause();
-    this.activeRegion = region;
-    this.loop = true;
-    const next = await provider.seek(region.startSeconds);
-    if (regionMatched) {
-      await provider.setMatchGains(Object.fromEntries(this.candidates.map((candidate) => [candidate.blindId,
-        candidate.regionLoudness?.[region.regionId]?.appliedGainDb ?? candidate.appliedGainDb])));
+    const previousRegion = this.activeRegion;
+    const previousLoop = this.loop;
+    try {
+      const regionMatched = this.candidates.some((candidate) => candidate.regionLoudness);
+      if (regionMatched) await provider.pause();
+      this.activeRegion = region;
+      this.loop = true;
+      const next = await provider.seek(region.startSeconds);
+      if (regionMatched) {
+        await provider.setMatchGains(Object.fromEntries(this.candidates.map((candidate) => [candidate.blindId,
+          candidate.regionLoudness?.[region.regionId]?.appliedGainDb ?? candidate.appliedGainDb])));
+      }
+      if (this.playRequested) return this.remember(this.normalizePlaybackState(await provider.play()));
+      return this.remember(this.normalizePlaybackState(next));
+    } catch (error) {
+      this.activeRegion = previousRegion;
+      this.loop = previousLoop;
+      throw error;
     }
-    if (this.playRequested) return this.remember(this.normalizePlaybackState(await provider.play()));
-    return this.remember(this.normalizePlaybackState(next));
   }
 
   setLoop(loop: boolean) { this.loop = loop; }
 
-  async setVolume(volume: number) { return this.remember(await this.requireProvider().setVolume(volume)); }
+  async setVolume(volume: number) {
+    this.volume = volume;
+    return this.remember(await this.requireProvider().setVolume(volume));
+  }
 
   async refresh() {
     const provider = this.requireProvider();
@@ -428,15 +447,47 @@ export class ComparisonPlaybackSession {
     return this.remember(this.normalizePlaybackState(status));
   }
 
-  async retry() {
+  private async statusForRetry() {
+    try {
+      if (this.provider) return await this.provider.status();
+    } catch (error) {
+      if (!this.nativeProvider) throw error;
+    }
+    if (!this.nativeProvider) throw new Error("Comparison audio is not prepared.");
+    // A native stream failure releases the backend session. Only an explicit
+    // Retry may recreate it, using the user's currently selected default output.
+    const previous = this.recoveryStatus ?? this.lastStatus;
+    this.recoveryStatus = previous;
+    await this.stopProvider();
+    await this.prepare();
     const provider = this.requireProvider();
+    if (previous) {
+      await provider.switchCandidate(this.failedCandidateId ?? previous.activeCandidateId);
+      await provider.seek(this.boundPosition(previous.currentSeconds));
+    }
+    return provider.status();
+  }
+
+  async retry() {
+    if (this.disposed) throw new Error("Comparison playback session is closed.");
     const finish = this.startDiagnostic("retry");
     try {
-      const status = await provider.status();
+      let status = await this.statusForRetry();
+      const provider = this.requireProvider();
+      if (this.failedCandidateId && status.activeCandidateId !== this.failedCandidateId) {
+        status = await provider.switchCandidate(this.failedCandidateId);
+      }
+      await provider.setVolume(this.volume);
+      if (this.candidates.some((candidate) => candidate.regionLoudness)) {
+        await provider.setMatchGains(Object.fromEntries(this.candidates.map((candidate) => [candidate.blindId,
+          candidate.regionLoudness?.[this.activeRegion.regionId]?.appliedGainDb ?? candidate.appliedGainDb])));
+      }
       await provider.seek(status.currentSeconds >= this.effectiveEnd(status)
         ? this.activeRegion.startSeconds : this.boundPosition(status.currentSeconds));
       this.playRequested = true;
       const next = this.remember(this.normalizePlaybackState(await provider.play()));
+      this.recoveryStatus = null;
+      this.failedCandidateId = null;
       finish("success", this.diagnosticFields(next));
       return next;
     } catch (error) {
