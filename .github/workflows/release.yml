@@ -170,10 +170,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -s docs/RELEASE_NOTES_V2.3.md
-          grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.3.md
-          grep -q 'More info' docs/RELEASE_NOTES_V2.3.md
-          grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.3.md
+          test -s docs/RELEASE_NOTES_V2.4.md
+          grep -q 'Open Anyway' docs/RELEASE_NOTES_V2.4.md
+          grep -q 'More info' docs/RELEASE_NOTES_V2.4.md
+          grep -q 'SHA256SUMS.txt' docs/RELEASE_NOTES_V2.4.md
       - name: Recheck unused version and create release tag
         env:
           GH_TOKEN: ${{ github.token }}
@@ -198,6 +198,6 @@ jobs:
           gh release create "$RELEASE_TAG" \
             --verify-tag \
             --title "JL Mixing Studio $RELEASE_TAG" \
-            --notes-file docs/RELEASE_NOTES_V2.3.md \
+            --notes-file docs/RELEASE_NOTES_V2.4.md \
             "${prerelease[@]}" \
             release-assets/*
